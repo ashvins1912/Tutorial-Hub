@@ -10,7 +10,7 @@ import {
 import { PROBLEMS } from '../data/problems';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../../server/seed/cognitiveSeed';
 
-export type TopView = 'workspace' | 'skill-tree' | 'roadmap' | 'schemas';
+export type TopView = 'workspace' | 'skill-tree' | 'roadmap' | 'schemas' | 'complete-roadmap';
 
 interface ProblemLocalProgress {
   selectedSignalId: string | null;
