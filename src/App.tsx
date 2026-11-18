@@ -27,6 +27,7 @@ import { PatternTemplateModal } from './components/cognitive/PatternTemplateModa
 import { ScratchpadDrawer } from './components/cognitive/ScratchpadDrawer';
 import { SrtbotWorksheetModal } from './components/cognitive/SrtbotWorksheetModal';
 import { TopicPatternQuizModal } from './components/cognitive/TopicPatternQuizModal';
+import { CompleteDsaRoadmap } from './components/CompleteDsaRoadmap';
 
 export default function App() {
   const activeView = usePatternForgeStore((s) => s.activeView);
@@ -57,6 +58,7 @@ export default function App() {
   const navItems: { id: TopView; label: string }[] = [
     { id: 'workspace', label: 'Workspace' },
     { id: 'skill-tree', label: 'Skill Tree' },
+    { id: 'complete-roadmap', label: 'Complete DSA' },
     { id: 'roadmap', label: '45 High-ROI' },
     { id: 'schemas', label: 'Schemas & API' },
   ];
@@ -256,6 +258,7 @@ export default function App() {
         )}
 
         {activeView === 'skill-tree' && <NoobToProSkillTree />}
+        {activeView === 'complete-roadmap' && <CompleteDsaRoadmap />}
         {activeView === 'roadmap' && <ProblemBank45View />}
         {activeView === 'schemas' && <SchemasReferenceView />}
       </main>
