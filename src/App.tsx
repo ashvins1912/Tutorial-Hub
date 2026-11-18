@@ -32,6 +32,7 @@ import { SrtbotWorksheetModal } from './components/cognitive/SrtbotWorksheetModa
 import { TopicPatternQuizModal } from './components/cognitive/TopicPatternQuizModal';
 import { CompleteDsaRoadmap } from './components/CompleteDsaRoadmap';
 import { LeetCode75Track } from './components/LeetCode75Track';
+import { TopInterview100Track } from './components/TopInterview100Track';
 
 export default function App() {
   const activeView = usePatternForgeStore((s) => s.activeView);
@@ -64,6 +65,7 @@ export default function App() {
     { id: 'skill-tree', label: 'Skill Tree' },
     { id: 'complete-roadmap', label: 'Complete DSA' },
     { id: 'leetcode-75', label: 'LeetCode 75' },
+    { id: 'top-interview-100', label: 'Top Interview 100' },
     { id: 'system-design', label: 'System Design' },
     { id: 'roadmap', label: '45 High-ROI' },
     { id: 'revision', label: 'Revision & Notes' },
@@ -279,6 +281,7 @@ export default function App() {
         {activeView === 'skill-tree' && <NoobToProSkillTree />}
         {activeView === 'complete-roadmap' && <CompleteDsaRoadmap />}
         {activeView === 'leetcode-75' && <LeetCode75Track />}
+        {activeView === 'top-interview-100' && <TopInterview100Track />}
         {activeView === 'system-design' && <SystemDesignStudio />}
         {activeView === 'roadmap' && <ProblemBank45View />}
         {activeView === 'revision' && <QuickRevisionHub />}
