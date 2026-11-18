@@ -7,11 +7,14 @@ import {
   FileCode2,
   Moon,
   NotebookPen,
+  Play,
   Sun,
   X,
 } from 'lucide-react';
 import { usePatternForgeStore, TopView } from './store/usePatternForgeStore';
+import { useSprintStore } from './store/useSprintStore';
 import { PROBLEMS } from './data/problems';
+import { BIG_TECH_36_PROBLEMS } from '../server/seed/bigTechTopicSeed';
 import { MasteryStepper } from './components/MasteryStepper';
 import { PolyaWorkflowBar } from './components/cognitive/PolyaWorkflowBar';
 import { ProblemXRayReader } from './components/ProblemXRayReader';
@@ -30,6 +33,12 @@ import { PatternTemplateModal } from './components/cognitive/PatternTemplateModa
 import { ScratchpadDrawer } from './components/cognitive/ScratchpadDrawer';
 import { SrtbotWorksheetModal } from './components/cognitive/SrtbotWorksheetModal';
 import { TopicPatternQuizModal } from './components/cognitive/TopicPatternQuizModal';
+import { TopicPatternExplorer } from './components/interview/TopicPatternExplorer';
+import { HowToIdentifyTrainer } from './components/interview/HowToIdentifyTrainer';
+import { BigTechRubricScorecard } from './components/interview/BigTechRubricScorecard';
+import { SprintWarRoomDashboard } from './components/sprint/SprintWarRoomDashboard';
+import { SprintConfiguratorModal } from './components/sprint/SprintConfiguratorModal';
+import { Mock45SimulatorModal } from './components/sprint/Mock45SimulatorModal';
 
 export default function App() {
   const activeView = usePatternForgeStore((s) => s.activeView);
@@ -46,22 +55,36 @@ export default function App() {
   const promotionToast = usePatternForgeStore((s) => s.promotionToast);
   const clearPromotionToast = usePatternForgeStore((s) => s.clearPromotionToast);
 
+  const fetchActiveSprint = useSprintStore((s) => s.fetchActiveSprint);
+  const setConfiguratorOpen = useSprintStore((s) => s.setConfiguratorOpen);
+  const activeTrainerSlug = useSprintStore((s) => s.activeTrainerSlug);
+  const closeTrainer = useSprintStore((s) => s.closeTrainer);
+  const activeRubricResult = useSprintStore((s) => s.activeRubricResult);
+  const clearRubricResult = useSprintStore((s) => s.clearRubricResult);
+  const activeSprint = useSprintStore((s) => s.activeSprint);
+  const activeSprintTaskContext = useSprintStore((s) => s.activeSprintTaskContext);
+
   const [academyOpen, setAcademyOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [scratchpadOpen, setScratchpadOpen] = useState(false);
   const [srtbotOpen, setSrtbotOpen] = useState(false);
+  const [bankSubTab, setBankSubTab] = useState<'bigtech36' | 'highroi45' | 'skilltree'>('bigtech36');
 
   const activeProblem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
+  const trainerProblem = activeTrainerSlug
+    ? BIG_TECH_36_PROBLEMS.find((p) => p.slug === activeTrainerSlug) ?? null
+    : null;
 
   useEffect(() => {
     fetchBrainProfile();
-  }, [fetchBrainProfile]);
+    fetchActiveSprint();
+  }, [fetchBrainProfile, fetchActiveSprint]);
 
   const navItems: { id: TopView; label: string }[] = [
     { id: 'workspace', label: 'DSA Lab' },
-    { id: 'skill-tree', label: 'Skill Tree' },
+    { id: 'sprint', label: '14-Day Sprint' },
+    { id: 'roadmap', label: 'Big Tech Bank' },
     { id: 'system-design', label: 'System Design' },
-    { id: 'roadmap', label: '45 High-ROI' },
     { id: 'revision', label: 'Revision & Notes' },
   ];
 
@@ -152,13 +175,26 @@ export default function App() {
             </select>
 
             <span className="hidden sm:inline text-xs text-slate-400">·</span>
-            <span className="text-xs font-mono text-slate-600 dark:text-slate-400 tabular-nums">
+            <button
+              type="button"
+              onClick={() => setActiveView('skill-tree')}
+              className="text-xs font-mono text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 tabular-nums"
+            >
               Rank: <strong className="text-slate-900 dark:text-slate-100">{brainProfile.currentTier}</strong> · Assembly{' '}
               {brainProfile.cognitiveMetrics.logicAssemblyAccuracy}%
-            </span>
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setConfiguratorOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/30 text-xs font-semibold text-sky-800 dark:text-sky-300 hover:border-sky-400 whitespace-nowrap shrink-0"
+            >
+              <Play className="w-3.5 h-3.5" aria-hidden="true" />
+              {activeSprint ? `${activeSprint.targetCompany} Day ${activeSprint.currentDay}` : 'Launch 14-Day Sprint'}
+            </button>
+
             <button
               type="button"
               onClick={() => setAcademyOpen(true)}
@@ -272,9 +308,65 @@ export default function App() {
           </>
         )}
 
+        {activeView === 'sprint' && <SprintWarRoomDashboard />}
+
+        {activeView === 'roadmap' && (
+          <div className="space-y-5">
+            {trainerProblem ? (
+              activeRubricResult && activeRubricResult.problemSlug === trainerProblem.slug ? (
+                <BigTechRubricScorecard
+                  problem={trainerProblem}
+                  result={activeRubricResult}
+                  onContinue={() => {
+                    const fromSprint = Boolean(activeSprintTaskContext);
+                    clearRubricResult();
+                    closeTrainer();
+                    if (fromSprint) setActiveView('sprint');
+                  }}
+                />
+              ) : (
+                <HowToIdentifyTrainer
+                  problem={trainerProblem}
+                  onBack={() => {
+                    const fromSprint = Boolean(activeSprintTaskContext);
+                    closeTrainer();
+                    if (fromSprint) setActiveView('sprint');
+                  }}
+                />
+              )
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
+                  {[
+                    { id: 'bigtech36' as const, label: 'Big Tech 36 Pattern Trainer' },
+                    { id: 'highroi45' as const, label: '45 High-ROI Sheet' },
+                    { id: 'skilltree' as const, label: 'Noob-to-Pro Skill Tree' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setBankSubTab(tab.id)}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                        bankSubTab === tab.id
+                          ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {bankSubTab === 'bigtech36' && <TopicPatternExplorer />}
+                {bankSubTab === 'highroi45' && <ProblemBank45View />}
+                {bankSubTab === 'skilltree' && <NoobToProSkillTree />}
+              </>
+            )}
+          </div>
+        )}
+
         {activeView === 'skill-tree' && <NoobToProSkillTree />}
         {activeView === 'system-design' && <SystemDesignStudio />}
-        {activeView === 'roadmap' && <ProblemBank45View />}
         {activeView === 'revision' && <QuickRevisionHub />}
         {activeView === 'schemas' && <SchemasReferenceView />}
       </main>
@@ -286,6 +378,8 @@ export default function App() {
       <ScratchpadDrawer open={scratchpadOpen} onClose={() => setScratchpadOpen(false)} />
       <SrtbotWorksheetModal open={srtbotOpen} onClose={() => setSrtbotOpen(false)} />
       <TopicPatternQuizModal />
+      <SprintConfiguratorModal />
+      <Mock45SimulatorModal />
     </div>
   );
 }

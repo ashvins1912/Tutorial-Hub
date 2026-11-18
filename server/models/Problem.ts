@@ -36,11 +36,28 @@ const PipelineSchema = new Schema(
   { _id: false }
 );
 
+export type BigTechTopicCategory =
+  | 'Arrays & Prefix Sum'
+  | 'Two Pointers'
+  | 'Sliding Window'
+  | 'Modified Binary Search'
+  | 'Linked Lists'
+  | 'Monotonic Stack'
+  | 'Trees DFS/BFS'
+  | 'Heaps & Intervals'
+  | 'Graphs & Topo Sort'
+  | 'Union-Find & Shortest Path'
+  | 'Backtracking & Tries'
+  | 'Dynamic Programming';
+
+export type BigTechCompany = 'Google' | 'Meta' | 'Amazon' | 'Microsoft' | 'Apple';
+
 export interface IProblem extends Document {
   slug: string;
   number: number;
   title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard' | 'Hardest';
+  topicCategory: BigTechTopicCategory;
   collections: string[];
   primaryPattern: string;
   secondaryStructure: string;
@@ -48,6 +65,39 @@ export interface IProblem extends Document {
   contextStory: string;
   ahaInsight: string;
   companyTags: string[];
+  bigTechFrequency: {
+    company: BigTechCompany;
+    frequencyScore: number;
+    lastAskedTag: string;
+  }[];
+  howToIdentify: {
+    keywordTriggers: string[];
+    eliminatorRule: string;
+    mentalModelQuestion: string;
+  };
+  interviewSolutionLadder: {
+    clarifyingQuestions: {
+      question: string;
+      interviewerAnswer: string;
+      isCritical: boolean;
+    }[];
+    bruteForcePitch: {
+      explanation: string;
+      bottleneck: string;
+      time: string;
+      space: string;
+    };
+    optimalPitch: {
+      explanation: string;
+      invariant: string;
+      time: string;
+      space: string;
+    };
+    interviewerFollowUp: {
+      twist: string;
+      adaptation: string;
+    };
+  };
   signalPhrases: {
     phrase: string;
     impliedConstraint: string;
@@ -90,6 +140,25 @@ const ProblemSchema = new Schema<IProblem>(
       enum: ['Easy', 'Medium', 'Hard', 'Hardest'],
       required: true,
     },
+    topicCategory: {
+      type: String,
+      enum: [
+        'Arrays & Prefix Sum',
+        'Two Pointers',
+        'Sliding Window',
+        'Modified Binary Search',
+        'Linked Lists',
+        'Monotonic Stack',
+        'Trees DFS/BFS',
+        'Heaps & Intervals',
+        'Graphs & Topo Sort',
+        'Union-Find & Shortest Path',
+        'Backtracking & Tries',
+        'Dynamic Programming',
+      ],
+      required: true,
+      index: true,
+    },
     collections: [{ type: String }],
     primaryPattern: { type: String, required: true, index: true },
     secondaryStructure: { type: String, default: 'None' },
@@ -97,6 +166,47 @@ const ProblemSchema = new Schema<IProblem>(
     contextStory: { type: String, required: true },
     ahaInsight: { type: String, required: true },
     companyTags: [{ type: String }],
+    bigTechFrequency: [
+      {
+        company: {
+          type: String,
+          enum: ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'],
+          required: true,
+        },
+        frequencyScore: { type: Number, min: 1, max: 100, required: true },
+        lastAskedTag: { type: String, required: true },
+      },
+    ],
+    howToIdentify: {
+      keywordTriggers: [String],
+      eliminatorRule: String,
+      mentalModelQuestion: String,
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        {
+          question: String,
+          interviewerAnswer: String,
+          isCritical: Boolean,
+        },
+      ],
+      bruteForcePitch: {
+        explanation: String,
+        bottleneck: String,
+        time: String,
+        space: String,
+      },
+      optimalPitch: {
+        explanation: String,
+        invariant: String,
+        time: String,
+        space: String,
+      },
+      interviewerFollowUp: {
+        twist: String,
+        adaptation: String,
+      },
+    },
     signalPhrases: [
       {
         phrase: String,

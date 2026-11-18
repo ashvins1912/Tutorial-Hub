@@ -217,3 +217,124 @@ export interface UserBrainProfile {
   completedProblemIds: string[];
   spacedRepetitionQueue: SpacedRepetitionItem[];
 }
+
+export type BigTechCompany = 'Google' | 'Meta' | 'Amazon' | 'Microsoft' | 'Apple';
+
+export type BigTechTopicCategory =
+  | 'Arrays & Prefix Sum'
+  | 'Two Pointers'
+  | 'Sliding Window'
+  | 'Modified Binary Search'
+  | 'Linked Lists'
+  | 'Monotonic Stack'
+  | 'Trees DFS/BFS'
+  | 'Heaps & Intervals'
+  | 'Graphs & Topo Sort'
+  | 'Union-Find & Shortest Path'
+  | 'Backtracking & Tries'
+  | 'Dynamic Programming';
+
+export interface BigTechTopicSummary {
+  topicCategory: BigTechTopicCategory;
+  shortDesc: string;
+  complexityLeap: string;
+  coreInvariant: string;
+  keywordTriggers: string[];
+}
+
+export interface BigTechProblem {
+  slug: string;
+  number: number;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  topicCategory: BigTechTopicCategory;
+  primaryPattern: string;
+  secondaryStructure: string;
+  labProblemId?: string;
+  promptSummary: string;
+  constraintsText: string;
+  bigTechFrequency: {
+    company: BigTechCompany;
+    frequencyScore: number;
+    lastAskedTag: string;
+  }[];
+  howToIdentify: {
+    keywordTriggers: string[];
+    eliminatorRule: string;
+    mentalModelQuestion: string;
+  };
+  interviewSolutionLadder: {
+    clarifyingQuestions: {
+      question: string;
+      interviewerAnswer: string;
+      isCritical: boolean;
+    }[];
+    bruteForcePitch: {
+      explanation: string;
+      bottleneck: string;
+      time: string;
+      space: string;
+    };
+    optimalPitch: {
+      explanation: string;
+      invariant: string;
+      time: string;
+      space: string;
+    };
+    interviewerFollowUp: {
+      twist: string;
+      adaptation: string;
+    };
+  };
+  solutions: {
+    java: string;
+    js: string;
+    python: string;
+  };
+}
+
+export type SprintTaskType =
+  | 'PatternWarmup'
+  | 'CoreProblem'
+  | 'SpacedRecall'
+  | 'BlindArena'
+  | 'Mock45Sim';
+
+export interface SprintTask {
+  taskId: string;
+  taskType: SprintTaskType;
+  problemId: string;
+  problemSlug: string;
+  problemNumber: number;
+  problemTitle: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  topicCategory: BigTechTopicCategory;
+  twistConstraint: string;
+  isCompleted: boolean;
+  scoreEarned: number;
+  estimatedMinutes: number;
+  labProblemId?: string;
+}
+
+export interface SprintDaySchedule {
+  dayNumber: number;
+  phaseTitle: string;
+  focusPattern: string;
+  patternTriggerReminder: string;
+  companyInsiderTip: string;
+  isUnlocked: boolean;
+  tasks: SprintTask[];
+}
+
+export interface CompanySprint {
+  id: string;
+  userId: string;
+  targetCompany: BigTechCompany;
+  dailyMinutesBudget: 60 | 120;
+  startDate: string;
+  currentDay: number;
+  companyPatternWeights: Record<string, number>;
+  dailySchedule: SprintDaySchedule[];
+  completionPct: number;
+  readinessScore: number;
+}

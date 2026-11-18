@@ -38,12 +38,14 @@ export function SchemasReferenceView() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
           {[
             { method: 'GET', path: '/api/cognitive/profile/:userId', desc: 'Fetches Rank, cognitive scores & 1-3-7-21 due queue' },
             { method: 'POST', path: '/api/cognitive/complete-problem', desc: 'Advances 1-3-7-21 interval & evaluates Rank promotion' },
-            { method: 'GET', path: '/api/cognitive/quiz/:topicId', desc: 'Loads topic pattern intuition questions & constraints' },
-            { method: 'POST', path: '/api/cognitive/quiz/submit', desc: 'Grades quiz (>= 80% gate) & updates recognition score' },
+            { method: 'GET', path: '/api/problems?topic=...&company=...', desc: 'Filters 36 Big Tech topic problems by company & difficulty' },
+            { method: 'POST', path: '/api/sprints/create', desc: 'Generates weighted 14-day company sprint with recall & Day 14 mock' },
+            { method: 'GET', path: '/api/sprints/active/:userId', desc: 'Fetches active sprint, readiness gauge & unlocked daily tasks' },
+            { method: 'PATCH', path: '/api/sprints/:sprintId/complete-task', desc: 'Marks daily sprint task complete & unlocks next day on clear' },
           ].map((ep) => (
             <div
               key={ep.path}

@@ -4,9 +4,11 @@ export type RankTier = 'LogicWarmup' | 'Noob' | 'Apprentice' | 'Practitioner' | 
 
 export interface ISpacedRepetitionItem {
   problemId: mongoose.Types.ObjectId | string;
+  problemTitle?: string;
   patternTag: string;
   intervalStage: 1 | 3 | 7 | 21;
   nextReviewDate: Date;
+  isDueNow?: boolean;
   twistConstraint: string;
 }
 
@@ -29,9 +31,11 @@ export interface IUserBrainProfile extends Document {
 const SpacedRepetitionItemSchema = new Schema<ISpacedRepetitionItem>(
   {
     problemId: { type: Schema.Types.Mixed, ref: 'Problem', required: true },
+    problemTitle: { type: String, default: '' },
     patternTag: { type: String, required: true },
     intervalStage: { type: Number, enum: [1, 3, 7, 21], default: 1 },
     nextReviewDate: { type: Date, required: true },
+    isDueNow: { type: Boolean, default: false },
     twistConstraint: { type: String, required: true },
   },
   { _id: false }
