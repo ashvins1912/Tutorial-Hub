@@ -452,7 +452,8 @@ export function SystemDesignStudio() {
             [
               { id: 'builder', label: 'Drag & Drop System Builder' },
               { id: 'animations', label: 'Existing System Animations' },
-              { id: 'probabilistic', label: 'Probabilistic Data Structures' },\n              { id: 'academy', label: 'Deep Learning Academy' },
+              { id: 'probabilistic', label: 'Probabilistic Data Structures' },
+              { id: 'academy', label: 'Deep Learning Academy' },
             ] as const
           ).map((tab) => (
             <button
