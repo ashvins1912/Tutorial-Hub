@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ExternalLink, Search, Target, Trophy, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
-import { TOP_INTERVIEW_100_CATEGORIES, TOP_INTERVIEW_100, topInterview100Url, type Top100Difficulty } from '../data/leetcode75';
+import { TOP_INTERVIEW_100_CATEGORIES, TOP_INTERVIEW_100, topInterview100Url, type Top100Difficulty } from '../data/topInterview100';
 
 type Status = 'Not started' | 'In progress' | 'Solved';
 type Progress = Record<number, { status: Status; notes: string }>;
