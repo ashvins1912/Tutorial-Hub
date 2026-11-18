@@ -166,6 +166,40 @@ Use the SRTBOT method: **Subproblem, Recurrence, Topological order, Base cases, 
 - Mixed-topic problems where the pattern is intentionally hidden
 - Explaining trade-offs, testing, and communicating solutions under interview time limits
 
+
+## Explicit high-value pattern catalogue
+
+These patterns are separate lessons even when they share a data structure. Do not teach them as interchangeable names.
+
+### Linear data structures
+- **Two pointers:** opposite-end pointers on sorted arrays/palindromes; same-direction read/write pointers for in-place compaction; pair/triplet search. State why a pointer can safely move.
+- **Sliding window:** fixed or variable contiguous range with an explicit validity invariant. Frequency windows cover distinct-character and anagram problems. The shrink rule must be justified; ordinary positive-sum reasoning does not work with arbitrary negative values. Fixed-width maximum-sum windows are a valid use; unrestricted maximum subarray sum is usually Kadane's algorithm.
+- **Prefix sums and difference arrays:** prefix sums make static range-sum queries O(1) after O(n) preprocessing; difference arrays turn many range additions into O(1) boundary updates followed by one O(n) reconstruction.
+- **Fast/slow pointers (Floyd):** cycle detection, cycle entry, and middle-node discovery with O(1) extra space. Teach separately from ordinary two-pointer scans.
+- **In-place linked-list reversal:** iterative pointer rewiring with prev/current/next; recursive form; sub-list and K-group variations.
+- **Cyclic sort / index placement:** use only when values have a known bounded mapping to indices; each swap must place a value, and duplicate guards prevent infinite loops.
+- **Merge intervals:** sort by start and merge according to inclusive/exclusive boundary semantics; extend to insertion, overlap counts, and meeting-room sweeps.
+
+### Searching, stacks and queues
+- **Modified binary search:** rotated arrays, lower/upper bounds, unknown-size ranges, and binary search on a monotonic feasibility predicate. Prove monotonicity before searching an answer space.
+- **Monotonic stack:** next/previous greater or smaller, stock span, histogram area, and contribution counting. Each element is pushed/popped at most once; duplicate handling depends on strict vs non-strict comparisons.
+- **Top K with heaps:** maintain a bounded heap for K largest/smallest/frequent values; compare O(n log K), sorting, and quickselect.
+- **K-way merge:** keep one candidate from each sorted source in a min-heap; O(N log K) time and O(K) heap space for N total values.
+
+### Trees and graphs
+- **BFS:** queue-based level exploration; shortest path in unweighted graphs; multi-source and grid BFS. Mark visited at enqueue time.
+- **DFS:** recursive/iterative traversal, components, cycle detection, entry/exit times, and subtree/postorder properties.
+- **Topological sort:** Kahn in-degree queue or DFS finish order; only DAGs have a topological ordering.
+- **Union-Find:** path compression plus union by rank/size for dynamic connectivity and Kruskal.
+- **Shortest paths:** BFS for unweighted graphs; Dijkstra for non-negative edge weights; Bellman-Ford supports negative edges and detects reachable negative cycles. A reachable negative cycle means no finite shortest path for affected vertices.
+
+### Optimisation and exhaustive search
+- **Backtracking:** choose, explore, undo; prune only when a constraint proves a branch cannot lead to a solution.
+- **Dynamic programming:** define state, recurrence, base cases and evaluation order. Cover 1D/2D, grid, knapsack, subsequence and interval DP.
+- **Greedy:** every local-choice strategy needs a correctness argument (exchange argument, cut property, or another proof); include counterexamples to plausible but invalid greedy rules.
+- **Trie:** character-by-character prefix index, terminal markers, wildcard search and autocomplete.
+- **Bitwise XOR and bit manipulation:** XOR cancellation, masks, shifts, popcount, subset enumeration and bitmask DP; explain fixed-width and signed-shift behaviour per language.
+
 ## Topic mastery gate
 
 For each topic, provide these mandatory gates:
