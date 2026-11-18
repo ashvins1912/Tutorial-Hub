@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SystemDesignLearningAcademy } from './SystemDesignLearningAcademy';
 import {
   DndContext,
   DragEndEvent,
