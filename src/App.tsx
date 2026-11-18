@@ -87,6 +87,8 @@ export default function App() {
   const navItems: { id: TopView; label: string }[] = [
     { id: 'workspace', label: 'DSA Lab' },
     { id: 'sprint', label: '14-Day Sprint' },
+    { id: 'topic-academy', label: 'Topic Academy' },
+    { id: 'topic-explorer', label: 'Topic Explorer' },
     { id: 'roadmap', label: 'Big Tech Bank' },
     { id: 'system-design', label: 'System Design' },
     { id: 'revision', label: 'Revision & Notes' },
@@ -374,6 +376,7 @@ export default function App() {
         {activeView === 'leetcode-75' && <LeetCode75Track />}
         {activeView === 'top-interview-100' && <TopInterview100Track />}
         {activeView === 'topic-academy' && <SharedTopicAcademy />}
+        {activeView === 'topic-explorer' && <TopicPatternExplorer />}
         {activeView === 'system-design' && <SystemDesignStudio />}
         {activeView === 'revision' && <QuickRevisionHub />}
         {activeView === 'schemas' && <SchemasReferenceView />}
