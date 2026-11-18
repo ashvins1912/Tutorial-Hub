@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Search } from 'lucide-react';
 import { MATRIX_PROBLEMS, type MatrixGroup, type MatrixLevel } from '../data/matrixProblems';
 
@@ -10,7 +10,7 @@ export function MatrixProblemBank() {
   const [group, setGroup] = useState<(typeof groups)[number]>('All');
   const [level, setLevel] = useState<(typeof levels)[number]>('All');
   const [expanded, setExpanded] = useState<string[]>(['m08', 'm12', 'm15', 'm17', 'm22', 'm27', 'm34']);
-  const [completed, setCompleted] = useState<string[]>([]);
+  const [completed, setCompleted] = useState<string[]>(() => {\n    if (typeof window === 'undefined') return [];\n    try { return JSON.parse(window.localStorage.getItem('patternforge-matrix-problem-progress-v1') || '[]') as string[]; }\n    catch { return []; }\n  });\n  useEffect(() => {\n    try { window.localStorage.setItem('patternforge-matrix-problem-progress-v1', JSON.stringify(completed)); }\n    catch { /* keep in-memory progress if storage is unavailable */ }\n  }, [completed]);
   const filtered = useMemo(() => MATRIX_PROBLEMS.filter((problem) => {
     const matchesQuery = !query.trim() || [problem.title, problem.prompt, problem.approach, problem.group].join(' ').toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (group === 'All' || problem.group === group) && (level === 'All' || problem.level === level);
@@ -29,7 +29,7 @@ export function MatrixProblemBank() {
       <select value={group} onChange={(event) => setGroup(event.target.value as (typeof groups)[number])} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950">{groups.map((item) => <option key={item} value={item}>{item === 'All' ? 'All patterns' : item}</option>)}</select>
       <select value={level} onChange={(event) => setLevel(event.target.value as (typeof levels)[number])} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950">{levels.map((item) => <option key={item} value={item}>{item === 'All' ? 'All levels' : item}</option>)}</select>
     </div>
-    <div className="flex items-center justify-between text-xs text-slate-500"><span>Showing {filtered.length} of {MATRIX_PROBLEMS.length} problems</span><span>Progress is session-based in this practice panel.</span></div>
+    <div className="flex items-center justify-between text-xs text-slate-500"><span>Showing {filtered.length} of {MATRIX_PROBLEMS.length} problems</span><span>Solved status is saved locally in this browser.</span></div>
     <div className="space-y-2">
       {filtered.map((problem) => {
         const isOpen = expanded.includes(problem.id);
