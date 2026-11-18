@@ -157,7 +157,53 @@ const UserMasterySchema = new Schema<IUserMastery>({
   masteredPatternSlugs: [{ type: String }],
 }, { timestamps: true });
 
+// 4. CompanySprint Schema — 14-Day Weighted Company Sprint & Daily War-Room
+export interface ICompanySprint extends Document {
+  userId: string;
+  targetCompany: 'Google' | 'Meta' | 'Amazon' | 'Microsoft' | 'Apple';
+  dailyMinutesBudget: 60 | 120;
+  startDate: Date;
+  currentDay: number;
+  companyPatternWeights: Map<string, number>;
+  dailySchedule: {
+    dayNumber: number;
+    phaseTitle: string;
+    focusPattern: string;
+    companyInsiderTip: string;
+    tasks: {
+      taskType: 'PatternWarmup' | 'CoreProblem' | 'SpacedRecall' | 'BlindArena' | 'Mock45Sim';
+      problemId: mongoose.Types.ObjectId;
+      twistConstraint: string;
+      isCompleted: boolean;
+      scoreEarned: number;
+    }[];
+  }[];
+}
+
+const CompanySprintSchema = new Schema<ICompanySprint>({
+  userId: { type: String, required: true, index: true },
+  targetCompany: { type: String, enum: ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'], required: true },
+  dailyMinutesBudget: { type: Number, enum: [60, 120], required: true },
+  startDate: { type: Date, default: Date.now },
+  currentDay: { type: Number, min: 1, max: 14, default: 1 },
+  companyPatternWeights: { type: Map, of: Number },
+  dailySchedule: [{
+    dayNumber: Number,
+    phaseTitle: String,
+    focusPattern: String,
+    companyInsiderTip: String,
+    tasks: [{
+      taskType: { type: String, enum: ['PatternWarmup', 'CoreProblem', 'SpacedRecall', 'BlindArena', 'Mock45Sim'] },
+      problemId: { type: Schema.Types.ObjectId, ref: 'Problem' },
+      twistConstraint: String,
+      isCompleted: { type: Boolean, default: false },
+      scoreEarned: { type: Number, default: 0 },
+    }],
+  }],
+}, { timestamps: true });
+
 export const PatternModel = mongoose.model<IPattern>('Pattern', PatternSchema);
 export const ProblemModel = mongoose.model<IProblem>('Problem', ProblemSchema);
 export const UserMasteryModel = mongoose.model<IUserMastery>('UserMastery', UserMasterySchema);
+export const CompanySprintModel = mongoose.model<ICompanySprint>('CompanySprint', CompanySprintSchema);
 `;
