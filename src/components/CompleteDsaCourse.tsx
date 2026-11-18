@@ -1,0 +1,132 @@
+import { useMemo, useState } from 'react';
+import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, GraduationCap, Search } from 'lucide-react';
+import { DSA_COMPLETE_LESSONS, DSA_LESSON_STEPS, type DsaLesson } from '../data/dsaCompleteLessons';
+import { MatrixProblemBank } from './MatrixProblemBank';
+import { DpLearningLab } from './DpLearningLab';
+
+type SectionKey = 'concepts' | 'recognition' | 'method' | 'workedExample' | 'complexity' | 'pitfalls' | 'practice' | 'interviewChecks';
+
+const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
+  { key: 'concepts', title: 'Concepts to understand', intro: 'Learn the vocabulary and mechanics before memorising templates.' },
+  { key: 'recognition', title: 'When should I use this?', intro: 'Recognise the problem signals and the assumptions that make the technique valid.' },
+  { key: 'method', title: 'How to derive a solution', intro: 'A repeatable reasoning process from the direct approach to a justified algorithm.' },
+  { key: 'workedExample', title: 'Worked example', intro: 'Follow the reasoning step by step; trace the state on paper before coding.' },
+  { key: 'complexity', title: 'Time and space complexity', intro: 'Know what is counted and why the bound follows.' },
+  { key: 'pitfalls', title: 'Common mistakes', intro: 'Use these as a pre-submit checklist.' },
+  { key: 'practice', title: 'Practice ladder', intro: 'Move from guided fundamentals to independent transfer.' },
+  { key: 'interviewChecks', title: 'Interview readiness checks', intro: 'Answer these without reading the lesson.' },
+];
+
+type LessonProgress = Record<string, string[]>;
+const progressKey = 'patternforge-dsa-course-progress-v1';
+
+function readProgress(): LessonProgress {
+  if (typeof window === 'undefined') return {};
+  try { return JSON.parse(window.localStorage.getItem(progressKey) || '{}') as LessonProgress; }
+  catch { return {}; }
+}
+
+function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
+  if (section === 'practice') {
+    return <div className="grid gap-3 sm:grid-cols-2">{lesson.practice.map((item, index) => (
+      <article key={item.task} className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+        <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold text-sky-700 dark:text-sky-300">{item.level}</span><span className="text-[11px] text-slate-400">Exercise {index + 1}</span></div>
+        <h4 className="mt-2 text-sm font-semibold">{item.task}</h4>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{item.goal}</p>
+      </article>
+    ))}</div>;
+  }
+  const values = lesson[section] as string[];
+  return <ol className="space-y-2.5">{values.map((value, index) => (
+    <li key={value} className="flex gap-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 dark:bg-slate-800">{index + 1}</span>
+      <span>{value}</span>
+    </li>
+  ))}</ol>;
+}
+
+export function CompleteDsaCourse() {
+  const [activeId, setActiveId] = useState(DSA_COMPLETE_LESSONS[0].id);
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<SectionKey[]>(['concepts', 'recognition', 'method', 'workedExample']);
+  const [progress, setProgress] = useState<LessonProgress>(readProgress);
+  const active = DSA_COMPLETE_LESSONS.find((lesson) => lesson.id === activeId) ?? DSA_COMPLETE_LESSONS[0];
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return DSA_COMPLETE_LESSONS;
+    return DSA_COMPLETE_LESSONS.filter((lesson) =>
+      [lesson.title, lesson.promise, lesson.mentalModel, ...lesson.concepts, ...lesson.recognition].join(' ').toLowerCase().includes(q));
+  }, [search]);
+  const doneCount = DSA_COMPLETE_LESSONS.filter((lesson) => (progress[lesson.id]?.length ?? 0) === DSA_LESSON_STEPS.length).length;
+  const toggleStep = (step: string) => {
+    const current = progress[active.id] ?? [];
+    const next = current.includes(step) ? current.filter((item) => item !== step) : [...current, step];
+    const updated = { ...progress, [active.id]: next };
+    setProgress(updated);
+    try { window.localStorage.setItem(progressKey, JSON.stringify(updated)); } catch { /* keep session progress */ }
+  };
+  const toggleSection = (key: SectionKey) => setExpanded((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+
+  return <div className="space-y-5">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-6 text-white sm:p-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300"><GraduationCap className="h-4 w-4" /> Complete DSA Academy · {DSA_COMPLETE_LESSONS.length} modules</div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Learn to solve, not memorise</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">Each module takes you from mental model to recognition, derivation, worked reasoning, complexity, pitfalls and independent practice. Mark a learning step only after you can perform it without copying.</p>
+          </div>
+          <div className="min-w-44 rounded-xl border border-white/15 bg-white/10 p-4">
+            <div className="text-xs text-slate-300">Modules mastered</div>
+            <div className="mt-1 text-3xl font-bold tabular-nums">{doneCount}<span className="text-base text-slate-400"> / {DSA_COMPLETE_LESSONS.length}</span></div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-sky-400" style={{ width: (doneCount / DSA_COMPLETE_LESSONS.length * 100) + '%' }} /></div>
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 p-4 sm:grid-cols-4 sm:p-5">
+        {['Understand the idea', 'Recognise the pattern', 'Derive and prove it', 'Solve new variations'].map((item, index) => <div key={item} className="flex items-center gap-2 rounded-lg bg-slate-50 p-3 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-200">{index + 1}</span>{item}</div>)}
+      </div>
+    </section>
+
+    <div className="grid items-start gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <aside className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 xl:sticky xl:top-24">
+        <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a module or concept..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-950" /></div>
+        <div className="mt-3 flex items-center justify-between px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400"><span>Learning path</span><span>{filtered.length} / {DSA_COMPLETE_LESSONS.length}</span></div>
+        <div className="mt-2 max-h-[65vh] space-y-1 overflow-y-auto">
+          {filtered.map((lesson) => {
+            const count = progress[lesson.id]?.length ?? 0;
+            const selected = active.id === lesson.id;
+            return <button key={lesson.id} type="button" onClick={() => setActiveId(lesson.id)} className={`w-full rounded-xl border p-3 text-left transition-colors ${selected ? 'border-sky-400 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/40' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+              <div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold">{lesson.title}</span>{count === DSA_LESSON_STEPS.length ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" /> : <span className="text-[10px] tabular-nums text-slate-400">{count}/{DSA_LESSON_STEPS.length}</span>}</div>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{lesson.promise}</p>
+            </button>;
+          })}
+          {filtered.length === 0 && <p className="p-4 text-center text-xs text-slate-500">No matching module.</p>}
+        </div>
+      </aside>
+
+      <div className="min-w-0 space-y-4">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div className="max-w-3xl"><div className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Module {DSA_COMPLETE_LESSONS.findIndex((item) => item.id === active.id) + 1} of {DSA_COMPLETE_LESSONS.length}</div><h2 className="mt-2 text-2xl font-bold">{active.title}</h2><p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{active.promise}</p></div><BookOpen className="h-7 w-7 text-sky-500" /></div>
+          <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50/70 p-4 dark:border-sky-900 dark:bg-sky-950/30"><div className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Mental model</div><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{active.mentalModel}</p></div>
+        </section>
+
+        {sectionMeta.map((meta) => {
+          const isOpen = expanded.includes(meta.key);
+          return <section key={meta.key} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <button type="button" onClick={() => toggleSection(meta.key)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5"><div><h3 className="text-sm font-bold sm:text-base">{meta.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{meta.intro}</p></div>{isOpen ? <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />}</button>
+            {isOpen && <div className="border-t border-slate-100 p-4 dark:border-slate-800 sm:p-5"><SectionList lesson={active} section={meta.key} /></div>}
+          </section>;
+        })}
+
+        {active.id === 'dynamic-programming' && <DpLearningLab />}
+        {active.id === 'two-dimensional-arrays' && <MatrixProblemBank />}\n\n        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+          <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold">Your mastery checklist</h3><p className="mt-1 text-xs text-slate-500">Complete all eight steps through independent work, not by simply reading.</p></div><span className="text-sm font-bold tabular-nums">{progress[active.id]?.length ?? 0}/8</span></div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: ((progress[active.id]?.length ?? 0) / 8 * 100) + '%' }} /></div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">{DSA_LESSON_STEPS.map((step) => { const checked = progress[active.id]?.includes(step) ?? false; return <button key={step} type="button" onClick={() => toggleStep(step)} className="flex items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><span className={checked ? 'text-emerald-500' : 'text-slate-300'}>{checked ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}</span><span className={`text-xs leading-relaxed ${checked ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>{step}</span></button>; })}</div>
+          <p className="mt-3 text-[11px] text-slate-400">Progress is stored locally in this browser. It is a self-assessment, not an externally graded result.</p>
+        </section>
+      </div>
+    </div>
+  </div>;
+}
