@@ -258,7 +258,6 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     ],
     interviewChecks: ['What information does your state represent?', 'Why are the subproblems overlapping?', 'Why is the evaluation order valid?', 'Why does 0/1 knapsack iterate capacity downward?', 'What makes knapsack pseudo-polynomial?']
   },
-  ,
   {
     id: 'two-dimensional-arrays', title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
     mentalModel: 'A matrix is a grid addressed by (row, column). Most bugs come from mixing row and column counts, inconsistent boundaries, or assuming the matrix is square. Treat a cell as a graph vertex when movement and reachability matter; treat a rectangle as a range when aggregation matters.',
@@ -337,7 +336,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       'Why mark a BFS cell visited when it is enqueued?',
       'How would you reduce the space of a grid DP to O(cols)?'
     ]
-  }
+  },
   {
     id: 'graphs', title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
     mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
