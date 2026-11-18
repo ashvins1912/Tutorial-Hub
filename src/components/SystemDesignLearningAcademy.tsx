@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Search, Target } from 'lucide-react';
 
 type Topic = {
@@ -111,13 +111,28 @@ export function SystemDesignLearningAcademy() {
   const [level, setLevel] = useState('All');
   const [opened, setOpened] = useState('model');
   const [showAnswer, setShowAnswer] = useState(false);
+  const [activeStage, setActiveStage] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState<Progress>(readProgress);
   const category = curriculum.find(c => c.id === categoryId) ?? curriculum[0];
   const topic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
   const allTopics = useMemo(() => curriculum.flatMap(c => c.topics.map(x => ({...x, categoryId:c.id, categoryTitle:c.title}))), []);
   const filtered = allTopics.filter(x => (level === 'All' || x.level === level) && (x.title + ' ' + x.categoryTitle + ' ' + x.model + ' ' + x.use).toLowerCase().includes(query.toLowerCase()));
   const doneCount = allTopics.filter(x => progress[x.id]?.done).length;
-  const setTopic = (catId:string,id:string) => { setCategoryId(catId); setTopicId(id); setShowAnswer(false); setOpened('model'); };
+  const setTopic = (catId:string,id:string) => { setCategoryId(catId); setTopicId(id); setShowAnswer(false); setOpened('model'); setActiveStage(0); setIsPlaying(false); };
+  const stages = [
+    { id:'mental-model', title:'1. Understand the concept', label:'MENTAL MODEL', body:topic.model, question:'What problem does this concept solve?' },
+    { id:'mechanism', title:'2. Explore the internals', label:'HOW IT WORKS', body:topic.internals, question:'What happens inside the system, step by step?' },
+    { id:'application', title:'3. Identify where to use it', label:'WHEN TO APPLY', body:topic.use + ' ' + topic.example, question:'Which workload or product requirement makes this useful?' },
+    { id:'tradeoffs', title:'4. Stress-test trade-offs', label:'FAILURE MODES', body:topic.tradeoff, question:'What breaks first, and what is the fallback?' },
+    { id:'practice', title:'5. Apply and explain', label:'HANDS-ON / INTERVIEW', body:topic.exercise + ' ' + topic.interview + ' Expected reasoning: ' + topic.answer, question:'Can you defend the design and explain its trade-offs?' },
+  ];
+  useEffect(() => { setActiveStage(0); setIsPlaying(false); }, [topic.id]);
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timer = window.setInterval(() => setActiveStage(current => (current + 1) % stages.length), 2600);
+    return () => window.clearInterval(timer);
+  }, [isPlaying, topic.id, stages.length]);
   const updateProgress = (id:string, patch:Partial<{done:boolean;note:string}>) => setProgress(old => {
     const next = {...old, [id]: {...old[id], done:old[id]?.done ?? false, note:old[id]?.note ?? '', ...patch}};
     try { window.localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* keep session progress */ }
@@ -146,7 +161,7 @@ export function SystemDesignLearningAcademy() {
         <div className="max-h-[72vh] space-y-3 overflow-y-auto pr-1">
           {curriculum.map(cat => <div key={cat.id}>
             <button onClick={()=>{setCategoryId(cat.id);setTopicId(cat.topics[0].id);}} className="w-full rounded-lg bg-slate-100 px-3 py-2 text-left text-xs font-bold dark:bg-slate-800">{cat.title}<span className="float-right font-normal text-slate-500">{cat.topics.filter(x=>progress[x.id]?.done).length}/{cat.topics.length}</span></button>
-            {cat.id===categoryId && <div className="mt-1 space-y-1">{cat.topics.filter(x=>(level==='All'||x.level===level)&&(x.title+' '+x.model+' '+x.use).toLowerCase().includes(query.toLowerCase())).map(x=><button key={x.id} onClick={()=>setTopic(cat.id,x.id)} className={'flex w-full items-start gap-2 rounded-lg p-2.5 text-left text-xs '+(x.id===topic.id?'bg-indigo-50 text-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200':'hover:bg-slate-50 dark:hover:bg-slate-800')}><span className="mt-0.5">{progress[x.id]?.done?<CheckCircle2 className="h-3.5 w-3.5 text-emerald-500"/>:<span className="block h-3.5 w-3.5 rounded-full border border-slate-300"/>}</span><span className="min-w-0 flex-1"><span className="block font-semibold">{x.title}</span><span className="mt-0.5 block text-[10px] opacity-65">{x.level}</span></span></button>)}</div>}
+            <div className="mt-1 space-y-1">{cat.topics.filter(x=>(level==='All'||x.level===level)&&(x.title+' '+cat.title+' '+x.model+' '+x.use).toLowerCase().includes(query.toLowerCase())).map(x=><button key={x.id} onClick={()=>setTopic(cat.id,x.id)} aria-current={x.id===topic.id?'page':undefined} className={'flex w-full items-start gap-2 rounded-lg p-2.5 text-left text-xs '+(x.id===topic.id?'bg-indigo-50 text-indigo-900 ring-1 ring-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-200 dark:ring-indigo-900':'hover:bg-slate-50 dark:hover:bg-slate-800')}><span className="mt-0.5">{progress[x.id]?.done?<CheckCircle2 className="h-3.5 w-3.5 text-emerald-500"/>:<span className="block h-3.5 w-3.5 rounded-full border border-slate-300"/>}</span><span className="min-w-0 flex-1"><span className="block font-semibold">{x.title}</span><span className="mt-0.5 block text-[10px] opacity-65">{x.level}</span></span></button>)}</div>}
           </div>)}
           {filtered.length===0&&<p className="p-4 text-center text-xs text-slate-500">No topics match. Try another search or level.</p>}
         </div>
@@ -155,6 +170,29 @@ export function SystemDesignLearningAcademy() {
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">{category.title} · {topic.level}</div><h3 className="mt-2 text-2xl font-bold">{topic.title}</h3><p className="mt-2 text-xs text-slate-500">{category.outcome}</p></div><Target className="h-7 w-7 text-indigo-500"/></div>
           <div className="mt-5 space-y-2">{sections.map(([id,title,body])=><section key={id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><button onClick={()=>setOpened(opened===id?'':id)} aria-expanded={opened===id} className="flex w-full items-center justify-between gap-3 p-4 text-left"><span className="text-sm font-semibold">{title}</span>{opened===id?<ChevronDown className="h-4 w-4"/>:<ChevronRight className="h-4 w-4"/>}</button>{opened===id&&<div className="border-t border-slate-100 p-4 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:text-slate-300">{body}</div>}</section>)}</div>
+        </section>
+        <section className="rounded-2xl border border-sky-200 bg-white p-5 dark:border-sky-900 dark:bg-slate-900 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div><div className="text-[10px] font-bold uppercase tracking-widest text-sky-600">Active Lab · 5-stage topic journey</div><h3 className="mt-1 text-xl font-bold">{topic.title}</h3><p className="mt-1 text-xs text-slate-500">Work through all five stages. The diagram highlights each stage as the walkthrough advances.</p></div>
+            <div className="flex gap-2"><button type="button" onClick={()=>setIsPlaying(x=>!x)} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white dark:bg-sky-500 dark:text-slate-950">{isPlaying?'Pause animation':'Play animation'}</button><button type="button" onClick={()=>{setIsPlaying(false);setActiveStage(0);}} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-700">Replay</button></div>
+          </div>
+          <div className="mt-5 grid grid-cols-5 gap-1.5">
+            {stages.map((stage,index)=><button key={stage.id} type="button" onClick={()=>{setActiveStage(index);setIsPlaying(false);}} className={`rounded-lg border p-2 text-left transition-all ${activeStage===index?'border-sky-500 bg-sky-50 shadow-sm dark:bg-sky-950/40':'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950'}`}><span className="block text-[10px] font-bold text-slate-400">STAGE 0{index+1}</span><span className="mt-1 block text-[10px] font-semibold leading-snug">{stage.title.replace(/^\\d+\\. /,'')}</span></button>)}
+          </div>
+          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-950">
+            <svg viewBox="0 0 900 150" role="img" aria-label={`Five stage learning animation for ${topic.title}`} className="min-w-[650px] w-full">
+              <defs><marker id="topic-stage-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L0 6 L6 3 z" fill="#94a3b8"/></marker></defs>
+              {stages.map((stage,index)=>{const x=12+index*178;const active=activeStage===index;const passed=index<activeStage;return <g key={stage.id}><rect x={x} y="34" width="150" height="68" rx="10" fill={active?'#dbeafe':passed?'#dcfce7':'#ffffff'} stroke={active?'#0284c7':passed?'#16a34a':'#cbd5e1'} strokeWidth={active?3:1.5}/><text x={x+75} y="60" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f172a">{['Understand','Internals','Apply','Stress-test','Demonstrate'][index]}</text><text x={x+75} y="79" textAnchor="middle" fontSize="9" fill="#475569">{['Mental model','Mechanism','Use cases','Trade-offs','Practice'][index]}</text>{active&&<circle cx={x+135} cy="45" r="5" fill="#0284c7"><animate attributeName="r" values="4;7;4" dur="1.2s" repeatCount="indefinite"/></circle>}{index<4&&<path d={`M ${x+151} 68 H ${x+174}`} stroke="#94a3b8" strokeWidth="2" markerEnd="url(#topic-stage-arrow)"/>}</g>})}
+              <text x="12" y="128" fontSize="10" fill="#64748b">Blue = current stage · Green = completed stage · Select a stage or play the walkthrough</text>
+            </svg>
+          </div>
+          <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50/60 p-4 dark:border-sky-900 dark:bg-sky-950/20">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">{stages[activeStage].label}</div>
+            <h4 className="mt-1 text-base font-bold">{stages[activeStage].title}</h4>
+            <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{stages[activeStage].body}</p>
+            <p className="mt-3 text-xs font-semibold text-sky-800 dark:text-sky-200">Think about: {stages[activeStage].question}</p>
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-2"><button type="button" onClick={()=>{setIsPlaying(false);setActiveStage(s=>(s+stages.length-1)%stages.length);}} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-700">Previous stage</button><span className="text-[11px] text-slate-500">Stage {activeStage+1} of 5</span><button type="button" onClick={()=>{setIsPlaying(false);setActiveStage(s=>(s+1)%stages.length);}} className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white">Next stage</button></div>
         </section>
         <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/20">
           <div className="flex items-center gap-2 text-sm font-bold"><Code2 className="h-4 w-4 text-indigo-600"/> Interview checkpoint</div><p className="mt-2 text-sm leading-relaxed">{topic.interview}</p><button onClick={()=>setShowAnswer(x=>!x)} className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">{showAnswer?'Hide explanation':'Reveal expected reasoning'}</button>{showAnswer&&<p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{topic.answer}</p>}
