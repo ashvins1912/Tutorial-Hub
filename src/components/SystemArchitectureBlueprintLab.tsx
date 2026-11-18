@@ -122,7 +122,7 @@ export function SystemArchitectureBlueprintLab() {
   const queueCapacity = workers * blueprint.queueCapacity;
   const dbUtil = dbDown ? 100 : Math.round(dbDemand / dbCapacity * 100);
   const queueUtil = brokerDown ? 100 : Math.round(queueDemand / queueCapacity * 100);
-  const overloaded = dbDown || dbUtil > 85 || (!brokerDown && queueUtil > 90);
+  const overloaded = dbDown || cacheDown || brokerDown || dbUtil > 85 || queueUtil > 90;
   const estimatedLatency = dbDown ? 3000 : blueprint.baseLatency + Math.max(0, dbUtil - 50) * 4 + (cacheDown ? 85 : 0) + (brokerDown ? 0 : Math.max(0, queueUtil - 65) * 1.8);
   const [expandedComponent, setExpandedComponent] = useState<string | null>(blueprint.components[0].name);
 
