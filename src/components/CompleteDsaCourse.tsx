@@ -71,7 +71,7 @@ export function CompleteDsaCourse() {
       <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-6 text-white sm:p-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300"><GraduationCap className="h-4 w-4" /> Complete DSA Academy · 14 modules</div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300"><GraduationCap className="h-4 w-4" /> Complete DSA Academy · {DSA_COMPLETE_LESSONS.length} modules</div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Learn to solve, not memorise</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">Each module takes you from mental model to recognition, derivation, worked reasoning, complexity, pitfalls and independent practice. Mark a learning step only after you can perform it without copying.</p>
           </div>
