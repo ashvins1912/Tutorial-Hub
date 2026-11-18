@@ -259,6 +259,24 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What information does your state represent?', 'Why are the subproblems overlapping?', 'Why is the evaluation order valid?', 'Why does 0/1 knapsack iterate capacity downward?', 'What makes knapsack pseudo-polynomial?']
   },
   {
+    id: 'graphs', title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
+    mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
+    concepts: ['Directed/undirected, weighted/unweighted, cyclic/acyclic, connected/disconnected.', 'Adjacency list vs adjacency matrix; edge list.', 'BFS for unweighted shortest paths and multi-source traversal.', 'DFS for components, cycle detection and finishing order.', 'Grid-to-graph modelling and state-expanded BFS.', 'Topological sorting with Kahn or DFS; DAG dependency order.', 'Union-Find with path compression and union by size/rank.', 'Dijkstra for non-negative weights; Bellman-Ford for negative edges.', 'Floyd-Warshall for all-pairs shortest paths.', 'Minimum spanning tree: Kruskal and Prim.', 'SCC, bridges and articulation points (advanced).'],
+    recognition: ['The prompt describes networks, dependencies, routes, transformations or reachability.', 'Need minimum number of edges in an unweighted graph.', 'Need a valid dependency order or detect a cycle.', 'Need repeated connectivity merges or minimum-cost connection.', 'Edge weights determine shortest-path algorithm choice.'],
+    method: ['Identify vertices, edges, direction, weight and graph size.', 'Choose adjacency list for sparse graphs; matrix for dense/small graphs or constant-time edge checks.', 'For BFS, mark visited when enqueuing to prevent duplicate queue entries.', 'For DFS, track recursion/explicit stack and distinguish visited from active-path state for directed cycles.', 'For topological order, count indegrees and process zero-indegree vertices; fewer than V outputs means a cycle.', 'For shortest paths, check weights first: BFS if unweighted, Dijkstra if all weights nonnegative, Bellman-Ford if negative edges may occur.', 'For MST, use Kruskal + DSU or Prim; distinguish MST from shortest-path tree.'],
+    workedExample: ['Unweighted shortest path from source s: initialise dist[s]=0 and enqueue s.', 'Pop u; for each unvisited neighbour v, set dist[v]=dist[u]+1, parent[v]=u, then enqueue v.', 'Because BFS explores by nondecreasing distance in layers, the first discovery gives the minimum edge count.', 'Time O(V+E), space O(V) with adjacency lists.', 'Reconstruct a path by following parent pointers backward from target.'],
+    complexity: ['Adjacency list storage: O(V+E); matrix storage: O(V²).', 'BFS/DFS: O(V+E).', 'Topological sort: O(V+E).', 'DSU operations: near-constant amortized with path compression and union by size/rank.', 'Dijkstra with binary heap: O((V+E) log V) commonly stated for adjacency lists.', 'Bellman-Ford: O(VE); Floyd-Warshall: O(V³).', 'Kruskal: O(E log E); Prim with heap: O((V+E) log V).'],
+    pitfalls: ['Using Dijkstra with negative edge weights.', 'Marking BFS visited only after dequeue and creating duplicate work.', 'Confusing directed and undirected cycle detection.', 'Assuming every graph is connected.', 'Using a topological sort on a cyclic graph.', 'Confusing minimum spanning tree with shortest paths from one source.'],
+    practice: [
+      {level:'Warm-up',task:'Represent a graph and traverse with BFS/DFS.',goal:'Handle isolated vertices and disconnected components.'},
+      {level:'Core',task:'Count islands and find unweighted shortest path.',goal:'Model grid cells as vertices and mark on enqueue.'},
+      {level:'Core',task:'Course Schedule / dependency ordering.',goal:'Use indegrees and detect cycles.'},
+      {level:'Challenge',task:'Network delay, negative edges and minimum spanning tree.',goal:'Select Dijkstra, Bellman-Ford, Kruskal or Prim by assumptions.'},
+      {level:'Transfer',task:'Solve a graph problem with an extra state such as stops, keys or parity.',goal:'Expand the state graph and bound its size.'}
+    ],
+    interviewChecks: ['When does BFS give shortest paths?', 'Why can Dijkstra fail with negative edges?', 'How does Kahn detect a cycle?', 'What does DSU represent?', 'How is an MST different from a shortest-path tree?']
+  },
+  {
     id: 'two-dimensional-arrays', title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
     mentalModel: 'A matrix is a grid addressed by (row, column). Most bugs come from mixing row and column counts, inconsistent boundaries, or assuming the matrix is square. Treat a cell as a graph vertex when movement and reachability matter; treat a rectangle as a range when aggregation matters.',
     concepts: [
@@ -336,25 +354,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       'Why mark a BFS cell visited when it is enqueued?',
       'How would you reduce the space of a grid DP to O(cols)?'
     ]
-  },
-  {
-    id: 'graphs', title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
-    mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
-    concepts: ['Directed/undirected, weighted/unweighted, cyclic/acyclic, connected/disconnected.', 'Adjacency list vs adjacency matrix; edge list.', 'BFS for unweighted shortest paths and multi-source traversal.', 'DFS for components, cycle detection and finishing order.', 'Grid-to-graph modelling and state-expanded BFS.', 'Topological sorting with Kahn or DFS; DAG dependency order.', 'Union-Find with path compression and union by size/rank.', 'Dijkstra for non-negative weights; Bellman-Ford for negative edges.', 'Floyd-Warshall for all-pairs shortest paths.', 'Minimum spanning tree: Kruskal and Prim.', 'SCC, bridges and articulation points (advanced).'],
-    recognition: ['The prompt describes networks, dependencies, routes, transformations or reachability.', 'Need minimum number of edges in an unweighted graph.', 'Need a valid dependency order or detect a cycle.', 'Need repeated connectivity merges or minimum-cost connection.', 'Edge weights determine shortest-path algorithm choice.'],
-    method: ['Identify vertices, edges, direction, weight and graph size.', 'Choose adjacency list for sparse graphs; matrix for dense/small graphs or constant-time edge checks.', 'For BFS, mark visited when enqueuing to prevent duplicate queue entries.', 'For DFS, track recursion/explicit stack and distinguish visited from active-path state for directed cycles.', 'For topological order, count indegrees and process zero-indegree vertices; fewer than V outputs means a cycle.', 'For shortest paths, check weights first: BFS if unweighted, Dijkstra if all weights nonnegative, Bellman-Ford if negative edges may occur.', 'For MST, use Kruskal + DSU or Prim; distinguish MST from shortest-path tree.'],
-    workedExample: ['Unweighted shortest path from source s: initialise dist[s]=0 and enqueue s.', 'Pop u; for each unvisited neighbour v, set dist[v]=dist[u]+1, parent[v]=u, then enqueue v.', 'Because BFS explores by nondecreasing distance in layers, the first discovery gives the minimum edge count.', 'Time O(V+E), space O(V) with adjacency lists.', 'Reconstruct a path by following parent pointers backward from target.'],
-    complexity: ['Adjacency list storage: O(V+E); matrix storage: O(V²).', 'BFS/DFS: O(V+E).', 'Topological sort: O(V+E).', 'DSU operations: near-constant amortized with path compression and union by size/rank.', 'Dijkstra with binary heap: O((V+E) log V) commonly stated for adjacency lists.', 'Bellman-Ford: O(VE); Floyd-Warshall: O(V³).', 'Kruskal: O(E log E); Prim with heap: O((V+E) log V).'],
-    pitfalls: ['Using Dijkstra with negative edge weights.', 'Marking BFS visited only after dequeue and creating duplicate work.', 'Confusing directed and undirected cycle detection.', 'Assuming every graph is connected.', 'Using a topological sort on a cyclic graph.', 'Confusing minimum spanning tree with shortest paths from one source.'],
-    practice: [
-      {level:'Warm-up',task:'Represent a graph and traverse with BFS/DFS.',goal:'Handle isolated vertices and disconnected components.'},
-      {level:'Core',task:'Count islands and find unweighted shortest path.',goal:'Model grid cells as vertices and mark on enqueue.'},
-      {level:'Core',task:'Course Schedule / dependency ordering.',goal:'Use indegrees and detect cycles.'},
-      {level:'Challenge',task:'Network delay, negative edges and minimum spanning tree.',goal:'Select Dijkstra, Bellman-Ford, Kruskal or Prim by assumptions.'},
-      {level:'Transfer',task:'Solve a graph problem with an extra state such as stops, keys or parity.',goal:'Expand the state graph and bound its size.'}
-    ],
-    interviewChecks: ['When does BFS give shortest paths?', 'Why can Dijkstra fail with negative edges?', 'How does Kahn detect a cycle?', 'What does DSU represent?', 'How is an MST different from a shortest-path tree?']
-  }
+ 
 ];
 
 export const DSA_LESSON_STEPS = [
