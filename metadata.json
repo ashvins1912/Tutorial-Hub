@@ -1,0 +1,8 @@
+{
+  "name": "PatternForge DSA",
+  "description": "Interactive problem-decoding, visual sandbox, drag-and-drop logic builder, and algorithm race workspace for mastering Data Structures and Algorithms from Easy to Hardest.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
