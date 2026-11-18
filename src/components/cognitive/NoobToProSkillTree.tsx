@@ -445,14 +445,14 @@ export function NoobToProSkillTree() {
           <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-              18 Core Algorithmic Patterns (Easy → Hardest)
+              20 Core Algorithmic Patterns (Easy → Hardest)
             </h2>
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
             {(
               [
-                { id: 'all', label: 'All 18 Patterns' },
+                { id: 'all', label: 'All 20 Patterns' },
                 { id: 'easy', label: 'Tier 1–2 Easy' },
                 { id: 'medium', label: 'Tier 3–4 Med' },
                 { id: 'hard', label: 'Tier 5–6 Hardest' },
