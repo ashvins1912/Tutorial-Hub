@@ -10,8 +10,8 @@ import {
 import { PROBLEMS } from '../data/problems';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../../server/seed/cognitiveSeed';
 
-export type TopView = 'workspace' | 'sprint' | 'roadmap' | 'system-design' | 'revision' | 'skill-tree' | 'schemas';
-
+export type TopView = 'workspace' | 'skill-tree' | 'system-design' | 'roadmap' | 'revision' | 'schemas' | 'complete-roadmap' | 'leetcode-75' | 'top-interview-100' | 'topic-academy' | 'sprint';
+ 
 interface ProblemLocalProgress {
   selectedSignalId: string | null;
   exploredSignals: string[];

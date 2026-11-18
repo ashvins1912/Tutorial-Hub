@@ -33,6 +33,10 @@ import { PatternTemplateModal } from './components/cognitive/PatternTemplateModa
 import { ScratchpadDrawer } from './components/cognitive/ScratchpadDrawer';
 import { SrtbotWorksheetModal } from './components/cognitive/SrtbotWorksheetModal';
 import { TopicPatternQuizModal } from './components/cognitive/TopicPatternQuizModal';
+import { CompleteDsaRoadmap } from './components/CompleteDsaRoadmap';
+import { LeetCode75Track } from './components/LeetCode75Track';
+import { TopInterview100Track } from './components/TopInterview100Track';
+import { SharedTopicAcademy } from './components/SharedTopicAcademy';
 import { TopicPatternExplorer } from './components/interview/TopicPatternExplorer';
 import { HowToIdentifyTrainer } from './components/interview/HowToIdentifyTrainer';
 import { BigTechRubricScorecard } from './components/interview/BigTechRubricScorecard';
@@ -366,6 +370,10 @@ export default function App() {
         )}
 
         {activeView === 'skill-tree' && <NoobToProSkillTree />}
+        {activeView === 'complete-roadmap' && <CompleteDsaRoadmap />}
+        {activeView === 'leetcode-75' && <LeetCode75Track />}
+        {activeView === 'top-interview-100' && <TopInterview100Track />}
+        {activeView === 'topic-academy' && <SharedTopicAcademy />}
         {activeView === 'system-design' && <SystemDesignStudio />}
         {activeView === 'revision' && <QuickRevisionHub />}
         {activeView === 'schemas' && <SchemasReferenceView />}

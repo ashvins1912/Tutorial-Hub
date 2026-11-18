@@ -1,0 +1,369 @@
+export interface DsaLesson {
+  id: string;
+  title: string;
+  promise: string;
+  mentalModel: string;
+  concepts: string[];
+  recognition: string[];
+  method: string[];
+  workedExample: string[];
+  complexity: string[];
+  pitfalls: string[];
+  practice: { level: 'Warm-up' | 'Core' | 'Challenge' | 'Transfer'; task: string; goal: string }[];
+  interviewChecks: string[];
+}
+
+export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
+  {
+    id: 'foundation', title: '1. Foundation', promise: 'Build the reasoning tools used by every data structure and algorithm.',
+    mentalModel: 'An algorithm is a precise plan. Data structures decide how information is stored; algorithms decide how that information is processed. Before coding, translate the problem into inputs, outputs, constraints, invariants and edge cases.',
+    concepts: [
+      'Problem decomposition: restate the task, identify input/output, constraints, assumptions and examples.',
+      'Time complexity: count how work grows with n. O(1), O(log n), O(n), O(n log n), O(n²), O(2ⁿ), O(n!).',
+      'Space complexity: distinguish input storage, auxiliary memory, output memory and recursion stack.',
+      'Asymptotic notation: Big-O upper bound, Big-Theta tight bound, Big-Omega lower bound; discuss worst/average/best case.',
+      'Arrays, references and memory: contiguous storage vs linked nodes; value vs reference semantics.',
+      'Recursion: base case, progress toward base case, recursive hypothesis, call stack and recurrence.',
+      'Correctness: loop invariant, induction, pre/postconditions, termination and counterexamples.',
+      'Integer safety: overflow, division, modulo with negatives, bounds, null and empty input.',
+      'Testing: normal, boundary, duplicate, sorted, reverse, negative, large and adversarial cases.'
+    ],
+    recognition: ['A prompt includes constraints such as n ≤ 10⁵ or memory limits.', 'You need to justify why a loop or recursion is correct.', 'Two solutions work but have different growth rates.', 'A solution passes examples but fails hidden edge cases.'],
+    method: ['Restate the problem and write one tiny example plus one boundary example.', 'Estimate the largest feasible complexity from n and the time limit; treat estimates as guidance, not a guarantee.', 'Write a brute-force solution first and state its time/space cost.', 'Identify repeated work or expensive operations; choose a data structure or invariant that removes it.', 'State the invariant before coding. Explain initialization, preservation and termination.', 'Test empty, singleton, duplicate, extreme and adversarial cases; then prove the result.'],
+    workedExample: ['Task: determine whether an array contains a duplicate.', 'Brute force compares every pair: O(n²) time, O(1) extra space.', 'Improvement: maintain a set of values already seen. Before inserting x, test membership; a hit proves a duplicate.', 'Expected complexity: O(n) time and O(n) extra space with a hash set. The expected qualifier matters because hash operations are not a deterministic O(1) worst-case guarantee.', 'Invariant: before processing index i, the set contains exactly the distinct values from indices 0 through i−1.'],
+    complexity: ['One loop over n items: O(n). Nested full loops: often O(n²), but inspect actual bounds.', 'Repeatedly halve/double a search space: O(log n).', 'Sorting plus a linear scan: O(n log n).', 'A recursion tree has one node per call; sum work by level and account for stack depth.', 'Amortized analysis averages a sequence of operations, not a single operation (e.g. dynamic-array append).'],
+    pitfalls: ['Dropping constants is not permission to ignore large constants in real systems.', 'O(n + m) is not O(n) when n and m are independent.', 'Auxiliary space and total space are different.', 'A recursive algorithm may use O(depth) stack even when it allocates no explicit collection.', 'Never claim correctness only because sample tests pass.'],
+    practice: [
+      {level:'Warm-up',task:'Classify single, nested, triangular and halving loops.',goal:'Explain the count, not just name the Big-O.'},
+      {level:'Warm-up',task:'Find min, max and sum in one pass.',goal:'Write the loop invariant and handle an empty array contract.'},
+      {level:'Core',task:'Compare pairwise duplicate detection with a hash-set solution.',goal:'Derive the time/space trade-off.'},
+      {level:'Challenge',task:'Analyse recursive binary search and merge sort.',goal:'Write and solve their recurrences.'},
+      {level:'Transfer',task:'Given a new n limit and memory budget, choose a feasible approach.',goal:'Defend assumptions and test strategy.'}
+    ],
+    interviewChecks: ['Why is binary search logarithmic?', 'What is the difference between O(n) auxiliary space and O(n) total space?', 'How do you prove a loop invariant?', 'When can average-case hash lookup degrade?']
+  },
+  {
+    id: 'arrays', title: '2. Arrays', promise: 'Master indexed storage, traversal, in-place transformations and range-query patterns.',
+    mentalModel: 'An array is a row of indexed cells. Random access is cheap because the address of an element can be calculated directly; inserting in the middle is expensive because later elements may need to shift.',
+    concepts: ['Static arrays vs dynamic arrays and amortized resizing.', 'Traversal, indexing, update, insertion and deletion costs.', 'Subarray (contiguous) vs subsequence (order-preserving, gaps allowed) vs subset.', 'In-place mutation, read/write pointers and stable compaction.', 'Sorting, frequency tables, hash maps and prefix aggregates.', '2D arrays: row/column indexing, bounds and coordinate transforms.', 'Range sums, prefix sums, difference arrays and prefix XOR.', 'Array invariants: processed prefix, unprocessed suffix and write boundary.'],
+    recognition: ['The prompt says contiguous range, subarray, in-place, rotate, partition or range query.', 'You need many indexed reads or one-pass processing.', 'Repeated range sums or range updates appear.', 'Constraints rule out checking every pair or every subarray.'],
+    method: ['Clarify whether mutation is allowed and whether order must be preserved.', 'Write the direct nested-loop solution and count repeated work.', 'For repeated sums, build prefix[i+1] = prefix[i] + a[i].', 'For in-place filtering, maintain a write index for the next valid element.', 'For many range additions, add at l and subtract after r in a difference array, then prefix-scan.', 'Prove index boundaries with half-open ranges [l, r).'],
+    workedExample: ['Range sum from l through r inclusive: prefix[k] stores the sum of the first k elements.', 'Build prefix in O(n): prefix[0]=0; prefix[i+1]=prefix[i]+a[i].', 'Answer is prefix[r+1]−prefix[l], O(1) per query.', 'For a half-open range [l,r), use prefix[r]−prefix[l]. Choose one convention and use it consistently.'],
+    complexity: ['Index read/write: O(1).', 'Full scan: O(n).', 'Insert/delete at arbitrary index: O(n) due to shifts.', 'Prefix preprocessing O(n), each range sum O(1), storage O(n).', 'Sorting usually O(n log n); in-place status depends on the algorithm and language implementation.'],
+    pitfalls: ['Off-by-one errors around inclusive endpoints.', 'Confusing a subarray with a subsequence.', 'Overwriting an unread value during in-place compaction.', 'Assuming a prefix-sum hash-map method works without considering integer range and initial prefix 0.', 'Using a difference array without applying the final prefix accumulation.'],
+    practice: [
+      {level:'Warm-up',task:'Find min/max, reverse an array and rotate by k.',goal:'Use indices safely and reduce k modulo n.'},
+      {level:'Core',task:'Remove duplicates from a sorted array in-place.',goal:'Use read/write pointers and preserve order.'},
+      {level:'Core',task:'Answer many range-sum queries.',goal:'Build and query prefix sums.'},
+      {level:'Challenge',task:'Count subarrays whose sum equals k.',goal:'Use prefix sums plus a frequency map; include prefix 0.'},
+      {level:'Transfer',task:'Apply many range increments, then return the final array.',goal:'Use a difference array and reason about endpoint updates.'}
+    ],
+    interviewChecks: ['Why is dynamic-array append amortized O(1)?', 'When is a prefix sum insufficient?', 'How do you preserve unread elements during compaction?', 'What changes when values can be negative?']
+  },
+  {
+    id: 'linked-list', title: '3. Linked List', promise: 'Reason confidently about nodes, references, pointer rewiring, cycles and list transformations.',
+    mentalModel: 'A linked list is a chain of nodes. Each node stores a value and a reference to the next node. You do not jump to index i; you follow links. The key skill is preserving references while rewiring edges.',
+    concepts: ['Singly vs doubly linked lists; head, tail and null termination.', 'Traversal and why indexed access is O(n).', 'Insertion/deletion after a known node vs searching for a node.', 'Dummy/sentinel nodes to remove head special cases.', 'Reverse iteratively and recursively.', 'Fast/slow pointers for middle and cycle detection.', 'Floyd cycle entry derivation.', 'Merge two sorted lists; split with slow/fast pointers.', 'LRU cache connection: hash map + doubly linked list.'],
+    recognition: ['The input is a node head and asks to reverse, merge, partition or detect a cycle.', 'Frequent insert/delete operations occur when the node is already known.', 'You need the middle, kth-from-end or cycle entry.'],
+    method: ['Draw nodes as boxes and arrows; mark head and null.', 'Before changing a link, save the next reference if it is still needed.', 'Use a dummy node when the result head may change.', 'For reversal, maintain previous, current and next; reverse one edge per iteration.', 'For cycle detection, move slow by one and fast by two; only compare after safe advancement.', 'State what each pointer represents at the top of every loop.'],
+    workedExample: ['Reverse A → B → C → null.', 'Start prev=null, curr=A. Save next=B; set A.next=prev; advance prev=A, curr=B.', 'Repeat: B.next=A, then C.next=B. Stop when curr=null.', 'Return prev (C). Time O(n), extra space O(1).', 'Invariant: prev is the reversed prefix; curr is the first node of the not-yet-reversed suffix.'],
+    complexity: ['Search/traversal: O(n).', 'Insert/delete after a known node: O(1). Finding that node still costs O(n).', 'Reverse: O(n) time, O(1) iterative extra space; recursive version uses O(n) call stack.', 'Floyd cycle detection: O(n) time, O(1) space.'],
+    pitfalls: ['Losing the rest of the list by overwriting next too early.', 'Returning the old head after reversal.', 'Null dereference when fast.next is null.', 'Creating a cycle accidentally while merging or reversing.', 'Assuming linked lists are faster than arrays for all insertions; locating the position is still costly.'],
+    practice: [
+      {level:'Warm-up',task:'Traverse, count nodes and search for a value.',goal:'Handle null head and one node.'},
+      {level:'Core',task:'Reverse a singly linked list.',goal:'Explain the three-pointer invariant.'},
+      {level:'Core',task:'Find the middle and detect a cycle.',goal:'Derive fast/slow pointer movement.'},
+      {level:'Challenge',task:'Find cycle entry and merge two sorted lists.',goal:'Prove pointer alignment and preserve sorted order.'},
+      {level:'Transfer',task:'Reverse nodes in groups of k.',goal:'Separate a complete group from the remaining suffix safely.'}
+    ],
+    interviewChecks: ['Why does Floyd’s algorithm meet inside a cycle?', 'Why use a dummy node?', 'What is the difference between deleting a node and finding the node to delete?', 'How do you avoid losing the suffix while reversing?']
+  },
+  {
+    id: 'strings', title: '4. Strings', promise: 'Solve character, substring, palindrome, parsing and pattern-matching problems safely.',
+    mentalModel: 'A string is a sequence of symbols. Many languages treat strings as immutable, so repeated concatenation can copy data. Decide whether the task concerns bytes, code units, Unicode code points or user-perceived grapheme clusters.',
+    concepts: ['String immutability and efficient builders/buffers.', 'Character arrays, frequency arrays and hash maps.', 'ASCII assumptions vs Unicode and normalization.', 'Substring vs subsequence.', 'Palindrome checks with two pointers and frequency parity.', 'Anagrams and canonical representations.', 'Parsing, tokenization and delimiter handling.', 'Naive matching, KMP prefix function, Z algorithm and rolling hash (advanced).'],
+    recognition: ['The task mentions anagram, palindrome, substring, subsequence, pattern match or character counts.', 'You need to compare two strings under reordering or normalization.', 'A naive repeated substring search is too slow.'],
+    method: ['Clarify the character model and case/space/punctuation rules.', 'For fixed alphabets, use a frequency array; otherwise use a map.', 'For palindrome, compare mirrored positions or use a center expansion.', 'For sliding substring constraints, maintain a window and character counts.', 'For repeated exact pattern matching, begin with a simple scan, then use KMP/Z when constraints justify it.', 'Build output with StringBuilder or a mutable buffer in languages where concatenation copies.'],
+    workedExample: ['Anagram check: if lengths differ, return false.', 'Count each character in the first string; decrement for each character in the second.', 'If any count becomes negative or any final count is nonzero, they are not anagrams.', 'Time O(n), extra space O(Σ) for a fixed alphabet or O(distinct characters) for a map.', 'If Unicode normalization or case folding matters, normalize both inputs before counting.'],
+    complexity: ['One pass with a frequency table: O(n + Σ), often O(n) for a fixed alphabet.', 'Sort both strings: O(n log n) time.', 'Center expansion for all palindromic substrings: O(n²) time, O(1) extra space.', 'KMP pattern matching: O(n + m) time and O(m) prefix table.'],
+    pitfalls: ['Assuming every language indexes Unicode by visible character.', 'Using repeated immutable concatenation in a loop.', 'Forgetting empty strings and unequal lengths.', 'Confusing substring with subsequence.', 'Incorrectly resetting a frequency window after a mismatch.'],
+    practice: [
+      {level:'Warm-up',task:'Reverse words and validate a palindrome.',goal:'Define treatment of spaces and punctuation.'},
+      {level:'Core',task:'Group anagrams and find the first unique character.',goal:'Choose a canonical key or frequency map.'},
+      {level:'Core',task:'Longest substring without repeating characters.',goal:'Maintain a valid variable-size window.'},
+      {level:'Challenge',task:'Find all anagram start indices and implement KMP.',goal:'Track counts and prefix-function fallback.'},
+      {level:'Transfer',task:'Adapt a string algorithm to Unicode-aware input.',goal:'State normalization and indexing assumptions.'}
+    ],
+    interviewChecks: ['When is a frequency array preferable to sorting?', 'What does KMP remember after a mismatch?', 'Why can string concatenation become quadratic?', 'What does “character” mean in the chosen language?']
+  },
+  {
+    id: 'stacks-queues', title: '5. Stack and Queues', promise: 'Use LIFO/FIFO order, monotonic structures and deques to process sequences and frontiers.',
+    mentalModel: 'A stack processes the most recently added item first (LIFO); a queue processes the earliest item first (FIFO). A deque supports both ends. A monotonic stack/deque keeps candidates in sorted order so dominated candidates can be discarded.',
+    concepts: ['Stack operations push/pop/peek and balanced delimiters.', 'Queue operations enqueue/dequeue and circular-array implementation.', 'Deque and sliding-window extrema.', 'Monotonic increasing/decreasing stack.', 'Next greater/smaller element, stock span and histogram area.', 'BFS queue frontier and level boundaries.', 'Amortized proof: each item enters and leaves a monotonic structure at most once.'],
+    recognition: ['Nested structure or undo/history suggests stack.', 'First-in-first-out processing or level traversal suggests queue.', 'Next greater/smaller or contribution boundaries suggest monotonic stack.', 'Window maximum/minimum suggests monotonic deque.'],
+    method: ['Identify which end must be processed next.', 'For delimiters, push opening symbols and validate matching closes.', 'For next-greater, scan once; while stack top is dominated by current value, resolve it.', 'For a window, evict indices outside the left boundary and remove dominated values from the back.', 'Store indices rather than values when expiry or distance matters.', 'Decide strict vs non-strict comparison carefully to handle duplicates.'],
+    workedExample: ['Next greater element to the right: scan left to right and keep unresolved indices in a decreasing stack of values.', 'For current x, pop while a[stack.top] < x; x is the next greater value for each popped index.', 'Push current index. Remaining indices have no greater value to their right.', 'Each index is pushed once and popped once: O(n) time, O(n) space. For next greater-or-equal, change the comparison deliberately.'],
+    complexity: ['Stack/queue push and pop: O(1) amortized for standard implementations.', 'Monotonic stack: O(n) total time because each index is pushed/popped at most once.', 'Sliding-window max with deque: O(n) time, O(k) space.', 'BFS: O(V + E) with adjacency lists.'],
+    pitfalls: ['Popping the wrong comparison direction.', 'Using values instead of indices when window expiry is needed.', 'Forgetting empty-stack checks.', 'Mishandling duplicate values with strict/non-strict comparisons.', 'Using an array queue with costly front deletion.'],
+    practice: [
+      {level:'Warm-up',task:'Validate parentheses and evaluate postfix notation.',goal:'Model push/pop and malformed input.'},
+      {level:'Core',task:'Implement queue using two stacks.',goal:'Explain amortized O(1) dequeue.'},
+      {level:'Core',task:'Next greater element and stock span.',goal:'Choose monotonic direction and equality rule.'},
+      {level:'Challenge',task:'Largest rectangle in histogram.',goal:'Use previous/next smaller boundaries.'},
+      {level:'Transfer',task:'Maximum of every window of size k.',goal:'Use index deque with expiry and domination.'}
+    ],
+    interviewChecks: ['Why is a monotonic stack linear overall?', 'Why store indices in a sliding-window deque?', 'What is the equality rule for duplicate heights?', 'How does a two-stack queue achieve amortized O(1)?']
+  },
+  {
+    id: 'binary-search', title: '6. Binary Search Algorithm', promise: 'Search sorted data and monotonic answer spaces with explicit invariants.',
+    mentalModel: 'Binary search works when the search space is ordered and each comparison lets you discard a half that cannot contain the answer. It is not merely “use mid”; the invariant and boundary convention define correctness.',
+    concepts: ['Exact search in sorted arrays.', 'Lower bound: first index with a[i] ≥ target; upper bound: first index with a[i] > target.', 'First/last occurrence and insertion position.', 'Rotated sorted arrays and identifying the sorted half.', 'Binary search on answer using a monotonic feasible predicate.', 'Integer overflow-safe midpoint and termination.', 'Unknown-size/exponential search and floating-point tolerance.'],
+    recognition: ['Input is sorted or a predicate changes monotonically from false to true.', 'Need first/last position, minimum feasible capacity or maximum feasible rate.', 'A brute-force answer scan can be replaced by a feasibility test.'],
+    method: ['Define the answer interval and whether endpoints are inclusive.', 'Write the invariant (e.g. answer lies in [lo, hi)).', 'Use mid = lo + (hi - lo) / 2 to avoid overflow in fixed-width languages.', 'For lower bound, if a[mid] ≥ target, keep mid by setting hi=mid; otherwise lo=mid+1.', 'For answer search, prove the predicate is monotonic before binary searching.', 'Check termination and test 0/1 length, absent target and all-equal values.'],
+    workedExample: ['Lower bound on [1,2,2,2,5] for target 2.', 'Maintain half-open interval [lo, hi) initially [0,n).', 'If a[mid] ≥ 2, set hi=mid; otherwise set lo=mid+1.', 'When lo==hi, that index is the first position whose value is at least 2 (index 1).', 'Time O(log n), extra space O(1).'],
+    complexity: ['Sorted-array search: O(log n) time, O(1) iterative extra space.', 'Answer-space search: O(log R × cost(check)) where R is the numeric search range.', 'Recursive binary search uses O(log n) stack; iterative uses O(1).'],
+    pitfalls: ['Infinite loops from inconsistent inclusive/exclusive boundaries.', 'Searching a non-monotonic predicate.', 'Returning mid without validating the desired boundary.', 'Overflow in (lo+hi)/2.', 'Incorrect rotated-array logic when duplicates make both halves appear equal.'],
+    practice: [
+      {level:'Warm-up',task:'Implement exact search and insertion position.',goal:'Use one consistent interval convention.'},
+      {level:'Core',task:'Find first and last occurrence in duplicates.',goal:'Implement lower and upper bound.'},
+      {level:'Core',task:'Search in a rotated sorted array.',goal:'Identify which half is sorted.'},
+      {level:'Challenge',task:'Minimum ship capacity to deliver within D days.',goal:'Define and prove a monotonic feasibility check.'},
+      {level:'Transfer',task:'Find minimum rate or maximum minimum distance.',goal:'Choose answer bounds and binary-search direction.'}
+    ],
+    interviewChecks: ['What exactly does lower_bound return?', 'Why does the answer-space predicate need monotonicity?', 'How do you prevent an infinite loop?', 'What changes when duplicates exist in a rotated array?']
+  },
+  {
+    id: 'two-pointers-window', title: '7. Two Pointers & Sliding Window', promise: 'Exploit order and contiguous ranges without repeatedly rescanning data.',
+    mentalModel: 'Two pointers coordinate positions. Sliding window is a special two-pointer technique for a contiguous interval whose state can be updated as its boundaries move. Pointer movement must be justified by a property, not guessed.',
+    concepts: ['Opposite-direction pointers on sorted arrays and palindromes.', 'Same-direction read/write pointers for compaction and partition.', 'Fast/slow pointers for cycles and middle positions.', 'Fixed-size sliding windows.', 'Variable-size windows with a validity invariant.', 'Frequency maps for distinct-count and anagram windows.', 'At-most K transformation to exactly K = atMost(K) − atMost(K−1).', 'Prefix sums or other methods when negative values invalidate greedy shrinking.'],
+    recognition: ['Sorted pair/triplet sum, palindrome, in-place removal or partition.', 'Longest/shortest contiguous substring/subarray with a maintainable constraint.', 'A range expands on the right and can be repaired by moving the left boundary.'],
+    method: ['For opposite pointers, sort if allowed and explain how order justifies movement.', 'For read/write, keep the prefix [0,write) as the valid output.', 'For a fixed window, add incoming and remove outgoing element.', 'For variable windows, state what makes a window valid and prove moving left can restore validity.', 'For at-most K, update counts and shrink while distinct/count constraint is violated.', 'If negative values break monotonicity, switch to prefix sums, a deque or another valid method.'],
+    workedExample: ['Longest substring with at most K distinct characters.', 'Expand right and increment the incoming character count.', 'While distinct character count exceeds K, decrement the left character and remove zero-count keys.', 'Update the best length after the window is valid.', 'Each index enters and exits at most once: O(n) expected time with a hash map, O(min(n, alphabet)) state.'],
+    complexity: ['Classic two-pointer scan: O(n) after any required sort; sorting adds O(n log n).', 'Sliding window: O(n) when each boundary moves only forward and updates are O(1) expected.', 'Frequency map space: O(alphabet) or O(n), depending on the character/value domain.'],
+    pitfalls: ['Sliding-window shrink logic is not universally valid with negative numbers.', 'Sorting can destroy original index order when indices are part of the answer.', 'Forgetting duplicate skipping in 3Sum.', 'Updating the answer while the window is invalid.', 'Confusing fixed-size and variable-size window invariants.'],
+    practice: [
+      {level:'Warm-up',task:'Pair sum in a sorted array and palindrome validation.',goal:'Explain why each pointer movement is safe.'},
+      {level:'Core',task:'Remove duplicates in-place and solve 3Sum.',goal:'Use write pointer and duplicate skipping.'},
+      {level:'Core',task:'Maximum sum of a fixed-size subarray.',goal:'Update by adding one and removing one.'},
+      {level:'Challenge',task:'Minimum window substring.',goal:'Track required vs formed counts and shrink only when valid.'},
+      {level:'Transfer',task:'Subarray sum equals K with negative numbers.',goal:'Recognise why a simple sliding window fails and use prefix sums.'}
+    ],
+    interviewChecks: ['What property makes pointer movement safe?', 'Why does a positive-number sum window shrink correctly?', 'How do you count exactly K distinct values?', 'When is sorting incompatible with the problem?']
+  },
+  {
+    id: 'binary-tree', title: '8. Binary Tree', promise: 'Master recursive structure, iterative traversals, level order, paths and tree construction.',
+    mentalModel: 'A binary tree is a node with up to two child trees. Many tree algorithms are recursive because a subtree is itself a tree. Decide whether information flows top-down (carry state) or bottom-up (return an aggregate).',
+    concepts: ['Root, leaf, depth, height, subtree and balanced tree.', 'Preorder, inorder, postorder and level-order BFS.', 'Recursive DFS and iterative stack traversals.', 'Height, diameter, balance and maximum path sum.', 'Root-to-leaf path, path sum and path construction.', 'Lowest common ancestor.', 'Build tree from traversal pairs with index maps.', 'Serialize/deserialize and null markers.', 'Morris traversal concept and O(1) auxiliary traversal.'],
+    recognition: ['The input is a root node and asks about paths, depth, subtree or ancestors.', 'A result depends on child subtree results.', 'Level-by-level output or minimum edge distance is required.'],
+    method: ['Define exactly what a recursive call returns.', 'Write the null/base case first.', 'For bottom-up problems, combine left and right results at the current node.', 'For top-down problems, pass accumulated state to children.', 'For BFS, process the queue size captured at the start of each level.', 'For LCA, state assumptions about node presence and unique values.'],
+    workedExample: ['Height in nodes: height(null)=0.', 'For a node, left=height(node.left), right=height(node.right).', 'Return 1 + max(left,right).', 'Each node is visited once: O(n) time, O(h) recursion stack where h is tree height.', 'A skewed tree has h=n; a balanced tree has h=O(log n).'],
+    complexity: ['Traversal and most one-pass aggregates: O(n).', 'Recursive DFS stack: O(h).', 'BFS queue: O(w), where w is maximum tree width.', 'Build from traversals: O(n) expected with a value-to-index map; avoid repeated linear scans.'],
+    pitfalls: ['Confusing node height with edge height.', 'Assuming the tree is balanced.', 'Using a global variable when a return value is clearer.', 'Capturing a changing queue size inside level-order traversal.', 'Assuming unique node values when reconstruction requires them.'],
+    practice: [
+      {level:'Warm-up',task:'Implement preorder, inorder, postorder and level order.',goal:'Compare recursion and explicit stacks.'},
+      {level:'Core',task:'Maximum depth, invert tree and balanced-tree check.',goal:'Return subtree information bottom-up.'},
+      {level:'Core',task:'Path sum and diameter.',goal:'Distinguish global answer from recursive return.'},
+      {level:'Challenge',task:'Lowest common ancestor and build tree from traversals.',goal:'State node-presence and uniqueness assumptions.'},
+      {level:'Transfer',task:'Serialize and deserialize a tree.',goal:'Design an unambiguous format including null children.'}
+    ],
+    interviewChecks: ['What is the recursive contract?', 'Why can diameter require a global answer?', 'What is the difference between depth and height?', 'When is BFS preferable to DFS?']
+  },
+  {
+    id: 'bst', title: '9. Binary Search Tree', promise: 'Use ordered tree invariants for search, insertion, deletion and order statistics.',
+    mentalModel: 'A BST maintains a global ordering: every key in a node’s left subtree is smaller and every key in its right subtree is larger (or follows a clearly defined duplicate policy). Inorder traversal therefore produces sorted order.',
+    concepts: ['BST invariant and duplicate-key policy.', 'Search and insertion.', 'Deletion: leaf, one child, two children using successor/predecessor.', 'Validate BST using lower/upper bounds.', 'Inorder traversal, kth smallest/largest.', 'Predecessor and successor.', 'Balanced BSTs: AVL and Red-Black tree concepts.', 'BST vs heap vs hash map use cases.'],
+    recognition: ['Need ordered membership, predecessor/successor or kth smallest.', 'Input is a BST and asks for range or sorted traversal.', 'Need dynamic insert/delete while retaining order.'],
+    method: ['Write the global range allowed at each node, not only a parent comparison.', 'Search by comparing target and following one child.', 'For validation, pass exclusive/inclusive bounds according to duplicate policy.', 'For two-child deletion, replace with inorder successor (minimum in right subtree) or predecessor.', 'For kth smallest, use inorder with a counter or augment subtree sizes.', 'Discuss worst-case skew and balancing.'],
+    workedExample: ['Validate BST with bounds: start at (−∞,+∞).', 'At node x, require low < x < high for a strict BST.', 'Recurse left with (low,x) and right with (x,high).', 'This catches a deep descendant that violates an ancestor even if it is correctly ordered relative to its parent.', 'Time O(n), recursion O(h).'],
+    complexity: ['Search/insert/delete: O(h), where h is tree height.', 'Balanced BST: O(log n); skewed BST: O(n).', 'Inorder traversal: O(n).', 'Kth smallest via inorder: O(h+k) with early stop; augmented subtree sizes can give O(h).'],
+    pitfalls: ['Checking only immediate children during validation.', 'Ignoring duplicate policy.', 'Losing a subtree during deletion.', 'Assuming an ordinary BST stays balanced.', 'Confusing BST ordering with heap ordering.'],
+    practice: [
+      {level:'Warm-up',task:'Search and insert a key.',goal:'Maintain the BST ordering invariant.'},
+      {level:'Core',task:'Validate BST and find kth smallest.',goal:'Use global bounds and inorder sequence.'},
+      {level:'Core',task:'Find predecessor and successor.',goal:'Use subtree extrema and ancestor path.'},
+      {level:'Challenge',task:'Delete a node with zero, one and two children.',goal:'Preserve both subtrees and ordering.'},
+      {level:'Transfer',task:'Support frequent kth-smallest queries.',goal:'Augment each node with subtree size.'}
+    ],
+    interviewChecks: ['Why are local parent-child checks insufficient?', 'What is the inorder successor?', 'What is the worst-case height?', 'When would a heap be a better fit?']
+  },
+  {
+    id: 'heap', title: '10. Heap', promise: 'Use priority queues for repeated extrema, Top K, scheduling and K-way merge.',
+    mentalModel: 'A binary heap is a complete binary tree stored compactly in an array. The heap property guarantees the root is the minimum (min-heap) or maximum (max-heap), but the rest of the array is not fully sorted.',
+    concepts: ['Complete binary tree and array index formulas.', 'Min-heap vs max-heap.', 'Sift-up and sift-down.', 'Insert, peek and extract.', 'Bottom-up heapify is O(n).', 'Top K largest/smallest and bounded heaps.', 'K-way merge with one candidate per sorted source.', 'Two heaps for running median.', 'Lazy deletion and stale heap entries.'],
+    recognition: ['Repeatedly need the next smallest/largest item.', 'Need Top K without sorting everything.', 'Merge K sorted lists or streams.', 'Need a dynamic median or priority scheduling.'],
+    method: ['Choose min or max root based on what must be removed.', 'For Top K largest, keep a min-heap of size K; root is the weakest retained candidate.', 'For K-way merge, store (value, source, index) and push the next item from the same source after pop.', 'Use lazy deletion when arbitrary removal is not supported.', 'Distinguish heap construction from repeated insertion.'],
+    workedExample: ['Find K largest values: maintain a min-heap of at most K values.', 'Insert the first K values. For each later x, if x > heap.peek(), remove root and insert x.', 'At all times the heap contains the K largest values seen so far.', 'Time O(n log K), extra space O(K); sorting all values costs O(n log n).'],
+    complexity: ['Peek: O(1).', 'Insert/extract: O(log n).', 'Bottom-up heapify: O(n).', 'Top K bounded heap: O(n log K), O(K) space.', 'K-way merge: O(N log K), O(K) heap space for K sorted sources and N total elements.'],
+    pitfalls: ['Using the wrong heap orientation for Top K.', 'Assuming heap array is sorted.', 'Building heap with n insertions and claiming O(n) instead of O(n log n).', 'Forgetting deterministic tie-breakers for equal priorities.', 'Pushing all K lists at once instead of one current candidate per list.'],
+    practice: [
+      {level:'Warm-up',task:'Implement min-heap insert and extract.',goal:'Trace parent/child indices.'},
+      {level:'Core',task:'Kth largest and Top K frequent elements.',goal:'Bound heap size and choose orientation.'},
+      {level:'Core',task:'Merge K sorted lists.',goal:'Store source identity and advance only that source.'},
+      {level:'Challenge',task:'Find median from a data stream.',goal:'Balance max-heap lower half and min-heap upper half.'},
+      {level:'Transfer',task:'Design a scheduler with priorities and cancellations.',goal:'Use tie-breakers and lazy invalidation.'}
+    ],
+    interviewChecks: ['Why is heapify O(n)?', 'Why does Top K largest use a min-heap?', 'What information belongs in a K-way merge heap entry?', 'Why is a heap not a sorted array?']
+  },
+  {
+    id: 'backtracking', title: '11. Backtracking', promise: 'Explore combinatorial choices systematically and prune only when safe.',
+    mentalModel: 'Backtracking builds a partial solution, explores one choice, then undoes it before trying another. The search tree represents decisions. Pruning removes a branch only when it cannot produce a valid or better answer.',
+    concepts: ['State, choices, constraints, goal and undo operation.', 'Subsets, combinations and permutations.', 'Choose–explore–unchoose template.', 'Duplicate handling after sorting.', 'Constraint propagation and early pruning.', 'N-Queens, Sudoku and word search.', 'Branch and bound for optimization.', 'Memoization when different paths reach the same state.', 'Meet in the middle for moderate n.'],
+    recognition: ['Need all valid combinations/permutations/subsets.', 'Small n but exponential possibilities.', 'Constraints make many partial choices impossible.', 'Need a witness configuration rather than only a count.'],
+    method: ['Define state completely: index, chosen elements, remaining capacity, used set, etc.', 'List choices available at this state.', 'Reject invalid states before recursing.', 'Make a choice, recurse, then undo exactly that change.', 'For duplicates, sort and skip equal choices at the same recursion depth.', 'Estimate branching factor and depth; add pruning or memoization only with a correctness argument.'],
+    workedExample: ['Subsets of [a,b]: at each index choose include or exclude.', 'At index i, recurse without a[i], then recurse with a[i] added to the path.', 'At i==n, emit a copy of the path.', 'There are 2ⁿ subsets; output itself requires Θ(n·2ⁿ) total element storage if every subset is materialized.', 'Never store the mutable path reference directly; copy it at the base case.'],
+    complexity: ['Permutations: O(n!) leaves, often O(n·n!) including output copying.', 'Subsets: O(2ⁿ) leaves, O(n) recursion depth.', 'Pruning improves practical search but may not change worst-case exponential complexity.', 'Memoization can reduce repeated states when the state space is much smaller than the search tree.'],
+    pitfalls: ['Forgetting to undo mutable state.', 'Emitting the same result multiple times when duplicates exist.', 'Pruning based on intuition rather than a proven impossibility condition.', 'Not copying a path before adding it to results.', 'Using backtracking where a polynomial greedy/DP solution exists.'],
+    practice: [
+      {level:'Warm-up',task:'Generate all subsets and permutations.',goal:'Trace the recursion tree and undo step.'},
+      {level:'Core',task:'Combination Sum and choose k numbers.',goal:'Control start index and reuse policy.'},
+      {level:'Core',task:'Generate unique permutations with duplicates.',goal:'Skip duplicates at the same depth.'},
+      {level:'Challenge',task:'N-Queens and Sudoku solver.',goal:'Use constraint checks and safe pruning.'},
+      {level:'Transfer',task:'Count solutions instead of listing them.',goal:'Change the return contract and consider memoization.'}
+    ],
+    interviewChecks: ['What is the complete state?', 'Why must you undo a choice?', 'When is duplicate skipping safe?', 'What is the difference between pruning and memoization?']
+  },
+  {
+    id: 'greedy', title: '12. Greedy Algorithm', promise: 'Recognise when local decisions can be proven to produce a global optimum.',
+    mentalModel: 'A greedy algorithm commits to a locally attractive choice and does not reconsider it. This is powerful only when the problem has a structure that makes the choice safe. A plausible heuristic is not a proof.',
+    concepts: ['Greedy-choice property and optimal substructure.', 'Exchange argument: transform an optimal solution to include the greedy choice.', 'Stays-ahead proof and cut property.', 'Interval scheduling by earliest finish.', 'Minimum platforms/meeting rooms via event ordering.', 'Jump Game reachability.', 'Huffman coding.', 'Greedy vs DP: coin systems and counterexamples.', 'Tie-breaking and sorting invariants.'],
+    recognition: ['The task asks for a maximum number of compatible intervals or minimum resources.', 'A sorted order may make one decision dominate alternatives.', 'A local choice can be exchanged into an optimal solution without worsening it.'],
+    method: ['Propose the greedy choice and define the remaining subproblem.', 'Try tiny counterexamples, especially ties and awkward values.', 'State the exchange or stays-ahead argument formally.', 'Show that after choosing greedily, the residual problem has the same structure.', 'Sort once if needed and account for sorting complexity.', 'If no proof emerges, compare with DP or graph search rather than assuming greedy works.'],
+    workedExample: ['Maximum number of non-overlapping intervals: sort by increasing finish time.', 'Choose the first interval; then repeatedly choose the next interval whose start is at least the finish of the last chosen interval (for half-open intervals).', 'Exchange proof: among all optimal schedules, replace its first interval with the globally earliest-finishing interval. This cannot reduce room for later intervals.', 'Repeat on the remaining compatible intervals.', 'Time O(n log n) for sorting, O(n) scan. Boundary comparison changes for closed intervals.'],
+    complexity: ['Often O(n log n) due to sorting plus O(n) scan.', 'Some greedy scans are O(n) when input is already ordered.', 'Huffman with a priority queue: O(n log n).'],
+    pitfalls: ['Assuming a locally largest/smallest choice is always optimal.', 'Ignoring interval endpoint semantics.', 'Using earliest start instead of earliest finish for interval scheduling.', 'Forgetting a counterexample to greedy coin change.', 'Failing to prove that a greedy choice leaves an optimal residual problem.'],
+    practice: [
+      {level:'Warm-up',task:'Choose maximum non-overlapping intervals.',goal:'Sort by finish and articulate exchange proof.'},
+      {level:'Core',task:'Jump Game and minimum jumps.',goal:'Maintain farthest reachable boundary.'},
+      {level:'Core',task:'Assign cookies or schedule tasks.',goal:'Sort both sides and justify matching order.'},
+      {level:'Challenge',task:'Huffman coding.',goal:'Repeatedly merge two smallest frequencies.'},
+      {level:'Transfer',task:'Test a proposed greedy coin strategy.',goal:'Find a counterexample or prove the denomination assumptions.'}
+    ],
+    interviewChecks: ['What is the greedy-choice property?', 'Give an exchange argument.', 'Why does earliest finish work for interval scheduling?', 'How do you know DP is needed instead?']
+  },
+  {
+    id: 'dynamic-programming', title: '13. Dynamic Programming', promise: 'Turn repeated recursive subproblems into a precise state and recurrence.',
+    mentalModel: 'DP is systematic reuse of answers to overlapping subproblems. The central work is not filling a table; it is defining a state that contains exactly the information needed to make future decisions.',
+    concepts: ['Overlapping subproblems and optimal substructure.', 'SRTBOT: state, recurrence, base case, order, answer, time.', 'Memoization (top-down) vs tabulation (bottom-up).', '1D DP: Fibonacci, climbing stairs, house robber.', 'Grid DP: paths, obstacles and minimum cost.', 'Knapsack: 0/1 vs unbounded; loop direction matters.', 'Subset sum, partition and coin change.', 'String DP: LCS, edit distance, LIS and palindromes.', 'Interval DP and tree DP.', 'State compression, bitmask DP and optimization.'],
+    recognition: ['The problem asks count/minimum/maximum over repeated choices.', 'Recursive branches revisit the same parameter combinations.', 'A solution depends on smaller prefixes, capacities, intervals or subtrees.', 'Greedy choices fail but optimal substructure exists.'],
+    method: ['Start with a recursive definition in plain language.', 'Choose state variables that fully determine the subproblem; avoid missing history.', 'Write recurrence from the choices available at a state.', 'Set base cases for empty/small states.', 'Draw dependencies and choose a valid evaluation order.', 'Prove each transition considers all legal choices and no illegal choice.', 'Count states × transitions; optimize space only after the recurrence is correct.'],
+    workedExample: ['0/1 Knapsack: dp[i][c] = maximum value using the first i items with capacity c.', 'Base: dp[0][c]=0 and dp[i][0]=0.', 'If weight[i] > c, skip: dp[i][c]=dp[i−1][c]. Otherwise max(skip, value[i]+dp[i−1][c−weight[i]]).', 'Time O(nW), space O(nW); compress to O(W) by iterating capacity downward.', 'For unbounded knapsack, capacity often iterates upward so the current item can be reused.'],
+    complexity: ['Typical 1D DP: O(n) states with O(1) transitions.', 'Grid DP: O(rows×cols) states.', '0/1 knapsack: O(nW), pseudo-polynomial because W is numeric capacity, not its bit length.', 'LCS: O(nm) time and O(nm) space; length-only can use O(min(n,m)) space.', 'Bitmask DP often O(2ⁿ·poly(n)); n must be small.'],
+    pitfalls: ['Defining a state that omits information needed for future decisions.', 'Wrong base cases or transition order.', 'Confusing 0/1 and unbounded knapsack loop direction.', 'Overwriting a previous row/column before all dependent states use it.', 'Calling pseudo-polynomial complexity polynomial in input bit length.', 'Optimizing memory before understanding dependency direction.'],
+    practice: [
+      {level:'Warm-up',task:'Climbing stairs and house robber.',goal:'Write state, recurrence and base cases.'},
+      {level:'Core',task:'Unique paths and minimum grid path sum.',goal:'Read dependencies from top/left.'},
+      {level:'Core',task:'0/1 knapsack, subset sum and coin change.',goal:'Explain loop direction and item reuse.'},
+      {level:'Challenge',task:'Longest common subsequence and edit distance.',goal:'Define two-index state and transitions.'},
+      {level:'Transfer',task:'Choose a DP state for a new constrained sequence problem.',goal:'Derive recurrence before coding and justify complexity.'}
+    ],
+    interviewChecks: ['What information does your state represent?', 'Why are the subproblems overlapping?', 'Why is the evaluation order valid?', 'Why does 0/1 knapsack iterate capacity downward?', 'What makes knapsack pseudo-polynomial?']
+  },
+  {
+    id: 'graphs', title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
+    mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
+    concepts: ['Directed/undirected, weighted/unweighted, cyclic/acyclic, connected/disconnected.', 'Adjacency list vs adjacency matrix; edge list.', 'BFS for unweighted shortest paths and multi-source traversal.', 'DFS for components, cycle detection and finishing order.', 'Grid-to-graph modelling and state-expanded BFS.', 'Topological sorting with Kahn or DFS; DAG dependency order.', 'Union-Find with path compression and union by size/rank.', 'Dijkstra for non-negative weights; Bellman-Ford for negative edges.', 'Floyd-Warshall for all-pairs shortest paths.', 'Minimum spanning tree: Kruskal and Prim.', 'SCC, bridges and articulation points (advanced).'],
+    recognition: ['The prompt describes networks, dependencies, routes, transformations or reachability.', 'Need minimum number of edges in an unweighted graph.', 'Need a valid dependency order or detect a cycle.', 'Need repeated connectivity merges or minimum-cost connection.', 'Edge weights determine shortest-path algorithm choice.'],
+    method: ['Identify vertices, edges, direction, weight and graph size.', 'Choose adjacency list for sparse graphs; matrix for dense/small graphs or constant-time edge checks.', 'For BFS, mark visited when enqueuing to prevent duplicate queue entries.', 'For DFS, track recursion/explicit stack and distinguish visited from active-path state for directed cycles.', 'For topological order, count indegrees and process zero-indegree vertices; fewer than V outputs means a cycle.', 'For shortest paths, check weights first: BFS if unweighted, Dijkstra if all weights nonnegative, Bellman-Ford if negative edges may occur.', 'For MST, use Kruskal + DSU or Prim; distinguish MST from shortest-path tree.'],
+    workedExample: ['Unweighted shortest path from source s: initialise dist[s]=0 and enqueue s.', 'Pop u; for each unvisited neighbour v, set dist[v]=dist[u]+1, parent[v]=u, then enqueue v.', 'Because BFS explores by nondecreasing distance in layers, the first discovery gives the minimum edge count.', 'Time O(V+E), space O(V) with adjacency lists.', 'Reconstruct a path by following parent pointers backward from target.'],
+    complexity: ['Adjacency list storage: O(V+E); matrix storage: O(V²).', 'BFS/DFS: O(V+E).', 'Topological sort: O(V+E).', 'DSU operations: near-constant amortized with path compression and union by size/rank.', 'Dijkstra with binary heap: O((V+E) log V) commonly stated for adjacency lists.', 'Bellman-Ford: O(VE); Floyd-Warshall: O(V³).', 'Kruskal: O(E log E); Prim with heap: O((V+E) log V).'],
+    pitfalls: ['Using Dijkstra with negative edge weights.', 'Marking BFS visited only after dequeue and creating duplicate work.', 'Confusing directed and undirected cycle detection.', 'Assuming every graph is connected.', 'Using a topological sort on a cyclic graph.', 'Confusing minimum spanning tree with shortest paths from one source.'],
+    practice: [
+      {level:'Warm-up',task:'Represent a graph and traverse with BFS/DFS.',goal:'Handle isolated vertices and disconnected components.'},
+      {level:'Core',task:'Count islands and find unweighted shortest path.',goal:'Model grid cells as vertices and mark on enqueue.'},
+      {level:'Core',task:'Course Schedule / dependency ordering.',goal:'Use indegrees and detect cycles.'},
+      {level:'Challenge',task:'Network delay, negative edges and minimum spanning tree.',goal:'Select Dijkstra, Bellman-Ford, Kruskal or Prim by assumptions.'},
+      {level:'Transfer',task:'Solve a graph problem with an extra state such as stops, keys or parity.',goal:'Expand the state graph and bound its size.'}
+    ],
+    interviewChecks: ['When does BFS give shortest paths?', 'Why can Dijkstra fail with negative edges?', 'How does Kahn detect a cycle?', 'What does DSU represent?', 'How is an MST different from a shortest-path tree?']
+  },
+  {
+    id: 'two-dimensional-arrays', title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
+    mentalModel: 'A matrix is a grid addressed by (row, column). Most bugs come from mixing row and column counts, inconsistent boundaries, or assuming the matrix is square. Treat a cell as a graph vertex when movement and reachability matter; treat a rectangle as a range when aggregation matters.',
+    concepts: [
+      'Representation: int[][], rows = matrix.length, columns = rows == 0 ? 0 : matrix[0].length; rectangular and ragged arrays are different contracts.',
+      'Indexing: matrix[r][c]; valid rows are [0, rows), valid columns are [0, cols). Always use rows for the outer loop and columns for the inner loop.',
+      'Traversal: row-major, column-major, diagonals, boundary, zigzag and spiral.',
+      'Coordinate transforms: transpose maps (r,c) to (c,r); clockwise rotation maps old (r,c) to (c, rows−1−r) for rectangular output dimensions.',
+      'In-place transformations: transpose a square matrix across the diagonal; rotate a square matrix by transpose + reverse each row.',
+      'Matrix search: linear scan, per-row binary search, flattened binary search when globally sorted, staircase search for row-and-column sorted matrices.',
+      '2D prefix sum: prefix[r+1][c+1] stores the sum of rectangle [0,r] × [0,c]; use inclusion-exclusion for any rectangle.',
+      '2D difference arrays: four corner updates represent adding a value to a rectangular region, followed by 2D prefix accumulation.',
+      'Grid as graph: four/eight directions, bounds checks, visited marking, BFS, DFS and multi-source BFS.',
+      'Grid DP: state at (r,c), transitions from predecessor cells, obstacles, path counts and minimum costs.',
+      'Advanced matrix optimisation: compress row pairs and apply Kadane; monotonic stacks for maximal rectangle; binary search on answer for sorted matrix statistics.'
+    ],
+    recognition: [
+      'The input is a grid, image, board, map, table or matrix with row/column coordinates.',
+      'The prompt asks for spiral, diagonal, boundary, rotation, transpose, zeroing or in-place transformation.',
+      'Rows and columns are sorted, or all values are globally sorted, which enables different binary-search strategies.',
+      'Many rectangle-sum queries suggest a 2D prefix sum; many rectangle updates suggest a 2D difference array.',
+      'Movement between adjacent cells suggests BFS/DFS; count/minimum-cost paths suggests grid DP.',
+      'Maximum-sum rectangle suggests fixing a pair of boundaries, compressing one dimension and applying 1D Kadane.'
+    ],
+    method: [
+      'Read the shape constraints first: square, rectangular, empty, ragged, sorted by rows, sorted by both axes, or globally sorted.',
+      'Name rows and cols separately. Check rows == 0 before reading matrix[0].length; do not assume rows == cols.',
+      'Write the valid coordinate condition once: 0 <= r && r < rows && 0 <= c && c < cols.',
+      'For traversal, define the exact order and use a visited set only when the traversal can revisit cells; spiral traversal instead maintains shrinking boundaries.',
+      'For transformations, write the old-coordinate to new-coordinate mapping before coding and test a 2×3 matrix, not only a square matrix.',
+      'For rectangle sums, adopt half-open coordinates [r1,r2) × [c1,c2) and derive inclusion-exclusion consistently.',
+      'For grid graph problems, define allowed directions, when a cell becomes visited, and whether BFS is unweighted shortest path.',
+      'For DP, define dp[r][c] in one sentence, list legal predecessor states, set first-row/first-column base cases, then choose a valid evaluation order.',
+      'Test 0×0, 1×1, 1×N, N×1, rectangular, duplicate, blocked-start/end and boundary-touching cases.'
+    ],
+    workedExample: [
+      '2D prefix sum: define P[r+1][c+1] as the sum of all matrix cells with row ≤ r and column ≤ c.',
+      'Build with P[r+1][c+1] = matrix[r][c] + P[r][c+1] + P[r+1][c] − P[r][c]. The subtraction removes the top-left overlap counted twice.',
+      'For half-open rectangle [r1,r2) × [c1,c2), sum = P[r2][c2] − P[r1][c2] − P[r2][c1] + P[r1][c1].',
+      'Preprocessing is O(rows×cols), each rectangle query is O(1), and prefix storage is O(rows×cols).',
+      'Java implementation detail: use long[][] if the sum of many large integers can exceed the int range.'
+    ],
+    complexity: [
+      'Full traversal, transpose, zeroing and spiral output: O(rows×cols) time.',
+      'Staircase search in a matrix sorted by rows and columns: O(rows+cols) time, O(1) extra space.',
+      'Binary search over a globally sorted rectangular matrix: O(log(rows×cols)) time.',
+      '2D prefix build: O(rows×cols); each range query O(1); extra space O(rows×cols).',
+      'Grid BFS/DFS: O(rows×cols) time and O(rows×cols) worst-case visited/frontier space.',
+      'Grid DP: usually O(rows×cols) time; space can often be reduced to O(cols) when only the previous row is needed.',
+      'Maximum sum rectangle by row-pair compression: O(min(rows,cols)² × max(rows,cols)) with the smaller dimension paired.'
+    ],
+    pitfalls: [
+      'Using matrix[0].length before checking whether the matrix has zero rows.',
+      'Swapping row and column bounds or using rows for both dimensions.',
+      'Assuming a rectangular matrix is square when transposing or rotating in place.',
+      'Double-counting the centre when summing both diagonals in an odd-sized square matrix.',
+      'Using flattened binary search when rows are individually sorted but row ranges overlap.',
+      'Applying staircase search when only rows or only columns are sorted.',
+      'Off-by-one errors in 2D prefix inclusion-exclusion; define half-open ranges.',
+      'Marking a BFS cell visited only after dequeue and enqueuing it repeatedly.',
+      'Forgetting to restore a cell during backtracking word search.',
+      'Using int for potentially large prefix or submatrix sums.'
+    ],
+    practice: [
+      {level:'Warm-up',task:'Matrix traversal, row/column sums, diagonals and boundary traversal.',goal:'Use independent row/column bounds; handle rectangular and one-row matrices.'},
+      {level:'Core',task:'Spiral Matrix, Transpose Matrix, Rotate Image and Set Matrix Zeroes.',goal:'Maintain boundary invariants and derive coordinate transforms.'},
+      {level:'Core',task:'Search a 2D Matrix and Search a 2D Matrix II.',goal:'Distinguish globally sorted from row-and-column sorted assumptions.'},
+      {level:'Challenge',task:'2D Range Sum Query, Number of Islands, Rotting Oranges and Word Search.',goal:'Choose prefix sums, BFS/DFS or backtracking from the problem structure.'},
+      {level:'Transfer',task:'Count submatrices with target sum, maximal rectangle and shortest path in a binary matrix.',goal:'Combine 2D compression, prefix maps, monotonic stacks and BFS.'}
+    ],
+    interviewChecks: [
+      'How do you safely handle an empty or rectangular matrix in Java?',
+      'When can a matrix be treated as one flattened sorted array?',
+      'Why does staircase search take O(rows+cols)?',
+      'Derive the four terms in a 2D prefix-sum rectangle query.',
+      'Why mark a BFS cell visited when it is enqueued?',
+      'How would you reduce the space of a grid DP to O(cols)?'
+    ]
+  }
+];
+
+export const DSA_LESSON_STEPS = [
+  'Understand the problem and constraints',
+  'Build a mental model and trace an example',
+  'Recognise when the technique applies (and when it does not)',
+  'Derive from brute force',
+  'Implement and test edge cases',
+  'Prove correctness with an invariant or recurrence',
+  'Analyse time and space complexity',
+  'Practise independently and transfer to a new problem'
+];
