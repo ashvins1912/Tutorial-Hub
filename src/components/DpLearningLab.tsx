@@ -41,13 +41,13 @@ export function DpLearningLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [stair, setStair] = useState(6);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [completed, setCompleted] = useState<string[]>([]);
+  const [completed, setCompleted] = useState<string[]>(() => {\n    try { return JSON.parse(window.localStorage.getItem('patternforge-dp-practice-v1') || '[]') as string[]; } catch { return []; }\n  });
   const [filter, setFilter] = useState('All');
   const lesson = lessons[lessonIndex];
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
   const visibleProblems = problems.filter((p) => filter === 'All' || p[0] === filter);
-  const toggle = (item: string) => setCompleted((old) => old.includes(item) ? old.filter((x) => x !== item) : [...old, item]);
+  const toggle = (item: string) => setCompleted((old) => {\n    const next = old.includes(item) ? old.filter((x) => x !== item) : [...old, item];\n    try { window.localStorage.setItem('patternforge-dp-practice-v1', JSON.stringify(next)); } catch { /* keep session progress */ }\n    return next;\n  });
   return <section className="space-y-5">
     <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 text-white sm:p-8">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-300"><Lightbulb className="h-4 w-4" /> Interactive DP learning path</div>
@@ -63,7 +63,7 @@ export function DpLearningLab() {
         <input aria-label="Number of stairs" type="range" min="1" max="10" value={stair} onChange={(e) => setStair(Number(e.target.value))} className="mt-4 w-full accent-indigo-600" />
         <div className="flex justify-between text-xs text-slate-500"><span>1 stair</span><strong>{stair} stairs</strong><span>10 stairs</span></div>
         <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">{fib.map((v, i) => <div key={i} className={i === stair ? 'rounded-xl border-2 border-indigo-500 bg-indigo-50 p-3 text-center dark:bg-indigo-950' : 'rounded-xl border border-slate-200 p-3 text-center dark:border-slate-700'}><div className="text-[10px] text-slate-400">dp[{i}]</div><div className="mt-1 text-lg font-bold tabular-nums">{v}</div></div>)}</div>
-        <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">For {stair} stairs: dp[{stair}] = dp[{Math.max(0, stair - 1)}] + dp[{Math.max(0, stair - 2)}] = {fib[stair]} ways.</p>
+        <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{stair <= 1 ? `Base case: dp[${stair}] = 1 way.` : `For ${stair} stairs: dp[${stair}] = dp[${stair - 1}] + dp[${stair - 2}] = ${fib[stair]} ways.`}</p>
       </article>
       <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="text-xs font-bold uppercase tracking-wider text-indigo-600">The DP recipe</div><h3 className="mt-1 text-lg font-bold">Ask these 7 questions</h3>
