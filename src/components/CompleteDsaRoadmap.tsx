@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { CompleteDsaCourse } from './CompleteDsaCourse';
 import { Search, CheckCircle2, Circle, BookOpen, Target, Brain, Filter } from 'lucide-react';
 import { COMPLETE_DSA_ROADMAP, DSA_LEVELS, LESSON_FLOW, MASTERY_CHECKLIST, type DsaLevel, type DsaRoadmapTopic } from '../data/completeDsaRoadmap';
 
@@ -48,7 +49,8 @@ export function CompleteDsaRoadmap() {
   };
   const groups = [...new Set(filtered.map((item) => item.group))];
 
-  return <div className="space-y-6">
+  return <div className="space-y-8">
+    <CompleteDsaCourse />
     <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
         <div className="max-w-3xl">
