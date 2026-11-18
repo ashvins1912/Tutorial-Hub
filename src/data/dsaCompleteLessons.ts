@@ -258,6 +258,86 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     ],
     interviewChecks: ['What information does your state represent?', 'Why are the subproblems overlapping?', 'Why is the evaluation order valid?', 'Why does 0/1 knapsack iterate capacity downward?', 'What makes knapsack pseudo-polynomial?']
   },
+  ,
+  {
+    id: 'two-dimensional-arrays', title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
+    mentalModel: 'A matrix is a grid addressed by (row, column). Most bugs come from mixing row and column counts, inconsistent boundaries, or assuming the matrix is square. Treat a cell as a graph vertex when movement and reachability matter; treat a rectangle as a range when aggregation matters.',
+    concepts: [
+      'Representation: int[][], rows = matrix.length, columns = rows == 0 ? 0 : matrix[0].length; rectangular and ragged arrays are different contracts.',
+      'Indexing: matrix[r][c]; valid rows are [0, rows), valid columns are [0, cols). Always use rows for the outer loop and columns for the inner loop.',
+      'Traversal: row-major, column-major, diagonals, boundary, zigzag and spiral.',
+      'Coordinate transforms: transpose maps (r,c) to (c,r); clockwise rotation maps old (r,c) to (c, rows−1−r) for rectangular output dimensions.',
+      'In-place transformations: transpose a square matrix across the diagonal; rotate a square matrix by transpose + reverse each row.',
+      'Matrix search: linear scan, per-row binary search, flattened binary search when globally sorted, staircase search for row-and-column sorted matrices.',
+      '2D prefix sum: prefix[r+1][c+1] stores the sum of rectangle [0,r] × [0,c]; use inclusion-exclusion for any rectangle.',
+      '2D difference arrays: four corner updates represent adding a value to a rectangular region, followed by 2D prefix accumulation.',
+      'Grid as graph: four/eight directions, bounds checks, visited marking, BFS, DFS and multi-source BFS.',
+      'Grid DP: state at (r,c), transitions from predecessor cells, obstacles, path counts and minimum costs.',
+      'Advanced matrix optimisation: compress row pairs and apply Kadane; monotonic stacks for maximal rectangle; binary search on answer for sorted matrix statistics.'
+    ],
+    recognition: [
+      'The input is a grid, image, board, map, table or matrix with row/column coordinates.',
+      'The prompt asks for spiral, diagonal, boundary, rotation, transpose, zeroing or in-place transformation.',
+      'Rows and columns are sorted, or all values are globally sorted, which enables different binary-search strategies.',
+      'Many rectangle-sum queries suggest a 2D prefix sum; many rectangle updates suggest a 2D difference array.',
+      'Movement between adjacent cells suggests BFS/DFS; count/minimum-cost paths suggests grid DP.',
+      'Maximum-sum rectangle suggests fixing a pair of boundaries, compressing one dimension and applying 1D Kadane.'
+    ],
+    method: [
+      'Read the shape constraints first: square, rectangular, empty, ragged, sorted by rows, sorted by both axes, or globally sorted.',
+      'Name rows and cols separately. Check rows == 0 before reading matrix[0].length; do not assume rows == cols.',
+      'Write the valid coordinate condition once: 0 <= r && r < rows && 0 <= c && c < cols.',
+      'For traversal, define the exact order and use a visited set only when the traversal can revisit cells; spiral traversal instead maintains shrinking boundaries.',
+      'For transformations, write the old-coordinate to new-coordinate mapping before coding and test a 2×3 matrix, not only a square matrix.',
+      'For rectangle sums, adopt half-open coordinates [r1,r2) × [c1,c2) and derive inclusion-exclusion consistently.',
+      'For grid graph problems, define allowed directions, when a cell becomes visited, and whether BFS is unweighted shortest path.',
+      'For DP, define dp[r][c] in one sentence, list legal predecessor states, set first-row/first-column base cases, then choose a valid evaluation order.',
+      'Test 0×0, 1×1, 1×N, N×1, rectangular, duplicate, blocked-start/end and boundary-touching cases.'
+    ],
+    workedExample: [
+      '2D prefix sum: define P[r+1][c+1] as the sum of all matrix cells with row ≤ r and column ≤ c.',
+      'Build with P[r+1][c+1] = matrix[r][c] + P[r][c+1] + P[r+1][c] − P[r][c]. The subtraction removes the top-left overlap counted twice.',
+      'For half-open rectangle [r1,r2) × [c1,c2), sum = P[r2][c2] − P[r1][c2] − P[r2][c1] + P[r1][c1].',
+      'Preprocessing is O(rows×cols), each rectangle query is O(1), and prefix storage is O(rows×cols).',
+      'Java implementation detail: use long[][] if the sum of many large integers can exceed the int range.'
+    ],
+    complexity: [
+      'Full traversal, transpose, zeroing and spiral output: O(rows×cols) time.',
+      'Staircase search in a matrix sorted by rows and columns: O(rows+cols) time, O(1) extra space.',
+      'Binary search over a globally sorted rectangular matrix: O(log(rows×cols)) time.',
+      '2D prefix build: O(rows×cols); each range query O(1); extra space O(rows×cols).',
+      'Grid BFS/DFS: O(rows×cols) time and O(rows×cols) worst-case visited/frontier space.',
+      'Grid DP: usually O(rows×cols) time; space can often be reduced to O(cols) when only the previous row is needed.',
+      'Maximum sum rectangle by row-pair compression: O(min(rows,cols)² × max(rows,cols)) with the smaller dimension paired.'
+    ],
+    pitfalls: [
+      'Using matrix[0].length before checking whether the matrix has zero rows.',
+      'Swapping row and column bounds or using rows for both dimensions.',
+      'Assuming a rectangular matrix is square when transposing or rotating in place.',
+      'Double-counting the centre when summing both diagonals in an odd-sized square matrix.',
+      'Using flattened binary search when rows are individually sorted but row ranges overlap.',
+      'Applying staircase search when only rows or only columns are sorted.',
+      'Off-by-one errors in 2D prefix inclusion-exclusion; define half-open ranges.',
+      'Marking a BFS cell visited only after dequeue and enqueuing it repeatedly.',
+      'Forgetting to restore a cell during backtracking word search.',
+      'Using int for potentially large prefix or submatrix sums.'
+    ],
+    practice: [
+      {level:'Warm-up',task:'Matrix traversal, row/column sums, diagonals and boundary traversal.',goal:'Use independent row/column bounds; handle rectangular and one-row matrices.'},
+      {level:'Core',task:'Spiral Matrix, Transpose Matrix, Rotate Image and Set Matrix Zeroes.',goal:'Maintain boundary invariants and derive coordinate transforms.'},
+      {level:'Core',task:'Search a 2D Matrix and Search a 2D Matrix II.',goal:'Distinguish globally sorted from row-and-column sorted assumptions.'},
+      {level:'Challenge',task:'2D Range Sum Query, Number of Islands, Rotting Oranges and Word Search.',goal:'Choose prefix sums, BFS/DFS or backtracking from the problem structure.'},
+      {level:'Transfer',task:'Count submatrices with target sum, maximal rectangle and shortest path in a binary matrix.',goal:'Combine 2D compression, prefix maps, monotonic stacks and BFS.'}
+    ],
+    interviewChecks: [
+      'How do you safely handle an empty or rectangular matrix in Java?',
+      'When can a matrix be treated as one flattened sorted array?',
+      'Why does staircase search take O(rows+cols)?',
+      'Derive the four terms in a 2D prefix-sum rectangle query.',
+      'Why mark a BFS cell visited when it is enqueued?',
+      'How would you reduce the space of a grid DP to O(cols)?'
+    ]
+  }
   {
     id: 'graphs', title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
     mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
