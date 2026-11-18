@@ -6,6 +6,7 @@ import { createServer as createViteServer } from 'vite';
 import { connectMongo, isMongoConnected } from './server/db/connectMongo';
 import cognitiveRoutes from './server/routes/cognitiveRoutes';
 import problemRoutes from './server/routes/problemRoutes';
+import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +23,8 @@ async function startServer() {
 
   // Big Tech Topic-Wise 36 Problem Bank API
   app.use('/api/problems', problemRoutes);
+  // Cached, read-only LeetCode statement/examples/constraints source
+  app.use('/api/leetcode/problem', leetcodeProblemRoutes);
 
   // 14-Day Company-Specific Sprint Generator & War-Room API
   app.use('/api/sprints', sprintRoutes);
