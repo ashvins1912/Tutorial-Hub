@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SystemDesignLearningAcademy } from './SystemDesignLearningAcademy';
+import { SystemArchitectureBlueprintLab } from './SystemArchitectureBlueprintLab';
 import {
   DndContext,
   DragEndEvent,
@@ -359,7 +360,7 @@ function ProbabilisticLab() {
 }
 
 export function SystemDesignStudio() {
-  const [subTab, setSubTab] = useState<'builder' | 'animations' | 'probabilistic' | 'academy'>('academy');
+  const [subTab, setSubTab] = useState<'builder' | 'animations' | 'probabilistic' | 'academy' | 'blueprints'>('blueprints');
   const [scenarioId, setScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
 
   const scenario = SYSTEM_SCENARIOS.find((s) => s.id === scenarioId) ?? SYSTEM_SCENARIOS[0];
@@ -454,6 +455,7 @@ export function SystemDesignStudio() {
               { id: 'animations', label: 'Existing System Animations' },
               { id: 'probabilistic', label: 'Probabilistic Data Structures' },
               { id: 'academy', label: 'Deep Learning Academy' },
+              { id: 'blueprints', label: 'Production Blueprints' },
             ] as const
           ).map((tab) => (
             <button
@@ -472,7 +474,7 @@ export function SystemDesignStudio() {
         </div>
       </div>
 
-      {subTab !== 'probabilistic' && subTab !== 'academy' && (
+      {subTab !== 'probabilistic' && subTab !== 'academy' && subTab !== 'blueprints' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SYSTEM_SCENARIOS.map((sc) => (
             <button
@@ -792,6 +794,9 @@ export function SystemDesignStudio() {
 
       {/* Mode 4: Deep System Design Learning Academy */}
       {subTab === 'academy' && <SystemDesignLearningAcademy />}
+
+      {/* Mode 5: Hand-authored production architecture blueprints */}
+      {subTab === 'blueprints' && <SystemArchitectureBlueprintLab />}
     </div>
   );
 }
