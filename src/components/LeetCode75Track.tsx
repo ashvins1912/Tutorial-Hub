@@ -39,7 +39,7 @@ export function LeetCode75Track() {
       <div className="bg-slate-950 p-6 text-white sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3"><span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-300"><Target className="h-4 w-4" /> Interview preparation track</span><span className="rounded-full border border-white/20 px-3 py-1 text-xs">75 curated questions</span></div>
         <h1 className="mt-3 text-3xl font-bold sm:text-4xl">LeetCode 75</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">A focused practice path across 20 topic groups. Build pattern recognition, implement independently in Java, and record what you learned from each problem.</p>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">A focused practice path across 22 topic groups. Build pattern recognition, implement independently in Java, and record what you learned from each problem.</p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-white/15 bg-white/5 p-4"><div className="text-xs text-slate-400">Solved</div><div className="mt-1 text-2xl font-bold tabular-nums">{completed}<span className="text-sm text-slate-400"> / 75</span></div></div>
           <div className="rounded-xl border border-white/15 bg-white/5 p-4"><div className="text-xs text-slate-400">In progress</div><div className="mt-1 text-2xl font-bold tabular-nums">{inProgress}</div></div>
