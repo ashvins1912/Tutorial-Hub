@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronRight, Code2, Eye, GraduationCap, Search, Target } from 'lucide-react';
 import { SHARED_TOPIC_LESSONS, SHARED_TOPIC_PROBLEMS, type SharedProblem } from '../data/sharedTopicAcademy';
 
@@ -10,10 +10,18 @@ function readRecord<T,>(key: string, fallback: T): T {
 }
 type Mastery = Record<string, boolean>;
 type Solved = Record<string, boolean>;
+interface LeetCodeProblemDetails {
+  slug: string; questionId: string; title: string; difficulty: string;
+  contentHtml: string; exampleTestcases: string; hints: string[];
+  javaSnippet: string | null; topics: string[];
+}
 
 export function SharedTopicAcademy() {
   const [activeTopicId, setActiveTopicId] = useState(SHARED_TOPIC_LESSONS[0].id);
   const [activeProblem, setActiveProblem] = useState<SharedProblem | null>(null);
+  const [leetcodeDetails, setLeetcodeDetails] = useState<LeetCodeProblemDetails | null>(null);
+  const [leetcodeLoading, setLeetcodeLoading] = useState(false);
+  const [leetcodeError, setLeetcodeError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [source, setSource] = useState('All tracks');
   const [difficulty, setDifficulty] = useState('All');
@@ -24,6 +32,33 @@ export function SharedTopicAcademy() {
   const [identifiedSignals, setIdentifiedSignals] = useState<string[]>([]);
   const [mastery, setMastery] = useState<Mastery>(() => readRecord(PROGRESS_KEY, {}));
   const [solved, setSolved] = useState<Solved>(() => readRecord(SOLVED_KEY, {}));
+  useEffect(() => {
+    if (!activeProblem) {
+      setLeetcodeDetails(null);
+      setLeetcodeError(null);
+      setLeetcodeLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setLeetcodeDetails(null);
+    setLeetcodeError(null);
+    setLeetcodeLoading(true);
+    fetch(`/api/leetcode/problem/${encodeURIComponent(activeProblem.slug)}`, { signal: controller.signal })
+      .then(async response => {
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Could not load the LeetCode statement.');
+        return payload.problem as LeetCodeProblemDetails;
+      })
+      .then(details => setLeetcodeDetails(details))
+      .catch(error => {
+        if (error.name !== 'AbortError') setLeetcodeError(error.message || 'Could not load the LeetCode statement.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLeetcodeLoading(false);
+      });
+    return () => controller.abort();
+  }, [activeProblem?.slug]);
+
   const topic = SHARED_TOPIC_LESSONS.find(item => item.id === activeTopicId) ?? SHARED_TOPIC_LESSONS[0];
   const topicProblems = useMemo(() => SHARED_TOPIC_PROBLEMS.filter(problem => problem.topicId === topic.id), [topic.id]);
   const filteredProblems = topicProblems.filter(problem =>
@@ -104,6 +139,21 @@ export function SharedTopicAcademy() {
         </section>
         {activeProblem&&<section className="rounded-2xl border border-sky-200 bg-sky-50/50 p-5 dark:border-sky-900 dark:bg-sky-950/20">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-[10px] font-bold uppercase tracking-wide text-sky-700">Five-stage problem mastery lab · {activeProblem.source}</div><h3 className="mt-1 text-lg font-bold">#{activeProblem.number} {activeProblem.title}</h3><p className="mt-1 text-xs text-slate-500">A guided workflow attached to this exact problem. Complete each stage before moving to the next.</p></div><button type="button" onClick={()=>setActiveProblem(null)} className="text-xs text-slate-500 underline">Close lab</button></div>
+          <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><h4 className="text-sm font-bold">Problem statement, examples & constraints</h4><p className="mt-1 text-[11px] text-slate-500">Loaded for this exact problem from LeetCode's problem data.</p></div>
+              {leetcodeDetails && <span className="rounded-full bg-sky-50 px-2 py-1 text-[10px] font-semibold text-sky-700 dark:bg-sky-950 dark:text-sky-300">LeetCode #{leetcodeDetails.questionId} · {leetcodeDetails.difficulty}</span>}
+            </div>
+            {leetcodeLoading && <p className="mt-3 text-xs text-slate-500">Loading the official problem statement…</p>}
+            {leetcodeError && <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{leetcodeError} <a className="ml-1 font-semibold underline" href={`https://leetcode.com/problems/${activeProblem.slug}/`} target="_blank" rel="noreferrer">Open LeetCode ↗</a></div>}
+            {leetcodeDetails && <>
+              <div className="mt-3 flex flex-wrap gap-1">{leetcodeDetails.topics.map(tag=><span key={tag} className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{tag}</span>)}</div>
+              <iframe title={`${activeProblem.title} problem statement`} sandbox="" srcDoc={`<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:14px/1.65 system-ui,sans-serif;color:#334155;margin:0;padding:12px;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f9;padding:10px;border-radius:8px}code{font-family:ui-monospace,monospace}img{max-width:100%;height:auto}table{border-collapse:collapse;max-width:100%}td,th{border:1px solid #cbd5e1;padding:6px}a{color:#0284c7}</style></head><body>${leetcodeDetails.contentHtml}</body></html>`} className="mt-3 h-[440px] w-full rounded-lg border border-slate-200 bg-white dark:border-slate-700" />
+              {leetcodeDetails.exampleTestcases && <details className="mt-3"><summary className="cursor-pointer text-xs font-semibold">Raw example test cases</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-[11px] dark:bg-slate-800">{leetcodeDetails.exampleTestcases}</pre></details>}
+              {leetcodeDetails.javaSnippet && <details className="mt-3"><summary className="cursor-pointer text-xs font-semibold">LeetCode Java starter signature</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-3 text-[11px] text-sky-100">{leetcodeDetails.javaSnippet}</pre></details>}
+              {leetcodeDetails.hints.length > 0 && <details className="mt-3"><summary className="cursor-pointer text-xs font-semibold">LeetCode hints</summary><ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-slate-600 dark:text-slate-300">{leetcodeDetails.hints.map((hint,index)=><li key={index}>{hint}</li>)}</ol></details>}
+            </>}
+          </section>
           <nav aria-label="Problem mastery stages" className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">{[{id:1,label:'1. Understand'},{id:2,label:'2. Identify'},{id:3,label:'3. Build'},{id:4,label:'4. Optimise'},{id:5,label:'5. Company rubric'}].map(item=><button key={item.id} type="button" onClick={()=>setLabStage(item.id as 1|2|3|4|5)} className={`rounded-lg border px-2 py-2 text-[11px] font-semibold ${labStage===item.id?'border-sky-500 bg-sky-600 text-white':'border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>{item.label}</button>)}</nav>
           <div className="mt-4 rounded-xl bg-white p-4 dark:bg-slate-900">
             {labStage===1&&<div><h4 className="text-sm font-bold">Understand the problem</h4><p className="mt-2 text-xs text-slate-600 dark:text-slate-300">Before coding {activeProblem.title}, write down the input shape, expected output, constraints, duplicates, empty input and boundary cases. Identify what must be returned and whether order or in-place mutation matters.</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><div className="rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800"><strong>Source & category</strong><p className="mt-1 text-slate-500">{activeProblem.source} · {activeProblem.category}</p></div><div className="rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800"><strong>Difficulty</strong><p className="mt-1 text-slate-500">{activeProblem.difficulty}</p></div></div><p className="mt-3 text-xs text-slate-500">Learning prompt: explain the problem in one sentence without using the title's words.</p></div>}
