@@ -10,7 +10,15 @@ export function MatrixProblemBank() {
   const [group, setGroup] = useState<(typeof groups)[number]>('All');
   const [level, setLevel] = useState<(typeof levels)[number]>('All');
   const [expanded, setExpanded] = useState<string[]>(['m08', 'm12', 'm15', 'm17', 'm22', 'm27', 'm34']);
-  const [completed, setCompleted] = useState<string[]>(() => {\n    if (typeof window === 'undefined') return [];\n    try { return JSON.parse(window.localStorage.getItem('patternforge-matrix-problem-progress-v1') || '[]') as string[]; }\n    catch { return []; }\n  });\n  useEffect(() => {\n    try { window.localStorage.setItem('patternforge-matrix-problem-progress-v1', JSON.stringify(completed)); }\n    catch { /* keep in-memory progress if storage is unavailable */ }\n  }, [completed]);
+  const [completed, setCompleted] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(window.localStorage.getItem('patternforge-matrix-problem-progress-v1') || '[]') as string[]; }
+    catch { return []; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem('patternforge-matrix-problem-progress-v1', JSON.stringify(completed)); }
+    catch { /* keep in-memory progress if storage is unavailable */ }
+  }, [completed]);
   const filtered = useMemo(() => MATRIX_PROBLEMS.filter((problem) => {
     const matchesQuery = !query.trim() || [problem.title, problem.prompt, problem.approach, problem.group].join(' ').toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (group === 'All' || problem.group === group) && (level === 'All' || problem.level === level);
