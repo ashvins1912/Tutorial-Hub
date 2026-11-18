@@ -788,7 +788,10 @@ export function SystemDesignStudio() {
       )}
 
       {/* Mode 3: Probabilistic Data Structures Lab */}
-      {subTab === 'probabilistic' && <ProbabilisticLab />}\n\n      {/* Mode 4: Deep System Design Learning Academy */}\n      {subTab === 'academy' && <SystemDesignLearningAcademy />}
+      {subTab === 'probabilistic' && <ProbabilisticLab />}
+
+      {/* Mode 4: Deep System Design Learning Academy */}
+      {subTab === 'academy' && <SystemDesignLearningAcademy />}
     </div>
   );
 }
