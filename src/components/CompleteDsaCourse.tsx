@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, GraduationCap, Search } from 'lucide-react';
 import { DSA_COMPLETE_LESSONS, DSA_LESSON_STEPS, type DsaLesson } from '../data/dsaCompleteLessons';
 import { MatrixProblemBank } from './MatrixProblemBank';
+import { DpLearningLab } from './DpLearningLab';
 
 type SectionKey = 'concepts' | 'recognition' | 'method' | 'workedExample' | 'complexity' | 'pitfalls' | 'practice' | 'interviewChecks';
 
@@ -118,6 +119,7 @@ export function CompleteDsaCourse() {
           </section>;
         })}
 
+        {active.id === 'dynamic-programming' && <DpLearningLab />}
         {active.id === 'two-dimensional-arrays' && <MatrixProblemBank />}\n\n        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold">Your mastery checklist</h3><p className="mt-1 text-xs text-slate-500">Complete all eight steps through independent work, not by simply reading.</p></div><span className="text-sm font-bold tabular-nums">{progress[active.id]?.length ?? 0}/8</span></div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: ((progress[active.id]?.length ?? 0) / 8 * 100) + '%' }} /></div>
