@@ -49,7 +49,11 @@ export function DpLearningLab() {
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
   const visibleProblems = problems.filter((p) => filter === 'All' || p[0] === filter);
-  const toggle = (item: string) => setCompleted((old) => {\n    const next = old.includes(item) ? old.filter((x) => x !== item) : [...old, item];\n    try { window.localStorage.setItem('patternforge-dp-practice-v1', JSON.stringify(next)); } catch { /* keep session progress */ }\n    return next;\n  });
+  const toggle = (item: string) => setCompleted((old) => {
+    const next = old.includes(item) ? old.filter((x) => x !== item) : [...old, item];
+    try { window.localStorage.setItem('patternforge-dp-practice-v1', JSON.stringify(next)); } catch { /* keep session progress */ }
+    return next;
+  });
   return <section className="space-y-5">
     <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 text-white sm:p-8">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-300"><Lightbulb className="h-4 w-4" /> Interactive DP learning path</div>
