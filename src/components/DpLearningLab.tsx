@@ -41,7 +41,9 @@ export function DpLearningLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [stair, setStair] = useState(6);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [completed, setCompleted] = useState<string[]>(() => {\n    try { return JSON.parse(window.localStorage.getItem('patternforge-dp-practice-v1') || '[]') as string[]; } catch { return []; }\n  });
+  const [completed, setCompleted] = useState<string[]>(() => {
+    try { return JSON.parse(window.localStorage.getItem('patternforge-dp-practice-v1') || '[]') as string[]; } catch { return []; }
+  });
   const [filter, setFilter] = useState('All');
   const lesson = lessons[lessonIndex];
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
