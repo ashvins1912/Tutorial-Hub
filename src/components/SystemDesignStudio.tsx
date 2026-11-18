@@ -358,7 +358,7 @@ function ProbabilisticLab() {
 }
 
 export function SystemDesignStudio() {
-  const [subTab, setSubTab] = useState<'builder' | 'animations' | 'probabilistic'>('builder');
+  const [subTab, setSubTab] = useState<'builder' | 'animations' | 'probabilistic' | 'academy'>('academy');
   const [scenarioId, setScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
 
   const scenario = SYSTEM_SCENARIOS.find((s) => s.id === scenarioId) ?? SYSTEM_SCENARIOS[0];
@@ -451,7 +451,7 @@ export function SystemDesignStudio() {
             [
               { id: 'builder', label: 'Drag & Drop System Builder' },
               { id: 'animations', label: 'Existing System Animations' },
-              { id: 'probabilistic', label: 'Probabilistic Data Structures' },
+              { id: 'probabilistic', label: 'Probabilistic Data Structures' },\n              { id: 'academy', label: 'Deep Learning Academy' },
             ] as const
           ).map((tab) => (
             <button
@@ -470,7 +470,7 @@ export function SystemDesignStudio() {
         </div>
       </div>
 
-      {subTab !== 'probabilistic' && (
+      {subTab !== 'probabilistic' && subTab !== 'academy' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SYSTEM_SCENARIOS.map((sc) => (
             <button
@@ -786,7 +786,7 @@ export function SystemDesignStudio() {
       )}
 
       {/* Mode 3: Probabilistic Data Structures Lab */}
-      {subTab === 'probabilistic' && <ProbabilisticLab />}
+      {subTab === 'probabilistic' && <ProbabilisticLab />}\n\n      {/* Mode 4: Deep System Design Learning Academy */}\n      {subTab === 'academy' && <SystemDesignLearningAcademy />}
     </div>
   );
 }
