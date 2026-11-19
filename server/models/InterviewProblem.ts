@@ -8,6 +8,7 @@ export interface IInterviewProblem extends Document {
   topic: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   aliases: string[];
+  relatedTitles: string[];
   catalogStatus: 'inventory' | 'authored' | 'review';
   contentStatus: 'needs-authoring' | 'in-progress' | 'validated';
   statement?: string;
@@ -33,6 +34,7 @@ const InterviewProblemSchema = new Schema<IInterviewProblem>({
   topic: { type: String, required: true },
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Medium' },
   aliases: { type: [String], default: [] },
+  relatedTitles: { type: [String], default: [] },
   catalogStatus: { type: String, enum: ['inventory', 'authored', 'review'], default: 'inventory' },
   contentStatus: { type: String, enum: ['needs-authoring', 'in-progress', 'validated'], default: 'needs-authoring' },
   statement: String,
