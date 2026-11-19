@@ -55,7 +55,8 @@ export async function resolveAndUpsertProblem(input:ProblemInput) {
     return {action:'review' as const,confidence:best.confidence,candidates:ranked.slice(0,5),message:'Potential duplicate; no record was changed. Confirm the match or submit as a distinct problem.'};
   }
   if(shouldUpdate) {
-    const update:any={...input,normalizedTitle,catalogStatus:input.contentStatus==='validated'?'authored':'inventory',matchReview:{status:'clear',confidence:best.confidence,matchedSlug:best.slug,reason:best.method}};
+    const update:any={...input,normalizedTitle,matchReview:{status:'clear',confidence:best.confidence,matchedSlug:best.slug,reason:best.method}};
+    if(input.contentStatus)update.catalogStatus=input.contentStatus==='validated'?'authored':'inventory';
     delete update.slug;
     delete update.aliases;
     const updated=await InterviewProblem.findOneAndUpdate({slug:best.slug},{$set:update,$addToSet:{aliases:{$each:input.aliases??[]}}},{new:true,runValidators:true});
