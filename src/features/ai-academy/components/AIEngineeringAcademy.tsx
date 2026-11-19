@@ -1,21 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, Code2, Compass, GraduationCap, Lightbulb, ListChecks, Play, RotateCcw, Search, Target } from 'lucide-react';
 import { AI_ENGINEERING_CURRICULUM, getAcademyCounts, type AcademyLesson } from '../data/aiEngineeringCurriculum';
+import { apiFetch } from '../../../lib/apiFetch';
 
 type Tab = 'learn' | 'visual' | 'code' | 'quiz' | 'project';
-const STORAGE_KEY = 'tutorial-hub-ai-academy-progress-v1';
+type ProgressState = { completed: string[]; quizCorrect: string[] };
 
-function readProgress(): { completed: string[]; quizCorrect: string[] } {
-  if (typeof window === 'undefined') return { completed: [], quizCorrect: [] };
-  try {
-    const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}');
-    return { completed: Array.isArray(value.completed) ? value.completed : [], quizCorrect: Array.isArray(value.quizCorrect) ? value.quizCorrect : [] };
-  } catch { return { completed: [], quizCorrect: [] }; }
+function emptyProgress(): ProgressState {
+  return { completed: [], quizCorrect: [] };
 }
 
 export function AIEngineeringAcademy() {
   const counts = getAcademyCounts();
-  const [progress, setProgress] = useState(readProgress);
+  const [progress, setProgress] = useState<ProgressState>(emptyProgress);
+  const [progressStatus, setProgressStatus] = useState('Loading account progress…');
+  const [quizResult, setQuizResult] = useState<boolean | null>(null);
   const [phaseId, setPhaseId] = useState(AI_ENGINEERING_CURRICULUM[0].id);
   const [lessonId, setLessonId] = useState(AI_ENGINEERING_CURRICULUM[0].modules[0].lessons[0].id);
   const [tab, setTab] = useState<Tab>('learn');
@@ -26,7 +25,29 @@ export function AIEngineeringAcademy() {
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); }, [progress]);
+  useEffect(() => {
+    let active = true;
+    const loadProgress = async () => {
+      try {
+        const response = await apiFetch('/api/ai-academy/progress');
+        if (!response.ok) {
+          if (active) setProgressStatus(response.status === 401 ? 'Sign in to sync your AI Academy progress across devices.' : response.status === 503 ? 'Account progress storage is unavailable. Your progress has not been saved.' : 'Could not load account progress.');
+          return;
+        }
+        const payload = await response.json();
+        if (!active) return;
+        setProgress({
+          completed: Array.isArray(payload.progress?.completed) ? payload.progress.completed : [],
+          quizCorrect: Array.isArray(payload.progress?.quizPassed) ? payload.progress.quizPassed : [],
+        });
+        setProgressStatus('Progress synced to your account.');
+      } catch {
+        if (active) setProgressStatus('Unable to reach progress service. Sign in and retry when the service is available.');
+      }
+    };
+    void loadProgress();
+    return () => { active = false; };
+  }, []);
 
   const phase = AI_ENGINEERING_CURRICULUM.find((item) => item.id === phaseId) ?? AI_ENGINEERING_CURRICULUM[0];
   const allLessons = AI_ENGINEERING_CURRICULUM.flatMap((p) => p.modules.flatMap((m) => m.lessons));
@@ -44,12 +65,39 @@ export function AIEngineeringAcademy() {
     setActiveStep(0);
     setAnswer(null);
     setSubmitted(false);
+    setQuizResult(null);
   };
-  const markComplete = () => setProgress((old) => ({ ...old, completed: old.completed.includes(lesson.id) ? old.completed : [...old.completed, lesson.id] }));
-  const submitQuiz = () => {
-    if (answer === null) return;
-    setSubmitted(true);
-    if (answer === lesson.question.answer) setProgress((old) => ({ ...old, quizCorrect: old.quizCorrect.includes(lesson.id) ? old.quizCorrect : [...old.quizCorrect, lesson.id] }));
+  const markComplete = async () => {
+    if (progress.completed.includes(lesson.id)) return;
+    try {
+      const response = await apiFetch('/api/ai-academy/progress/' + encodeURIComponent(lesson.id), {
+        method: 'PUT', body: JSON.stringify({ action: 'complete' }),
+      });
+      if (!response.ok) {
+        setProgressStatus(response.status === 401 ? 'Sign in to save lesson completion to your account.' : 'Could not save completion. Please retry.');
+        return;
+      }
+      setProgress((old) => ({ ...old, completed: old.completed.includes(lesson.id) ? old.completed : [...old.completed, lesson.id] }));
+      setProgressStatus('Lesson completion saved to your account.');
+    } catch { setProgressStatus('Progress service unavailable. Completion was not saved.'); }
+  };
+  const submitQuiz = async () => {
+    if (answer === null || submitted) return;
+    try {
+      const response = await apiFetch('/api/ai-academy/progress/' + encodeURIComponent(lesson.id), {
+        method: 'PUT', body: JSON.stringify({ action: 'quiz', answer }),
+      });
+      if (!response.ok) {
+        setProgressStatus(response.status === 401 ? 'Sign in to save quiz mastery to your account.' : 'Could not submit quiz. Please retry.');
+        return;
+      }
+      const payload = await response.json();
+      const correct = payload.grading?.correct === true;
+      setQuizResult(correct);
+      setSubmitted(true);
+      if (payload.grading?.passed) setProgress((old) => ({ ...old, quizCorrect: old.quizCorrect.includes(lesson.id) ? old.quizCorrect : [...old.quizCorrect, lesson.id] }));
+      setProgressStatus(correct ? 'Quiz result verified and saved to your account.' : 'Quiz attempt saved. Review the explanation and try again.');
+    } catch { setProgressStatus('Quiz service unavailable. Your answer was not saved.'); }
   };
   const tabs: { id: Tab; label: string; icon: typeof BookOpen }[] = [
     { id: 'learn', label: 'Understand', icon: BookOpen }, { id: 'visual', label: 'Visual flow', icon: Compass },
@@ -72,6 +120,7 @@ export function AIEngineeringAcademy() {
               <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-3 col-span-2 sm:col-span-1"><div className="text-xl font-bold">{counts.lessons}</div><div className="text-[11px] text-slate-500">Detailed lessons</div></div>
             </div>
           </div>
+          <div className="mt-3 text-xs text-slate-500" role="status">{progressStatus}</div>
           <div className="mt-5 rounded-xl bg-slate-100 dark:bg-slate-800 p-3">
             <div className="flex justify-between text-xs font-semibold mb-2"><span>Learning progress</span><span>{progress.completed.length}/{total} lessons · {completion}%</span></div>
             <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"><div className="h-full bg-sky-600 rounded-full transition-all" style={{ width: `${completion}%` }}/></div>
@@ -140,11 +189,11 @@ export function AIEngineeringAcademy() {
 
               {tab === 'code' && <div className="mt-5 space-y-3"><div className="flex items-center justify-between gap-2"><div><h3 className="font-bold text-sm">Implementation example</h3><p className="text-xs text-slate-500 mt-1">Read, run and modify this in a Python notebook. The academy does not execute untrusted code in the browser.</p></div><button type="button" onClick={() => { void navigator.clipboard?.writeText(lesson.code).then(() => setCopied(true)).catch(() => setCopied(false)); }} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-semibold">{copied ? 'Copied' : 'Copy code'}</button></div><pre className="overflow-x-auto rounded-xl bg-slate-950 text-slate-100 p-4 text-xs leading-6"><code>{lesson.code}</code></pre><div className="rounded-lg bg-slate-100 dark:bg-slate-800 p-3 text-xs text-slate-600 dark:text-slate-300">Suggested free environment: Google Colab or Kaggle Notebooks. Install only the libraries used in the lesson.</div></div>}
 
-              {tab === 'quiz' && <div className="mt-5 max-w-3xl space-y-4"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300"><ListChecks className="w-4 h-4"/> Check your reasoning</div><h3 className="text-base font-semibold leading-7">{lesson.question.prompt}</h3><div className="space-y-2">{lesson.question.options.map((option,index) => <button key={option} type="button" disabled={submitted} onClick={() => setAnswer(index)} className={`w-full text-left rounded-lg border p-3 text-sm ${submitted && index === lesson.question.answer ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : answer === index ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}>{String.fromCharCode(65+index)}. {option}</button>)}</div><button type="button" disabled={answer===null || submitted} onClick={submitQuiz} className="rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 px-4 py-2.5 text-xs font-bold disabled:opacity-40">Submit answer</button>{submitted && <div className={`rounded-xl p-4 text-sm leading-6 ${answer === lesson.question.answer ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}><div className="font-bold mb-1">{answer === lesson.question.answer ? 'Correct — good reasoning.' : 'Not quite. Review the explanation.'}</div>{lesson.question.explanation}</div>}</div>}
+              {tab === 'quiz' && <div className="mt-5 max-w-3xl space-y-4"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300"><ListChecks className="w-4 h-4"/> Check your reasoning</div><h3 className="text-base font-semibold leading-7">{lesson.question.prompt}</h3><div className="space-y-2">{lesson.question.options.map((option,index) => <button key={option} type="button" disabled={submitted} onClick={() => setAnswer(index)} className={`w-full text-left rounded-lg border p-3 text-sm ${submitted && index === lesson.question.answer ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : answer === index ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}>{String.fromCharCode(65+index)}. {option}</button>)}</div><button type="button" disabled={answer===null || submitted} onClick={submitQuiz} className="rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 px-4 py-2.5 text-xs font-bold disabled:opacity-40">Submit answer</button>{submitted && <div className={`rounded-xl p-4 text-sm leading-6 ${quizResult ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}><div className="font-bold mb-1">{quizResult ? 'Correct — verified by the server.' : 'Not quite. Review the explanation.'}</div>{lesson.question.explanation}</div>}</div>}
 
               {tab === 'project' && <div className="mt-5 space-y-4"><div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/20 p-4"><div className="text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300 mb-2">Practical task</div><p className="text-sm leading-7">{lesson.project}</p></div><div><h3 className="font-bold text-sm mb-2">Definition of done</h3><ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300"><li>□ I can explain the approach without reading the lesson.</li><li>□ I can implement the core steps and test normal and edge cases.</li><li>□ I can describe at least one failure mode and how I would detect it.</li><li>□ I can explain when I would choose a different approach.</li></ul></div><button type="button" onClick={markComplete} className="rounded-lg bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold">Mark lesson complete</button></div>}
             </section>
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><span>Quiz mastery: {progress.quizCorrect.includes(lesson.id) ? 'Passed' : 'Not passed yet'} · Lesson progress is saved in this browser.</span><button type="button" onClick={() => { setAnswer(null); setSubmitted(false); setActiveStep(0); setTab('learn'); setCopied(false); }} className="inline-flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white"><RotateCcw className="w-3.5 h-3.5"/> Reset lesson view</button></div>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500"><span>Quiz mastery: {progress.quizCorrect.includes(lesson.id) ? 'Passed' : 'Not passed yet'} · Lesson progress is saved in this browser.</span><button type="button" onClick={() => { setAnswer(null); setSubmitted(false); setQuizResult(null); setActiveStep(0); setTab('learn'); setCopied(false); }} className="inline-flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white"><RotateCcw className="w-3.5 h-3.5"/> Reset lesson view</button></div>
           </main>
         </div>
       </div>
