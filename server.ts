@@ -17,6 +17,7 @@ import { seedVerifiedProblemBatches } from './server/db/seedVerifiedProblemBatch
 import authRoutes from './server/routes/authRoutes';
 import userStateRoutes from './server/routes/userStateRoutes';
 import profileRoutes from './server/routes/profileRoutes';
+import communityRoutes from './server/routes/communityRoutes';
 import learningProgressRoutes from './server/routes/learningProgressRoutes';
 import codeExecutionRoutes from './server/routes/codeExecutionRoutes';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
@@ -39,6 +40,7 @@ async function startServer() {
   app.use('/api/auth', authRoutes);
   app.use('/api/user-state', userStateRoutes);
   app.use('/api/profile', profileRoutes);
+  app.use('/api/community', communityRoutes);
   app.use('/api/learning-progress', learningProgressRoutes);
   app.use('/api/code-execution', codeExecutionRoutes);
 
