@@ -17,6 +17,17 @@ function requireContentAuthor(req: Request, res: Response, next: express.NextFun
   return next();
 }
 
+export function sanitizePublishedLesson(lesson: Record<string, any>) {
+  return {
+    ...lesson,
+    quiz: Array.isArray(lesson.quiz) ? lesson.quiz.map((question: any) => ({
+      question: question.question,
+      options: question.options,
+      explanation: question.explanation,
+    })) : [],
+  };
+}
+
 const templates: Record<string, { fileName: string; mimeType: string; content: string }> = {
   'universal-json': { fileName: 'tutorial-hub-universal-content.json', mimeType: 'application/json', content: JSON.stringify({ schemaVersion: '1.0', content: { title: 'Your topic title', domain: 'GENERAL', type: 'tutorial', level: 'beginner', description: 'Explain the topic and its learning value.', learningObjectives: ['Understand the core concept'], prerequisites: [], topics: [], concepts: [], sourceReferences: [], examples: [], implementations: [], authorNotes: '' } }, null, 2) },
   markdown: { fileName: 'tutorial-hub-learning-topic.md', mimeType: 'text/markdown', content: '# Topic Title\n\n## Domain and Level\n- Domain: GENERAL\n- Type: tutorial\n- Level: beginner\n\n## Learning Objectives\n- Understand the core concept\n\n## Prerequisites\n- None\n\n## Core Explanation\n\n## Reasoning and Intuition\n\n## Worked Examples\n\n## Implementation / Practical Walkthrough\n\n## Visualization Requirements\n- Flowchart:\n- Diagram:\n- Animation:\n\n## Practice Questions\n\n## Quiz\n\n## Sources and References\n' },
@@ -193,15 +204,7 @@ router.get('/published/:id', requireAuth, async (req: Request, res: Response) =>
     .select('generatedLesson publishedAt fileName')
     .lean();
   if (!job?.generatedLesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
-  const publishedLesson = {
-    ...job.generatedLesson,
-    quiz: Array.isArray(job.generatedLesson.quiz) ? job.generatedLesson.quiz.map((question: any) => ({
-      question: question.question,
-      options: question.options,
-      explanation: question.explanation,
-    })) : [],
-  };
-  return res.json({ lesson: publishedLesson, publishedAt: job.publishedAt, fileName: job.fileName });
+  return res.json({ lesson: sanitizePublishedLesson(job.generatedLesson), publishedAt: job.publishedAt, fileName: job.fileName });
 });
 
 export default router;
