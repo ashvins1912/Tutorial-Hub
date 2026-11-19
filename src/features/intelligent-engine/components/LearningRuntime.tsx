@@ -77,6 +77,10 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
 
   useEffect(() => {
     let active = true;
+    setProgressReady(false);
+    setProgressStatus('Loading saved progress…');
+    setAlgorithm('binary-search'); setRawValues('2, 5, 8, 12, 16, 23, 38'); setTarget('16'); setTraceIndex(0);
+    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
         if (!response.ok) throw new Error(response.status === 503 ? 'Database persistence is unavailable.' : 'Could not load saved progress.');
@@ -119,7 +123,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
   }, 0);
   const accuracy = quiz.length ? Math.round((score / quiz.length) * 100) : 0;
   const nextLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
-  const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))];
+  const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };
   useEffect(() => { if (trace.length && traceIndex >= trace.length) setTraceIndex(trace.length - 1); }, [trace.length, traceIndex]);
   useEffect(() => {
     if (!progressReady) return;
