@@ -8,10 +8,7 @@ import {
   SprintTask,
 } from '../types/dsa';
 import { BIG_TECH_36_PROBLEMS } from '../../server/seed/bigTechTopicSeed';
-import {
-  computeSprintMetrics,
-  generate14DaySprint,
-} from '../../server/services/sprintGeneratorService';
+import { computeSprintMetrics } from '../../server/services/sprintGeneratorService';
 
 const SPRINT_STORAGE_KEY = 'patternforge_active_sprint_v1';
 const MASTERED_STORAGE_KEY = 'patternforge_bigtech_mastered_v1';
@@ -118,8 +115,8 @@ interface SprintState {
 }
 
 export const useSprintStore = create<SprintState>((set, get) => ({
-  activeSprint: typeof window !== 'undefined' ? loadSavedSprint() : null,
-  selectedDayNumber: typeof window !== 'undefined' ? loadSavedSprint()?.currentDay ?? 1 : 1,
+  activeSprint: null,
+  selectedDayNumber: 1,
   configuratorOpen: false,
   isCreatingSprint: false,
 
@@ -181,9 +178,9 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   closeMock45: () => set({ mock45Open: false, mock45DayNumber: null }),
   clearSprintBanner: () => set({ sprintBannerMessage: null }),
 
-  fetchActiveSprint: async (userId = 'learner-default') => {
+  fetchActiveSprint: async () => {
     try {
-      const res = await apiFetch(`/api/sprints/active/${encodeURIComponent(userId)}`);
+      const res = await apiFetch('/api/sprints/active');
       if (res.ok) {
         const data = await res.json();
         if (data.sprint) {
@@ -194,13 +191,18 @@ export const useSprintStore = create<SprintState>((set, get) => ({
           });
           return;
         }
+        saveSprintLocal(null);
+        set({ activeSprint: null, selectedDayNumber: 1 });
+      } else {
+        const payload = await res.json().catch(() => ({}));
+        set({ sprintBannerMessage: payload.message || payload.error || 'Unable to load your sprint. Please retry.' });
       }
     } catch {
-      // fallback to localStorage sprint
+      set({ sprintBannerMessage: 'Unable to reach the learning API. Your sprint was not changed.' });
     }
   },
 
-  createSprint: async (targetCompany, dailyMinutesBudget, userId = 'learner-default') => {
+  createSprint: async (targetCompany, dailyMinutesBudget) => {
     set({ isCreatingSprint: true });
     let created: CompanySprint | null = null;
 
@@ -208,18 +210,21 @@ export const useSprintStore = create<SprintState>((set, get) => ({
       const res = await apiFetch('/api/sprints/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, targetCompany, dailyMinutesBudget }),
+        body: JSON.stringify({ targetCompany, dailyMinutesBudget }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        created = data.sprint;
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || payload.error || 'Sprint creation failed.');
       }
-    } catch {
-      // fallback local generator
-    }
-
-    if (!created) {
-      created = generate14DaySprint(userId, targetCompany, dailyMinutesBudget);
+      const data = await res.json();
+      created = data.sprint;
+      if (!created) throw new Error('The API did not return a created sprint.');
+    } catch (error) {
+      set({
+        isCreatingSprint: false,
+        sprintBannerMessage: error instanceof Error ? error.message : 'Unable to create sprint. Please retry.',
+      });
+      return;
     }
 
     saveSprintLocal(created);
@@ -247,47 +252,20 @@ export const useSprintStore = create<SprintState>((set, get) => ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dayNumber, taskId, scoreEarned }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        updatedSprint = data.sprint;
-        unlockedNextDay = Boolean(data.unlockedNextDay);
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || payload.error || 'Unable to save sprint progress.');
       }
-    } catch {
-      // fallback local update
+      const data = await res.json();
+      updatedSprint = data.sprint;
+      unlockedNextDay = Boolean(data.unlockedNextDay);
+      if (!updatedSprint) throw new Error('The API did not return the updated sprint.');
+    } catch (error) {
+      set({ sprintBannerMessage: error instanceof Error ? error.message : 'Unable to save sprint progress.' });
+      return { unlockedNextDay: false };
     }
 
-    if (!updatedSprint) {
-      const cloned: CompanySprint = {
-        ...sprint,
-        dailySchedule: sprint.dailySchedule.map((day) => ({
-          ...day,
-          tasks: day.tasks.map((t) => ({ ...t })),
-        })),
-      };
-      const dayObj = cloned.dailySchedule.find((d) => d.dayNumber === dayNumber);
-      if (dayObj) {
-        const task = dayObj.tasks.find((t) => t.taskId === taskId);
-        if (task) {
-          task.isCompleted = true;
-          task.scoreEarned = Math.max(task.scoreEarned, scoreEarned);
-        }
-        const allDone = dayObj.tasks.every((t) => t.isCompleted);
-        if (allDone && dayNumber < 14) {
-          const nextDay = cloned.dailySchedule.find((d) => d.dayNumber === dayNumber + 1);
-          if (nextDay && !nextDay.isUnlocked) {
-            nextDay.isUnlocked = true;
-            unlockedNextDay = true;
-          }
-          if (cloned.currentDay < dayNumber + 1) {
-            cloned.currentDay = dayNumber + 1;
-          }
-        }
-      }
-      const metrics = computeSprintMetrics(cloned);
-      cloned.completionPct = metrics.completionPct;
-      cloned.readinessScore = metrics.readinessScore;
-      updatedSprint = cloned;
-    }
+
 
     saveSprintLocal(updatedSprint);
     set({
