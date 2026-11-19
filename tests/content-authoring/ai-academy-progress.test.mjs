@@ -11,7 +11,13 @@ test('AI Academy progress is uniquely scoped to authenticated user and lesson', 
   assert.ok(indexes.some(([keys, options]) => keys.userId === 1 && keys.lessonId === 1 && options.unique === true));
 });
 
-test('AI Academy progress rate limit is atomic per user and minute with TTL cleanup', () => {\n  const indexes = AIAcademyRateLimit.schema.indexes();\n  assert.ok(indexes.some(([keys, options]) => keys.userId === 1 && keys.windowStart === 1 && options.unique === true));\n  assert.ok(indexes.some(([keys, options]) => keys.expiresAt === 1 && options.expireAfterSeconds === 0));\n});\n\ntest('AI Academy progress has server-owned completion and quiz fields', () => {
+test('AI Academy progress rate limit is atomic per user and minute with TTL cleanup', () => {
+  const indexes = AIAcademyRateLimit.schema.indexes();
+  assert.ok(indexes.some(([keys, options]) => keys.userId === 1 && keys.windowStart === 1 && options.unique === true));
+  assert.ok(indexes.some(([keys, options]) => keys.expiresAt === 1 && options.expireAfterSeconds === 0));
+});
+
+test('AI Academy progress has server-owned completion and quiz fields', () => {
   assert.equal(AIAcademyProgress.schema.path('completed').instance, 'Boolean');
   assert.equal(AIAcademyProgress.schema.path('quizPassed').instance, 'Boolean');
   assert.equal(AIAcademyProgress.schema.path('quizAttempts').options.min, 0);
