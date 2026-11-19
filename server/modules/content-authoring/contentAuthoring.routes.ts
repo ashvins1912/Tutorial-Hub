@@ -5,6 +5,7 @@ import { isMongoConnected } from '../../db/connectMongo';
 import { ContentAuthoringJob } from './ContentAuthoringJob';
 import { analyzeContent, normalizeUpload } from './contentAuthoring.service';
 import type { LearningSection } from './contentAuthoring.types';
+import { generateLearningDraft } from './generation/contentGeneration.service';
 
 const router = express.Router();
 const authorIds = new Set((process.env.CONTENT_AUTHOR_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean));
@@ -59,6 +60,60 @@ router.get('/jobs', requireAuth, requireContentAuthor, async (req: Request, res:
   if (!isMongoConnected()) return res.status(503).json({ error: 'MongoDB is unavailable.' });
   const jobs = await ContentAuthoringJob.find({ ownerId: req.authUser!.id }).select('-sourceText -draft.sourceText').sort({ createdAt: -1 }).limit(50).lean();
   return res.json({ jobs });
+});
+
+router.post('/jobs/:id/generate', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
+  if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'MongoDB is unavailable.' });
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Authoring job not found.' });
+  const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id }).select('+sourceText');
+  if (!job?.draft || !job.analysis) return res.status(404).json({ error: 'Authoring draft not found.' });
+  if (job.generation?.status === 'generating') return res.status(409).json({ code: 'GENERATION_IN_PROGRESS', message: 'This draft is already being generated.' });
+  if (job.sourceText.length > 60_000) return res.status(413).json({ code: 'SOURCE_TOO_LARGE_FOR_GENERATION', message: 'The source exceeds the AI generation context limit. Split it into smaller topic files.' });
+  job.generation = { status: 'generating' };
+  job.error = undefined;
+  job.markModified('generation');
+  await job.save();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90_000);
+  try {
+    const result = await generateLearningDraft({ draft: job.draft, analysis: job.analysis, signal: controller.signal });
+    job.generatedLesson = result.lesson;
+    job.generation = result.metadata;
+    job.error = undefined;
+    job.markModified('generatedLesson');
+    job.markModified('generation');
+    await job.save();
+    return res.status(200).json({
+      job: {
+        id: job.id,
+        status: job.status,
+        generation: job.generation,
+        generatedLesson: job.generatedLesson,
+        warnings: result.warnings,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'CONTENT_GENERATION_FAILED';
+    const code = message === 'CONTENT_AI_NOT_CONFIGURED' ? 'CONTENT_AI_NOT_CONFIGURED'
+      : message === 'CONTENT_AI_PROVIDER_UNSUPPORTED' ? 'CONTENT_AI_PROVIDER_UNSUPPORTED'
+      : message.startsWith('CONTENT_AI_PROVIDER_ERROR:') ? 'CONTENT_AI_PROVIDER_ERROR'
+      : message === 'MODEL_OUTPUT_EMPTY' || message === 'MODEL_OUTPUT_NOT_OBJECT' ? 'MODEL_OUTPUT_INVALID'
+      : message.startsWith('GENERATED_') ? 'GENERATED_CONTENT_INVALID'
+      : controller.signal.aborted ? 'CONTENT_AI_TIMEOUT' : 'CONTENT_GENERATION_FAILED';
+    job.generation = { status: 'failed', errorCode: code };
+    job.error = code;
+    job.markModified('generation');
+    await job.save();
+    const status = code === 'CONTENT_AI_NOT_CONFIGURED' ? 503 : code === 'CONTENT_AI_PROVIDER_UNSUPPORTED' ? 503
+      : code === 'CONTENT_AI_TIMEOUT' ? 504 : code === 'CONTENT_AI_PROVIDER_ERROR' ? 502 : 422;
+    return res.status(status).json({ code, message: code === 'CONTENT_AI_NOT_CONFIGURED'
+      ? 'Configure a server-side AI provider before generating lessons.'
+      : code === 'CONTENT_AI_TIMEOUT' ? 'The AI provider took too long. Try a smaller source or retry.'
+      : code === 'CONTENT_AI_PROVIDER_ERROR' ? 'The configured AI provider returned an error.'
+      : 'The generated response did not pass the lesson structure checks. Review the source and retry.' });
+  } finally {
+    clearTimeout(timeout);
+  }
 });
 
 router.get('/jobs/:id', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
