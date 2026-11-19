@@ -8,45 +8,6 @@ import {
   SprintTask,
 } from '../types/dsa';
 import { BIG_TECH_36_PROBLEMS } from '../../server/seed/bigTechTopicSeed';
-import { computeSprintMetrics } from '../../server/services/sprintGeneratorService';
-
-const SPRINT_STORAGE_KEY = 'patternforge_active_sprint_v1';
-const MASTERED_STORAGE_KEY = 'patternforge_bigtech_mastered_v1';
-
-function loadSavedSprint(): CompanySprint | null {
-  try {
-    const raw = localStorage.getItem(SPRINT_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as CompanySprint) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSprintLocal(sprint: CompanySprint | null) {
-  try {
-    if (sprint) localStorage.setItem(SPRINT_STORAGE_KEY, JSON.stringify(sprint));
-    else localStorage.removeItem(SPRINT_STORAGE_KEY);
-  } catch {
-    // ignore storage quota
-  }
-}
-
-function loadMasteredSlugs(): string[] {
-  try {
-    const raw = localStorage.getItem(MASTERED_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveMasteredSlugs(slugs: string[]) {
-  try {
-    localStorage.setItem(MASTERED_STORAGE_KEY, JSON.stringify(slugs));
-  } catch {
-    // ignore
-  }
-}
 
 export interface ActiveSprintTaskContext {
   sprintId: string;
@@ -94,6 +55,7 @@ interface SprintState {
   openTrainerForProblem: (slug: string, sprintCtx?: ActiveSprintTaskContext | null) => void;
   closeTrainer: () => void;
   submitRubricResult: (result: RubricResult) => Promise<void>;
+  fetchMasteredSlugs: () => Promise<void>;
   clearRubricResult: () => void;
   openMock45ForDay: (dayNumber: number) => void;
   closeMock45: () => void;
@@ -104,8 +66,7 @@ interface SprintState {
   fetchActiveSprint: () => Promise<void>;
   createSprint: (
     targetCompany: BigTechCompany,
-    dailyMinutesBudget: 60 | 120,
-    userId?: string
+    dailyMinutesBudget: 60 | 120
   ) => Promise<void>;
   completeSprintTask: (
     dayNumber: number,
@@ -126,7 +87,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   selectedDifficultyFilter: 'All',
   activeTrainerSlug: null,
   activeRubricResult: null,
-  masteredSlugs: typeof window !== 'undefined' ? loadMasteredSlugs() : [],
+  masteredSlugs: [],
   activeSprintTaskContext: null,
   mock45Open: false,
   mock45DayNumber: null,
@@ -154,22 +115,32 @@ export const useSprintStore = create<SprintState>((set, get) => ({
 
   submitRubricResult: async (result) => {
     const state = get();
-    const updatedMastered = state.masteredSlugs.includes(result.problemSlug)
-      ? state.masteredSlugs
-      : [...state.masteredSlugs, result.problemSlug];
-    saveMasteredSlugs(updatedMastered);
-
-    set({
-      masteredSlugs: updatedMastered,
-      activeRubricResult: result,
-    });
-
-    if (state.activeSprintTaskContext) {
-      await get().completeSprintTask(
-        state.activeSprintTaskContext.dayNumber,
-        state.activeSprintTaskContext.taskId,
-        result.overallScore
-      );
+    try {
+      const response = await apiFetch('/api/cognitive/mastered-problems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemSlug: result.problemSlug }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.message || payload.error || 'Unable to save problem mastery.');
+      }
+      set({
+        masteredSlugs: payload.masteredProblemSlugs ?? [],
+        activeRubricResult: result,
+        sprintBannerMessage: null,
+      });
+      if (state.activeSprintTaskContext) {
+        await get().completeSprintTask(
+          state.activeSprintTaskContext.dayNumber,
+          state.activeSprintTaskContext.taskId,
+          result.overallScore
+        );
+      }
+    } catch (error) {
+      set({
+        sprintBannerMessage: error instanceof Error ? error.message : 'Unable to save problem mastery.',
+      });
     }
   },
 
@@ -190,20 +161,29 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     sprintBannerMessage: null,
   }),
 
+  fetchMasteredSlugs: async () => {
+    try {
+      const response = await apiFetch('/api/cognitive/mastered-problems');
+      if (!response.ok) throw new Error('Unable to load saved problem mastery.');
+      const payload = await response.json();
+      set({ masteredSlugs: payload.masteredProblemSlugs ?? [] });
+    } catch (error) {
+      set({ sprintBannerMessage: error instanceof Error ? error.message : 'Unable to load saved problem mastery.' });
+    }
+  },
+
   fetchActiveSprint: async () => {
     try {
       const res = await apiFetch('/api/sprints/active');
       if (res.ok) {
         const data = await res.json();
         if (data.sprint) {
-          saveSprintLocal(data.sprint);
           set({
             activeSprint: data.sprint,
             selectedDayNumber: data.sprint.currentDay,
           });
           return;
         }
-        saveSprintLocal(null);
         set({ activeSprint: null, selectedDayNumber: 1 });
       } else {
         const payload = await res.json().catch(() => ({}));
@@ -239,7 +219,6 @@ export const useSprintStore = create<SprintState>((set, get) => ({
       return;
     }
 
-    saveSprintLocal(created);
     set({
       activeSprint: created,
       selectedDayNumber: 1,
@@ -278,8 +257,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     }
 
 
-
-    saveSprintLocal(updatedSprint);
+    
     set({
       activeSprint: updatedSprint,
       selectedDayNumber: unlockedNextDay ? updatedSprint.currentDay : state.selectedDayNumber,
