@@ -54,7 +54,7 @@ export function LoginPage() {
       options: {
         // Explicit post-OAuth destination. Configure this as the public app URL
         // in Render; fall back to the current origin for local development.
-        redirectTo: (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim().replace(/\\/+$/, '') || window.location.origin,
+        redirectTo: (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim().replace(/\/+$/, '') || window.location.origin,
       },
     });
     if (authError) {
