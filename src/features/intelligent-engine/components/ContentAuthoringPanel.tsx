@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Download, FileJson, FileText, Loader2, Plus, RefreshCw, UploadCloud } from 'lucide-react';
 import { apiFetch } from '../../../lib/apiFetch';
 import { VisualizationRenderer } from './VisualizationRenderer';
+import { LearningRuntime } from './LearningRuntime';
 
 type LearningSection = {
   id: string;
@@ -261,8 +262,7 @@ export function ContentAuthoringPanel() {
                     {selected.generatedLesson.modules.map((module) => <article key={module.sectionId} className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2"><h4 className="text-xs font-semibold">{module.title}</h4><pre className="whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-slate-700 dark:text-slate-300">{module.contentMarkdown}</pre>{module.keyPoints?.length > 0 && <ul className="list-disc pl-4 text-[11px] text-slate-500">{module.keyPoints.map((point, index) => <li key={index}>{point}</li>)}</ul>}{module.codeExamples?.map((example, index) => <div key={index} className="space-y-1"><span className="text-[10px] uppercase text-slate-500">{example.language}</span><pre className="overflow-x-auto rounded bg-slate-950 p-3 text-[11px] text-slate-100">{example.code}</pre><p className="text-[11px] text-slate-500">{example.explanation}</p></div>)}</article>)}
                   </div>
                   {selected.generatedLesson.visualizations?.length > 0 && <div className="space-y-3"><h4 className="text-xs font-semibold">Interactive diagrams and simulations</h4>{selected.generatedLesson.visualizations.map((visual) => <VisualizationRenderer key={visual.id} visual={visual}/>)}</div>}
-                  {selected.generatedLesson.quiz?.length > 0 && <div className="space-y-2"><h4 className="text-xs font-semibold">Knowledge check ({selected.generatedLesson.quiz.length})</h4>{selected.generatedLesson.quiz.map((question, index) => <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-xs"><strong>{index + 1}. {question.question}</strong>{question.options?.map((option, optionIndex) => <p key={optionIndex} className="pl-3 text-slate-500">{String.fromCharCode(65 + optionIndex)}. {option}</p>)}<details className="mt-2"><summary className="cursor-pointer text-sky-600">Reveal answer and explanation</summary><p className="mt-1 text-slate-500">Answer: {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}</p><p className="text-slate-500">{question.explanation}</p></details></div>)}</div>}
-                  {selected.generatedLesson.practiceTasks?.length > 0 && <div className="space-y-2"><h4 className="text-xs font-semibold">Practice tasks</h4>{selected.generatedLesson.practiceTasks.map((task, index) => <div key={index} className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 text-xs"><strong>{task.title}</strong><p className="mt-1 text-slate-500">{task.instructions}</p><p className="mt-1 text-slate-500">Expected outcome: {task.expectedOutcome}</p></div>)}</div>}
+                  <LearningRuntime jobId={selected.id} quiz={selected.generatedLesson.quiz || []} practiceTasks={selected.generatedLesson.practiceTasks || []}/>
                   <p className="text-[10px] text-amber-700 dark:text-amber-300">AI output is not fact-checked, code-executed or approved. Verify source claims, formulas, diagrams, code and quiz answers before publishing.</p>
                 </div>
               )}
