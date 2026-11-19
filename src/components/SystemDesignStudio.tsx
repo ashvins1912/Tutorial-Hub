@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SystemDesignLearningAcademy } from './SystemDesignLearningAcademy';
+import { SystemDesignMasterRoadmap } from './SystemDesignMasterRoadmap';
 import {
   DndContext,
   DragEndEvent,
@@ -529,7 +530,7 @@ function ProbabilisticLab() {
 }
 
 export function SystemDesignStudio() {
-  const [subTab, setSubTab] = useState<'builder' | 'animations' | 'probabilistic' | 'academy'>('academy');
+  const [subTab, setSubTab] = useState<'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'>('roadmap');
   const [scenarioId, setScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
 
   const scenario = SYSTEM_SCENARIOS.find((s) => s.id === scenarioId) ?? SYSTEM_SCENARIOS[0];
@@ -620,10 +621,11 @@ export function SystemDesignStudio() {
         <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
           {(
             [
-              { id: 'builder', label: 'Drag & Drop System Builder' },
-              { id: 'animations', label: 'Existing System Animations' },
-              { id: 'probabilistic', label: 'Probabilistic Data Structures' },
-              { id: 'academy', label: 'Deep Learning Academy' },
+              { id: 'roadmap', label: 'Master Roadmap & Algos' },
+              { id: 'builder', label: 'Drag & Drop Builder' },
+              { id: 'animations', label: 'System Animations' },
+              { id: 'probabilistic', label: 'Probabilistic Lab' },
+              { id: 'academy', label: 'Deep Academy' },
             ] as const
           ).map((tab) => (
             <button
@@ -642,7 +644,7 @@ export function SystemDesignStudio() {
         </div>
       </div>
 
-      {subTab !== 'probabilistic' && subTab !== 'academy' && (
+      {subTab !== 'probabilistic' && subTab !== 'academy' && subTab !== 'roadmap' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SYSTEM_SCENARIOS.map((sc) => (
             <button
@@ -1012,6 +1014,9 @@ export function SystemDesignStudio() {
           </div>
         </div>
       )}
+
+      {/* Mode 0: System Design & Distributed Algorithms Master Roadmap */}
+      {subTab === 'roadmap' && <SystemDesignMasterRoadmap />}
 
       {/* Mode 3: Probabilistic Data Structures Lab */}
       {subTab === 'probabilistic' && <ProbabilisticLab />}

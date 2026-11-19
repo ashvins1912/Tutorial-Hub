@@ -52,6 +52,7 @@ const PERSISTED_KEY_LABELS: Record<string, { label: string; category: string }> 
   'algorithms-implemented': { label: 'Algorithms Studio Implementations', category: 'Algorithms' },
   'fuzzy-modules-completed': { label: 'N-Gram / Fuzzy Curriculum Track', category: 'Search & N-Gram' },
   'system-design-academy-progress': { label: 'System Design Academy Modules', category: 'System Design' },
+  'system-design-roadmap-progress': { label: 'System Design & Distributed Algos Roadmap', category: 'System Design' },
   'topic-expertise-checks': { label: 'Topic Expertise Playbook Checks', category: 'Curriculum' },
   'mutation-graph-solved': { label: 'Mutation Graph & Ladder Milestones', category: 'Curriculum' },
   'solver-adaptive-telemetry': { label: 'Universal Solver SM-2 & Micro-Drills', category: 'Logic Solver' },
@@ -96,6 +97,20 @@ function summarizePayloadCount(key: string, val: unknown): number {
   if (key === 'system-design-academy-progress') {
     const entries = Object.values(val as Record<string, { done?: boolean; note?: string }>);
     return entries.filter((e) => e?.done || (e?.note && e.note.trim().length > 0)).length;
+  }
+  if (key === 'system-design-roadmap-progress') {
+    const r = val as {
+      completedFrameworkSteps?: unknown[];
+      reviewedModules?: unknown[];
+      reviewedAlgos?: unknown[];
+      quizAnswers?: Record<string, unknown>;
+    };
+    return (
+      (Array.isArray(r.completedFrameworkSteps) ? r.completedFrameworkSteps.length : 0) +
+      (Array.isArray(r.reviewedModules) ? r.reviewedModules.length : 0) +
+      (Array.isArray(r.reviewedAlgos) ? r.reviewedAlgos.length : 0) +
+      (r.quizAnswers && typeof r.quizAnswers === 'object' ? Object.keys(r.quizAnswers).length : 0)
+    );
   }
   if (key === 'solver-adaptive-telemetry') {
     const t = val as {
@@ -346,6 +361,10 @@ router.get('/stats', async (req: Request, res: Response) => {
         >)
       : {};
   const sysDesignCompletedCount = Object.values(sysDesignProgress).filter((v) => v?.done).length;
+  const sysDesignRoadmapCount = summarizePayloadCount(
+    'system-design-roadmap-progress',
+    states['system-design-roadmap-progress'],
+  );
   const topicExpertiseChecksCount = countTruthyRecord(states['topic-expertise-checks']);
   const mutationGraphCount = countArrayItems(states['mutation-graph-solved']);
   const solverTelemetryRaw =
@@ -475,6 +494,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     algorithmsImplCount * 50 +
     fuzzyModulesCount * 45 +
     sysDesignCompletedCount * 60 +
+    sysDesignRoadmapCount * 30 +
     topicExpertiseChecksCount * 10 +
     mutationGraphCount * 25 +
     solverCompletedCount * 40 +
@@ -597,6 +617,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       { id: 'algorithms', label: 'Algorithms Studio', completed: algorithmsImplCount, total: 16 },
       { id: 'fuzzy', label: 'N-Gram / Fuzzy Modules', completed: fuzzyModulesCount, total: 6 },
       { id: 'sys-design', label: 'System Design Academy', completed: sysDesignCompletedCount, total: 12 },
+      { id: 'sys-roadmap', label: 'System Design Master Roadmap', completed: sysDesignRoadmapCount, total: 19 },
       { id: 'mutations', label: 'Mutation Graph & Ladder', completed: mutationGraphCount, total: 24 },
       { id: 'solver-studio', label: 'Universal Logic Solver', completed: solverCompletedCount, total: 15 },
       { id: 'concept-engine', label: 'Knowledge Engine Concepts', completed: engineMasteryValues.length + customConceptsCount, total: 15 + customConceptsCount },

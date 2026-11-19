@@ -160,6 +160,7 @@ const MODULE_NAV_MAP: Record<string, TopView> = {
   algorithms: 'algorithms',
   fuzzy: 'fuzzy-search',
   'sys-design': 'system-design',
+  'sys-roadmap': 'system-design',
   mutations: 'workspace',
   'solver-studio': 'solver',
   'concept-engine': 'knowledge-engine',
