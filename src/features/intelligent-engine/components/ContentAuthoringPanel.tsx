@@ -13,6 +13,8 @@ type AuthoringJob = {
   id: string;
   fileName: string;
   status: string;
+  generation?: { status: string; provider?: string; model?: string; generatedAt?: string; durationMs?: number; errorCode?: string };
+  generatedLesson?: { title: string; summary: string; learningObjectives: string[]; modules: Array<{ sectionId: string; title: string; contentMarkdown: string; keyPoints: string[]; reasoningSteps: string[]; codeExamples: Array<{ language: string; code: string; explanation: string }> }>; visualizations: Array<{ id: string; title: string; type: string; description: string; source: string; steps?: Array<{ title: string; explanation: string }> }>; quiz: Array<{ question: string; options: string[]; correctAnswer: string | string[]; explanation: string }>; practiceTasks: Array<{ title: string; instructions: string; expectedOutcome: string }> };
   analysis: {
     domain: string;
     kind: string;
@@ -44,6 +46,7 @@ export function ContentAuthoringPanel() {
   const [selected, setSelected] = useState<AuthoringJob | null>(null);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [sections, setSections] = useState<LearningSection[]>([]);
@@ -60,6 +63,8 @@ export function ContentAuthoringPanel() {
         id: String(job._id),
         fileName: String(job.fileName),
         status: String(job.status),
+        generation: job.generation as AuthoringJob['generation'],
+        generatedLesson: job.generatedLesson as AuthoringJob['generatedLesson'],
         analysis: job.analysis as AuthoringJob['analysis'],
       })));
     } catch (err) {
@@ -143,6 +148,21 @@ export function ContentAuthoringPanel() {
     }
   };
 
+  const generateLesson = async () => {
+    if (!selected) return;
+    setGenerating(true); setError(''); setNotice('');
+    try {
+      const saved = await apiFetch(`/api/authoring/jobs/${selected.id}/structure`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sections, metadata: { title: selected.analysis.title, domain: selected.analysis.domain, kind: selected.analysis.kind, level: selected.analysis.level } }) });
+      if (!saved.ok) throw new Error('Save the learning blueprint before generation.');
+      const response = await apiFetch(`/api/authoring/jobs/${selected.id}/generate`, { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || payload.code || 'AI generation failed.');
+      setSelected((current) => current ? { ...current, generation: payload.job.generation, generatedLesson: payload.job.generatedLesson } : current);
+      setNotice('AI lesson generated and saved as an unverified draft. Review every section, diagram, answer and code example before using it.');
+      await loadJobs();
+    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to generate the lesson.'); }
+    finally { setGenerating(false); }
+  };
   const updateSection = (index: number, patch: Partial<LearningSection>) => {
     setSections((current) => current.map((section, i) => i === index ? { ...section, ...patch } : section));
   };
@@ -151,7 +171,7 @@ export function ContentAuthoringPanel() {
     <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl space-y-1">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-sky-600 dark:text-sky-400">Author workspace · Phase 1</div>
+          <div className="text-[11px] font-mono uppercase tracking-wider text-sky-600 dark:text-sky-400">Author workspace · AI orchestration</div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Intelligent Content Studio</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">Upload technical knowledge, detect its domain and learning level, then review a subject-aware learning blueprint. Nothing is published automatically.</p>
         </div>
@@ -228,7 +248,9 @@ export function ContentAuthoringPanel() {
                   </div>
                 ))}
                 <button type="button" onClick={() => setSections((current) => [...current, { id: `custom-${Date.now()}`, title: 'New learning section', purpose: 'Describe the learning outcome for this section.', required: false, blockType: 'explanation' }])} className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600"><Plus className="h-3.5 w-3.5"/> Add section</button>
-                <button type="button" disabled={saving} onClick={() => void saveStructure()} className="w-full rounded-lg bg-slate-900 dark:bg-sky-500 px-4 py-2.5 text-xs font-semibold text-white dark:text-slate-950 disabled:opacity-50">{saving ? 'Saving…' : 'Save learning structure'}</button>
+                <button type="button" disabled={saving} onClick={() => void saveStructure()} className="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-xs font-semibold disabled:opacity-50">{saving ? 'Saving…' : 'Save learning structure'}</button>
+                <p className="text-[10px] text-slate-500">Generate sends this source and outline to the AI provider configured by your server. Output remains an unverified draft.</p>
+                <button type="button" disabled={generating || saving} onClick={() => void generateLesson()} className="w-full rounded-lg bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{generating ? 'Generating structured lesson…' : selected.generation?.status === 'generated' ? 'Regenerate lesson' : 'Generate learning content'}</button>
               </div>
             </div>
           ) : (
