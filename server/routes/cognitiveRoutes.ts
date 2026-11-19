@@ -140,8 +140,8 @@ function evaluateRankPromotion(profile: UserBrainProfileType): boolean {
   return false;
 }
 
-// GET /api/cognitive/profile/:userId
-router.get('/profile/:userId', async (req: Request, res: Response) => {
+// GET /api/cognitive/profile — identity always comes from the verified access token
+router.get('/profile', async (req: Request, res: Response) => {
   const userId = req.authUser!.id;
   const profile = await getOrCreateProfile(userId);
   res.json({ profile });
@@ -299,7 +299,7 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
   });
 });
 
-router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
+router.get('/notes/:problemId', async (req: Request, res: Response) => {
   const { problemId } = req.params;
   const userId = req.authUser!.id;
   if (isMongoConnected()) {
@@ -314,7 +314,12 @@ router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
 router.post('/notes', async (req: Request, res: Response) => {
   const { problemId, note = '' } = req.body ?? {};
   const userId = req.authUser!.id;
-  if (!problemId) return res.status(400).json({ error: 'problemId is required' });
+  if (typeof problemId !== 'string' || !/^[a-zA-Z0-9_-]{1,120}$/.test(problemId)) {
+    return res.status(400).json({ error: 'A valid problemId is required' });
+  }
+  if (typeof note !== 'string' || note.length > 20000) {
+    return res.status(400).json({ error: 'Note must be text up to 20,000 characters' });
+  }
 
   if (isMongoConnected()) {
     await getOrCreateProfile(userId);
