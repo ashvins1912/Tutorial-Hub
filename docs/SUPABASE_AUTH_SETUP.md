@@ -15,6 +15,7 @@ In **Authentication → URL Configuration**:
 
 - Set the Site URL to the deployed Render service URL.
 - Add the Render service URL to Redirect URLs.
+- Add the exact value of `VITE_AUTH_REDIRECT_URL` to Redirect URLs as well. The Google sign-in flow passes this value to Supabase as `redirectTo`.
 - For local development, add `http://localhost:3000`.
 
 Enable email/password sign-in. Email confirmation can remain enabled; new users will be asked to verify their email before their first session.
@@ -29,13 +30,14 @@ Set these on the `tutorial-hub` Web Service:
 | --- | --- |
 | `VITE_SUPABASE_URL` | Browser Supabase client; available at build time |
 | `VITE_SUPABASE_ANON_KEY` | Browser Supabase client; available at build time |
+| `VITE_AUTH_REDIRECT_URL` | Post-Google-OAuth destination; set to the deployed Render URL and available at build time |
 | `SUPABASE_URL` | Server-side token verification |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side token verification only; secret |
 | `MONGODB_URI` | Persist account and learning profile documents |
 | `GEMINI_API_KEY` | Optional Gemini-powered features |
 | `NODE_ENV` | Set to `production` |
 
-Redeploy after setting the `VITE_*` values because Vite embeds them into the frontend build.
+Set `VITE_AUTH_REDIRECT_URL` to the exact public frontend origin, for example `https://YOUR-APP.onrender.com` (no localhost and no trailing path). Redeploy after setting the `VITE_*` values because Vite embeds them into the frontend build. When unset locally, Google sign-in falls back to the current browser origin.
 
 ## 4. Data flow
 
