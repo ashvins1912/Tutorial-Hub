@@ -3,7 +3,8 @@ import { apiFetch } from '../../../lib/apiFetch';
 import { CodeExecutionLab } from './CodeExecutionLab';
 import { binarySearchTrace, bubbleSortTrace, parseInput } from './learningAlgorithms';
 
-type QuizQuestion = { question: string; options: string[]; correctAnswer: string | string[]; explanation: string };
+type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string };
+type QuizGrading = { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]> };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 
 export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[] }) {
@@ -18,19 +19,21 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
   const [progressStatus, setProgressStatus] = useState('Loading saved progress…');
   const [completedPracticeIds, setCompletedPracticeIds] = useState<string[]>([]);
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
+  const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
 
   useEffect(() => {
     let active = true;
     setProgressReady(false);
     setProgressStatus('Loading saved progress…');
     setAlgorithm('binary-search'); setRawValues('2, 5, 8, 12, 16, 23, 38'); setTarget('16'); setTraceIndex(0);
-    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null);
+    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
         if (!response.ok) throw new Error(response.status === 503 ? 'Database persistence is unavailable.' : 'Could not load saved progress.');
-        const payload = await response.json() as { progress?: { algorithm?: string; input?: string; target?: string; currentStep?: number; attempts?: number; lastScore?: number | null; bestScore?: number; masteryLevel?: string; lastAnswers?: Record<string, string>; completedPracticeIds?: string[] } | null };
+        const payload = await response.json() as { progress?: { algorithm?: string; input?: string; target?: string; currentStep?: number; attempts?: number; lastScore?: number | null; bestScore?: number; masteryLevel?: string; lastAnswers?: Record<string, string>; completedPracticeIds?: string[] } | null; grading?: QuizGrading | null };
         if (!active) return;
         const saved = payload.progress;
+        setQuizGrading(payload.grading || null);
         if (saved) {
           if (saved.algorithm === 'binary-search' || saved.algorithm === 'bubble-sort') setAlgorithm(saved.algorithm);
           if (typeof saved.input === 'string') setRawValues(saved.input);
@@ -60,12 +63,13 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
       return bubbleSortTrace(values);
     } catch { return []; }
   }, [algorithm, rawValues, target]);
-  const score = quiz.reduce((sum, question, index) => {
-    const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
+  const localScore = quiz.reduce((sum, question, index) => {
+    const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : question.correctAnswer ? [question.correctAnswer] : []).map((value) => String(value).trim().toLowerCase()).sort();
     const actual = (answers[index] || '').split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
-    return sum + (expected.length === actual.length && expected.every((value, i) => value === actual[i]) ? 1 : 0);
+    return sum + (expected.length > 0 && expected.length === actual.length && expected.every((value, i) => value === actual[i]) ? 1 : 0);
   }, 0);
-  const accuracy = quiz.length ? Math.round((score / quiz.length) * 100) : 0;
+  const score = quizGrading?.score ?? localScore;
+  const accuracy = quizGrading?.accuracy ?? (quiz.length ? Math.round((score / quiz.length) * 100) : 0);
   const nextLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
   const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };
   useEffect(() => { if (trace.length && traceIndex >= trace.length) setTraceIndex(trace.length - 1); }, [trace.length, traceIndex]);
@@ -84,22 +88,27 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
     return () => clearTimeout(timer);
   }, [progressReady, jobId, algorithm, rawValues, target, traceIndex, completedPracticeIds]);
 
-  const isCorrect = (question: QuizQuestion, answer: string) => {
-    const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
+  const isCorrect = (question: QuizQuestion, answer: string, index: number) => {
+    const correctAnswer = quizGrading?.correctAnswers[index] ?? question.correctAnswer;
+    if (!correctAnswer) return false;
+    const expected = (Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
     const actual = answer.split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
     return expected.length === actual.length && expected.every((value, index) => value === actual[index]);
   };
 
   const submitQuiz = async () => {
     setSubmitted(true);
+    setQuizGrading(null);
     try {
-      const response = await apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quizAttempt: { score, total: quiz.length, answers } }) });
+      const response = await apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quizAttempt: { total: quiz.length, answers } }) });
       if (!response.ok) throw new Error('Quiz progress could not be saved.');
-      const payload = await response.json() as { progress?: { attempts?: number; bestScore?: number; masteryLevel?: string } };
+      const payload = await response.json() as { progress?: { attempts?: number; bestScore?: number; masteryLevel?: string }; grading?: QuizGrading | null };
+      if (!payload.grading) throw new Error('The server did not return verified quiz feedback.');
+      setQuizGrading(payload.grading);
       setAttempts(payload.progress?.attempts ?? attempts + 1);
       setMasterySummary({ bestScore: payload.progress?.bestScore ?? accuracy, masteryLevel: payload.progress?.masteryLevel ?? nextLevel });
       setProgressStatus('Quiz result saved');
-    } catch { setAttempts((value) => value + 1); setProgressStatus('Quiz completed, but saving failed'); }
+    } catch { setSubmitted(false); setProgressStatus('Quiz could not be verified or saved. Please retry.'); }
   };
 
   return <section className="space-y-4" aria-label="Interactive learning runtime">
@@ -120,8 +129,8 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
 
     {quiz.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Adaptive knowledge check</h4><p className="text-[11px] text-slate-500">Submit your choices to see explanations and a suggested next difficulty.</p></div><span className="text-[10px] text-slate-500">{attempts} attempt{attempts === 1 ? '' : 's'}</span></div>
-      {quiz.map((question, index) => <fieldset key={index} disabled={submitted} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => { const multi = Array.isArray(question.correctAnswer) && question.correctAnswer.length > 1; const selectedOptions = (answers[index] || '').split('|').filter(Boolean); return <label key={optionIndex} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type={multi ? 'checkbox' : 'radio'} name={`quiz-${jobId}-${index}`} checked={selectedOptions.includes(option)} onChange={() => setAnswers((currentAnswers) => { const current = (currentAnswers[index] || '').split('|').filter(Boolean); const next = multi ? (current.includes(option) ? current.filter((value) => value !== option) : [...current, option]) : [option]; return { ...currentAnswers, [index]: next.join('|') }; })} className="mt-0.5"/>{option}</label>; })}{submitted && <div className="rounded bg-slate-50 dark:bg-slate-950 p-2 text-[11px]"><strong>{isCorrect(question, answers[index] || '') ? 'Correct' : 'Review this answer'}</strong><p className="mt-1 text-slate-500">Answer: {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}. {question.explanation}</p></div>}</fieldset>)}
-      {!submitted ? <button type="button" disabled={quiz.some((_, index) => !answers[index])} onClick={submitQuiz} className="rounded-lg bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">Submit answers</button> : <div className="space-y-2"><p className="text-sm font-semibold">Score: {score} / {quiz.length} ({accuracy}%)</p><p className="text-xs text-slate-500">Suggested next difficulty: <strong className="capitalize">{nextLevel}</strong>. {accuracy >= 80 ? 'Move to a harder practice set.' : accuracy >= 50 ? 'Review missed explanations, then try an intermediate set.' : 'Revisit the lesson fundamentals before retrying.'}</p><button type="button" onClick={() => { setAnswers({}); setSubmitted(false); void apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resetQuiz: true }) }).then((response) => { if (!response.ok) throw new Error('Reset failed'); setProgressStatus('Ready for another attempt'); }).catch(() => setProgressStatus('Quiz reset locally; saved history remains unchanged')); }} className="rounded-lg border px-4 py-2 text-xs">Retry quiz</button></div>}
+      {quiz.map((question, index) => <fieldset key={index} disabled={submitted} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => { const multi = Array.isArray(question.correctAnswer) && question.correctAnswer.length > 1; const selectedOptions = (answers[index] || '').split('|').filter(Boolean); return <label key={optionIndex} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type={multi ? 'checkbox' : 'radio'} name={`quiz-${jobId}-${index}`} checked={selectedOptions.includes(option)} onChange={() => setAnswers((currentAnswers) => { const current = (currentAnswers[index] || '').split('|').filter(Boolean); const next = multi ? (current.includes(option) ? current.filter((value) => value !== option) : [...current, option]) : [option]; return { ...currentAnswers, [index]: next.join('|') }; })} className="mt-0.5"/>{option}</label>; })}{submitted && <div className="rounded bg-slate-50 dark:bg-slate-950 p-2 text-[11px]"><strong>{isCorrect(question, answers[index] || '', index) ? 'Correct' : 'Review this answer'}</strong><p className="mt-1 text-slate-500">Answer: {(() => { const answer = quizGrading?.correctAnswers[index] ?? question.correctAnswer; return Array.isArray(answer) ? answer.join(', ') : answer || 'Verified after submission'; })()}. {question.explanation}</p></div>}</fieldset>)}
+      {!submitted ? <button type="button" disabled={quiz.some((_, index) => !answers[index])} onClick={submitQuiz} className="rounded-lg bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">Submit answers</button> : <div className="space-y-2"><p className="text-sm font-semibold">Score: {score} / {quiz.length} ({accuracy}%)</p><p className="text-xs text-slate-500">Suggested next difficulty: <strong className="capitalize">{nextLevel}</strong>. {accuracy >= 80 ? 'Move to a harder practice set.' : accuracy >= 50 ? 'Review missed explanations, then try an intermediate set.' : 'Revisit the lesson fundamentals before retrying.'}</p><button type="button" onClick={() => { setAnswers({}); setSubmitted(false); setQuizGrading(null); void apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resetQuiz: true }) }).then((response) => { if (!response.ok) throw new Error('Reset failed'); setProgressStatus('Ready for another attempt'); }).catch(() => setProgressStatus('Quiz reset locally; saved history remains unchanged')); }} className="rounded-lg border px-4 py-2 text-xs">Retry quiz</button></div>}
     </div>}
 
     {practiceTasks.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2"><h4 className="text-sm font-semibold">Practice checklist</h4>{practiceTasks.map((task, index) => <div key={index} className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={completedPracticeIds.includes("task-" + index)} onChange={(event) => setCompletedPracticeIds((currentIds) => event.target.checked ? [...currentIds, "task-" + index] : currentIds.filter((id) => id !== "task-" + index))}/>{task.title}</label><p className="mt-2 text-xs text-slate-500">{task.instructions}</p><p className="mt-1 text-xs text-slate-500">Expected outcome: {task.expectedOutcome}</p></div>)}</div>}
