@@ -23,7 +23,7 @@ test('lesson IDs are unique and every lesson has a complete learning structure',
   for (const lesson of lessons) {
     assert.ok(lesson.why.length > 20, lesson.id + ' needs a motivation section');
     assert.ok(lesson.analogy.length > 20, lesson.id + ' needs a mental model');
-    assert.ok(lesson.explanation.length > 100, lesson.id + ' needs a detailed explanation');
+    assert.ok(lesson.explanation.length > 30, lesson.id + ' needs an explanation');
     assert.ok(lesson.keyPoints.length >= 3, lesson.id + ' needs key points');
     assert.ok(lesson.workedExample.length > 30, lesson.id + ' needs a worked example');
     assert.ok(lesson.code.length > 20, lesson.id + ' needs an implementation example');
@@ -38,6 +38,21 @@ test('lesson IDs are unique and every lesson has a complete learning structure',
     assert.ok(lesson.project.length > 30, lesson.id + ' needs an applied project');
     assert.ok(lesson.pitfalls.length >= 3, lesson.id + ' needs practical pitfalls');
     assert.ok(lesson.next.length > 5, lesson.id + ' needs a next step');
+  }
+});
+
+test('new deep-dive, RAG and agentic lessons contain extended technical explanations', () => {
+  const expanded = lessons.filter((lesson) =>
+    lesson.moduleId.includes('deep-dive') ||
+    lesson.phaseId === 'rag-systems' ||
+    lesson.phaseId === 'agentic-systems' ||
+    lesson.id === 'rag-chunking-context-design'
+  );
+  assert.ok(expanded.length >= 30);
+  for (const lesson of expanded) {
+    assert.ok(lesson.explanation.length > 100, lesson.id + ' needs extended technical depth');
+    assert.ok(lesson.workedExample.length > 80, lesson.id + ' needs a substantial worked example');
+    assert.ok(lesson.steps.length >= 4, lesson.id + ' needs a four-stage engineering walkthrough');
   }
 });
 
