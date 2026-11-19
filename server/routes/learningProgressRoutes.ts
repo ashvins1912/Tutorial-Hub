@@ -58,12 +58,14 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
       return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
     }
     const accuracy = Math.round((attempt.score / attempt.total) * 100);
+    const previous = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).select('bestScore').lean();
+    const bestAccuracy = Math.max(previous?.bestScore || 0, accuracy);
     const normalizedAnswers = attempt.answers === undefined ? {} : normalizeAnswers(attempt.answers);
     if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
     quizAccuracy = accuracy;
     update.lastScore = accuracy;
     update.quizTotal = attempt.total;
-    update.masteryLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
+    update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
     update.lastAnswers = normalizedAnswers;
   }
   if (body.completedPracticeIds !== undefined) {
