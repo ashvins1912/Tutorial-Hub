@@ -65,14 +65,15 @@ router.get('/jobs', requireAuth, requireContentAuthor, async (req: Request, res:
 router.post('/jobs/:id/generate', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'MongoDB is unavailable.' });
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Authoring job not found.' });
-  const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id }).select('+sourceText');
-  if (!job?.draft || !job.analysis) return res.status(404).json({ error: 'Authoring draft not found.' });
-  if (job.generation?.status === 'generating') return res.status(409).json({ code: 'GENERATION_IN_PROGRESS', message: 'This draft is already being generated.' });
-  if (job.sourceText.length > 60_000) return res.status(413).json({ code: 'SOURCE_TOO_LARGE_FOR_GENERATION', message: 'The source exceeds the AI generation context limit. Split it into smaller topic files.' });
-  job.generation = { status: 'generating' };
-  job.error = undefined;
-  job.markModified('generation');
-  await job.save();
+  const existingJob = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id }).select('+sourceText');
+  if (!existingJob?.draft || !existingJob.analysis) return res.status(404).json({ error: 'Authoring draft not found.' });
+  if (existingJob.sourceText.length > 60_000) return res.status(413).json({ code: 'SOURCE_TOO_LARGE_FOR_GENERATION', message: 'The source exceeds the AI generation context limit. Split it into smaller topic files.' });
+  const job = await ContentAuthoringJob.findOneAndUpdate(
+    { _id: req.params.id, ownerId: req.authUser!.id, 'generation.status': { $ne: 'generating' } },
+    { $set: { 'generation.status': 'generating' }, $unset: { error: 1 } },
+    { new: true },
+  ).select('+sourceText');
+  if (!job) return res.status(409).json({ code: 'GENERATION_IN_PROGRESS', message: 'This draft is already being generated.' });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90_000);
   try {
