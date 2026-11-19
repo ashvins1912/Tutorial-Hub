@@ -45,6 +45,7 @@ import { Mock45SimulatorModal } from './components/sprint/Mock45SimulatorModal';
 import { AlgorithmMatcherModal } from './components/AlgorithmMatcherModal';
 import { CurriculumWorkbench } from './features/topics/components/CurriculumWorkbench';
 import { PatternRecognitionQuizModal } from './features/quiz/components/PatternRecognitionQuizModal';
+import { UniversalSolverStudio } from './features/solver-studio/UniversalSolverStudio';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -107,12 +108,13 @@ export default function App() {
           : hubSubTab;
 
   const navItems: { id: TopView; label: string; isActive: boolean }[] = [
+    { id: 'solver', label: 'Logic Solver', isActive: activeView === 'solver' },
     { id: 'workspace', label: 'Curriculum', isActive: activeView === 'workspace' },
     { id: 'algorithms', label: 'Algorithms', isActive: activeView === 'algorithms' },
     { id: 'fuzzy-search', label: 'N-Gram Lab', isActive: activeView === 'fuzzy-search' },
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
-    { id: 'sprint', label: '14-Day Sprint', isActive: activeView === 'sprint' },
+    { id: 'sprint', label: 'Sprint', isActive: activeView === 'sprint' },
   ];
 
   const handleSelectNav = (id: TopView) => {
@@ -139,7 +141,7 @@ export default function App() {
             PatternForge DSA
           </button>
 
-          <nav aria-label="Primary Navigation" className="hidden md:flex items-center gap-7">
+          <nav aria-label="Primary Navigation" className="hidden md:flex items-center gap-5 lg:gap-6">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -216,7 +218,17 @@ export default function App() {
       )}
 
       {/* Main View Router */}
-      {isCurriculumFullBleed ? (
+      {activeView === 'solver' ? (
+        <main className="flex-1 w-full">
+          <UniversalSolverStudio
+            onOpenCurriculumTopic={(topicId) => {
+              setJumpTopicId(topicId);
+              setWorkspaceMode('curriculum');
+              setActiveView('workspace');
+            }}
+          />
+        </main>
+      ) : isCurriculumFullBleed ? (
         <main className="flex-1 w-full">
           <CurriculumWorkbench
             externalTopicId={jumpTopicId}

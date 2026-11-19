@@ -11,6 +11,7 @@ import { PROBLEMS } from '../data/problems';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../../server/seed/cognitiveSeed';
 
 export type TopView =
+  | 'solver'
   | 'workspace'
   | 'algorithms'
   | 'fuzzy-search'
@@ -163,7 +164,7 @@ for (const p of PROBLEMS) {
 }
 
 export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
-  activeView: 'workspace',
+  activeView: 'solver',
   activeAlgorithmId: 'prefix-sum-hash',
   activeAlgorithmTab: 'mental',
   algorithmsStudioMode: 'studio',

@@ -28,7 +28,8 @@ export function LeetCode75Track() {
       && (status === 'All' || (progress[problem.number]?.status ?? 'Not started') === status);
   }), [query, category, difficulty, status, progress]);
   const update = (number: number, patch: Partial<Progress[number]>) => {
-    const next = { ...progress, [number]: { status: 'Not started' as Status, notes: '', ...progress[number], ...patch } };
+    const current = progress[number] ?? { status: 'Not started' as Status, notes: '' };
+    const next = { ...progress, [number]: { ...current, ...patch } };
     setProgress(next);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
