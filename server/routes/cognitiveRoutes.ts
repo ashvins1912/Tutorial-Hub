@@ -7,6 +7,15 @@ import { isMongoConnected } from '../db/connectMongo';
 
 const router = express.Router();
 router.use(requireAuth);
+router.use((_req: Request, res: Response, next: express.NextFunction) => {
+  if (process.env.NODE_ENV === 'production' && !isMongoConnected()) {
+    return res.status(503).json({
+      code: 'DATABASE_UNAVAILABLE',
+      message: 'Persistent learning storage is temporarily unavailable. Please retry shortly.',
+    });
+  }
+  return next();
+});
 
 const RANK_ORDER: RankTier[] = ['Noob', 'Apprentice', 'Practitioner', 'Strategist', 'Pro'];
 
