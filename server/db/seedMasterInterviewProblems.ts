@@ -12,6 +12,9 @@ let completed=false;
  */
 export async function seedMasterInterviewProblems():Promise<void>{
   if(completed || !isMongoConnected())return;
+  if(MASTER_INTERVIEW_PROBLEM_ADDITIONS.length!==293)throw new Error('Master DSA inventory must contain exactly 293 questions.');
+  const uniqueSlugs=new Set(MASTER_INTERVIEW_PROBLEM_ADDITIONS.map(item=>item.slug));
+  if(uniqueSlugs.size!==MASTER_INTERVIEW_PROBLEM_ADDITIONS.length)throw new Error('Duplicate topic-scoped problem slug in master inventory.');
   try{
     await InterviewProblem.init();
     const operations=MASTER_INTERVIEW_PROBLEM_ADDITIONS.map(item=>{
@@ -30,8 +33,8 @@ export async function seedMasterInterviewProblems():Promise<void>{
             difficulty:{$ifNull:['$difficulty',item.difficulty]},
             aliases:{$ifNull:['$aliases',item.aliases]},
             relatedTitles:{$ifNull:['$relatedTitles',item.relatedTitles]},
-            catalogStatus:{$cond:[{$eq:['$catalogStatus','authored']},'authored',{$ifNull:['$catalogStatus','review']}]},
-            contentStatus:{$cond:[{$eq:['$contentStatus','validated']},'validated',{$ifNull:['$contentStatus','in-progress']}]},
+            catalogStatus:{$cond:[{$eq:['$catalogStatus','authored']},'authored','review']},
+            contentStatus:{$cond:[{$eq:['$contentStatus','validated']},'validated','in-progress']},
             statement:{$ifNull:['$statement',lesson.statement]},
             examples:{$ifNull:['$examples',[]]},
             constraints:{$ifNull:['$constraints',[]]},
