@@ -35,10 +35,12 @@ Write endpoints require `x-problem-catalog-token`, configured server-side as `PR
 ### Resolution policy
 
 1. Normalize Unicode, punctuation, case, and whitespace; exact normalized title wins.
-2. Explicit aliases are accepted only within the same topic.
+2. Explicit aliases are accepted only within the same topic, and only for known equivalent title variants. Related-but-different problems are stored separately in `relatedTitles` and never auto-merged.
 3. Otherwise combine token Jaccard (0.38), character trigram Dice (0.34), edit similarity (0.18), and topic agreement (0.10).
-4. Fuzzy auto-update requires confidence >= 0.96, same topic, and >= 0.08 margin over the runner-up.
+4. Fuzzy auto-update requires confidence >= 0.96, same topic, and >= 0.08 margin over the runner-up. Explicit aliases must resolve to exactly one candidate.
 5. Scores >= 0.82 that are not safe matches return HTTP 409 with candidates for human review. Lower scores create a distinct record.
 6. Startup imports use the unique (topicId, normalizedTitle) key and `$setOnInsert`, so restarts never overwrite authored content.
+
+The startup seed contains **194 topic-specific records**: 173 previously missing entries plus 21 exact requested variants for the partial/related cases. The 21 related-title relationships are retained as metadata; only genuinely equivalent variants are aliases. Existing 99 title matches remain in their existing repository learning sources and are not falsely marked as fully authored in this new catalog.
 
 A record can only be marked `validated` after statement, examples, constraints, and implementation/practice/master stage evidence are supplied.
