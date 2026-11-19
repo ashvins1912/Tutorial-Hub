@@ -50,6 +50,7 @@ export interface ComputedProgressSummary {
     fuzzyModulesCount: number;
     sysDesignCompletedCount: number;
     sysDesignRoadmapCount: number;
+    oodMasteredCount: number;
     topicExpertiseChecksCount: number;
     mutationGraphCount: number;
     solverCompletedCount: number;
@@ -185,6 +186,7 @@ export function computeUserProgressSummary(
     'system-design-roadmap-progress',
     states['system-design-roadmap-progress']
   );
+  const oodMasteredCount = countArrayItems(states['ood-mastery-progress']);
   const topicExpertiseChecksCount = countTruthyRecord(states['topic-expertise-checks']);
   const mutationGraphCount = countArrayItems(states['mutation-graph-solved']);
   const solverTelemetryRaw =
@@ -216,6 +218,7 @@ export function computeUserProgressSummary(
     fuzzyModulesCount * 45 +
     sysDesignCompletedCount * 60 +
     sysDesignRoadmapCount * 30 +
+    oodMasteredCount * 45 +
     topicExpertiseChecksCount * 10 +
     mutationGraphCount * 25 +
     solverCompletedCount * 40 +
@@ -266,6 +269,7 @@ export function computeUserProgressSummary(
       fuzzyModulesCount,
       sysDesignCompletedCount,
       sysDesignRoadmapCount,
+      oodMasteredCount,
       topicExpertiseChecksCount,
       mutationGraphCount,
       solverCompletedCount,

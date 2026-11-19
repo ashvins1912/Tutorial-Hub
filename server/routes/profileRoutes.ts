@@ -54,6 +54,7 @@ const PERSISTED_KEY_LABELS: Record<string, { label: string; category: string }> 
   'fuzzy-modules-completed': { label: 'N-Gram / Fuzzy Curriculum Track', category: 'Search & N-Gram' },
   'system-design-academy-progress': { label: 'System Design Academy Modules', category: 'System Design' },
   'system-design-roadmap-progress': { label: 'System Design & Distributed Algos Roadmap', category: 'System Design' },
+  'ood-mastery-progress': { label: 'OOPs, SOLID & OOD Visual Studio', category: 'OOD & Principles' },
   'topic-expertise-checks': { label: 'Topic Expertise Playbook Checks', category: 'Curriculum' },
   'mutation-graph-solved': { label: 'Mutation Graph & Ladder Milestones', category: 'Curriculum' },
   'solver-adaptive-telemetry': { label: 'Universal Solver SM-2 & Micro-Drills', category: 'Logic Solver' },
@@ -366,6 +367,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     'system-design-roadmap-progress',
     states['system-design-roadmap-progress'],
   );
+  const oodMasteredCount = countArrayItems(states['ood-mastery-progress']);
   const topicExpertiseChecksCount = countTruthyRecord(states['topic-expertise-checks']);
   const mutationGraphCount = countArrayItems(states['mutation-graph-solved']);
   const solverTelemetryRaw =
@@ -503,6 +505,7 @@ router.get('/stats', async (req: Request, res: Response) => {
     fuzzyModulesCount * 45 +
     sysDesignCompletedCount * 60 +
     sysDesignRoadmapCount * 30 +
+    oodMasteredCount * 45 +
     topicExpertiseChecksCount * 10 +
     mutationGraphCount * 25 +
     solverCompletedCount * 40 +
@@ -640,6 +643,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       { id: 'fuzzy', label: 'N-Gram / Fuzzy Modules', completed: fuzzyModulesCount, total: 6 },
       { id: 'sys-design', label: 'System Design Academy', completed: sysDesignCompletedCount, total: 12 },
       { id: 'sys-roadmap', label: 'System Design Master Roadmap', completed: sysDesignRoadmapCount, total: 19 },
+      { id: 'ood-studio', label: 'OOPs, SOLID & OOD Studio', completed: oodMasteredCount, total: 32 },
       { id: 'mutations', label: 'Mutation Graph & Ladder', completed: mutationGraphCount, total: 24 },
       { id: 'solver-studio', label: 'Universal Logic Solver', completed: solverCompletedCount, total: 15 },
       { id: 'concept-engine', label: 'Knowledge Engine Concepts', completed: engineMasteryValues.length + customConceptsCount, total: 15 + customConceptsCount },

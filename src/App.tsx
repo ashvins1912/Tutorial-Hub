@@ -53,6 +53,7 @@ import { ProductCompanyMasterBankView } from './components/interview/ProductComp
 import { IntelligentEngineStudio } from './features/intelligent-engine/components/IntelligentEngineStudio';
 import { ProfileStatsView } from './components/ProfileStatsView';
 import { CommunityHubView } from './components/CommunityHubView';
+import { OodPrinciplesStudio } from './components/OodPrinciplesStudio';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -260,6 +261,7 @@ export default function App() {
     { id: 'workspace', label: 'Curriculum', isActive: activeView === 'workspace' },
     { id: 'algorithms', label: 'Algorithms', isActive: activeView === 'algorithms' },
     { id: 'fuzzy-search', label: 'N-Gram Lab', isActive: activeView === 'fuzzy-search' },
+    { id: 'ood', label: 'OOPs & OOD', isActive: activeView === 'ood' },
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
     { id: 'sprint', label: 'Sprint', isActive: activeView === 'sprint' },
@@ -410,6 +412,10 @@ export default function App() {
               setWorkspaceMode('curriculum');
               setActiveView('workspace');
             }}
+            onOpenLabProblem={(problemId) => {
+              selectProblem(problemId);
+              setWorkspaceMode('classic-lab');
+            }}
           />
         </main>
       ) : isCurriculumFullBleed ? (
@@ -539,6 +545,8 @@ export default function App() {
           {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
+
+          {activeView === 'ood' && <OodPrinciplesStudio />}
 
           {activeView === 'profile' && <ProfileStatsView />}
 
