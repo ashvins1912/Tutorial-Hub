@@ -19,11 +19,10 @@ import { AlgorithmMatcherPanel } from '../../matcher/components/AlgorithmMatcher
 import { RecursionBacktrackingLab } from '../../recursion-lab/components/RecursionBacktrackingLab';
 import { usePatternForgeStore } from '../../../store/usePatternForgeStore';
 import { useSprintStore } from '../../../store/useSprintStore';
+import { useAccountState } from '../../../hooks/useAccountState';
 
 type PlaygroundTab = 'visualizer' | 'recursion-lab' | 'logic-builder' | 'code' | 'matcher';
 type MobilePane = 'theory' | 'playground';
-
-const STORAGE_KEY = 'patternforge_curriculum_mastered_v1';
 
 interface CurriculumWorkbenchProps {
   externalTopicId?: string | null;
@@ -45,18 +44,7 @@ export function CurriculumWorkbench({
   const [mobilePane, setMobilePane] = useState<MobilePane>('theory');
   const [codeDefaultTier, setCodeDefaultTier] = useState<'brute' | 'better' | 'optimal'>('optimal');
 
-  const [masteredIds, setMasteredIds] = useState<string[]>(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {
-      // ignore storage errors
-    }
-    return [];
-  });
+  const [masteredIds, setMasteredIds] = useAccountState<string[]>('curriculum-mastered-topics', []);
 
   const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
   const openNGramAlgorithm = usePatternForgeStore((s) => s.openNGramAlgorithm);
@@ -82,14 +70,7 @@ export function CurriculumWorkbench({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTopicId]);
 
-  const persistMastered = (next: string[]) => {
-    setMasteredIds(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // ignore storage errors
-    }
-  };
+  const persistMastered = (next: string[]) => setMasteredIds(next);
 
   const toggleMastered = (id: string) => {
     const next = masteredIds.includes(id)

@@ -15,6 +15,7 @@ In **Authentication → URL Configuration**:
 
 - Set the Site URL to the deployed Render service URL.
 - Add the Render service URL to Redirect URLs.
+- Add the exact value of `VITE_AUTH_REDIRECT_URL` to Redirect URLs as well. The Google sign-in flow passes this value to Supabase as `redirectTo`.
 - For local development, add `http://localhost:3000`.
 
 Enable email/password sign-in. Email confirmation can remain enabled; new users will be asked to verify their email before their first session.
@@ -29,13 +30,14 @@ Set these on the `tutorial-hub` Web Service:
 | --- | --- |
 | `VITE_SUPABASE_URL` | Browser Supabase client; available at build time |
 | `VITE_SUPABASE_ANON_KEY` | Browser Supabase client; available at build time |
+| `VITE_AUTH_REDIRECT_URL` | Post-Google-OAuth destination; set to the deployed Render URL and available at build time |
 | `SUPABASE_URL` | Server-side token verification |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side token verification only; secret |
 | `MONGODB_URI` | Persist account and learning profile documents |
 | `GEMINI_API_KEY` | Optional Gemini-powered features |
 | `NODE_ENV` | Set to `production` |
 
-Redeploy after setting the `VITE_*` values because Vite embeds them into the frontend build.
+Set `VITE_AUTH_REDIRECT_URL` to the exact public frontend origin, for example `https://YOUR-APP.onrender.com` (no localhost and no trailing path). Redeploy after setting the `VITE_*` values because Vite embeds them into the frontend build. When unset locally, Google sign-in falls back to the current browser origin.
 
 ## 4. Data flow
 
@@ -48,7 +50,32 @@ Redeploy after setting the `VITE_*` values because Vite embeds them into the fro
 
 Supabase Auth remains the source of truth for credentials. Do not store passwords in MongoDB.
 
-## 5. Verify
+## 5. Authenticated API surface
+
+All user-specific routes require `Authorization: Bearer <Supabase access token>`. The server verifies the token and derives the owner from its Supabase user ID; clients must not send a user ID to select an account.
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/auth/me` | Upsert the account and initialise its learning profile |
+| `GET /api/cognitive/profile` | Read the signed-in learner's cognitive profile |
+| `POST /api/cognitive/complete-problem` | Record a completed problem and spaced-repetition update |
+| `GET /api/cognitive/quiz/:topicId` / `GET /api/cognitive/quizzes` | Read quiz content |
+| `POST /api/cognitive/quiz/submit` | Grade and persist quiz progress |
+| `GET /api/cognitive/notes` / `GET /api/cognitive/notes/:problemId` | Read the learner's notes |
+| `POST /api/cognitive/notes` | Create or update a note |
+| `GET /api/cognitive/mastered-problems` / `POST /api/cognitive/mastered-problems` | Read or record mastered Big Tech problems |
+| `POST /api/cognitive/warmup/complete` | Record a completed warm-up drill |
+| `GET /api/sprints/companies/meta` | Read sprint company metadata |
+| `POST /api/sprints/create` | Create a 14-day sprint for the signed-in user |
+| `GET /api/user-state/:stateKey` / `PUT /api/user-state/:stateKey` | Read and persist account-scoped curriculum, track and academy progress |
+| `GET /api/sprints/active` | Read the signed-in user's active sprint |
+| `PATCH /api/sprints/:sprintId/complete-task` | Complete a task belonging to the signed-in user's sprint |
+
+The public read-only `/api/problems` catalogue and cached `/api/leetcode/problem/:slug` statement proxy do not contain user data and do not require a session.
+
+In production, MongoDB is required. The service fails startup when `MONGODB_URI` is missing or unreachable, and `/api/health` reports HTTP 503 if database readiness is lost. Learning progress and sprint mutations are not silently replaced with browser-only writes.
+
+## 6. Verify
 
 After deployment:
 

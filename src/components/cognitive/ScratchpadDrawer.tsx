@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NotebookPen, Save, X } from 'lucide-react';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
 import { PROBLEMS } from '../../data/problems';
+import { apiFetch } from '../../lib/apiFetch';
 
 export function ScratchpadDrawer({
   open,
@@ -12,44 +13,40 @@ export function ScratchpadDrawer({
 }) {
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
-  const storageKey = `patternforge-note-${problem.id}`;
-
   const [note, setNote] = useState('');
   const [savedLabel, setSavedLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    const local = typeof window !== 'undefined' ? window.localStorage.getItem(storageKey) : null;
-    if (local !== null) setNote(local);
-
-    fetch(`/api/cognitive/notes/learner-default/${problem.id}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.note && !local) setNote(data.note);
+    let active = true;
+    setNote('');
+    apiFetch(`/api/cognitive/notes/${encodeURIComponent(problem.id)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load note.');
+        const data = await response.json();
+        if (active) setNote(data?.note ?? '');
       })
-      .catch(() => {});
-  }, [open, problem.id, storageKey]);
+      .catch(() => {
+        if (active) setSavedLabel('Unable to load saved note');
+      });
+    return () => { active = false; };
+  }, [open, problem.id]);
 
   if (!open) return null;
 
   const handleSave = async () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(storageKey, note);
-    }
     try {
-      await fetch('/api/cognitive/notes', {
+      const response = await apiFetch('/api/cognitive/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: 'learner-default',
-          problemId: problem.id,
-          note,
-        }),
+        body: JSON.stringify({ problemId: problem.id, note }),
       });
+      if (!response.ok) throw new Error('Unable to save note.');
+      setSavedLabel('Saved to your account');
     } catch {
-      // localStorage already persisted
+      setSavedLabel('Save failed — please retry');
+      return;
     }
-    setSavedLabel('Saved to Notebook & Server');
     window.setTimeout(() => setSavedLabel(null), 2000);
   };
 

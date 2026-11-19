@@ -24,6 +24,7 @@ export interface IUserBrainProfile extends Document {
   passedTopicQuizzes: string[];
   completedProblemIds: string[];
   completedWarmupDrills: string[];
+  masteredProblemSlugs: string[];
   notes: Map<string, string>;
   spacedRepetitionQueue: ISpacedRepetitionItem[];
 }
@@ -58,6 +59,7 @@ const UserBrainProfileSchema = new Schema<IUserBrainProfile>(
     passedTopicQuizzes: [{ type: String }],
     completedProblemIds: [{ type: String }],
     completedWarmupDrills: [{ type: String }],
+    masteredProblemSlugs: [{ type: String }],
     notes: { type: Map, of: String, default: {} },
     spacedRepetitionQueue: [SpacedRepetitionItemSchema],
   },

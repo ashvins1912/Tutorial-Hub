@@ -13,6 +13,7 @@ import {
 import { CURRICULUM_PATTERNS } from '../data/curriculum';
 import { PROBLEMS } from '../data/problems';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
+import { apiFetch } from '../lib/apiFetch';
 
 export function QuickRevisionHub() {
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
@@ -22,33 +23,55 @@ export function QuickRevisionHub() {
   // Unified Notes Maker across all problems
   const [selectedNoteId, setSelectedNoteId] = useState(PROBLEMS[0].id);
   const [noteText, setNoteText] = useState('');
+  const [notesByProblem, setNotesByProblem] = useState<Record<string, string>>({});
+  const [notesLoaded, setNotesLoaded] = useState(false);
+  const [noteDirty, setNoteDirty] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  const storageKey = `patternforge-note-${selectedNoteId}`;
+  useEffect(() => {
+    let active = true;
+    apiFetch('/api/cognitive/notes')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load your saved notes.');
+        const payload = await response.json();
+        if (active) {
+          setNotesByProblem(payload.notes ?? {});
+          setNotesLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (active) setNotesLoaded(true);
+      });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? window.localStorage.getItem(storageKey) : null;
-    setNoteText(saved ?? '');
-  }, [storageKey]);
+    setNoteText(notesByProblem[selectedNoteId] ?? '');
+    setNoteDirty(false);
+  }, [selectedNoteId, notesByProblem]);
 
-  const handleSaveNote = (text: string) => {
-    setNoteText(text);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(storageKey, text);
-    }
-    fetch('/api/cognitive/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: 'learner-default', problemId: selectedNoteId, note: text }),
-    }).catch(() => {});
-  };
+  useEffect(() => {
+    if (!notesLoaded || !noteDirty) return;
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await apiFetch('/api/cognitive/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ problemId: selectedNoteId, note: noteText }),
+        });
+        if (!response.ok) throw new Error('Unable to save this note.');
+        setNotesByProblem((current) => ({ ...current, [selectedNoteId]: noteText }));
+        setNoteDirty(false);
+      } catch {
+        // Keep the note in the editor; a later edit retries the save.
+      }
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [notesLoaded, noteDirty, selectedNoteId, noteText]);
 
   const buildMarkdownBundle = () => {
     return PROBLEMS.map((p) => {
-      const saved =
-        typeof window !== 'undefined'
-          ? window.localStorage.getItem(`patternforge-note-${p.id}`) || ''
-          : '';
+      const saved = notesByProblem[p.id] ?? '';
       return `## #${p.number} ${p.title} (${p.difficulty} · ${p.patternName})\n- Optimal: ${p.targetBigO} time / ${p.spaceOptimal} space\n- Key Signal: ${p.signals.map((s) => s.phrase).join(', ')}\n- Personal Notes: ${saved || 'No notes recorded yet.'}\n`;
     }).join('\n');
   };
@@ -269,7 +292,7 @@ export function QuickRevisionHub() {
 
           <textarea
             value={noteText}
-            onChange={(e) => handleSaveNote(e.target.value)}
+            onChange={(e) => { setNoteText(e.target.value); setNoteDirty(true); }}
             placeholder="Record your pen-and-paper dry run, edge cases, and loop invariant..."
             rows={7}
             className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3.5 text-xs font-mono leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"

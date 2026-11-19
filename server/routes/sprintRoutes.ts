@@ -15,11 +15,11 @@ import { requireAuth } from '../middleware/requireAuth';
 
 const router = express.Router();
 router.use(requireAuth);
-router.use((_req: Request, res: Response, next: express.NextFunction) => {
+router.use((_req: Request, res: Response, next: import('express').NextFunction) => {
   if (process.env.NODE_ENV === 'production' && !isMongoConnected()) {
     return res.status(503).json({
       code: 'DATABASE_UNAVAILABLE',
-      message: 'Persistent learning storage is temporarily unavailable. Please retry shortly.',
+      message: 'Persistent sprint storage is temporarily unavailable. Please retry shortly.',
     });
   }
   return next();
@@ -94,7 +94,7 @@ router.post('/create', async (req: Request, res: Response) => {
   return res.status(201).json({ sprint });
 });
 
-// GET /api/sprints/active — identity always comes from the verified access token
+// GET /api/sprints/active — identity comes from the verified access token
 router.get('/active', async (req: Request, res: Response) => {
   const userId = req.authUser!.id;
 
@@ -196,7 +196,7 @@ router.patch('/:sprintId/complete-task', async (req: Request, res: Response) => 
   }
 
   task.isCompleted = true;
-  task.scoreEarned = Math.max(task.scoreEarned, Number(scoreEarned) || 90);
+  task.scoreEarned = Math.max(task.scoreEarned, Math.min(100, Math.max(0, Number(scoreEarned))));
 
   const allDayTasksComplete = dayObj.tasks.every((t) => t.isCompleted);
   let unlockedNextDay = false;

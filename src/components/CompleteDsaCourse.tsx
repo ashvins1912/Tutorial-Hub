@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, GraduationCa
 import { DSA_COMPLETE_LESSONS, DSA_LESSON_STEPS, type DsaLesson } from '../data/dsaCompleteLessons';
 import { MatrixProblemBank } from './MatrixProblemBank';
 import { DpLearningLab } from './DpLearningLab';
+import { useAccountState } from '../hooks/useAccountState';
 
 type SectionKey = 'concepts' | 'recognition' | 'method' | 'workedExample' | 'complexity' | 'pitfalls' | 'practice' | 'interviewChecks';
 
@@ -18,14 +19,6 @@ const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
 ];
 
 type LessonProgress = Record<string, string[]>;
-const progressKey = 'patternforge-dsa-course-progress-v1';
-
-function readProgress(): LessonProgress {
-  if (typeof window === 'undefined') return {};
-  try { return JSON.parse(window.localStorage.getItem(progressKey) || '{}') as LessonProgress; }
-  catch { return {}; }
-}
-
 function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
   if (section === 'practice') {
     return <div className="grid gap-3 sm:grid-cols-2">{lesson.practice.map((item, index) => (
@@ -49,7 +42,7 @@ export function CompleteDsaCourse() {
   const [activeId, setActiveId] = useState(DSA_COMPLETE_LESSONS[0].id);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<SectionKey[]>(['concepts', 'recognition', 'method', 'workedExample']);
-  const [progress, setProgress] = useState<LessonProgress>(readProgress);
+  const [progress, setProgress] = useAccountState<LessonProgress>('dsa-course-progress', {});
   const active = DSA_COMPLETE_LESSONS.find((lesson) => lesson.id === activeId) ?? DSA_COMPLETE_LESSONS[0];
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -63,7 +56,6 @@ export function CompleteDsaCourse() {
     const next = current.includes(step) ? current.filter((item) => item !== step) : [...current, step];
     const updated = { ...progress, [active.id]: next };
     setProgress(updated);
-    try { window.localStorage.setItem(progressKey, JSON.stringify(updated)); } catch { /* keep session progress */ }
   };
   const toggleSection = (key: SectionKey) => setExpanded((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
 

@@ -1,17 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useAccountState } from '../hooks/useAccountState';
 import { ExternalLink, Search, Target, Trophy, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { TOP_INTERVIEW_100_CATEGORIES, TOP_INTERVIEW_100, topInterview100Url, type Top100Difficulty } from '../data/topInterview100';
 
 type Status = 'Not started' | 'In progress' | 'Solved';
 type Progress = Record<number, { status: Status; notes: string }>;
-const STORAGE_KEY = 'patternforge-top-interview100-progress-v1';
-function readProgress(): Progress {
-  if (typeof window === 'undefined') return {};
-  try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}') as Progress; } catch { return {}; }
-}
-
 export function TopInterview100Track() {
-  const [progress, setProgress] = useState<Progress>(readProgress);
+  const [progress, setProgress] = useAccountState<Progress>('top-interview-100-progress', {});
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All categories');
   const [difficulty, setDifficulty] = useState<'All' | Top100Difficulty>('All');
@@ -31,7 +26,6 @@ export function TopInterview100Track() {
     const current = progress[number] ?? { status: 'Not started' as Status, notes: '' };
     const next = { ...progress, [number]: { ...current, ...patch } };
     setProgress(next);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
   const active = TOP_INTERVIEW_100.find((problem) => problem.number === activeNumber);
 

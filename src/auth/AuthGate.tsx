@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { LoginPage } from './LoginPage';
 import App from '../App';
+import { usePatternForgeStore } from '../store/usePatternForgeStore';
+import { useSprintStore } from '../store/useSprintStore';
 
 export function AuthGate() {
   const { user, session, loading, configured, signOut } = useAuth();
@@ -12,6 +14,8 @@ export function AuthGate() {
     let active = true;
     setProfileReady(false);
     setProfileError('');
+    usePatternForgeStore.getState().resetForUser();
+    useSprintStore.getState().resetForUser();
     if (!session?.access_token) return;
     fetch('/api/auth/me', {
       headers: { Authorization: `Bearer ${session.access_token}` },
