@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/apiFetch';
+import { apiFetchWithFreshSession } from '../lib/apiFetch';
 import { useAuth } from './AuthContext';
 import { LoginPage } from './LoginPage';
 import App from '../App';
@@ -23,7 +23,7 @@ export function AuthGate() {
     // PatternForge currently uses direct Supabase sessions (unlike Pharma's
     // first-party Pharma cookie session). Keep its existing API contract, but
     // let the shared API helper attach the latest refreshed bearer token.
-    apiFetch('/api/auth/me')
+    apiFetchWithFreshSession('/api/auth/me')
       .then(async response => {
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
