@@ -6,22 +6,34 @@ import {
   BookOpen,
   Brain,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Code2,
   Compass,
+  Database,
   FlaskConical,
   Gauge,
   Grid3X3,
   HelpCircle,
   Layers,
+  Search,
+  Shuffle,
   Sparkles,
   Target,
 } from 'lucide-react';
+import { apiFetch } from '../../lib/apiFetch';
 import { analyzeProblemStatement } from '../../core/engine/UniversalLogicEngine';
 import {
   PURE_LOGIC_MODULES,
   SAMPLE_PROBLEMS,
   STRATEGIES_CATALOG,
 } from '../../core/knowledge-base/strategiesCatalog';
+import {
+  buildStaticSystemProblemCatalog,
+  mergeDbInterviewProblems,
+  type SystemProblemSource,
+  type SystemSolverProblem,
+} from './systemProblemsAdapter';
 import type {
   CognitiveDomain,
   SocraticPhase,
@@ -48,6 +60,7 @@ import { AdaptiveCoachPanel } from './AdaptiveCoachPanel';
 
 interface UniversalSolverStudioProps {
   onOpenCurriculumTopic?: (topicId: string) => void;
+  onOpenLabProblem?: (problemId: string) => void;
   externalProblem?: { id: string; title: string; statement: string } | null;
   onConsumeExternalProblem?: () => void;
 }
@@ -64,9 +77,21 @@ type MobilePane = 'problem' | 'builder' | 'visualizer' | 'code';
 
 export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   onOpenCurriculumTopic,
+  onOpenLabProblem,
   externalProblem,
   onConsumeExternalProblem,
 }) => {
+  const staticCatalog = useMemo(() => buildStaticSystemProblemCatalog(), []);
+  const [systemCatalog, setSystemCatalog] = useState<SystemSolverProblem[]>(staticCatalog);
+  const [catalogOpen, setCatalogOpen] = useState<boolean>(false);
+  const [catalogSource, setCatalogSource] = useState<'All' | SystemProblemSource>('All');
+  const [catalogDifficulty, setCatalogDifficulty] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
+  const [catalogTopic, setCatalogTopic] = useState<string>('All');
+  const [catalogSearch, setCatalogSearch] = useState<string>('');
+  const [activeSystemProblem, setActiveSystemProblem] = useState<SystemSolverProblem | null>(
+    staticCatalog[0] ?? null,
+  );
+
   const [selectedSampleId, setSelectedSampleId] = useState<string>(SAMPLE_PROBLEMS[0].id);
   const [problemInput, setProblemInput] = useState<string>(SAMPLE_PROBLEMS[0].statement);
   const [problemTitle, setProblemTitle] = useState<string>(SAMPLE_PROBLEMS[0].title);
@@ -89,11 +114,29 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   );
   const [toast, setToast] = useState<{ kind: 'success' | 'warn'; text: string } | null>(null);
 
+  // Merge live MongoDB interview problems when connected (non-blocking)
+  useEffect(() => {
+    let active = true;
+    void apiFetch('/api/interview-problems?limit=100')
+      .then(async (res) => {
+        if (!res.ok || !active) return;
+        const data = await res.json();
+        if (Array.isArray(data?.problems) && data.problems.length > 0 && active) {
+          setSystemCatalog(mergeDbInterviewProblems(staticCatalog, data.problems));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [staticCatalog]);
+
   useEffect(() => {
     if (externalProblem) {
       setSelectedSampleId(externalProblem.id);
       setProblemTitle(externalProblem.title);
       setProblemInput(externalProblem.statement);
+      setActiveSystemProblem(null);
       setActiveWorkspaceOverride(null);
       setCompletedPhases([]);
       setRevealedPhases(['DECONSTRUCT']);
@@ -137,10 +180,62 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
     return 'chessboard-parity';
   }, [analysis.deconstruction.normalizedText]);
 
+  const catalogTopics = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of systemCatalog) set.add(p.topic);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [systemCatalog]);
+
+  const filteredSystemProblems = useMemo(() => {
+    const q = catalogSearch.trim().toLowerCase();
+    return systemCatalog.filter((item) => {
+      if (catalogSource !== 'All' && item.source !== catalogSource) return false;
+      if (catalogDifficulty !== 'All' && item.difficulty !== catalogDifficulty) return false;
+      if (catalogTopic !== 'All' && item.topic !== catalogTopic) return false;
+      if (!q) return true;
+      return (
+        item.title.toLowerCase().includes(q) ||
+        item.topic.toLowerCase().includes(q) ||
+        item.statement.toLowerCase().includes(q) ||
+        item.companies.some((c) => c.toLowerCase().includes(q))
+      );
+    });
+  }, [systemCatalog, catalogSource, catalogDifficulty, catalogTopic, catalogSearch]);
+
+  const handleLoadSystemProblem = (item: SystemSolverProblem) => {
+    setSelectedSampleId(item.id);
+    setActiveSystemProblem(item);
+    setProblemTitle(item.title);
+    setProblemInput(item.statement);
+    setActiveWorkspaceOverride(null);
+    setCompletedPhases([]);
+    setRevealedPhases(['DECONSTRUCT']);
+    setHintsUsed(0);
+    setToast({
+      kind: 'success',
+      text: `Loaded "${item.title}" (${item.source} · ${item.difficulty}) into Solver Studio.`,
+    });
+  };
+
+  const handleLoadRandomUnsolved = () => {
+    const pool = filteredSystemProblems.length > 0 ? filteredSystemProblems : systemCatalog;
+    const unsolved = pool.filter((p) => !telemetry.completedProblemIds.includes(p.id));
+    const candidates = unsolved.length > 0 ? unsolved : pool;
+    if (candidates.length === 0) return;
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    handleLoadSystemProblem(picked);
+  };
+
   const handleLoadSample = (sampleId: string) => {
+    const found = systemCatalog.find((s) => s.id === sampleId);
+    if (found) {
+      handleLoadSystemProblem(found);
+      return;
+    }
     const sample = SAMPLE_PROBLEMS.find((s) => s.id === sampleId);
     if (!sample) return;
     setSelectedSampleId(sample.id);
+    setActiveSystemProblem(null);
     setProblemTitle(sample.title);
     setProblemInput(sample.statement);
     setActiveWorkspaceOverride(null);
@@ -289,26 +384,230 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
         </div>
       )}
 
-      {/* Sample Problem Launcher */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">
-          Test Presets:
-        </span>
-        {SAMPLE_PROBLEMS.map((sample) => (
-          <button
-            key={sample.id}
-            type="button"
-            onClick={() => handleLoadSample(sample.id)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-              selectedSampleId === sample.id
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-200'
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-            }`}
-          >
-            {sample.title.split(' ').slice(0, 3).join(' ')}
-          </button>
-        ))}
-      </div>
+      {/* Unified System Problem Library Bar */}
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCatalogOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap"
+            >
+              <Database className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>System Problem Library ({systemCatalog.length})</span>
+              {catalogOpen ? (
+                <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLoadRandomUnsolved}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-indigo-500 transition-colors whitespace-nowrap"
+            >
+              <Shuffle className="w-3.5 h-3.5" aria-hidden="true" />
+              Random Unsolved
+            </button>
+
+            <span className="hidden sm:inline text-xs text-slate-400" aria-hidden="true">
+              |
+            </span>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {SAMPLE_PROBLEMS.slice(0, 5).map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => handleLoadSample(sample.id)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                    selectedSampleId === sample.id
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-200'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  {sample.title.split(' ').slice(0, 3).join(' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeSystemProblem && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
+              <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                {activeSystemProblem.source}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>{activeSystemProblem.difficulty}</span>
+              <span aria-hidden="true">·</span>
+              <span>{activeSystemProblem.topic}</span>
+              {activeSystemProblem.labProblemId && onOpenLabProblem && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenLabProblem(activeSystemProblem.labProblemId!)}
+                    className="inline-flex items-center gap-1 font-sans font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Open 5-Stage Lab
+                    <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Expandable Full System Problem Catalog Browser */}
+        {catalogOpen && (
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5">
+              <div className="relative lg:col-span-4">
+                <Search
+                  className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  placeholder="Search by title, company, pattern, or keyword..."
+                  className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <select
+                aria-label="Filter problems by source bank"
+                value={catalogSource}
+                onChange={(e) => setCatalogSource(e.target.value as 'All' | SystemProblemSource)}
+                className="lg:col-span-3 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200"
+              >
+                <option value="All">All Banks ({systemCatalog.length})</option>
+                {(
+                  [
+                    '5-Stage Labs',
+                    'Big Tech Vault',
+                    'Product Co. Bank',
+                    '45 High-ROI',
+                    'Matrix Bank',
+                    'Logic Presets',
+                    'DB Interview Catalog',
+                  ] as const
+                ).map((src) => {
+                  const count = systemCatalog.filter((p) => p.source === src).length;
+                  if (count === 0) return null;
+                  return (
+                    <option key={src} value={src}>
+                      {src} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+
+              <select
+                aria-label="Filter problems by topic"
+                value={catalogTopic}
+                onChange={(e) => setCatalogTopic(e.target.value)}
+                className="lg:col-span-3 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200"
+              >
+                <option value="All">All Topics ({catalogTopics.length})</option>
+                {catalogTopics.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label="Filter problems by difficulty"
+                value={catalogDifficulty}
+                onChange={(e) =>
+                  setCatalogDifficulty(e.target.value as 'All' | 'Easy' | 'Medium' | 'Hard')
+                }
+                className="lg:col-span-2 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-800 dark:text-slate-200"
+              >
+                <option value="All">Any Difficulty</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+              <span>
+                Showing {Math.min(filteredSystemProblems.length, 60)} of{' '}
+                {filteredSystemProblems.length} matching system problems
+              </span>
+              <span>
+                {telemetry.completedProblemIds.length} solved in Universal Studio
+              </span>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg">
+              {filteredSystemProblems.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                  No problems match these filters. Try clearing the search or switching bank.
+                </div>
+              ) : (
+                filteredSystemProblems.slice(0, 60).map((item) => {
+                  const isSelected = selectedSampleId === item.id;
+                  const isSolved = telemetry.completedProblemIds.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        handleLoadSystemProblem(item);
+                        setCatalogOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between gap-3 transition-colors ${
+                        isSelected
+                          ? 'bg-indigo-50/80 dark:bg-indigo-950/40'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                          {isSolved && (
+                            <CheckCircle2
+                              className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span className="truncate">{item.title}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          {item.source} · {item.topic}
+                          {item.companies.length > 0
+                            ? ` · ${item.companies.slice(0, 3).join(', ')}`
+                            : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 font-mono text-[11px]">
+                        <span
+                          className={
+                            item.difficulty === 'Easy'
+                              ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
+                              : item.difficulty === 'Hard'
+                                ? 'text-rose-700 dark:text-rose-400 font-semibold'
+                                : 'text-amber-700 dark:text-amber-400 font-semibold'
+                          }
+                        >
+                          {item.difficulty}
+                        </span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-sans font-semibold">
+                          Load
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Main Split Workspace (Desktop 12-Col Split, Mobile Tabbed) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">

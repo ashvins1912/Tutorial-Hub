@@ -20,6 +20,7 @@ export type TopView =
   | 'sprint'
   | 'roadmap'
   | 'system-design'
+  | 'ood'
   | 'revision'
   | 'skill-tree'
   | 'schemas'
