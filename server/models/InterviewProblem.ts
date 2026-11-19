@@ -23,6 +23,7 @@ export interface IInterviewProblem extends Document {
   };
   source: { kind: string; reference?: string };
   matchReview?: { status: 'clear' | 'needs-review'; confidence: number; matchedSlug?: string; reason?: string };
+  authoringMetadata?: { generation: string; status: string; sourcePolicy: string; missingEvidence: string[] };
 }
 
 const ExampleSchema = new Schema({ input: String, output: String, explanation: String }, { _id: false });
@@ -49,6 +50,7 @@ const InterviewProblemSchema = new Schema<IInterviewProblem>({
   },
   source: { kind: { type: String, default: 'master-interview-inventory' }, reference: String },
   matchReview: Schema.Types.Mixed,
+  authoringMetadata: Schema.Types.Mixed,
 }, { timestamps: true, strict: true });
 
 InterviewProblemSchema.index({ topicId: 1, normalizedTitle: 1 }, { unique: true });
