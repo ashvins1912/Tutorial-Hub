@@ -22,6 +22,7 @@ export type TopView =
   | 'roadmap'
   | 'system-design'
   | 'ood'
+  | 'ai-engineering'
   | 'revision'
   | 'skill-tree'
   | 'schemas'

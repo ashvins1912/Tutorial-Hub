@@ -54,6 +54,7 @@ import { IntelligentEngineStudio } from './features/intelligent-engine/component
 import { ProfileStatsView } from './components/ProfileStatsView';
 import { CommunityHubView } from './components/CommunityHubView';
 import { OodPrinciplesStudio } from './components/OodPrinciplesStudio';
+import { AiEngineeringStudio } from './components/AiEngineeringStudio';
 const AIEngineeringAcademy = lazy(() => import('./features/ai-academy/components/AIEngineeringAcademy').then((module) => ({ default: module.AIEngineeringAcademy })));
 import { PublishedLessonView } from './features/intelligent-engine/components/PublishedLessonView';
 
@@ -265,6 +266,7 @@ export default function App() {
     { id: 'algorithms', label: 'Algorithms', isActive: activeView === 'algorithms' },
     { id: 'fuzzy-search', label: 'N-Gram Lab', isActive: activeView === 'fuzzy-search' },
     { id: 'ood', label: 'OOPs & OOD', isActive: activeView === 'ood' },
+    { id: 'ai-engineering', label: 'AI Engineer', isActive: activeView === 'ai-engineering' },
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
     { id: 'sprint', label: 'Sprint', isActive: activeView === 'sprint' },
@@ -554,6 +556,8 @@ export default function App() {
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 
           {activeView === 'ood' && <OodPrinciplesStudio />}
+
+          {activeView === 'ai-engineering' && <AiEngineeringStudio />}
 
           {activeView === 'profile' && <ProfileStatsView />}
 
