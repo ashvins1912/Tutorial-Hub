@@ -3,7 +3,7 @@ import type { GeneratedLesson, LearningSection } from '../contentAuthoring.types
 const isText = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 
-export function validateGeneratedLesson(value: unknown, sections: LearningSection[]): { lesson: GeneratedLesson; warnings: string[] } {
+export function validateGeneratedLesson(value: unknown, sections: LearningSection[], sourceText = ''): { lesson: GeneratedLesson; warnings: string[] } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('GENERATED_LESSON_INVALID_OBJECT');
   const raw = value as Record<string, unknown>;
   if (!isText(raw.title) || !isText(raw.summary)) throw new Error('GENERATED_LESSON_MISSING_TITLE_OR_SUMMARY');
@@ -24,6 +24,10 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   const quiz = asArray(raw.quiz);
   const practiceTasks = asArray(raw.practiceTasks);
   const warnings: string[] = [];
+  const sourceUrls = new Set((sourceText.match(/https?:\\/\\/[^\\s)\\]>]+/g) || []).map((url) => url.replace(/[.,;]+$/, ''));
+  const candidateReferences = asArray(raw.references).filter((ref): ref is Record<string, unknown> => !!ref && typeof ref === 'object' && isText((ref as Record<string, unknown>).label) && isText((ref as Record<string, unknown>).url));
+  const allowedReferences = candidateReferences.filter((ref) => sourceUrls.has(String(ref.url).replace(/[.,;]+$/, '')));
+  if (candidateReferences.length !== allowedReferences.length) warnings.push('One or more AI-suggested references were omitted because their URLs were not present in the author-supplied source.');
   if (!quiz.length) warnings.push('No quiz questions were generated.');
   if (!practiceTasks.length) warnings.push('No practical exercises were generated.');
   if (!visualizations.length) warnings.push('No visualizations were generated.');
@@ -47,7 +51,7 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     visualizations: visualizations as GeneratedLesson['visualizations'],
     quiz: quiz as GeneratedLesson['quiz'],
     practiceTasks: practiceTasks as GeneratedLesson['practiceTasks'],
-    references: asArray(raw.references).filter((ref): ref is GeneratedLesson['references'][number] => !!ref && typeof ref === 'object' && isText((ref as Record<string, unknown>).label) && isText((ref as Record<string, unknown>).url)).map((ref) => ({ ...ref, suppliedByUser: Boolean(ref.suppliedByUser) })) as GeneratedLesson['references'],
+    references: allowedReferences.map((ref) => ({ label: String(ref.label), url: String(ref.url), suppliedByUser: true })),
     qualityNotes: asArray(raw.qualityNotes).filter(isText),
     validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and quiz structure checked'], warnings },
   };
