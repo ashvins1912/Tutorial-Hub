@@ -13,7 +13,7 @@ All progress routes require a verified Supabase bearer token:
 - Authors can publish a generated lesson with `POST /api/content-authoring/jobs/:id/publish`.
 - Authors can unpublish it with `DELETE /api/content-authoring/jobs/:id/publish`.
 - Publishing requires an existing generated lesson and is scoped to the author who owns the job.
-- Authenticated learners can retrieve published lesson content through `GET /api/content-authoring/published/:id`.
+- Authenticated learners can retrieve published lesson content through `GET /api/content-authoring/published/:id`; the authoring UI provides a shareable `/?lesson=<id>` learner view.
 - Progress access is allowed when the authenticated user owns the draft or the lesson has a valid `publishedAt` timestamp.
 - Unpublished drafts remain private to their author. Progress records remain isolated by authenticated user ID.
 
