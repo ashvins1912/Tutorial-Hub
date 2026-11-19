@@ -19,13 +19,13 @@ export function parseGraph(source: string) {
   const direction = /^(flowchart|graph)\s+LR/i.test(lines[0] || '') ? 'LR' : 'TD';
   const nodes = new Map<string, GraphNode>();
   const edges: GraphEdge[] = [];
-  const token = /([A-Za-z][\w-]*)(?:\[([^\]]+)\]|\{([^}]+)\}|\(\(([^)]+)\)\)|\(([^)]+)\)|\[\(([^)]+)\)\])?/g;
+  const token = /([A-Za-z][\w-]*)(?:\[\(([^)]+)\)\]|\[([^\]]+)\]|\{([^}]+)\}|\(\(([^)]+)\)\)|\(([^)]+)\))?/g;
   const readToken = (value: string) => {
     const match = token.exec(value);
     token.lastIndex = 0;
     if (!match) return null;
-    const [, id, rect, diamond, round, pill, database,] = match;
-    const label = rect || diamond || round || pill || database || id;
+    const [, id, database, rect, diamond, round, pill] = match;
+    const label = database || rect || diamond || round || pill || id;
     const shape: GraphNode['shape'] = database ? 'database' : diamond ? 'diamond' : round || pill ? 'round' : 'rect';
     if (!nodes.has(id)) nodes.set(id, { id, label, shape });
     return id;
