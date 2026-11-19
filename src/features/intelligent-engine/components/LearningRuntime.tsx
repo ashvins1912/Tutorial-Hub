@@ -52,7 +52,9 @@ export function bubbleSortTrace(values: number[]): TraceStep[] {
 
 export function parseInput(raw: string): number[] {
   if (!raw.trim()) throw new Error('Enter comma-separated finite numbers.');
-  const values = raw.split(',').map((part) => Number(part.trim()));
+  const parts = raw.split(',').map((part) => part.trim());
+  if (parts.some((part) => !part)) throw new Error('Enter comma-separated finite numbers.');
+  const values = parts.map(Number);
   if (!values.length || values.some((value) => !Number.isFinite(value))) throw new Error('Enter comma-separated finite numbers.');
   if (values.length > 12) throw new Error('Use at most 12 values for a readable trace.');
   return values;
