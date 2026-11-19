@@ -38,10 +38,14 @@ async function startServer() {
   app.use('/api/sprints', sprintRoutes);
 
   app.get('/api/health', (_req, res) => {
-    res.json({
-      ok: true,
+    const databaseReady = isMongoConnected();
+    const production = process.env.NODE_ENV === 'production';
+    const status = databaseReady || !production ? 200 : 503;
+    res.status(status).json({
+      ok: databaseReady || !production,
       service: 'patternforge-dsa',
-      storageMode: isMongoConnected() ? 'mongodb' : 'in-memory',
+      storageMode: databaseReady ? 'mongodb' : 'in-memory',
+      databaseReady,
       pairWs: '/ws/pair',
     });
   });
