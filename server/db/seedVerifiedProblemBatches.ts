@@ -1,5 +1,6 @@
 import { InterviewProblem } from '../models/InterviewProblem';
 import { ARRAYS_BATCH_01 } from '../seed/verifiedProblemBatches/arraysBatch01';
+import { isMongoConnected } from './connectMongo';
 
 function assertVerifiedBatchRecord(item:any):void {
   const stages=item.stages??{};
@@ -22,6 +23,7 @@ function assertVerifiedBatchRecord(item:any):void {
 
 /** Import only content that passed source, code, test, animation and complexity gates. */
 export async function seedVerifiedProblemBatches():Promise<void> {
+  if(!isMongoConnected())return;
   if(ARRAYS_BATCH_01.length!==5)throw new Error('Arrays batch 01 must contain exactly five authored problems.');
   for(const item of ARRAYS_BATCH_01) {
     assertVerifiedBatchRecord(item);
