@@ -8,7 +8,7 @@ export const ARRAYS_BATCH_01 = [
 {
  slug:'arrays-two-sum', title:'Two Sum', difficulty:'Easy', leetcodeId:1,
  sourceReferences:['https://leetcode.com/problems/two-sum/'],
- statement:'Given an array of integers nums and an integer target, return the indices of the two numbers such that they add up to target. You may assume that each input has exactly one solution, and you may not use the same element twice. You may return the answer in any order.',
+ statement:'Given integer array nums and target, find two different positions whose values total target. Exactly one valid pair exists; return its two indices in either order.',
  examples:[
   {input:'nums = [2,7,11,15], target = 9',output:'[0,1]',explanation:'nums[0] + nums[1] = 2 + 7 = 9.'},
   {input:'nums = [3,2,4], target = 6',output:'[1,2]',explanation:'nums[1] + nums[2] = 2 + 4 = 6.'},
@@ -26,7 +26,7 @@ export const ARRAYS_BATCH_01 = [
 {
  slug:'arrays-best-time-to-buy-and-sell-stock',title:'Best Time to Buy and Sell Stock',difficulty:'Easy',leetcodeId:121,
  sourceReferences:['https://leetcode.com/problems/best-time-to-buy-and-sell-stock/'],
- statement:'You are given an array prices where prices[i] is the price of a given stock on the ith day. You want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell it. Return the maximum profit you can achieve. If you cannot achieve any profit, return 0.',
+ statement:'Given the stock price on each day, choose at most one buy day and a strictly later sell day. Return the greatest achievable profit, or 0 when no profitable trade exists.',
  examples:[
   {input:'prices = [7,1,5,3,6,4]',output:'5',explanation:'Buy at price 1 on day 2 and sell at price 6 on day 5; profit is 6 - 1 = 5.'},
   {input:'prices = [7,6,4,3,1]',output:'0',explanation:'No later selling day yields a positive profit.'}
@@ -43,7 +43,7 @@ export const ARRAYS_BATCH_01 = [
 {
  slug:'arrays-contains-duplicate',title:'Contains Duplicate',difficulty:'Easy',leetcodeId:217,
  sourceReferences:['https://leetcode.com/problems/contains-duplicate/'],
- statement:'Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.',
+ statement:'Determine whether any integer occurs at two or more positions in nums. Return true when a repeated value exists; otherwise return false.',
  examples:[
   {input:'nums = [1,2,3,1]',output:'true',explanation:'The value 1 occurs at indices 0 and 3.'},
   {input:'nums = [1,2,3,4]',output:'false',explanation:'All values are distinct.'},
@@ -61,7 +61,7 @@ export const ARRAYS_BATCH_01 = [
 {
  slug:'arrays-maximum-subarray-kadanes-algorithm',title:'Maximum Subarray (Kadane\'s Algorithm)',difficulty:'Medium',leetcodeId:53,
  sourceReferences:['https://leetcode.com/problems/maximum-subarray/'],
- statement:'Given an integer array nums, find the subarray with the largest sum, and return its sum.',
+ statement:'Find the non-empty contiguous segment of nums with the greatest possible sum, and return that sum.',
  examples:[
   {input:'nums = [-2,1,-3,4,-1,2,1,-5,4]',output:'6',explanation:'The subarray [4,-1,2,1] has the largest sum 6.'},
   {input:'nums = [1]',output:'1',explanation:'The only non-empty subarray is [1].'},
@@ -79,7 +79,7 @@ export const ARRAYS_BATCH_01 = [
 {
  slug:'arrays-product-of-array-except-self',title:'Product of Array Except Self',difficulty:'Medium',leetcodeId:238,
  sourceReferences:['https://leetcode.com/problems/product-of-array-except-self/'],
- statement:'Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i]. The product of any prefix or suffix of nums is guaranteed to fit in a 32-bit integer. You must write an algorithm that runs in O(n) time and without using the division operation.',
+ statement:'Build answer so each answer[i] is the product of every nums element at a different index. The algorithm must run in O(n) time without division; every prefix/suffix product and output value fits in a 32-bit integer.',
  examples:[
   {input:'nums = [1,2,3,4]',output:'[24,12,8,6]'},
   {input:'nums = [-1,1,0,-3,3]',output:'[0,0,9,0,0]'}
