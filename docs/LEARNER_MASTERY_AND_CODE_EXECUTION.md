@@ -11,7 +11,7 @@ All routes require a verified Supabase bearer token:
 ### Stored mastery data
 The MongoDB `LearningProgress` collection is uniquely indexed by `userId + lessonId`. It stores:
 - Last algorithm and bounded input configuration, target and current trace step.
-- Quiz attempt count, latest score, best score, mastery band and selected answers.
+- Quiz attempt count, latest score, best score, mastery band, selected answers and the latest 30 score-history entries.
 - Completed practice task identifiers and last activity timestamp.
 
 The server derives mastery bands from quiz accuracy: below 50% = beginner, 50–79% = intermediate, 80%+ = advanced. The client cannot set the mastery score directly. Every database query is scoped to the authenticated Supabase user ID. The progress API fails closed with HTTP 503 when MongoDB is unavailable; it does not silently pretend that in-memory state is persistent.
