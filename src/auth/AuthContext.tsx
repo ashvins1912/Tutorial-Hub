@@ -23,16 +23,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let active = true;
-    supabase.auth.getSession().then(({ data, error }) => {
+    // Subscribe before getSession so a fast OAuth callback cannot be missed.
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return;
-      if (error) console.error('Unable to restore Supabase session:', error.message);
-      setSession(data.session);
+      setSession(nextSession);
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) console.error('Unable to restore Supabase session:', error.message);
+      setSession(current => current || data.session);
       setLoading(false);
+    }).catch(error => {
+      if (active) {
+        console.error('Unable to restore Supabase session:', error);
+        setLoading(false);
+      }
     });
 
     return () => {
