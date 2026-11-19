@@ -17,8 +17,8 @@ async function findOwnedLesson(lessonId: string, userId: string) {
   return ContentAuthoringJob.findOne({ _id: lessonId, ownerId: userId }).select('generatedLesson.quiz').lean();
 }
 
-function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
-  if (Object.keys(answers).length !== quiz.length) return null;
+export function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
+  if (Object.keys(answers).length !== quiz.length || quiz.some((_, index) => typeof answers[String(index)] !== 'string')) return null;
   return quiz.reduce((score, question, index) => {
     const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
     const actual = (answers[String(index)] || '').split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
