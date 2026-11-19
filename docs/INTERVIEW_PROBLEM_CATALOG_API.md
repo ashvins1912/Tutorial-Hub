@@ -44,3 +44,12 @@ Write endpoints require `x-problem-catalog-token`, configured server-side as `PR
 The startup seed contains **194 topic-specific records**: 173 previously missing entries plus 21 exact requested variants for the partial/related cases. The 21 related-title relationships are retained as metadata; only genuinely equivalent variants are aliases. Existing 99 title matches remain in their existing repository learning sources and are not falsely marked as fully authored in this new catalog.
 
 A record can only be marked `validated` after statement, examples, constraints, and implementation/practice/master stage evidence are supplied.
+
+ 
+## Five-stage lesson authoring and topic UI
+
+The startup importer generates a structured five-stage topic blueprint for all 293 records. It includes topic-specific invariant, recognition cues, brute-force/better/optimal strategy, pseudocode, visual trace guidance, progressive hints, test-design checklists, proof strategy, complexity framework, interview follow-ups, quizzes, and 1/3/7/14/30-day revision checkpoints.
+
+These deterministic blueprints are marked `draft-needs-problem-specific-verification`. They do not invent official statements, numeric constraints, sample input/output, or accepted submissions. The topic UI labels Java/JavaScript/Python material as implementation checklists rather than passing them off as runnable accepted code. A LeetCode source lookup is available per selected problem when a matching source slug exists.
+
+The Curriculum workspace includes a topic-first 22-topic catalog panel backed by `GET /api/interview-problems`, with search, problem selection, five stage tabs, source verification messaging, and quality status. Existing curriculum visualizers and progress controls remain intact.
