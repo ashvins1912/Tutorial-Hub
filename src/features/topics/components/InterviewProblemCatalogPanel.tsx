@@ -36,6 +36,29 @@ function TextList({items}:{items?:any[]}) {
 function Panel({title,children}:{title:string;children:ReactNode}) {
   return <section className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2"><h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</h4>{children}</section>;
 }
+function AnimationSequence({steps}:{steps:string[]}) {
+  const [activeStep,setActiveStep]=useState(0);
+  const [playing,setPlaying]=useState(false);
+  useEffect(()=>{
+    if(!playing||steps.length<2)return;
+    const timer=window.setInterval(()=>setActiveStep(current=>current>=steps.length-1?0:current+1),1200);
+    return()=>window.clearInterval(timer);
+  },[playing,steps.length]);
+  const move=(next:number)=>{setPlaying(false);setActiveStep(Math.max(0,Math.min(steps.length-1,next)));};
+  return <Panel title="Problem-specific animation">
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" onClick={()=>setPlaying(value=>!value)} disabled={steps.length<2} className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{playing?'Pause':'Play animation'}</button>
+      <button type="button" onClick={()=>move(0)} className="rounded-md border px-3 py-1.5 text-xs">Restart</button>
+      <button type="button" onClick={()=>move(activeStep-1)} disabled={activeStep===0} className="rounded-md border px-3 py-1.5 text-xs disabled:opacity-40">Previous</button>
+      <button type="button" onClick={()=>move(activeStep+1)} disabled={activeStep>=steps.length-1} className="rounded-md border px-3 py-1.5 text-xs disabled:opacity-40">Next</button>
+      <span className="ml-auto text-xs tabular-nums text-slate-500">Step {steps.length?activeStep+1:0} / {steps.length}</span>
+    </div>
+    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-sky-500 transition-all duration-500" style={{width:steps.length?((activeStep+1)/steps.length*100)+'%':'0%'}}/></div>
+    <div className="min-h-20 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm leading-relaxed transition-all duration-300 dark:border-sky-900 dark:bg-sky-950/40">{steps[activeStep]??'No animation steps authored yet.'}</div>
+    <ol className="space-y-1 text-xs">{steps.map((step,index)=><li key={index} className={`rounded-md px-2 py-1.5 transition-colors ${index===activeStep?'bg-sky-100 font-semibold text-sky-900 dark:bg-sky-900/50 dark:text-sky-100':'text-slate-500'}`}><button type="button" onClick={()=>move(index)} className="w-full text-left">{index+1}. {step}</button></li>)}</ol>
+  </Panel>;
+}
+
 function StageContent({problem,stage}:{problem:ProblemRecord;stage:StageKey}) {
   const data=problem.stages?.[stage]??{};
   if(stage==='understand')return <div className="grid md:grid-cols-2 gap-3">
@@ -48,7 +71,7 @@ function StageContent({problem,stage}:{problem:ProblemRecord;stage:StageKey}) {
   </div>;
   if(stage==='visualize')return <div className="space-y-3">
     <Panel title="Hand-drawn model / diagram"><pre className="whitespace-pre-wrap text-xs leading-relaxed font-mono bg-slate-50 dark:bg-slate-950 rounded-md p-3">{data.diagram}</pre><p className="text-xs text-slate-500">{data.diagramNotation}</p></Panel>
-    <Panel title="Animation sequence"><ol className="list-decimal pl-5 space-y-2 text-sm">{(data.animationSteps??[]).map((s:string,i:number)=><li key={i}>{s}</li>)}</ol></Panel>
+    <AnimationSequence steps={data.animationSteps??[]}/>
     <Panel title="Trace walkthrough"><p className="text-sm leading-relaxed">{data.traceWalkthrough}</p></Panel>
   </div>;
   if(stage==='implement')return <div className="space-y-3">
