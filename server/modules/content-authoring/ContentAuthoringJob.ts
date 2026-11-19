@@ -13,6 +13,7 @@ export interface IContentAuthoringJob extends Document {
   draft?: CanonicalLearningDraft;
   generatedLesson?: GeneratedLesson;
   generation?: GenerationMetadata;
+  publishedAt?: Date | null;
   error?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -33,6 +34,7 @@ const ContentAuthoringJobSchema = new Schema<IContentAuthoringJob>({
   draft: Schema.Types.Mixed,
   generatedLesson: Schema.Types.Mixed,
   generation: Schema.Types.Mixed,
+  publishedAt: { type: Date, default: null, index: true },
   error: String,
 }, { timestamps: true });
 
