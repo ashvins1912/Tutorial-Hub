@@ -26,7 +26,7 @@ export async function generateLearningDraft(input: {
     }),
     signal: input.signal,
   });
-  const validated = validateGeneratedLesson(result.lesson, input.draft.sections);
+  const validated = validateGeneratedLesson(result.lesson, input.draft.sections, input.draft.sourceText);
   const metadata: GenerationMetadata = {
     status: 'generated',
     provider: result.provider,
