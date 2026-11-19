@@ -1,3 +1,4 @@
+import { AI_ENGINEERING_EXTRA_MODULES } from './aiEngineeringExtraLessons';
 export type AcademyStep = { title: string; detail: string; input: string; output: string; failure: string };
 export type AcademyQuestion = { prompt: string; options: string[]; answer: number; explanation: string };
 export type AcademyLesson = {
@@ -125,6 +126,11 @@ export const AI_ENGINEERING_CURRICULUM: AcademyPhase[] = [
     ]
   }
 ];
+
+for (const [phaseId, modules] of Object.entries(AI_ENGINEERING_EXTRA_MODULES)) {
+  const phase = AI_ENGINEERING_CURRICULUM.find((item) => item.id === phaseId);
+  if (phase) phase.modules.push(...modules);
+}
 
 export const getAcademyCounts = () => {
   const modules = AI_ENGINEERING_CURRICULUM.flatMap((phase) => phase.modules);
