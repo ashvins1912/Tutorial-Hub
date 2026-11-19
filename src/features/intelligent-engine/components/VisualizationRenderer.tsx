@@ -47,6 +47,63 @@ function parseGraph(source: string) {
   return { direction, nodes: [...nodes.values()].slice(0, 30), edges: edges.slice(0, 50) };
 }
 
+function SequenceDiagram({ source }: { source: string }) {
+  const lines = source.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean).slice(1);
+  const participants: string[] = [];
+  const messages: Array<{ from: string; to: string; label: string }> = [];
+  for (const line of lines) {
+    const participant = line.match(/^(?:participant|actor)\\s+([\\w-]+)(?:\\s+as\\s+(.+))?/i);
+    if (participant) { if (!participants.includes(participant[1])) participants.push(participant[1]); continue; }
+    const message = line.match(/^([\\w-]+)\\s*(?:->>|-->>|->|-->)\\s*([\\w-]+)\\s*:\\s*(.+)$/);
+    if (message) {
+      if (!participants.includes(message[1])) participants.push(message[1]);
+      if (!participants.includes(message[2])) participants.push(message[2]);
+      messages.push({ from: message[1], to: message[2], label: message[3] });
+    }
+  }
+  const width = Math.max(500, participants.length * 170 + 50);
+  return <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-950">
+    {participants.length === 0 ? <pre className="text-xs">{source}</pre> : <svg viewBox={`0 0 ${width} ${Math.max(150, messages.length * 76 + 90)}`} className="w-full" style={{ minWidth: width }} role="img" aria-label="Sequence diagram">
+      <defs><marker id="sequence-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#0284c7"/></marker></defs>
+      {participants.map((name,index)=>{const x=70+index*170;return <g key={name}><rect x={x-58} y="12" width="116" height="34" rx="8" fill="#e0f2fe" stroke="#0284c7"/><text x={x} y="33" textAnchor="middle" fontSize="11" fontWeight="600" fill="#0f172a">{name}</text><line x1={x} y1="46" x2={x} y2={messages.length*76+75} stroke="#94a3b8" strokeDasharray="4 4"/></g>;})}
+      {messages.map((message,index)=>{const from=70+participants.indexOf(message.from)*170;const to=70+participants.indexOf(message.to)*170;const y=78+index*76;return <g key={index}><line x1={from} y1={y} x2={to} y2={y} stroke="#0284c7" strokeWidth="1.8" markerEnd="url(#sequence-arrow)"/><text x={(from+to)/2} y={y-8} textAnchor="middle" fontSize="10" fill="#334155">{message.label.slice(0,42)}</text></g>;})}
+    </svg>}
+    <p className="px-2 pb-1 text-[10px] text-slate-500">Sequence diagram · {participants.length} participants · {messages.length} messages</p>
+  </div>;
+}
+
+function EntityRelationshipDiagram({ source }: { source: string }) {
+  const lines = source.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean).slice(1);
+  const entities = new Map<string, string[]>();
+  const relationships: Array<{ from: string; to: string; label: string }> = [];
+  let current = '';
+  for (const line of lines) {
+    const entity = line.match(/^([A-Za-z][\\w-]*)\\s*\\{$/);
+    if (entity) { current = entity[1]; if (!entities.has(current)) entities.set(current, []); continue; }
+    if (line === '}') { current = ''; continue; }
+    if (current) { entities.get(current)?.push(line.replace(/\\s+/g, ' ')); continue; }
+    const relation = line.match(/^([A-Za-z][\\w-]*)\\s+[^ ]+\\s+([A-Za-z][\\w-]*)\\s*:\\s*(.+)$/);
+    if (relation) { entities.set(relation[1], entities.get(relation[1]) || []); entities.set(relation[2], entities.get(relation[2]) || []); relationships.push({ from: relation[1], to: relation[2], label: relation[3] }); }
+  }
+  const names = [...entities.keys()].slice(0, 16);
+  const columns = Math.min(3, Math.max(1, names.length));
+  const cardWidth = 190;
+  const cardHeight = 100;
+  const gapX = 24;
+  const gapY = 28;
+  const width = columns * cardWidth + (columns - 1) * gapX + 30;
+  const rows = Math.ceil(names.length / columns);
+  const height = rows * (cardHeight + gapY) + 30;
+  const points = new Map(names.map((name,index)=>[name,{x:15+(index%columns)*(cardWidth+gapX),y:15+Math.floor(index/columns)*(cardHeight+gapY)}]));
+  return <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-950">
+    {names.length === 0 ? <pre className="text-xs">{source}</pre> : <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{minWidth:width}} role="img" aria-label="Entity relationship diagram">
+      {relationships.map((relation,index)=>{const a=points.get(relation.from);const b=points.get(relation.to);if(!a||!b)return null;return <g key={index}><path d={`M ${a.x+cardWidth/2} ${a.y+cardHeight} L ${b.x+cardWidth/2} ${b.y}`} stroke="#0d9488" strokeWidth="1.5" fill="none"/><text x={(a.x+b.x+cardWidth)/2} y={(a.y+b.y+cardHeight)/2} fontSize="9" textAnchor="middle" fill="#0f766e">{relation.label.slice(0,28)}</text></g>;})}
+      {names.map((name)=>{const point=points.get(name)!;return <g key={name}><rect x={point.x} y={point.y} width={cardWidth} height={cardHeight} rx="7" fill="#ecfdf5" stroke="#059669"/><path d={`M ${point.x} ${point.y+26} H ${point.x+cardWidth}`} stroke="#059669"/><text x={point.x+10} y={point.y+18} fontSize="11" fontWeight="700" fill="#064e3b">{name}</text>{(entities.get(name)||[]).slice(0,4).map((field,index)=><text key={index} x={point.x+10} y={point.y+44+index*13} fontSize="9" fill="#334155">{field.slice(0,30)}</text>)}</g>;})}
+    </svg>}
+    <p className="px-2 pb-1 text-[10px] text-slate-500">Entity relationship diagram · {names.length} entities · {relationships.length} relationships</p>
+  </div>;
+}
+
 function MermaidDiagram({ source }: { source: string }) {
   const graph = useMemo(() => parseGraph(source), [source]);
   const horizontal = graph.direction === 'LR';
