@@ -20,8 +20,8 @@ export function AuthGate() {
 
     if (!session?.access_token) return () => { active = false; };
 
-    // PatternForge keeps Supabase as its session authority. Verify the current
-    // user before loading any user-scoped learning state.
+    // Keep Supabase as the session authority. Verify the current user before
+    // loading any user-scoped learning state.
     apiFetchWithFreshSession('/api/auth/me')
       .then(async response => {
         const payload = await response.json().catch(() => ({}));
