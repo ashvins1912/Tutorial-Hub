@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../../lib/apiFetch';
 import { LearningRuntime } from './LearningRuntime';
-import { LessonVisual, VisualizationRenderer } from './VisualizationRenderer';
+import { VisualizationRenderer, type LessonVisual } from './VisualizationRenderer';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer: string | string[]; explanation: string };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
