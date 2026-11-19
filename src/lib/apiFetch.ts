@@ -4,9 +4,8 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
   const headers = new Headers(init.headers);
   const existingAuthorization = headers.get('Authorization');
 
-  // Match the API's existing bearer-token contract. Fetch the current session
-  // for every request so Supabase's automatic refresh is reflected, rather
-  // than retaining a possibly stale JWT from the OAuth callback.
+  // Always attach the latest Supabase access token unless caller explicitly
+  // supplied credentials. This keeps API requests aligned with auto-refresh.
   if (!existingAuthorization && supabase) {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
@@ -19,5 +18,24 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
     headers.set('Content-Type', 'application/json');
   }
 
+  return fetch(input, { ...init, headers, credentials: init.credentials || 'same-origin' });
+}
+
+/**
+ * Wrap state-changing authenticated requests with one retry after refreshing
+ * Supabase's client session. The API still validates every bearer token.
+ * Use only for idempotent requests; do not automatically replay writes.
+ */
+export async function apiFetchWithFreshSession(input: RequestInfo | URL, init: RequestInit = {}) {
+  const response = await apiFetch(input, init);
+  if (response.status !== 401 || !supabase || init.method && !['GET', 'HEAD'].includes(init.method.toUpperCase())) {
+    return response;
+  }
+
+  const { data, error } = await supabase.auth.refreshSession();
+  if (error || !data.session?.access_token) return response;
+
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${data.session.access_token}`);
   return fetch(input, { ...init, headers, credentials: init.credentials || 'same-origin' });
 }
