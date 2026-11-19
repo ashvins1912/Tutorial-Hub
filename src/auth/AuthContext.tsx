@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) console.error('Unable to restore Supabase session:', error.message);
-      setSession(current => current || data.session);
+      setSession(current => data.session || current);
       setLoading(false);
     }).catch(error => {
       if (active) {
