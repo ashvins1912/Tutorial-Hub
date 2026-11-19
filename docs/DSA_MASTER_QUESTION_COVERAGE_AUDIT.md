@@ -319,3 +319,17 @@ The inspected files contain 248 candidate problem/learning entries and 165 uniqu
 5. Add automated coverage tests so every master-list ID maps to exactly one problem record and no requested question is silently omitted.
 
 **Conclusion:** Tutorial-Hub has broad curriculum coverage, but the requested interview-question bank is not complete. The current conservative title audit finds 99 exact matches, 21 partial matches, and 173 missing exact-title matches. No application code or deployment was changed by this audit.
+
+
+## Implementation update — 2026-11-19
+
+The follow-up implementation is now on the PR branch:
+
+- Added **194 topic-specific inventory records** to the MongoDB catalog seed: the 173 previously missing entries plus 21 exact requested variants for the 21 partial/related cases (including topic-specific duplicate appearances such as Sort Colors).
+- Related-but-different problem names are stored as `relatedTitles`; they are not silently treated as equivalent. Only four known equivalent title variants are configured as safe aliases: Sort Colors, Burst Balloons (#312), Design Add and Search Words (#211), and Kth Largest Element in an Array.
+- Added a MongoDB model, paginated read API, single-record read API, protected upsert API, and stable-slug patch API.
+- Added hybrid duplicate resolution: normalized exact title, unique same-topic explicit alias, then weighted token Jaccard + character trigram Dice + edit similarity + topic agreement. Fuzzy auto-update requires a score of at least 0.96 and a clear margin; uncertain candidates return HTTP 409 for human review.
+- Added an idempotent startup import using a unique topic/title key and `$setOnInsert`, preserving authored content on restarts.
+- New inventory records are explicitly `needs-authoring`. The existing 99 exact title matches remain in their existing learning sources; this implementation does not claim their five-stage content has been migrated or validated.
+
+See [Interview Problem Catalog API](INTERVIEW_PROBLEM_CATALOG_API.md) for endpoint and matching details. CI/build verification is still required before merge; no deployment was triggered.
