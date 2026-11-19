@@ -32,5 +32,7 @@ jobs:
         run: npm run lint
       - name: Verify source-authored DSA solutions (Java, JavaScript, Python)
         run: npm run test:dsa:arrays:01
+      - name: Test Content Studio ingestion and classification
+        run: npm run test:content-authoring
       - name: Build frontend
         run: npm run build
