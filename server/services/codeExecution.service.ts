@@ -31,7 +31,8 @@ export async function executeInJudge0(input: { language: SupportedCodeLanguage; 
   let endpoint: URL;
   try { endpoint = new URL(baseUrl); } catch { throw new Error('CODE_EXECUTION_ENDPOINT_INVALID'); }
   const localDevelopmentEndpoint = process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(endpoint.hostname);
-  if ((endpoint.protocol !== 'https:' && !localDevelopmentEndpoint) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+  const allowedProtocol = endpoint.protocol === 'https:' || (localDevelopmentEndpoint && endpoint.protocol === 'http:');
+  if (!allowedProtocol || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
     throw new Error('CODE_EXECUTION_ENDPOINT_MUST_USE_HTTPS');
   }
 
@@ -58,6 +59,7 @@ export async function executeInJudge0(input: { language: SupportedCodeLanguage; 
     if (!submit.ok) throw new Error(`JUDGE0_SUBMIT_FAILED_${submit.status}`);
     const submitted = await submit.json() as { token?: string; status?: { id?: number; description?: string }; stdout?: string; stderr?: string; compile_output?: string; time?: string; memory?: number };
     let result = submitted;
+    if (!submitted.token && (submitted.status?.id ?? 0) < 3) throw new Error('JUDGE0_RESPONSE_INVALID');
     if (submitted.token && (submitted.status?.id === undefined || submitted.status.id < 3)) {
       let finished = false;
       for (let attempt = 0; attempt < 25; attempt++) {
