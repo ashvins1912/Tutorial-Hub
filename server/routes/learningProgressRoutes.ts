@@ -76,6 +76,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (quizAccuracy !== null) {
     atomicUpdate.$inc = { attempts: 1 };
     atomicUpdate.$max = { bestScore: quizAccuracy };
+    atomicUpdate.$push = { quizHistory: { $each: [{ score: (body.quizAttempt as { score: number }).score, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date() }], $slice: -30 } };
   }
   const progress = await LearningProgress.findOneAndUpdate(
     { userId: req.authUser!.id, lessonId: req.params.lessonId },
