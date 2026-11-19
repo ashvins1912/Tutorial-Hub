@@ -10,7 +10,7 @@ type QuizQuestion = {
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 type TraceStep = { title: string; explanation: string; values: number[]; active: number[]; variables: Record<string, string | number> };
 
-function binarySearchTrace(values: number[], target: number): TraceStep[] {
+export function binarySearchTrace(values: number[], target: number): TraceStep[] {
   const steps: TraceStep[] = [];
   let left = 0, right = values.length - 1;
   while (left <= right && steps.length < 100) {
@@ -32,7 +32,7 @@ function binarySearchTrace(values: number[], target: number): TraceStep[] {
   return steps;
 }
 
-function bubbleSortTrace(values: number[]): TraceStep[] {
+export function bubbleSortTrace(values: number[]): TraceStep[] {
   const result = [...values];
   const steps: TraceStep[] = [{ title: 'Initial array', explanation: 'Compare adjacent values and swap them when they are out of order.', values: [...result], active: [], variables: { pass: 0, swaps: 0 } }];
   let swaps = 0;
@@ -50,7 +50,7 @@ function bubbleSortTrace(values: number[]): TraceStep[] {
   return steps;
 }
 
-function parseInput(raw: string): number[] {
+export function parseInput(raw: string): number[] {
   const values = raw.split(',').map((part) => Number(part.trim()));
   if (!values.length || values.some((value) => !Number.isFinite(value))) throw new Error('Enter comma-separated finite numbers.');
   if (values.length > 24) throw new Error('Use at most 24 values for a readable trace.');
@@ -87,6 +87,11 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
   const accuracy = quiz.length ? Math.round((score / quiz.length) * 100) : 0;
   const nextLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
   const current = trace[traceIndex];
+  const isCorrect = (question: QuizQuestion, answer: string) => {
+    const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
+    const actual = answer.split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
+    return expected.length === actual.length && expected.every((value, index) => value === actual[index]);
+  };
 
   const submitQuiz = () => { setSubmitted(true); setAttempts((value) => value + 1); };
 
@@ -107,7 +112,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
 
     {quiz.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Adaptive knowledge check</h4><p className="text-[11px] text-slate-500">Submit your choices to see explanations and a suggested next difficulty.</p></div><span className="text-[10px] text-slate-500">{attempts} attempt{attempts === 1 ? '' : 's'}</span></div>
-      {quiz.map((question, index) => <fieldset key={index} disabled={submitted} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => <label key={optionIndex} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="radio" name={`quiz-${jobId}-${index}`} checked={answers[index] === option} onChange={() => setAnswers((currentAnswers) => ({ ...currentAnswers, [index]: option }))} className="mt-0.5"/>{option}</label>)}{submitted && <div className="rounded bg-slate-50 dark:bg-slate-950 p-2 text-[11px]"><strong>{(Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).includes(answers[index]) ? 'Correct' : 'Review this answer'}</strong><p className="mt-1 text-slate-500">Answer: {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}. {question.explanation}</p></div>}</fieldset>)}
+      {quiz.map((question, index) => <fieldset key={index} disabled={submitted} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => <label key={optionIndex} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="radio" name={`quiz-${jobId}-${index}`} checked={answers[index] === option} onChange={() => setAnswers((currentAnswers) => ({ ...currentAnswers, [index]: option }))} className="mt-0.5"/>{option}</label>)}{submitted && <div className="rounded bg-slate-50 dark:bg-slate-950 p-2 text-[11px]"><strong>{isCorrect(question, answers[index] || '') ? 'Correct' : 'Review this answer'}</strong><p className="mt-1 text-slate-500">Answer: {Array.isArray(question.correctAnswer) ? question.correctAnswer.join(', ') : question.correctAnswer}. {question.explanation}</p></div>}</fieldset>)}
       {!submitted ? <button type="button" disabled={quiz.some((_, index) => !answers[index])} onClick={submitQuiz} className="rounded-lg bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">Submit answers</button> : <div className="space-y-2"><p className="text-sm font-semibold">Score: {score} / {quiz.length} ({accuracy}%)</p><p className="text-xs text-slate-500">Suggested next difficulty: <strong className="capitalize">{nextLevel}</strong>. {accuracy >= 80 ? 'Move to a harder practice set.' : accuracy >= 50 ? 'Review missed explanations, then try an intermediate set.' : 'Revisit the lesson fundamentals before retrying.'}</p><button type="button" onClick={() => { setAnswers({}); setSubmitted(false); }} className="rounded-lg border px-4 py-2 text-xs">Retry quiz</button></div>}
     </div>}
 
