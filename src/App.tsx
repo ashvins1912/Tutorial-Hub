@@ -54,6 +54,7 @@ import { IntelligentEngineStudio } from './features/intelligent-engine/component
 import { ProfileStatsView } from './components/ProfileStatsView';
 import { CommunityHubView } from './components/CommunityHubView';
 import { OodPrinciplesStudio } from './components/OodPrinciplesStudio';
+import { AIEngineeringAcademy } from './features/ai-academy/components/AIEngineeringAcademy';
 import { PublishedLessonView } from './features/intelligent-engine/components/PublishedLessonView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
@@ -259,6 +260,7 @@ export default function App() {
   const navItems: { id: TopView; label: string; isActive: boolean }[] = [
     { id: 'solver', label: 'Logic Solver', isActive: activeView === 'solver' },
     { id: 'knowledge-engine', label: 'Concept Engine', isActive: activeView === 'knowledge-engine' },
+    { id: 'ai-academy', label: 'AI Academy', isActive: activeView === 'ai-academy' },
     { id: 'workspace', label: 'Curriculum', isActive: activeView === 'workspace' },
     { id: 'algorithms', label: 'Algorithms', isActive: activeView === 'algorithms' },
     { id: 'fuzzy-search', label: 'N-Gram Lab', isActive: activeView === 'fuzzy-search' },
@@ -547,6 +549,7 @@ export default function App() {
           )}
 
           {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
+          {activeView === 'ai-academy' && <AIEngineeringAcademy />}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 
