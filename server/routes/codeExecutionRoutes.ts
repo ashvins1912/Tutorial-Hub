@@ -27,7 +27,8 @@ router.get('/status', (_req, res) => {
   try {
     const endpoint = new URL(rawBaseUrl);
     const localDevelopmentEndpoint = process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(endpoint.hostname);
-    secureEndpoint = (endpoint.protocol === 'https:' || localDevelopmentEndpoint) && !endpoint.username && !endpoint.password && !endpoint.search && !endpoint.hash;
+    const allowedProtocol = endpoint.protocol === 'https:' || (localDevelopmentEndpoint && endpoint.protocol === 'http:');
+    secureEndpoint = allowedProtocol && !endpoint.username && !endpoint.password && !endpoint.search && !endpoint.hash;
   } catch { secureEndpoint = false; }
   const configured = (process.env.CODE_EXECUTION_PROVIDER || '').trim().toLowerCase() === 'judge0' && secureEndpoint;
   return res.json({ configured, provider: configured ? 'judge0' : null, languages: ['java', 'javascript', 'python'] });
