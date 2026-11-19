@@ -72,15 +72,34 @@ router.get('/jobs/:id', requireAuth, requireContentAuthor, async (req: Request, 
 router.put('/jobs/:id/structure', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
   if (!isMongoConnected()) return res.status(503).json({ error: 'MongoDB is unavailable.' });
   const sections = req.body?.sections;
-  if (!Array.isArray(sections) || sections.length > 80 || sections.some((section: LearningSection) =>
+  const metadata = req.body?.metadata ?? {};
+  const domains = ['DSA','MACHINE_LEARNING','AI','DATABASE','SYSTEM_DESIGN','SOFTWARE_ENGINEERING','GENERAL'];
+  const kinds = ['algorithm','coding_problem','concept','model','architecture','database_concept','case_study','tutorial','question_bank','custom'];
+  const levels = ['beginner','intermediate','advanced','expert','undetermined'];
+  const hasSections = Array.isArray(sections);
+  const hasMetadata = metadata && typeof metadata === 'object' && Object.keys(metadata).length > 0;
+  if (!hasSections && !hasMetadata) return res.status(400).json({ error: 'Provide a learning section array or author metadata overrides.' });
+  if (hasSections && (sections.length > 80 || sections.some((section: LearningSection) =>
     !section || typeof section.id !== 'string' || typeof section.title !== 'string' || typeof section.purpose !== 'string' ||
     typeof section.required !== 'boolean' || !['explanation','reasoning','visualization','code','quiz','exercise','assessment','reference'].includes(section.blockType)
-  )) return res.status(400).json({ error: 'sections must be a valid learning section array (maximum 80).' });
+  ))) return res.status(400).json({ error: 'sections must be a valid learning section array (maximum 80).' });
+  if (metadata.domain !== undefined && !domains.includes(metadata.domain)) return res.status(400).json({ error: 'Unsupported content domain.' });
+  if (metadata.kind !== undefined && !kinds.includes(metadata.kind)) return res.status(400).json({ error: 'Unsupported content type.' });
+  if (metadata.level !== undefined && !levels.includes(metadata.level)) return res.status(400).json({ error: 'Unsupported learning level.' });
+  if (metadata.title !== undefined && (typeof metadata.title !== 'string' || !metadata.title.trim() || metadata.title.length > 180)) return res.status(400).json({ error: 'Title must contain 1–180 characters.' });
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Authoring draft not found.' });
   const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id });
   if (!job?.draft || !job.analysis) return res.status(404).json({ error: 'Authoring draft not found.' });
-  job.analysis.outline = sections;
-  job.draft.sections = sections;
+  if (hasSections) {
+    job.analysis.outline = sections;
+    job.draft.sections = sections;
+  }
+  for (const key of ['domain','kind','level','title'] as const) {
+    if (metadata[key] !== undefined) {
+      (job.analysis as any)[key] = metadata[key];
+      (job.draft as any)[key] = metadata[key];
+    }
+  }
   job.markModified('analysis');
   job.markModified('draft');
   await job.save();
