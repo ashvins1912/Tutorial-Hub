@@ -13,10 +13,10 @@ Tutorial Hub uses Supabase Auth for identity and MongoDB for the application's a
 
 In **Authentication → URL Configuration**:
 
-- Set the Site URL to the deployed Render service URL.
-- Add the Render service URL to Redirect URLs.
-- Add the exact value of `VITE_AUTH_REDIRECT_URL` to Redirect URLs as well. The Google sign-in flow passes this value to Supabase as `redirectTo`.
-- For local development, add `http://localhost:3000`.
+- Set the Site URL to the deployed frontend origin: `https://tutorial-hub-f5ck.onrender.com`.
+- Under Redirect URLs, allow `https://tutorial-hub-f5ck.onrender.com/**` (or the exact deployed origin if you do not use nested callback paths).
+- For local development only, also allow `http://localhost:3000/**`. Do not set localhost as the production Site URL.
+- The app passes `window.location.origin` to Supabase at runtime for Google OAuth and email-confirmation redirects. Production login returns to the Render host; local login returns to the local dev host.
 
 Enable email/password sign-in. Email confirmation can remain enabled; new users will be asked to verify their email before their first session.
 
@@ -30,14 +30,13 @@ Set these on the `tutorial-hub` Web Service:
 | --- | --- |
 | `VITE_SUPABASE_URL` | Browser Supabase client; available at build time |
 | `VITE_SUPABASE_ANON_KEY` | Browser Supabase client; available at build time |
-| `VITE_AUTH_REDIRECT_URL` | Post-Google-OAuth destination; set to the deployed Render URL and available at build time |
 | `SUPABASE_URL` | Server-side token verification |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side token verification only; secret |
 | `MONGODB_URI` | Persist account and learning profile documents |
 | `GEMINI_API_KEY` | Optional Gemini-powered features |
 | `NODE_ENV` | Set to `production` |
 
-Set `VITE_AUTH_REDIRECT_URL` to the exact public frontend origin, for example `https://YOUR-APP.onrender.com` (no localhost and no trailing path). Redeploy after setting the `VITE_*` values because Vite embeds them into the frontend build. When unset locally, Google sign-in falls back to the current browser origin.
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the same Supabase project and redeploy after changing them because Vite embeds `VITE_*` values into the frontend build. Redirect destinations are resolved from the browser origin at runtime; no redirect URL environment variable is needed.
 
 ## 4. Data flow
 
