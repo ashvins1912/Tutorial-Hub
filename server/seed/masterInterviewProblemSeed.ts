@@ -11,6 +11,7 @@ const TOPIC_ROWS: Array<[string,string,string[]]> = [["arrays","Arrays",["Sort C
 const PARTIAL_TITLE_ALIASES: Record<string,string[]> = {
   'sort-colors': ['Sort Colors — Dutch National Flag'],
   'next-greater-element-ii': ['Next Greater Element I'],
+  'next-greater-element-ii': ['Next Greater Element I'],
   'validate-binary-search-tree': ['Binary Search (Index & On Answer)'],
   'lowest-common-ancestor-of-bst': ['Lowest Common Ancestor (#236)'],
   'recover-binary-search-tree': ['Binary Search (Index & On Answer)'],
