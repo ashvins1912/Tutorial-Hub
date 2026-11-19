@@ -154,6 +154,34 @@ const EXPERTISE_BY_TOPIC_ID: Record<string, TopicExpertiseGuide> = {
       'Know when Sliding Window Maximum needs a Monotonic Deque instead of a Stack',
     ],
   },
+  'queues-monotonic-deque': {
+    goldenInvariant:
+      'Keep window candidate INDICES in strictly monotonic order inside a double-ended queue: expire out-of-window indices from the FRONT and evict dominated values from the BACK so every index enters and leaves at most once in O(N).',
+    canonicalRecipe:
+      '1) If deque[front] <= i - k, pop front (expired). 2) While nums[deque[back]] <= nums[i], pop back (dominated). 3) Push i to back. 4) Once i >= k - 1, nums[deque[front]] is the exact window maximum.',
+    verbalizationScript:
+      '"Scanning every k-window takes O(N·k) and a Max-Heap takes O(N log k) with stale entries. Notice an older, smaller element in the same window can NEVER win once a newer, larger element arrives—so a Monotonic Deque gives O(1) amortized max per window and O(N) total."',
+    trapsAndFixes: [
+      {
+        trap: 'Using JavaScript array.shift() on huge queues (O(N) shift degrades O(N) to O(N²)).',
+        bestWayFix: 'Track a moving `head` index pointer over an array or use a circular ring buffer for true O(1) front eviction.',
+      },
+      {
+        trap: 'Storing raw values instead of indices in the deque, making window expiry impossible.',
+        bestWayFix: 'Always push array index `i` so expiry is simply `deque[head] <= i - k`.',
+      },
+      {
+        trap: 'Emitting window answers before the first full window reaches index k - 1.',
+        bestWayFix: 'Guard output emission strictly with `if (i >= k - 1) result.push(nums[deque[head]])`.',
+      },
+    ],
+    masteryCheckpoints: [
+      'Explain why older smaller values are permanently dominated inside any fixed sliding window',
+      'Implement Sliding Window Maximum in true O(N) with O(1) head-pointer eviction',
+      'Distinguish FIFO BFS Queue vs 0-1 BFS Deque vs Monotonic Deque fluently',
+      'Solve Shortest Subarray with Sum at Least K (negative numbers + monotonic prefix deque)',
+    ],
+  },
   'sorting-algorithms': {
     goldenInvariant:
       'Comparison sorts cannot beat Ω(N log N); choose Merge Sort for stability & inversion counting, Randomized QuickSort/Quickselect for O(1) space or O(N) K-th selection, and Counting/Radix for bounded integer keys.',
@@ -688,8 +716,20 @@ const EXPERTISE_BY_TOPIC_ID: Record<string, TopicExpertiseGuide> = {
   },
 };
 
+const CANONICAL_PLAYBOOK_ALIASES: Record<string, string> = {
+  'prefix-sum-diff-array': 'prefix-sums',
+  'stacks-monotonic-stack': 'monotonic-stack',
+  'trees-bst-nary': 'trees-bst',
+  'tries-radix': 'tries-prefix',
+  'graphs-traversal-dsu': 'graphs-bfs-dfs',
+  'segment-fenwick-trees': 'segment-trees',
+  'ngram-fuzzy-candidate-retrieval': 'candidate-generation',
+  'confident-fuzzy-reranking': 'confident-reranking',
+};
+
 export function getTopicExpertiseGuide(topic: CurriculumTopic): TopicExpertiseGuide {
-  const direct = EXPERTISE_BY_TOPIC_ID[topic.id];
+  const resolvedKey = CANONICAL_PLAYBOOK_ALIASES[topic.id] ?? topic.id;
+  const direct = EXPERTISE_BY_TOPIC_ID[resolvedKey];
   if (direct) return direct;
 
   // Smart structured fallback derived from the topic's actual metadata

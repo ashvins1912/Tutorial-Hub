@@ -1,17 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen,
   Code2,
   Compass,
+  GitFork,
   Layers,
   Menu,
   PanelLeftOpen,
+  PanelRightOpen,
   PlayCircle,
   Puzzle,
 } from 'lucide-react';
 import { CURRICULUM_TOPICS, getTopicById } from '../data/curriculumIndex';
+import { getCurriculumDfdGraph } from '../data/curriculumDfdBuilder';
 import { TopicSidebar } from './TopicSidebar';
 import { TheoryMentalModelPane } from './TheoryMentalModelPane';
+import { CurriculumDfdVisualizer } from './CurriculumDfdVisualizer';
+import { DfdNodeMetadataDrawer, type DfdDrawerMode } from './DfdNodeMetadataDrawer';
 import { AlgorithmVisualizer } from '../../visualizer/components/AlgorithmVisualizer';
 import { DragDropLogicBuilder } from '../../logic-builder/components/DragDropLogicBuilder';
 import { BruteToOptimalCodeViewer } from '../../code-progression/components/BruteToOptimalCodeViewer';
@@ -22,7 +27,7 @@ import { useSprintStore } from '../../../store/useSprintStore';
 import { useAccountState } from '../../../hooks/useAccountState';
 import { InterviewProblemCatalogPanel } from './InterviewProblemCatalogPanel';
 
-type PlaygroundTab = 'visualizer' | 'recursion-lab' | 'logic-builder' | 'code' | 'matcher';
+type PlaygroundTab = 'visualizer' | 'dfd' | 'recursion-lab' | 'logic-builder' | 'code' | 'matcher';
 type MobilePane = 'theory' | 'playground';
 
 interface CurriculumWorkbenchProps {
@@ -44,6 +49,9 @@ export function CurriculumWorkbench({
   const [playgroundTab, setPlaygroundTab] = useState<PlaygroundTab>('visualizer');
   const [mobilePane, setMobilePane] = useState<MobilePane>('theory');
   const [codeDefaultTier, setCodeDefaultTier] = useState<'brute' | 'better' | 'optimal'>('optimal');
+  const [selectedDfdNodeId, setSelectedDfdNodeId] = useState<string>('process-core');
+  const [dfdDrawerOpen, setDfdDrawerOpen] = useState<boolean>(false);
+  const [dfdDrawerMode, setDfdDrawerMode] = useState<DfdDrawerMode>('docked');
 
   const [masteredIds, setMasteredIds] = useAccountState<string[]>('curriculum-mastered-topics', []);
 
@@ -88,6 +96,18 @@ export function CurriculumWorkbench({
 
   const topic = getTopicById(activeTopicId);
   const isMastered = masteredIds.includes(topic.id);
+
+  // Resolve DFD graph & active node dynamically from the active curriculum topic
+  const dfdGraph = useMemo(() => getCurriculumDfdGraph(topic), [topic]);
+  const activeDfdNode = useMemo(
+    () => dfdGraph.nodes.find((n) => n.id === selectedDfdNodeId) ?? dfdGraph.nodes[0],
+    [dfdGraph, selectedDfdNodeId],
+  );
+
+  const handleSelectDfdNode = (nodeId: string) => {
+    setSelectedDfdNodeId(nodeId);
+    setDfdDrawerOpen(true);
+  };
 
   const handleOpenDeepLink = () => {
     if (!topic.deepLink) return;
@@ -202,6 +222,18 @@ export function CurriculumWorkbench({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setDfdDrawerOpen((open) => !open)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                dfdDrawerOpen
+                  ? 'border-sky-600 dark:border-sky-400 bg-sky-50 dark:bg-sky-950/50 text-sky-900 dark:text-sky-200'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-sky-500'
+              }`}
+            >
+              <PanelRightOpen className="w-3.5 h-3.5" aria-hidden="true" />
+              {dfdDrawerOpen ? 'Hide Node Spec' : 'Node Spec Drawer'}
+            </button>
+            <button
+              type="button"
               onClick={onOpenAlgorithmMatcher}
               className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-sky-500 transition-colors whitespace-nowrap"
             >
@@ -235,6 +267,8 @@ export function CurriculumWorkbench({
                 setPlaygroundTab(tab);
                 setMobilePane('playground');
               }}
+              selectedDfdNodeId={dfdDrawerOpen ? activeDfdNode.id : null}
+              onSelectDfdNode={handleSelectDfdNode}
             />
           </div>
 
@@ -259,6 +293,7 @@ export function CurriculumWorkbench({
                         ]
                       : []),
                     { id: 'visualizer' as const, label: 'Step Visualizer', icon: PlayCircle },
+                    { id: 'dfd' as const, label: 'DFD Visualizer', icon: GitFork },
                     { id: 'logic-builder' as const, label: 'Logic Builder', icon: Puzzle },
                     { id: 'code' as const, label: 'Brute → Optimal Code', icon: Code2 },
                     { id: 'matcher' as const, label: 'Algorithm Matcher', icon: Compass },
@@ -296,6 +331,15 @@ export function CurriculumWorkbench({
 
               {playgroundTab === 'visualizer' && <AlgorithmVisualizer topic={topic} />}
 
+              {playgroundTab === 'dfd' && (
+                <CurriculumDfdVisualizer
+                  topic={topic}
+                  selectedNodeId={activeDfdNode.id}
+                  onSelectNode={handleSelectDfdNode}
+                  variant="full"
+                />
+              )}
+
               {playgroundTab === 'logic-builder' && (
                 <DragDropLogicBuilder
                   topic={topic}
@@ -323,8 +367,26 @@ export function CurriculumWorkbench({
             </section>
           </div>
         </div>
-        <InterviewProblemCatalogPanel />
+        <InterviewProblemCatalogPanel
+          activeTopicId={topic.id}
+          onSelectCurriculumTopic={(topicId) => {
+            setActiveTopicId(topicId);
+            setMobilePane('theory');
+          }}
+          onOpenProblemTrainer={handleOpenProblemTrainer}
+        />
       </div>
+
+      {/* Persistent Side-Drawer / Overlay for Clicked DFD Node Metadata */}
+      <DfdNodeMetadataDrawer
+        graph={dfdGraph}
+        node={activeDfdNode}
+        open={dfdDrawerOpen}
+        mode={dfdDrawerMode}
+        onSelectNode={handleSelectDfdNode}
+        onChangeMode={setDfdDrawerMode}
+        onClose={() => setDfdDrawerOpen(false)}
+      />
     </div>
   );
 }

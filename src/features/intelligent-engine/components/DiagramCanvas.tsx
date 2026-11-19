@@ -1,5 +1,15 @@
-import { useState } from 'react';
-import { Check, Code2, Copy, Eye } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Check,
+  Clock,
+  Code2,
+  Copy,
+  Eye,
+  HardDrive,
+  X,
+} from 'lucide-react';
 import type {
   ConceptNode,
   DiagramType,
@@ -304,237 +314,472 @@ function FlowchartSvg({
   );
 }
 
+interface Level1DfdNodeDetail {
+  id: string;
+  role: 'External Input' | 'Core Process' | 'Data Store' | 'Output';
+  title: string;
+  timeComplexity: string;
+  spaceComplexity: string;
+  inputDetail: string;
+  outputDetail: string;
+}
+
 function DataFlowDiagramSvg({ concept }: { concept: ConceptNode }) {
   const inputs = concept.visualSpec.inputs.slice(0, 3);
   const processes = concept.visualSpec.processes.slice(0, 4);
   const stores = concept.visualSpec.dataStores.slice(0, 3);
   const outputs = concept.visualSpec.outputs.slice(0, 2);
+  const [activeNode, setActiveNode] = useState<Level1DfdNodeDetail | null>(null);
+
+  useEffect(() => {
+    setActiveNode(null);
+  }, [concept.id]);
+
+  useEffect(() => {
+    if (!activeNode) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActiveNode(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeNode]);
+
+  const inputSummary = inputs.join(', ') || 'Caller arguments';
+  const outputSummary = outputs.join(', ') || 'Computed result';
+  const storeSummary = stores.join(', ') || 'Auxiliary state';
+
+  const openInputNode = (inp: string, i: number) =>
+    setActiveNode({
+      id: `in-${i}`,
+      role: 'External Input',
+      title: inp,
+      timeComplexity: 'O(1) parameter ingest',
+      spaceComplexity: 'O(N) input payload',
+      inputDetail: `External caller supplies ${inp} into ${concept.title}.`,
+      outputDetail: `Validated ${inp} handed to Process 1.0 (${processes[0] ?? 'Core stage'}).`,
+    });
+
+  const openProcessNode = (proc: string, i: number) =>
+    setActiveNode({
+      id: `proc-${i}`,
+      role: 'Core Process',
+      title: `${i + 1}.0 ${proc}`,
+      timeComplexity: concept.complexity.time,
+      spaceComplexity: concept.complexity.space,
+      inputDetail:
+        i === 0
+          ? `Receives external inputs (${inputSummary}) and reads ${storeSummary}.`
+          : `Receives intermediate state from Stage ${i}.0 (${processes[i - 1]}) and reads ${storeSummary}.`,
+      outputDetail:
+        i < processes.length - 1
+          ? `Updates ${storeSummary} and passes transformed state to Stage ${i + 2}.0 (${processes[i + 1]}).`
+          : `Finalizes invariant (${concept.invariantRule}) and emits ${outputSummary}.`,
+    });
+
+  const openStoreNode = (ds: string, i: number) =>
+    setActiveNode({
+      id: `store-${i}`,
+      role: 'Data Store',
+      title: `D${i + 1}: ${ds}`,
+      timeComplexity: 'O(1) – O(log N) state lookup/update',
+      spaceComplexity: concept.complexity.space,
+      inputDetail: `Write/mutation updates from core processes (${processes.slice(0, 2).join(' → ')}).`,
+      outputDetail: `Fast read access maintaining invariant: ${concept.invariantRule}`,
+    });
+
+  const openOutputNode = (out: string, i: number) =>
+    setActiveNode({
+      id: `out-${i}`,
+      role: 'Output',
+      title: out,
+      timeComplexity: concept.complexity.time,
+      spaceComplexity: concept.complexity.space,
+      inputDetail: `Final verified state emitted from Stage ${processes.length}.0 (${processes[processes.length - 1] ?? 'Final stage'}).`,
+      outputDetail: `Returns ${out} to the caller guaranteeing ${concept.invariantRule}`,
+    });
 
   return (
-    <svg
-      viewBox="0 0 820 380"
-      className="w-full h-auto"
-      role="img"
-      aria-label={`${concept.title} Level-1 Data Flow Diagram`}
-    >
-      <defs>
-        <marker
-          id="dfd-arrow"
-          viewBox="0 0 10 10"
-          refX="8"
-          refY="5"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto-start-reverse"
-        >
-          <path d="M 0 1 L 10 5 L 0 9 z" className="fill-sky-500 dark:fill-sky-400" />
-        </marker>
-      </defs>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+        <span>Click any Input, Process, Data Store, or Output node to open Complexity &amp; I/O details.</span>
+        <span className="font-mono tabular-nums">
+          {concept.complexity.time} · {concept.complexity.space}
+        </span>
+      </div>
 
-      {/* Column headers */}
-      <text x="86" y="24" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
-        External Inputs
-      </text>
-      <text x="410" y="24" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
-        Core Processes (Level-1 DFD)
-      </text>
-      <text x="734" y="24" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
-        Outputs
-      </text>
+      <svg
+        viewBox="0 0 820 380"
+        className="w-full h-auto"
+        role="img"
+        aria-label={`${concept.title} Level-1 Data Flow Diagram`}
+      >
+        <defs>
+          <marker
+            id="dfd-arrow"
+            viewBox="0 0 10 10"
+            refX="8"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1 L 10 5 L 0 9 z" className="fill-sky-500 dark:fill-sky-400" />
+          </marker>
+        </defs>
 
-      {/* External Inputs */}
-      {inputs.map((inp, i) => {
-        const y = 76 + i * 74;
-        return (
-          <g key={i}>
-            <rect
-              x="16"
-              y={y}
-              width="140"
-              height="48"
-              rx="6"
-              className="fill-white dark:fill-slate-900 stroke-slate-400 dark:stroke-slate-600"
-              strokeWidth="1.5"
-            />
-            <text
-              x="86"
-              y={y + 20}
-              textAnchor="middle"
-              className="fill-slate-500 dark:fill-slate-400 text-[9px] font-mono"
-            >
-              INPUT {i + 1}
-            </text>
-            <text
-              x="86"
-              y={y + 36}
-              textAnchor="middle"
-              className="fill-slate-900 dark:fill-slate-100 text-[10px] font-semibold"
-            >
-              {truncateLabel(inp, 20)}
-            </text>
-            <line
-              x1="156"
-              y1={y + 24}
-              x2="208"
-              y2="124"
-              className="stroke-sky-500 dark:stroke-sky-400"
-              strokeWidth="1.4"
-              markerEnd="url(#dfd-arrow)"
-            />
-          </g>
-        );
-      })}
+        {/* Column headers */}
+        <text x="86" y="24" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
+          External Inputs
+        </text>
+        <text x="410" y="24" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
+          Core Processes (Level-1 DFD)
+        </text>
+        <text x="734" y="24" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
+          Outputs
+        </text>
 
-      {/* Process Bubbles */}
-      {processes.map((proc, i) => {
-        const cx = 252 + i * 116;
-        const cy = 124;
-        return (
-          <g key={i}>
-            <circle
-              cx={cx}
-              cy={cy}
-              r="42"
-              className="fill-sky-50 dark:fill-sky-950/60 stroke-sky-500 dark:stroke-sky-400"
-              strokeWidth="1.75"
-            />
-            <text
-              x={cx}
-              y={cy - 14}
-              textAnchor="middle"
-              className="fill-sky-700 dark:fill-sky-300 text-[10px] font-mono font-bold"
+        {/* External Inputs */}
+        {inputs.map((inp, i) => {
+          const y = 76 + i * 74;
+          const isSelected = activeNode?.id === `in-${i}`;
+          return (
+            <g
+              key={i}
+              onClick={() => openInputNode(inp, i)}
+              className="cursor-pointer group"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openInputNode(inp, i);
+                }
+              }}
             >
-              {i + 1}.0
-            </text>
-            <text
-              x={cx}
-              y={cy + 3}
-              textAnchor="middle"
-              className="fill-slate-900 dark:fill-slate-100 text-[9.5px] font-semibold"
-            >
-              {truncateLabel(proc.split(' ').slice(0, 2).join(' '), 14)}
-            </text>
-            <text
-              x={cx}
-              y={cy + 16}
-              textAnchor="middle"
-              className="fill-slate-600 dark:fill-slate-300 text-[8.5px]"
-            >
-              {truncateLabel(proc.split(' ').slice(2).join(' '), 15)}
-            </text>
-            {i < processes.length - 1 && (
+              <rect
+                x="16"
+                y={y}
+                width="140"
+                height="48"
+                rx="6"
+                className={
+                  isSelected
+                    ? 'fill-sky-50 dark:fill-sky-950/70 stroke-sky-600 dark:stroke-sky-400'
+                    : 'fill-white dark:fill-slate-900 stroke-slate-400 dark:stroke-slate-600 group-hover:stroke-sky-500'
+                }
+                strokeWidth={isSelected ? '2.2' : '1.5'}
+              />
+              <text
+                x="86"
+                y={y + 20}
+                textAnchor="middle"
+                className="fill-slate-500 dark:fill-slate-400 text-[9px] font-mono"
+              >
+                INPUT {i + 1}
+              </text>
+              <text
+                x="86"
+                y={y + 36}
+                textAnchor="middle"
+                className="fill-slate-900 dark:fill-slate-100 text-[10px] font-semibold"
+              >
+                {truncateLabel(inp, 20)}
+              </text>
               <line
-                x1={cx + 42}
-                y1={cy}
-                x2={cx + 71}
-                y2={cy}
+                x1="156"
+                y1={y + 24}
+                x2="208"
+                y2="124"
                 className="stroke-sky-500 dark:stroke-sky-400"
+                strokeWidth="1.4"
+                markerEnd="url(#dfd-arrow)"
+              />
+            </g>
+          );
+        })}
+
+        {/* Process Bubbles */}
+        {processes.map((proc, i) => {
+          const cx = 252 + i * 116;
+          const cy = 124;
+          const isSelected = activeNode?.id === `proc-${i}`;
+          return (
+            <g
+              key={i}
+              onClick={() => openProcessNode(proc, i)}
+              className="cursor-pointer group"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openProcessNode(proc, i);
+                }
+              }}
+            >
+              <circle
+                cx={cx}
+                cy={cy}
+                r="42"
+                className={
+                  isSelected
+                    ? 'fill-sky-100 dark:fill-sky-900/80 stroke-sky-600 dark:stroke-sky-300'
+                    : 'fill-sky-50 dark:fill-sky-950/60 stroke-sky-500 dark:stroke-sky-400 group-hover:fill-sky-100 dark:group-hover:fill-sky-900/70'
+                }
+                strokeWidth={isSelected ? '2.5' : '1.75'}
+              />
+              <text
+                x={cx}
+                y={cy - 14}
+                textAnchor="middle"
+                className="fill-sky-700 dark:fill-sky-300 text-[10px] font-mono font-bold"
+              >
+                {i + 1}.0
+              </text>
+              <text
+                x={cx}
+                y={cy + 3}
+                textAnchor="middle"
+                className="fill-slate-900 dark:fill-slate-100 text-[9.5px] font-semibold"
+              >
+                {truncateLabel(proc.split(' ').slice(0, 2).join(' '), 14)}
+              </text>
+              <text
+                x={cx}
+                y={cy + 16}
+                textAnchor="middle"
+                className="fill-slate-600 dark:fill-slate-300 text-[8.5px]"
+              >
+                {truncateLabel(proc.split(' ').slice(2).join(' '), 15)}
+              </text>
+              {i < processes.length - 1 && (
+                <line
+                  x1={cx + 42}
+                  y1={cy}
+                  x2={cx + 71}
+                  y2={cy}
+                  className="stroke-sky-500 dark:stroke-sky-400"
+                  strokeWidth="1.5"
+                  markerEnd="url(#dfd-arrow)"
+                />
+              )}
+            </g>
+          );
+        })}
+
+        {/* Data Stores (Open-sided DFD Store Notation along bottom) */}
+        <text x="410" y="254" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
+          State & Data Stores (Read / Write)
+        </text>
+        {stores.map((ds, i) => {
+          const total = stores.length;
+          const w = 186;
+          const gap = 22;
+          const startX = 410 - (total * w + (total - 1) * gap) / 2;
+          const x = startX + i * (w + gap);
+          const y = 274;
+          const procTargetX = 252 + Math.min(i, processes.length - 1) * 116;
+          const isSelected = activeNode?.id === `store-${i}`;
+          return (
+            <g
+              key={i}
+              onClick={() => openStoreNode(ds, i)}
+              className="cursor-pointer group"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openStoreNode(ds, i);
+                }
+              }}
+            >
+              <line
+                x1={procTargetX}
+                y1="168"
+                x2={x + w / 2}
+                y2={y - 4}
+                className="stroke-amber-500 dark:stroke-amber-400"
+                strokeWidth="1.3"
+                strokeDasharray="4 3"
+                markerEnd="url(#dfd-arrow)"
+              />
+              <line x1={x} y1={y} x2={x + w} y2={y} className="stroke-amber-500" strokeWidth={isSelected ? '2.6' : '2'} />
+              <line x1={x} y1={y + 44} x2={x + w} y2={y + 44} className="stroke-amber-500" strokeWidth={isSelected ? '2.6' : '2'} />
+              <rect
+                x={x}
+                y={y + 1}
+                width={w}
+                height="42"
+                className={
+                  isSelected
+                    ? 'fill-amber-100 dark:fill-amber-900/60'
+                    : 'fill-amber-50/70 dark:fill-amber-950/40 group-hover:fill-amber-100/80'
+                }
+              />
+              <line x1={x + 34} y1={y} x2={x + 34} y2={y + 44} className="stroke-amber-500" strokeWidth="1.5" />
+              <text
+                x={x + 17}
+                y={y + 26}
+                textAnchor="middle"
+                className="fill-amber-800 dark:fill-amber-300 text-[10px] font-mono font-bold"
+              >
+                D{i + 1}
+              </text>
+              <text
+                x={x + 110}
+                y={y + 26}
+                textAnchor="middle"
+                className="fill-slate-900 dark:fill-slate-100 text-[10px] font-semibold"
+              >
+                {truncateLabel(ds, 24)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Outputs */}
+        {outputs.map((out, i) => {
+          const y = 100 + i * 74;
+          const lastProcX = 252 + Math.max(0, processes.length - 1) * 116;
+          const isSelected = activeNode?.id === `out-${i}`;
+          return (
+            <g
+              key={i}
+              onClick={() => openOutputNode(out, i)}
+              className="cursor-pointer group"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openOutputNode(out, i);
+                }
+              }}
+            >
+              <line
+                x1={lastProcX + 42}
+                y1="124"
+                x2="660"
+                y2={y + 24}
+                className="stroke-emerald-500"
                 strokeWidth="1.5"
                 markerEnd="url(#dfd-arrow)"
               />
-            )}
-          </g>
-        );
-      })}
+              <rect
+                x="664"
+                y={y}
+                width="140"
+                height="48"
+                rx="6"
+                className={
+                  isSelected
+                    ? 'fill-emerald-100 dark:fill-emerald-900/70 stroke-emerald-600 dark:stroke-emerald-300'
+                    : 'fill-emerald-50 dark:fill-emerald-950/50 stroke-emerald-500 dark:stroke-emerald-400 group-hover:fill-emerald-100/80'
+                }
+                strokeWidth={isSelected ? '2.2' : '1.5'}
+              />
+              <text
+                x="734"
+                y={y + 20}
+                textAnchor="middle"
+                className="fill-emerald-700 dark:fill-emerald-300 text-[9px] font-mono font-bold"
+              >
+                OUTPUT {i + 1}
+              </text>
+              <text
+                x="734"
+                y={y + 36}
+                textAnchor="middle"
+                className="fill-emerald-950 dark:fill-emerald-100 text-[10px] font-semibold"
+              >
+                {truncateLabel(out, 20)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
 
-      {/* Data Stores (Open-sided DFD Store Notation along bottom) */}
-      <text x="410" y="254" textAnchor="middle" className="fill-slate-400 text-[10px] font-mono uppercase">
-        State & Data Stores (Read / Write)
-      </text>
-      {stores.map((ds, i) => {
-        const total = stores.length;
-        const w = 186;
-        const gap = 22;
-        const startX = 410 - (total * w + (total - 1) * gap) / 2;
-        const x = startX + i * (w + gap);
-        const y = 274;
-        const procTargetX = 252 + Math.min(i, processes.length - 1) * 116;
-        return (
-          <g key={i}>
-            <line
-              x1={procTargetX}
-              y1="168"
-              x2={x + w / 2}
-              y2={y - 4}
-              className="stroke-amber-500 dark:stroke-amber-400"
-              strokeWidth="1.3"
-              strokeDasharray="4 3"
-              markerEnd="url(#dfd-arrow)"
-            />
-            <line x1={x} y1={y} x2={x + w} y2={y} className="stroke-amber-500" strokeWidth="2" />
-            <line x1={x} y1={y + 44} x2={x + w} y2={y + 44} className="stroke-amber-500" strokeWidth="2" />
-            <rect
-              x={x}
-              y={y + 1}
-              width={w}
-              height="42"
-              className="fill-amber-50/70 dark:fill-amber-950/40"
-            />
-            <line x1={x + 34} y1={y} x2={x + 34} y2={y + 44} className="stroke-amber-500" strokeWidth="1.5" />
-            <text
-              x={x + 17}
-              y={y + 26}
-              textAnchor="middle"
-              className="fill-amber-800 dark:fill-amber-300 text-[10px] font-mono font-bold"
-            >
-              D{i + 1}
-            </text>
-            <text
-              x={x + 110}
-              y={y + 26}
-              textAnchor="middle"
-              className="fill-slate-900 dark:fill-slate-100 text-[10px] font-semibold"
-            >
-              {truncateLabel(ds, 24)}
-            </text>
-          </g>
-        );
-      })}
+      {/* Slide-Over DFD Node Specification Overlay Drawer */}
+      {activeNode && (
+        <div
+          className="fixed inset-0 z-50 flex justify-end"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${activeNode.title} specification`}
+        >
+          <div
+            className="fixed inset-0 bg-slate-950/50 backdrop-blur-[1px]"
+            onClick={() => setActiveNode(null)}
+            aria-hidden="true"
+          />
+          <aside className="relative z-10 w-full max-w-md h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl">
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+              <div className="space-y-0.5 min-w-0">
+                <div className="text-xs font-mono font-semibold text-sky-700 dark:text-sky-400">
+                  {activeNode.role} · {concept.title}
+                </div>
+                <h4 className="text-base font-display font-bold text-slate-900 dark:text-slate-100">
+                  {activeNode.title}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveNode(null)}
+                aria-label="Close node details drawer"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
 
-      {/* Outputs */}
-      {outputs.map((out, i) => {
-        const y = 100 + i * 74;
-        const lastProcX = 252 + Math.max(0, processes.length - 1) * 116;
-        return (
-          <g key={i}>
-            <line
-              x1={lastProcX + 42}
-              y1="124"
-              x2="660"
-              y2={y + 24}
-              className="stroke-emerald-500"
-              strokeWidth="1.5"
-              markerEnd="url(#dfd-arrow)"
-            />
-            <rect
-              x="664"
-              y={y}
-              width="140"
-              height="48"
-              rx="6"
-              className="fill-emerald-50 dark:fill-emerald-950/50 stroke-emerald-500 dark:stroke-emerald-400"
-              strokeWidth="1.5"
-            />
-            <text
-              x="734"
-              y={y + 20}
-              textAnchor="middle"
-              className="fill-emerald-700 dark:fill-emerald-300 text-[9px] font-mono font-bold"
-            >
-              OUTPUT {i + 1}
-            </text>
-            <text
-              x="734"
-              y={y + 36}
-              textAnchor="middle"
-              className="fill-emerald-950 dark:fill-emerald-100 text-[10px] font-semibold"
-            >
-              {truncateLabel(out, 20)}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-sky-200 dark:border-sky-900/70 bg-sky-50/60 dark:bg-sky-950/35 p-3.5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-800 dark:text-sky-300">
+                    <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    Time Complexity
+                  </div>
+                  <div className="text-sm font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                    {activeNode.timeComplexity}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-indigo-200 dark:border-indigo-900/70 bg-indigo-50/60 dark:bg-indigo-950/35 p-3.5 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-800 dark:text-indigo-300">
+                    <HardDrive className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    Space Complexity
+                  </div>
+                  <div className="text-sm font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                    {activeNode.spaceComplexity}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  <ArrowDownToLine className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                  Input
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                  {activeNode.inputDetail}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  <ArrowUpFromLine className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                  Output
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                  {activeNode.outputDetail}
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+    </div>
   );
 }
 
