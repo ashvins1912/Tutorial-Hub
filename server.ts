@@ -19,6 +19,7 @@ import userStateRoutes from './server/routes/userStateRoutes';
 import profileRoutes from './server/routes/profileRoutes';
 import communityRoutes from './server/routes/communityRoutes';
 import learningProgressRoutes from './server/routes/learningProgressRoutes';
+import aiAcademyProgressRoutes from './server/routes/aiAcademyProgressRoutes';
 import codeExecutionRoutes from './server/routes/codeExecutionRoutes';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
@@ -42,6 +43,7 @@ async function startServer() {
   app.use('/api/profile', profileRoutes);
   app.use('/api/community', communityRoutes);
   app.use('/api/learning-progress', learningProgressRoutes);
+  app.use('/api/ai-academy/progress', aiAcademyProgressRoutes);
   app.use('/api/code-execution', codeExecutionRoutes);
 
   // Cognitive Brain-Training & Spaced Repetition API

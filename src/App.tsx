@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -55,6 +55,7 @@ import { ProfileStatsView } from './components/ProfileStatsView';
 import { CommunityHubView } from './components/CommunityHubView';
 import { OodPrinciplesStudio } from './components/OodPrinciplesStudio';
 import { AiEngineeringStudio } from './components/AiEngineeringStudio';
+const AIEngineeringAcademy = lazy(() => import('./features/ai-academy/components/AIEngineeringAcademy').then((module) => ({ default: module.AIEngineeringAcademy })));
 import { PublishedLessonView } from './features/intelligent-engine/components/PublishedLessonView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
@@ -260,6 +261,7 @@ export default function App() {
   const navItems: { id: TopView; label: string; isActive: boolean }[] = [
     { id: 'solver', label: 'Logic Solver', isActive: activeView === 'solver' },
     { id: 'knowledge-engine', label: 'Concept Engine', isActive: activeView === 'knowledge-engine' },
+    { id: 'ai-academy', label: 'AI Academy', isActive: activeView === 'ai-academy' },
     { id: 'workspace', label: 'Curriculum', isActive: activeView === 'workspace' },
     { id: 'algorithms', label: 'Algorithms', isActive: activeView === 'algorithms' },
     { id: 'fuzzy-search', label: 'N-Gram Lab', isActive: activeView === 'fuzzy-search' },
@@ -549,6 +551,7 @@ export default function App() {
           )}
 
           {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
+          {activeView === 'ai-academy' && <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading AI Engineering Academy…</div>}><AIEngineeringAcademy /></Suspense>}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 
