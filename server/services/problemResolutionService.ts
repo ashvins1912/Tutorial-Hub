@@ -50,7 +50,9 @@ export async function resolveAndUpsertProblem(input:ProblemInput) {
   // same topic, and a clear margin over the runner-up.
   const second=ranked[1]?.confidence ?? 0;
   const safeFuzzy=best && best.topicId===input.topicId && best.confidence>=.96 && best.confidence-second>=.08;
-  const shouldUpdate=!!best && (best.confidence===1 || best.method==='explicit-alias' || safeFuzzy);
+  const aliasMatches=ranked.filter(candidate=>candidate.method==='explicit-alias');
+  const safeAlias=best?.method==='explicit-alias' && aliasMatches.length===1;
+  const shouldUpdate=!!best && (best.confidence===1 || safeAlias || safeFuzzy);
   if(best && !shouldUpdate && best.confidence>=.82) {
     return {action:'review' as const,confidence:best.confidence,candidates:ranked.slice(0,5),message:'Potential duplicate; no record was changed. Confirm the match or submit as a distinct problem.'};
   }
