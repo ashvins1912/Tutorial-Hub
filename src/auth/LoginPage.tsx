@@ -51,7 +51,11 @@ export function LoginPage() {
     setError('');
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: {
+        // Explicit post-OAuth destination. Configure this as the public app URL
+        // in Render; fall back to the current origin for local development.
+        redirectTo: (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim().replace(/\/+$/, '') || window.location.origin,
+      },
     });
     if (authError) {
       setError(authError.message);
