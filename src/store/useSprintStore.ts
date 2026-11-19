@@ -100,7 +100,8 @@ interface SprintState {
   clearSprintBanner: () => void;
 
   // Sprint API + resilient local sync
-  fetchActiveSprint: (userId?: string) => Promise<void>;
+  resetForUser: () => void;
+  fetchActiveSprint: () => Promise<void>;
   createSprint: (
     targetCompany: BigTechCompany,
     dailyMinutesBudget: 60 | 120,
@@ -177,6 +178,17 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   openMock45ForDay: (dayNumber) => set({ mock45Open: true, mock45DayNumber: dayNumber }),
   closeMock45: () => set({ mock45Open: false, mock45DayNumber: null }),
   clearSprintBanner: () => set({ sprintBannerMessage: null }),
+
+  resetForUser: () => set({
+    activeSprint: null,
+    selectedDayNumber: 1,
+    isCreatingSprint: false,
+    masteredSlugs: [],
+    activeTrainerSlug: null,
+    activeRubricResult: null,
+    activeSprintTaskContext: null,
+    sprintBannerMessage: null,
+  }),
 
   fetchActiveSprint: async () => {
     try {
