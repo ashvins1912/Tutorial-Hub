@@ -11,6 +11,7 @@ import problemRoutes from './server/routes/problemRoutes';
 import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
 import interviewProblemRoutes from './server/routes/interviewProblemRoutes';
+import contentAuthoringRoutes from './server/modules/content-authoring/contentAuthoring.routes';
 import { seedMasterInterviewProblems } from './server/db/seedMasterInterviewProblems';
 import { seedVerifiedProblemBatches } from './server/db/seedVerifiedProblemBatches';
 import authRoutes from './server/routes/authRoutes';
@@ -31,7 +32,7 @@ async function startServer() {
   const httpServer = http.createServer(app);
   attachPairWebSocketServer(httpServer);
 
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
 
   app.use('/api/auth', authRoutes);
   app.use('/api/user-state', userStateRoutes);
@@ -44,6 +45,8 @@ async function startServer() {
   app.use('/api/problems', problemRoutes);
   // Canonical topic-wise interview problem inventory and authoring API
   app.use('/api/interview-problems', interviewProblemRoutes);
+  // Intelligent Content Studio: authenticated, author-allowlisted knowledge ingestion.
+  app.use('/api/authoring', contentAuthoringRoutes);
   // Cached, read-only LeetCode statement/examples/constraints source
   app.use('/api/leetcode/problem', leetcodeProblemRoutes);
 
