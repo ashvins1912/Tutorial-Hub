@@ -79,7 +79,7 @@ router.put('/jobs/:id/structure', requireAuth, requireContentAuthor, async (req:
   job.analysis.outline = sections;
   job.draft.sections = sections;
   await job.save();
-  return res.json({ job: { id: job.id, status: job.status, analysis: job.analysis, draft: { ...job.draft.toObject?.() ?? job.draft, sourceText: undefined } } });
+  return res.json({ job: { id: job.id, status: job.status, analysis: job.analysis, draft: { ...job.draft, sourceText: undefined } } });
 });
 
 export default router;
