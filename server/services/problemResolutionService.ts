@@ -2,7 +2,7 @@ import { InterviewProblem } from '../models/InterviewProblem';
 
 export type ProblemInput = {
   title: string; topicId: string; topic: string; difficulty?: 'Easy'|'Medium'|'Hard';
-  slug?: string; aliases?: string[]; statement?: string;
+  slug?: string; aliases?: string[]; relatedTitles?: string[]; statement?: string;
   examples?: Array<{input:string;output:string;explanation?:string}>;
   constraints?: string[]; stages?: Record<string, unknown>;
   contentStatus?: 'needs-authoring'|'in-progress'|'validated';
