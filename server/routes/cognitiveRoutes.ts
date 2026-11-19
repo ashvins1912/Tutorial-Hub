@@ -345,6 +345,27 @@ router.post('/notes', async (req: Request, res: Response) => {
   return res.json({ ok: true, problemId, note });
 });
 
+// GET /api/cognitive/mastered-problems
+router.get('/mastered-problems', async (req: Request, res: Response) => {
+  const profile = await UserBrainProfileModel.findOne({ userId: req.authUser!.id }).select('masteredProblemSlugs');
+  return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [] });
+});
+
+// POST /api/cognitive/mastered-problems
+router.post('/mastered-problems', async (req: Request, res: Response) => {
+  const { problemSlug } = req.body ?? {};
+  if (typeof problemSlug !== 'string' || !/^[a-z0-9-]{2,120}$/.test(problemSlug)) {
+    return res.status(400).json({ error: 'A valid problemSlug is required' });
+  }
+  await getOrCreateProfile(req.authUser!.id);
+  const profile = await UserBrainProfileModel.findOneAndUpdate(
+    { userId: req.authUser!.id },
+    { $addToSet: { masteredProblemSlugs: problemSlug } },
+    { new: true, projection: { masteredProblemSlugs: 1 } }
+  );
+  return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [problemSlug] });
+});
+
 router.post('/warmup/complete', async (req: Request, res: Response) => {
   const { drillId } = req.body ?? {};
   const userId = req.authUser!.id;
