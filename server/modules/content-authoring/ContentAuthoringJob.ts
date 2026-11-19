@@ -11,6 +11,8 @@ export interface IContentAuthoringJob extends Document {
   status: AuthoringStatus;
   analysis?: ContentAnalysis;
   draft?: CanonicalLearningDraft;
+  generatedLesson?: GeneratedLesson;
+  generation?: GenerationMetadata;
   error?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -29,6 +31,8 @@ const ContentAuthoringJobSchema = new Schema<IContentAuthoringJob>({
   status: { type: String, enum: ['uploaded', 'analyzed', 'review_required', 'failed'], default: 'uploaded', index: true },
   analysis: Schema.Types.Mixed,
   draft: Schema.Types.Mixed,
+  generatedLesson: Schema.Types.Mixed,
+  generation: Schema.Types.Mixed,
   error: String,
 }, { timestamps: true });
 
