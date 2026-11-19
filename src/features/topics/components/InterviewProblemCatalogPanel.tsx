@@ -1,0 +1,154 @@
+import { useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '../../../lib/apiFetch';
+import { BookOpen, Brain, CheckCircle2, Code2, Compass, FlaskConical, Loader2, Search, Sparkles } from 'lucide-react';
+
+type StageKey='understand'|'visualize'|'implement'|'practice'|'master';
+type ProblemRecord={
+  slug:string; title:string; topicId:string; topic:string; difficulty:string;
+  contentStatus:string; catalogStatus:string; statement?:string;
+  examples?:Array<{input:string;output:string;explanation?:string}>;
+  constraints?:string[];
+  stages?:Record<string,any>;
+  authoringMetadata?:{status?:string;missingEvidence?:string[];sourcePolicy?:string};
+};
+const TOPICS=[
+  ['arrays','Arrays'],['strings','Strings'],['two-pointers','Two Pointers'],['sliding-window','Sliding Window'],
+  ['hashing','Hashing'],['binary-search','Binary Search'],['linked-lists','Linked Lists'],['stack-queue','Stack and Queue'],
+  ['binary-trees','Binary Trees'],['bst','Binary Search Tree'],['heaps','Heap / Priority Queue'],
+  ['backtracking','Recursion and Backtracking'],['dynamic-programming','Dynamic Programming'],['graphs','Graph Algorithms'],
+  ['greedy','Greedy'],['trie','Trie'],['bit-manipulation','Bit Manipulation'],['intervals','Intervals'],
+  ['prefix-sum','Prefix Sum and Difference Array'],['sorting','Sorting'],
+  ['advanced-data-structures','Advanced Data Structures'],['mathematics','Mathematical Algorithms']
+] as const;
+const STAGES:{id:StageKey;label:string;icon:any;description:string}[]=[
+  {id:'understand',label:'01 Understand',icon:BookOpen,description:'Concept, recognition signals, prerequisites, and invariant'},
+  {id:'visualize',label:'02 Visualize',icon:Compass,description:'Diagram model, animation sequence, and trace walkthrough'},
+  {id:'implement',label:'03 Implement',icon:Code2,description:'Brute force → better → optimal, pseudocode, and language checklist'},
+  {id:'practice',label:'04 Practice',icon:FlaskConical,description:'Progressive hints, edge cases, and test-design ladder'},
+  {id:'master',label:'05 Master',icon:Brain,description:'Correctness proof, complexity, interview follow-ups, and revision'}
+];
+function TextList({items}:{items?:any[]}) {
+  if(!items?.length)return <p className="text-xs text-slate-500">Not authored yet.</p>;
+  return <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">{items.map((item,i)=><li key={i}>{typeof item==='string'?item:JSON.stringify(item)}</li>)}</ul>;
+}
+function Panel({title,children}:{title:string;children:React.ReactNode}) {
+  return <section className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2"><h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</h4>{children}</section>;
+}
+function StageContent({problem,stage}:{problem:ProblemRecord;stage:StageKey}) {
+  const data=problem.stages?.[stage]??{};
+  if(stage==='understand')return <div className="grid md:grid-cols-2 gap-3">
+    <Panel title="Core concept"><p className="text-sm leading-relaxed">{data.concept}</p><p className="text-sm mt-2">{data.problemGoal}</p></Panel>
+    <Panel title="Recognition signals"><TextList items={data.recognitionSignals}/></Panel>
+    <Panel title="Prerequisites"><TextList items={data.prerequisites}/></Panel>
+    <Panel title="Invariant"><p className="text-sm leading-relaxed">{data.invariant}</p></Panel>
+    <Panel title="Clarify before coding"><TextList items={data.clarifyBeforeCoding}/></Panel>
+    <Panel title="Source verification"><p className="text-xs leading-relaxed">{data.sourceVerification}</p></Panel>
+  </div>;
+  if(stage==='visualize')return <div className="space-y-3">
+    <Panel title="Hand-drawn model / diagram"><pre className="whitespace-pre-wrap text-xs leading-relaxed font-mono bg-slate-50 dark:bg-slate-950 rounded-md p-3">{data.diagram}</pre><p className="text-xs text-slate-500">{data.diagramNotation}</p></Panel>
+    <Panel title="Animation sequence"><ol className="list-decimal pl-5 space-y-2 text-sm">{(data.animationSteps??[]).map((s:string,i:number)=><li key={i}>{s}</li>)}</ol></Panel>
+    <Panel title="Trace walkthrough"><p className="text-sm leading-relaxed">{data.traceWalkthrough}</p></Panel>
+  </div>;
+  if(stage==='implement')return <div className="space-y-3">
+    <div className="grid md:grid-cols-3 gap-3">
+      <Panel title="A. Brute force"><p className="text-sm">{data.bruteForce?.idea}</p><p className="text-xs text-amber-600 mt-2">{data.bruteForce?.bottleneck}</p></Panel>
+      <Panel title="B. Better"><p className="text-sm">{data.better?.idea}</p><p className="text-xs text-slate-500 mt-2">{data.better?.upgrade}</p></Panel>
+      <Panel title="C. Optimal pattern"><p className="text-sm">{data.optimal?.idea}</p><p className="text-xs text-slate-500 mt-2">{data.optimal?.invariant}</p></Panel>
+    </div>
+    <Panel title="Pseudocode"><pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed">{data.pseudocode}</pre></Panel>
+    <div className="grid md:grid-cols-3 gap-3">
+      <Panel title="Java implementation checklist"><p className="text-xs leading-relaxed">{data.java}</p></Panel>
+      <Panel title="JavaScript implementation checklist"><p className="text-xs leading-relaxed">{data.javascript}</p></Panel>
+      <Panel title="Python implementation checklist"><p className="text-xs leading-relaxed">{data.python}</p></Panel>
+    </div>
+    <Panel title="Dry-run checklist"><TextList items={data.dryRunChecklist}/></Panel>
+    <p className="text-xs text-amber-700 dark:text-amber-400">{data.languageStatus==='blueprint-not-submission'?'These are implementation blueprints, not verified accepted submissions. Problem-specific executable code remains to be authored and tested.':''}</p>
+  </div>;
+  if(stage==='practice')return <div className="grid md:grid-cols-2 gap-3">
+    <Panel title="Progressive hints"><TextList items={data.hints}/></Panel>
+    <Panel title="Edge-case checklist"><TextList items={data.edgeCases}/></Panel>
+    <Panel title="Test-design ladder"><TextList items={data.testDesign}/></Panel>
+    <Panel title="Official examples and constraints"><p className="text-sm">Verified examples: {problem.examples?.length??0}. Verified constraints: {problem.constraints?.length??0}.</p><p className="text-xs text-amber-700 dark:text-amber-400">{data.validationNote}</p></Panel>
+  </div>;
+  return <div className="space-y-3">
+    <Panel title="Correctness proof strategy"><p className="text-sm leading-relaxed">{data.proof}</p></Panel>
+    <div className="grid md:grid-cols-2 gap-3">
+      <Panel title="Complexity"><p className="text-sm"><b>Time:</b> {data.timeComplexity}</p><p className="text-sm mt-1"><b>Space:</b> {data.spaceComplexity}</p><p className="text-xs text-slate-500 mt-2">{data.complexityDerivation}</p></Panel>
+      <Panel title="Invariant"><p className="text-sm">{data.invariant}</p></Panel>
+      <Panel title="Correctness checklist"><TextList items={data.correctnessChecklist}/></Panel>
+      <Panel title="Common pitfalls"><TextList items={data.pitfalls}/></Panel>
+      <Panel title="Interview follow-ups"><TextList items={data.interviewFollowUps}/></Panel>
+      <Panel title="Mastery gate"><TextList items={data.masteryGate}/><p className="text-xs text-slate-500">Target score: {data.targetScore}%</p></Panel>
+    </div>
+    <Panel title="Knowledge-check quiz">{(data.quiz??[]).map((q:any,i:number)=><div key={i} className="border-b last:border-0 border-slate-100 dark:border-slate-800 py-2"><p className="text-sm font-semibold">{i+1}. {q.question}</p><details className="mt-1 text-xs"><summary className="cursor-pointer text-sky-600">Reveal reasoning</summary><p className="mt-2 text-slate-600 dark:text-slate-300">{q.answer}</p></details></div>)}</Panel>
+    <Panel title="Spaced revision"><div className="flex flex-wrap gap-2">{(data.revisionDays??[1,3,7,14,30]).map((day:number)=><span key={day} className="rounded-full border px-3 py-1 text-xs">Day {day}</span>)}</div></Panel>
+  </div>;
+}
+
+export function InterviewProblemCatalogPanel(){
+  const [topicId,setTopicId]=useState<string>('arrays');
+  const [query,setQuery]=useState('');
+  const [problems,setProblems]=useState<ProblemRecord[]>([]);
+  const [selectedSlug,setSelectedSlug]=useState('');
+  const [stage,setStage]=useState<StageKey>('understand');
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState('');
+  const [apiUnavailable,setApiUnavailable]=useState(false);
+  const selected=useMemo(()=>problems.find(p=>p.slug===selectedSlug)??problems[0],[problems,selectedSlug]);
+
+  useEffect(()=>{
+    let active=true;
+    const load=async()=>{
+      setLoading(true);setError('');setApiUnavailable(false);
+      try{
+        const params=new URLSearchParams({topicId,page:'1',limit:'100'});
+        if(query.trim())params.set('q',query.trim());
+        const response=await apiFetch(`/api/interview-problems?${params.toString()}`);
+        if(!response.ok)throw new Error(response.status===503?'MongoDB problem catalog is unavailable.':'Unable to load interview problems.');
+        const payload=await response.json();
+        if(!active)return;
+        const rows:ProblemRecord[]=payload.problems??[];
+        setProblems(rows);
+        setSelectedSlug((current)=>rows.some(p=>p.slug===current)?current:(rows[0]?.slug??''));
+      }catch(e){if(active){setProblems([]);setError(e instanceof Error?e.message:'Problem catalog request failed.');setApiUnavailable(true);}}
+      finally{if(active)setLoading(false);}
+    };
+    void load();
+    return()=>{active=false;};
+  },[topicId,query]);
+
+  return <section className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 space-y-4">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-sky-500"/><h2 className="text-base font-bold">293-Question Interview Master Bank</h2></div><p className="text-xs text-slate-500 mt-1">Topic-first lessons with five stages, source-verification flags, and spaced revision.</p></div>
+      <span className="text-xs rounded-full border px-2.5 py-1 text-slate-500">22 topics · 293 questions</span>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-[minmax(180px,0.7fr)_minmax(220px,1fr)] gap-3">
+      <label className="text-xs font-semibold text-slate-500">Topic
+        <select value={topicId} onChange={e=>setTopicId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-2.5 text-sm">
+          {TOPICS.map(([id,label])=><option key={id} value={id}>{label}</option>)}
+        </select>
+      </label>
+      <label className="text-xs font-semibold text-slate-500">Search questions
+        <div className="mt-1 flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 px-3"><Search className="w-4 h-4 text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search within selected topic..." className="w-full bg-transparent py-2.5 text-sm outline-none"/></div>
+      </label>
+    </div>
+    {error&&<div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-800 dark:text-amber-200">{error}{apiUnavailable?' The app can still use the existing curriculum, but this catalog requires a connected MongoDB API.':''}</div>}
+    {loading?<div className="flex items-center gap-2 py-8 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin"/>Loading topic questions...</div>:<div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,0.65fr)_minmax(0,1.6fr)] gap-4">
+      <div className="max-h-[560px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="px-3 py-2 text-xs text-slate-500">{problems.length} questions in {TOPICS.find(t=>t[0]===topicId)?.[1]}</div>
+        {problems.map(problem=><button key={problem.slug} onClick={()=>setSelectedSlug(problem.slug)} className={`w-full text-left px-3 py-3 transition-colors ${selected?.slug===problem.slug?'bg-sky-50 dark:bg-sky-950/40':'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`}>
+          <span className="block text-sm font-semibold">{problem.title}</span><span className="mt-1 flex flex-wrap gap-2 text-[10px] text-slate-500"><span>{problem.difficulty}</span><span>·</span><span>{problem.contentStatus}</span></span>
+        </button>)}
+        {!problems.length&&!error&&<p className="p-4 text-sm text-slate-500">No matching questions.</p>}
+      </div>
+      {selected?<div className="min-w-0 space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="text-lg font-bold">{selected.title}</h3><p className="text-xs text-slate-500 mt-1">{selected.topic} · {selected.difficulty} · {selected.slug}</p></div><span className="rounded-full border border-amber-300 px-2.5 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">{selected.authoringMetadata?.status??'Draft lesson'}</span></div>
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Problem brief</p><p className="text-sm leading-relaxed">{selected.statement??'Problem statement awaiting source verification.'}</p></div>
+        <div className="flex gap-1 overflow-x-auto pb-1">{STAGES.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>setStage(item.id)} className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${stage===item.id?'bg-sky-600 text-white':'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}><Icon className="w-3.5 h-3.5"/>{item.label}</button>;})}</div>
+        <p className="text-xs text-slate-500">{STAGES.find(s=>s.id===stage)?.description}</p>
+        <StageContent problem={selected} stage={stage}/>
+        <div className="rounded-lg border border-amber-200 dark:border-amber-900 p-3 text-xs text-amber-800 dark:text-amber-200"><b>Content quality:</b> This is a generated topic-specific lesson blueprint. Official statement, sample I/O, numeric constraints, and accepted language submissions must be source-verified before marking this question validated. {(selected.authoringMetadata?.missingEvidence??[]).length} evidence items remain.</div>
+      </div>:<div className="rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">Select a problem to open its five-stage lesson.</div>}
+    </div>}
+  </section>;
+}
