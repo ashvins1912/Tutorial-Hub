@@ -12,6 +12,11 @@ test('mastery levels and algorithm choices are constrained by the schema', () =>
   assert.deepEqual(LearningProgress.schema.path('algorithm').enumValues, ['binary-search', 'bubble-sort']);
 });
 
+test('keeps a bounded quiz history collection', () => {
+  assert.ok(LearningProgress.schema.path('quizHistory'));
+  assert.equal(LearningProgress.schema.path('quizHistory').options.default instanceof Array, true);
+});
+
 test('progress fields have server-side bounds', () => {
   assert.equal(LearningProgress.schema.path('currentStep').options.max, 100);
   assert.equal(LearningProgress.schema.path('input').options.maxlength, 300);
