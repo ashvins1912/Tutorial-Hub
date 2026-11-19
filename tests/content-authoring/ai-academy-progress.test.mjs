@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AIAcademyProgress } from '../../server/models/AIAcademyProgress.ts';
+import { AIAcademyRateLimit } from '../../server/models/AIAcademyRateLimit.ts';
 import { gradeAcademyAnswer, isKnownAcademyLesson } from '../../server/routes/aiAcademyProgressRoutes.ts';
 import { AI_ACADEMY_QUIZ_ANSWERS } from '../../server/data/aiAcademyQuizAnswers.ts';
 import { AI_ENGINEERING_CURRICULUM } from '../../src/features/ai-academy/data/aiEngineeringCurriculum.ts';
@@ -10,7 +11,7 @@ test('AI Academy progress is uniquely scoped to authenticated user and lesson', 
   assert.ok(indexes.some(([keys, options]) => keys.userId === 1 && keys.lessonId === 1 && options.unique === true));
 });
 
-test('AI Academy progress has server-owned completion and quiz fields', () => {
+test('AI Academy progress rate limit is atomic per user and minute with TTL cleanup', () => {\n  const indexes = AIAcademyRateLimit.schema.indexes();\n  assert.ok(indexes.some(([keys, options]) => keys.userId === 1 && keys.windowStart === 1 && options.unique === true));\n  assert.ok(indexes.some(([keys, options]) => keys.expiresAt === 1 && options.expireAfterSeconds === 0));\n});\n\ntest('AI Academy progress has server-owned completion and quiz fields', () => {
   assert.equal(AIAcademyProgress.schema.path('completed').instance, 'Boolean');
   assert.equal(AIAcademyProgress.schema.path('quizPassed').instance, 'Boolean');
   assert.equal(AIAcademyProgress.schema.path('quizAttempts').options.min, 0);
