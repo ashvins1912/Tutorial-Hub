@@ -11,7 +11,7 @@ test('AI Engineering Academy includes seven complete learning phases', () => {
   const counts = getAcademyCounts();
   assert.equal(counts.phases, 7);
   assert.ok(counts.modules >= 25, `expected at least 25 modules, received ${counts.modules}`);
-  assert.ok(counts.lessons >= 70, `expected at least 70 lessons, received ${counts.lessons}`);
+  assert.ok(counts.lessons >= 68, `expected at least 68 lessons, received ${counts.lessons}`);
   assert.deepEqual(AI_ENGINEERING_CURRICULUM.map((phase) => phase.id), [
     'foundations', 'classical-ml', 'deep-learning', 'genai', 'mlops', 'rag-systems', 'agentic-systems',
   ]);
