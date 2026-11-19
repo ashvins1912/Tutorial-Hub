@@ -16,6 +16,7 @@ import { seedVerifiedProblemBatches } from './server/db/seedVerifiedProblemBatch
 import authRoutes from './server/routes/authRoutes';
 import userStateRoutes from './server/routes/userStateRoutes';
 import profileRoutes from './server/routes/profileRoutes';
+import communityRoutes from './server/routes/communityRoutes';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -36,6 +37,7 @@ async function startServer() {
   app.use('/api/auth', authRoutes);
   app.use('/api/user-state', userStateRoutes);
   app.use('/api/profile', profileRoutes);
+  app.use('/api/community', communityRoutes);
 
   // Cognitive Brain-Training & Spaced Repetition API
   app.use('/api/cognitive', cognitiveRoutes);

@@ -14,7 +14,13 @@ export interface ISpacedRepetitionItem {
 
 export interface IActivityLogEntry {
   date: Date;
-  kind: 'lab-complete' | 'quiz-submit' | 'problem-mastered' | 'warmup-complete' | 'state-sync';
+  kind:
+    | 'lab-complete'
+    | 'quiz-submit'
+    | 'problem-mastered'
+    | 'warmup-complete'
+    | 'state-sync'
+    | 'community-challenge';
   label: string;
   xp: number;
   score?: number;
@@ -65,7 +71,14 @@ const ActivityLogSchema = new Schema<IActivityLogEntry>(
     date: { type: Date, default: Date.now },
     kind: {
       type: String,
-      enum: ['lab-complete', 'quiz-submit', 'problem-mastered', 'warmup-complete', 'state-sync'],
+      enum: [
+        'lab-complete',
+        'quiz-submit',
+        'problem-mastered',
+        'warmup-complete',
+        'state-sync',
+        'community-challenge',
+      ],
       required: true,
     },
     label: { type: String, required: true },
@@ -84,10 +97,10 @@ const UserBrainProfileSchema = new Schema<IUserBrainProfile>(
       default: 'Noob',
     },
     cognitiveMetrics: {
-      signalRecognitionScore: { type: Number, min: 0, max: 100, default: 76 },
-      bottleneckDiagnosisScore: { type: Number, min: 0, max: 100, default: 80 },
-      logicAssemblyAccuracy: { type: Number, min: 0, max: 100, default: 74 },
-      paperDryRunStreak: { type: Number, min: 0, default: 2 },
+      signalRecognitionScore: { type: Number, min: 0, max: 100, default: 0 },
+      bottleneckDiagnosisScore: { type: Number, min: 0, max: 100, default: 0 },
+      logicAssemblyAccuracy: { type: Number, min: 0, max: 100, default: 0 },
+      paperDryRunStreak: { type: Number, min: 0, default: 0 },
     },
     preferences: {
       targetRole: { type: String, default: 'Senior Software Engineer' },

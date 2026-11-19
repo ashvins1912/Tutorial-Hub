@@ -4,6 +4,7 @@ import { isMongoConnected } from '../db/connectMongo';
 import { UserAccount } from '../models/UserAccount';
 import { IUserPreferences, UserBrainProfile } from '../models/UserBrainProfile';
 import { CompanySprint } from '../models/CompanySprint';
+import { CommunityPost } from '../models/CommunityPost';
 import { getAllUserLearningStates } from './userStateRoutes';
 import { getDevCognitiveExtras } from './cognitiveRoutes';
 import { BIG_TECH_PROBLEMS } from '../seed/bigTechTopicSeed';
@@ -146,10 +147,10 @@ router.get('/stats', async (req: Request, res: Response) => {
 
   let currentTier: RankTier = 'Noob';
   let cognitiveMetrics = {
-    signalRecognitionScore: 76,
-    bottleneckDiagnosisScore: 80,
-    logicAssemblyAccuracy: 74,
-    paperDryRunStreak: 2,
+    signalRecognitionScore: 0,
+    bottleneckDiagnosisScore: 0,
+    logicAssemblyAccuracy: 0,
+    paperDryRunStreak: 0,
   };
   let passedTopicQuizzes: string[] = [];
   let completedProblemIds: string[] = [];
@@ -205,10 +206,10 @@ router.get('/stats', async (req: Request, res: Response) => {
         : 'Noob') as RankTier;
       if (profileDoc.cognitiveMetrics) {
         cognitiveMetrics = {
-          signalRecognitionScore: profileDoc.cognitiveMetrics.signalRecognitionScore ?? 76,
-          bottleneckDiagnosisScore: profileDoc.cognitiveMetrics.bottleneckDiagnosisScore ?? 80,
-          logicAssemblyAccuracy: profileDoc.cognitiveMetrics.logicAssemblyAccuracy ?? 74,
-          paperDryRunStreak: profileDoc.cognitiveMetrics.paperDryRunStreak ?? 2,
+          signalRecognitionScore: profileDoc.cognitiveMetrics.signalRecognitionScore ?? 0,
+          bottleneckDiagnosisScore: profileDoc.cognitiveMetrics.bottleneckDiagnosisScore ?? 0,
+          logicAssemblyAccuracy: profileDoc.cognitiveMetrics.logicAssemblyAccuracy ?? 0,
+          paperDryRunStreak: profileDoc.cognitiveMetrics.paperDryRunStreak ?? 0,
         };
       }
       passedTopicQuizzes = profileDoc.passedTopicQuizzes ?? [];
@@ -480,6 +481,13 @@ router.get('/stats', async (req: Request, res: Response) => {
     }
   }
 
+  let communityChallengesSolved = 0;
+  if (mongoReady) {
+    communityChallengesSolved = await CommunityPost.countDocuments({ completedBy: userId });
+  } else {
+    communityChallengesSolved = activityLog.filter((a) => a.kind === 'community-challenge').length;
+  }
+
   // 8. Total XP & Rank Progress Calculation
   const totalXp =
     completedLabsCount * 120 +
@@ -500,7 +508,8 @@ router.get('/stats', async (req: Request, res: Response) => {
     solverCompletedCount * 40 +
     solverDrillsDone * 20 +
     customConceptsCount * 35 +
-    noteEntries.length * 15;
+    noteEntries.length * 15 +
+    communityChallengesSolved * 50;
 
   const tierIdx = Math.max(0, RANK_ORDER.indexOf(currentTier));
   const nextTier: RankTier | null =
@@ -534,7 +543,10 @@ router.get('/stats', async (req: Request, res: Response) => {
       b.xp += act.xp;
     }
   }
-  for (const ts of Object.values(updatedAtByKey)) {
+  for (const [stateKey, ts] of Object.entries(updatedAtByKey)) {
+    if (stateKey === 'ui-preferences') continue;
+    const itemCount = summarizePayloadCount(stateKey, states[stateKey]);
+    if (itemCount === 0) continue;
     const day = ts.slice(0, 10);
     const b = bucketMap.get(day);
     if (b && b.count === 0) {
@@ -568,8 +580,18 @@ router.get('/stats', async (req: Request, res: Response) => {
     matrixCompletedCount +
     solverCompletedCount;
 
+  const isFreshAccount =
+    totalXp === 0 &&
+    uniqueProblemsSolved === 0 &&
+    compositeAccuracy === 0 &&
+    cognitiveMetrics.paperDryRunStreak === 0 &&
+    spacedRepetitionQueue.length === 0 &&
+    activityLog.length === 0;
+
   return res.json({
     storageMode: mongoReady ? 'mongodb' : 'dev-memory',
+    isFreshAccount,
+    communityChallengesSolved,
     account: accountInfo,
     preferences,
     rank: {

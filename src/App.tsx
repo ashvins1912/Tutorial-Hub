@@ -52,6 +52,7 @@ import { UniversalSolverStudio } from './features/solver-studio/UniversalSolverS
 import { ProductCompanyMasterBankView } from './components/interview/ProductCompanyMasterBankView';
 import { IntelligentEngineStudio } from './features/intelligent-engine/components/IntelligentEngineStudio';
 import { ProfileStatsView } from './components/ProfileStatsView';
+import { CommunityHubView } from './components/CommunityHubView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -262,6 +263,7 @@ export default function App() {
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
     { id: 'sprint', label: 'Sprint', isActive: activeView === 'sprint' },
+    { id: 'community', label: 'Community', isActive: activeView === 'community' },
   ];
 
   const handleSelectNav = (id: TopView) => {
@@ -539,6 +541,15 @@ export default function App() {
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 
           {activeView === 'profile' && <ProfileStatsView />}
+
+          {activeView === 'community' && (
+            <CommunityHubView
+              onOpenProblem={(problemId) => {
+                selectProblem(problemId);
+                setWorkspaceMode('classic-lab');
+              }}
+            />
+          )}
 
           {activeView === 'sprint' && (
             <div className="space-y-5">
