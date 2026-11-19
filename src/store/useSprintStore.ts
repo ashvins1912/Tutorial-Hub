@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/apiFetch';
 import { create } from 'zustand';
 import {
   BigTechCompany,
@@ -182,7 +183,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
 
   fetchActiveSprint: async (userId = 'learner-default') => {
     try {
-      const res = await fetch(`/api/sprints/active/${encodeURIComponent(userId)}`);
+      const res = await apiFetch(`/api/sprints/active/${encodeURIComponent(userId)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.sprint) {
@@ -204,7 +205,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     let created: CompanySprint | null = null;
 
     try {
-      const res = await fetch('/api/sprints/create', {
+      const res = await apiFetch('/api/sprints/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, targetCompany, dailyMinutesBudget }),
@@ -241,7 +242,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     let unlockedNextDay = false;
 
     try {
-      const res = await fetch(`/api/sprints/${encodeURIComponent(sprint.id)}/complete-task`, {
+      const res = await apiFetch(`/api/sprints/${encodeURIComponent(sprint.id)}/complete-task`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dayNumber, taskId, scoreEarned }),

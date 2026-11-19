@@ -11,8 +11,10 @@ import {
   ISprintTask,
 } from '../models/CompanySprint';
 import { isMongoConnected } from '../db/connectMongo';
+import { requireAuth } from '../middleware/requireAuth';
 
 const router = express.Router();
+router.use(requireAuth);
 
 // In-memory store fallback when MONGODB_URI is not set
 const activeSprintByUser = new Map<string, CompanySprintType>();
@@ -50,11 +52,12 @@ router.get('/companies/meta', (_req: Request, res: Response) => {
 // POST /api/sprints/create
 router.post('/create', async (req: Request, res: Response) => {
   const {
-    userId = 'learner-default',
+
     targetCompany = 'Google',
     dailyMinutesBudget = 60,
   } = req.body ?? {};
 
+  const userId = req.authUser!.id;
   const validCompanies: BigTechCompany[] = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'];
   const company: BigTechCompany = validCompanies.includes(targetCompany)
     ? targetCompany
@@ -84,7 +87,7 @@ router.post('/create', async (req: Request, res: Response) => {
 
 // GET /api/sprints/active/:userId
 router.get('/active/:userId', async (req: Request, res: Response) => {
-  const userId = req.params.userId || 'learner-default';
+  const userId = req.authUser!.id;
 
   let sprint: CompanySprintType | null = null;
 
@@ -123,7 +126,7 @@ router.patch('/:sprintId/complete-task', async (req: Request, res: Response) => 
   const { dayNumber, taskId, scoreEarned = 90 } = req.body ?? {};
 
   if (isMongoConnected()) {
-    const doc = await CompanySprintModel.findById(sprintId);
+    const doc = await CompanySprintModel.findOne({ _id: sprintId, userId: req.authUser!.id });
     if (!doc) {
       return res.status(404).json({ error: 'Sprint not found' });
     }
@@ -163,6 +166,7 @@ router.patch('/:sprintId/complete-task', async (req: Request, res: Response) => 
   }
 
   const sprint = sprintById.get(sprintId);
+  if (sprint && sprint.userId !== req.authUser!.id) return res.status(404).json({ error: 'Sprint not found' });
   if (!sprint) {
     return res.status(404).json({ error: 'Sprint not found' });
   }

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { usePatternForgeStore, TopView } from './store/usePatternForgeStore';
 import { useSprintStore } from './store/useSprintStore';
+import { useAuth } from './auth/AuthContext';
 import { PROBLEMS } from './data/problems';
 import { BIG_TECH_36_PROBLEMS } from '../server/seed/bigTechTopicSeed';
 import { MasteryStepper } from './components/MasteryStepper';
@@ -51,6 +52,7 @@ import { ProductCompanyMasterBankView } from './components/interview/ProductComp
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
 export default function App() {
+  const { user, signOut } = useAuth();
   const activeView = usePatternForgeStore((s) => s.activeView);
   const setActiveView = usePatternForgeStore((s) => s.setActiveView);
   const theme = usePatternForgeStore((s) => s.theme);
@@ -167,6 +169,8 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden xl:block max-w-40 truncate text-xs text-slate-500">{user?.email}</span>
+            <button type="button" onClick={() => void signOut()} className="rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-rose-400">Sign out</button>
             <button
               type="button"
               onClick={toggleTheme}

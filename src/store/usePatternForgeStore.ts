@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/apiFetch';
 import { create } from 'zustand';
 import {
   CodeLanguage,
@@ -518,7 +519,7 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
   fetchBrainProfile: async () => {
     set({ isLoadingProfile: true });
     try {
-      const res = await fetch('/api/cognitive/profile/learner-default');
+      const res = await apiFetch('/api/cognitive/profile/learner-default');
       if (res.ok) {
         const data = await res.json();
         if (data.profile) {
@@ -554,7 +555,7 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
     if (!choice.isCorrect) return;
 
     try {
-      const res = await fetch('/api/cognitive/complete-problem', {
+      const res = await apiFetch('/api/cognitive/complete-problem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -584,7 +585,7 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
 
   openTopicQuiz: async (topicId) => {
     try {
-      const res = await fetch(`/api/cognitive/quiz/${topicId}`);
+      const res = await apiFetch(`/api/cognitive/quiz/${topicId}`);
       if (res.ok) {
         const data = await res.json();
         if (data.quiz) {
@@ -607,7 +608,7 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
     if (!quiz) return null;
 
     try {
-      const res = await fetch('/api/cognitive/quiz/submit', {
+      const res = await apiFetch('/api/cognitive/quiz/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

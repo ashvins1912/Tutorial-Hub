@@ -1,10 +1,12 @@
 import express, { Request, Response } from 'express';
+import { requireAuth } from '../middleware/requireAuth';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../seed/cognitiveSeed';
 import { RankTier, UserBrainProfile as UserBrainProfileType } from '../../src/types/dsa';
 import { UserBrainProfile as UserBrainProfileModel } from '../models/UserBrainProfile';
 import { isMongoConnected } from '../db/connectMongo';
 
 const router = express.Router();
+router.use(requireAuth);
 
 const RANK_ORDER: RankTier[] = ['Noob', 'Apprentice', 'Practitioner', 'Strategist', 'Pro'];
 
@@ -140,7 +142,7 @@ function evaluateRankPromotion(profile: UserBrainProfileType): boolean {
 
 // GET /api/cognitive/profile/:userId
 router.get('/profile/:userId', async (req: Request, res: Response) => {
-  const userId = req.params.userId || 'learner-default';
+  const userId = req.authUser!.id;
   const profile = await getOrCreateProfile(userId);
   res.json({ profile });
 });
@@ -148,7 +150,7 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
 // POST /api/cognitive/complete-problem
 router.post('/complete-problem', async (req: Request, res: Response) => {
   const {
-    userId = 'learner-default',
+
     problemId,
     problemTitle,
     patternTag,
@@ -157,6 +159,7 @@ router.post('/complete-problem', async (req: Request, res: Response) => {
     assemblyErrors = 0,
     bottleneckCorrect = true,
   } = req.body ?? {};
+  const userId = req.authUser!.id;
 
   if (!problemId) {
     return res.status(400).json({ error: 'problemId is required' });
@@ -251,7 +254,8 @@ router.get('/quizzes', (_req: Request, res: Response) => {
 
 // POST /api/cognitive/quiz/submit
 router.post('/quiz/submit', async (req: Request, res: Response) => {
-  const { userId = 'learner-default', topicId, answers } = req.body ?? {};
+  const { topicId, answers } = req.body ?? {};
+  const userId = req.authUser!.id;
   const quiz = SEED_TOPIC_QUIZZES.find((q) => q.topicId === topicId);
   if (!quiz) {
     return res.status(404).json({ error: `Quiz "${topicId}" not found` });
@@ -296,7 +300,8 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
 });
 
 router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
-  const { userId, problemId } = req.params;
+  const { problemId } = req.params;
+  const userId = req.authUser!.id;
   if (isMongoConnected()) {
     const doc = await UserBrainProfileModel.findOne({ userId });
     const note = doc?.notes?.get(problemId) ?? '';
@@ -307,7 +312,8 @@ router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
 });
 
 router.post('/notes', async (req: Request, res: Response) => {
-  const { userId = 'learner-default', problemId, note = '' } = req.body ?? {};
+  const { problemId, note = '' } = req.body ?? {};
+  const userId = req.authUser!.id;
   if (!problemId) return res.status(400).json({ error: 'problemId is required' });
 
   if (isMongoConnected()) {
@@ -326,7 +332,8 @@ router.post('/notes', async (req: Request, res: Response) => {
 });
 
 router.post('/warmup/complete', async (req: Request, res: Response) => {
-  const { userId = 'learner-default', drillId } = req.body ?? {};
+  const { drillId } = req.body ?? {};
+  const userId = req.authUser!.id;
   if (!drillId) return res.status(400).json({ error: 'drillId is required' });
 
   if (isMongoConnected()) {
