@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { ARRAYS_BATCH_01 } from '../server/seed/verifiedProblemBatches/arraysBatch01.ts';
+import { ARRAYS_BATCH_01 } from '../../server/seed/verifiedProblemBatches/arraysBatch01.ts';
 
 const cases = {
   'arrays-two-sum': [
