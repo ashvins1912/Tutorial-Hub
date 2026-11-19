@@ -162,4 +162,38 @@ router.put('/jobs/:id/structure', requireAuth, requireContentAuthor, async (req:
   return res.json({ job: { id: job.id, status: job.status, analysis: job.analysis, draft: { ...job.draft, sourceText: undefined } } });
 });
 
+
+router.post('/jobs/:id/publish', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
+  if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE' });
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ code: 'AUTHORING_JOB_NOT_FOUND' });
+  const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id });
+  if (!job) return res.status(404).json({ code: 'AUTHORING_JOB_NOT_FOUND' });
+  if (!job.generatedLesson || !Array.isArray(job.generatedLesson.quiz)) {
+    return res.status(409).json({ code: 'LESSON_NOT_READY', message: 'Generate and review the lesson before publishing it.' });
+  }
+  job.publishedAt = new Date();
+  await job.save();
+  return res.json({ ok: true, publishedAt: job.publishedAt });
+});
+
+router.delete('/jobs/:id/publish', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
+  if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE' });
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ code: 'AUTHORING_JOB_NOT_FOUND' });
+  const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id });
+  if (!job) return res.status(404).json({ code: 'AUTHORING_JOB_NOT_FOUND' });
+  job.publishedAt = null;
+  await job.save();
+  return res.json({ ok: true, publishedAt: null });
+});
+
+router.get('/published/:id', requireAuth, async (req: Request, res: Response) => {
+  if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE' });
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
+  const job = await ContentAuthoringJob.findOne({ _id: req.params.id, publishedAt: { $type: 'date' } })
+    .select('generatedLesson publishedAt fileName')
+    .lean();
+  if (!job?.generatedLesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
+  return res.json({ lesson: job.generatedLesson, publishedAt: job.publishedAt, fileName: job.fileName });
+});
+
 export default router;
