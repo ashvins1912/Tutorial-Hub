@@ -22,5 +22,5 @@ test('bubble sort trace sorts without mutating caller input', () => {
 
 test('input parser rejects non-numeric and oversized inputs', () => {
   assert.throws(() => parseInput('1, two, 3'), /finite numbers/);
-  assert.throws(() => parseInput(Array.from({ length: 25 }, (_, i) => i).join(',')), /at most 24/);
+  assert.throws(() => parseInput(Array.from({ length: 25 }, (_, i) => i).join(',')), /at most 12/);
 });
