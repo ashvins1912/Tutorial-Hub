@@ -15,6 +15,15 @@ import { requireAuth } from '../middleware/requireAuth';
 
 const router = express.Router();
 router.use(requireAuth);
+router.use((_req: Request, res: Response, next: express.NextFunction) => {
+  if (process.env.NODE_ENV === 'production' && !isMongoConnected()) {
+    return res.status(503).json({
+      code: 'DATABASE_UNAVAILABLE',
+      message: 'Persistent learning storage is temporarily unavailable. Please retry shortly.',
+    });
+  }
+  return next();
+});
 
 // In-memory store fallback when MONGODB_URI is not set
 const activeSprintByUser = new Map<string, CompanySprintType>();
