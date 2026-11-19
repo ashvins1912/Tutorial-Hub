@@ -17,6 +17,13 @@ function validInput(body:any): body is ProblemInput {
     typeof body.topicId==='string' && body.topicId.trim().length>0 &&
     typeof body.topic==='string' && body.topic.trim().length>0;
 }
+function hasCompleteLesson(body:any):boolean {
+  const stages=body?.stages??{};
+  return typeof body?.statement==='string' && body.statement.trim().length>0 &&
+    Array.isArray(body.examples) && body.examples.length>0 &&
+    Array.isArray(body.constraints) && body.constraints.length>0 &&
+    !!stages.understand && !!stages.visualize && !!stages.implement && !!stages.practice && !!stages.master;
+}
 
 // GET /api/interview-problems?topicId=&q=&contentStatus=&page=&limit=
 router.get('/',async(req:Request,res:Response)=>{
@@ -45,6 +52,7 @@ router.get('/:slug',async(req:Request,res:Response)=>{
 router.post('/upsert',requireCatalogAdmin,async(req:Request,res:Response)=>{
   if(!isMongoConnected())return res.status(503).json({error:'MongoDB is required for catalog writes.'});
   if(!validInput(req.body))return res.status(400).json({error:'title, topicId and topic are required.'});
+  if(req.body.contentStatus==='validated' && !hasCompleteLesson(req.body))return res.status(400).json({error:'A problem cannot be validated until its statement, examples, constraints and all five learning stages are supplied.'});
   const result=await resolveAndUpsertProblem(req.body);
   if(result.action==='review')return res.status(409).json(result);
   res.status(result.action==='created'?201:200).json(result);
@@ -65,6 +73,7 @@ router.patch('/:slug',requireCatalogAdmin,async(req:Request,res:Response)=>{
     if(!merged.statement || !merged.examples?.length || !merged.constraints?.length || !stages.understand || !stages.visualize || !stages.implement || !stages.practice || !stages.master)
       return res.status(400).json({error:'A problem cannot be marked validated until its statement, examples, constraints and all five learning stages are present.'});
   }
+  if(update.contentStatus)update.catalogStatus=update.contentStatus==='validated'?'authored':'inventory';
   const problem=await InterviewProblem.findOneAndUpdate({slug:req.params.slug},{$set:update},{new:true,runValidators:true});
   res.json({problem});
 });
