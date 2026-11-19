@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, fix/api-integration]
+    branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content]
 
 jobs:
   validate:
