@@ -308,6 +308,18 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
   });
 });
 
+router.get('/notes', async (req: Request, res: Response) => {
+  const userId = req.authUser!.id;
+  if (isMongoConnected()) {
+    const doc = await UserBrainProfileModel.findOne({ userId }).select('notes');
+    const notes = doc?.notes instanceof Map
+      ? Object.fromEntries(doc.notes.entries())
+      : doc?.notes ?? {};
+    return res.json({ notes });
+  }
+  return res.json({ notes: notesStore.get(userId) ?? {} });
+});
+
 router.get('/notes/:problemId', async (req: Request, res: Response) => {
   const { problemId } = req.params;
   const userId = req.authUser!.id;
