@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Search, Target } from 'lucide-react';
+import { useAccountState } from '../hooks/useAccountState';
 
 type Topic = {
   id: string; title: string; level: 'Foundation' | 'Intermediate' | 'Advanced';
@@ -113,7 +114,7 @@ export function SystemDesignLearningAcademy() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [activeStage, setActiveStage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState<Progress>(readProgress);
+  const [progress, setProgress] = useAccountState<Progress>('system-design-academy-progress', {});
   const category = curriculum.find(c => c.id === categoryId) ?? curriculum[0];
   const topic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
   const allTopics = useMemo(() => curriculum.flatMap(c => c.topics.map(x => ({...x, categoryId:c.id, categoryTitle:c.title}))), []);
@@ -135,7 +136,6 @@ export function SystemDesignLearningAcademy() {
   }, [isPlaying, topic.id, stages.length]);
   const updateProgress = (id:string, patch:Partial<{done:boolean;note:string}>) => setProgress(old => {
     const next = {...old, [id]: {...old[id], done:old[id]?.done ?? false, note:old[id]?.note ?? '', ...patch}};
-    try { window.localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* keep session progress */ }
     return next;
   });
   const sections = [
