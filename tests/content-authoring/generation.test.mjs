@@ -56,3 +56,14 @@ test('orchestrates provider output and keeps it unverified', async () => {
   assert.equal(result.metadata.provider, 'test-provider');
   assert.equal(result.lesson.validation.status, 'unverified-draft');
 });
+
+test('drops hallucinated references and keeps only source-provided URLs', () => {
+  const withRefs = { ...validLesson, references: [
+    { label: 'Provided reference', url: 'https://example.com/guide', suppliedByUser: false },
+    { label: 'Invented reference', url: 'https://not-in-source.example/docs', suppliedByUser: true },
+  ] };
+  const result = validateGeneratedLesson(withRefs, sections, 'See https://example.com/guide for details.');
+  assert.equal(result.lesson.references.length, 1);
+  assert.equal(result.lesson.references[0].suppliedByUser, true);
+  assert.equal(result.warnings.some((warning) => warning.includes('omitted')), true);
+});
