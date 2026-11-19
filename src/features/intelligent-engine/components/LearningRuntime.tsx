@@ -51,9 +51,10 @@ export function bubbleSortTrace(values: number[]): TraceStep[] {
 }
 
 export function parseInput(raw: string): number[] {
+  if (!raw.trim()) throw new Error('Enter comma-separated finite numbers.');
   const values = raw.split(',').map((part) => Number(part.trim()));
   if (!values.length || values.some((value) => !Number.isFinite(value))) throw new Error('Enter comma-separated finite numbers.');
-  if (values.length > 24) throw new Error('Use at most 24 values for a readable trace.');
+  if (values.length > 12) throw new Error('Use at most 12 values for a readable trace.');
   return values;
 }
 
@@ -62,7 +63,6 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
   const [rawValues, setRawValues] = useState('2, 5, 8, 12, 16, 23, 38');
   const [target, setTarget] = useState('16');
   const [traceIndex, setTraceIndex] = useState(0);
-  const [traceError, setTraceError] = useState('');
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -99,7 +99,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
     <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Algorithm trace lab</h4><p className="text-[11px] text-slate-500">Deterministic, built-in simulations. No generated source code is executed.</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">Step-by-step</span></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <label className="text-[11px] text-slate-500">Algorithm<select className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={algorithm} onChange={(event) => { setAlgorithm(event.target.value as typeof algorithm); setTraceIndex(0); setTraceError(''); }}><option value="binary-search">Binary search</option><option value="bubble-sort">Bubble sort</option></select></label>
+        <label className="text-[11px] text-slate-500">Algorithm<select className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={algorithm} onChange={(event) => { setAlgorithm(event.target.value as typeof algorithm); setTraceIndex(0); }}><option value="binary-search">Binary search</option><option value="bubble-sort">Bubble sort</option></select></label>
         <label className="text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); }} /></label>
       </div>
       {algorithm === 'binary-search' && <label className="block text-[11px] text-slate-500">Target value<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={target} onChange={(event) => { setTarget(event.target.value); setTraceIndex(0); }} /></label>}
