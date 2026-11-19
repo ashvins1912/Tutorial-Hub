@@ -78,13 +78,13 @@ for (const problem of ARRAYS_BATCH_01) {
     const invocation=problem.slug==='arrays-two-sum'
       ? `int[] result = solution.twoSum(nums, Integer.parseInt(args[1])); ${javaMain}`
       : `var result = solution.${method.java}(nums); ${javaMain}`;
-    const runner=`import java.util.*; class Runner { public static void main(String[] args) { int[] nums=Arrays.stream(args[0].split(",")).mapToInt(Integer::parseInt).toArray(); Solution solution=new Solution(); ${invocation} } }`;
+    const runner=`class Runner { public static void main(String[] args) { int[] nums=java.util.Arrays.stream(args[0].split(",")).mapToInt(Integer::parseInt).toArray(); Solution solution=new Solution(); ${invocation} } }`;
     writeFileSync(path.join(javaDir,'Solution.java'),problem.stages.implement.java+'\n'+runner);
     run('javac',['Solution.java'],{cwd:javaDir});
     for (const test of vectors) {
       const args=[test.args[0].join(',')];
       if(test.args.length>1)args.push(String(test.args[1]));
-      const output=run('java',['Runner',...args],{cwd:javaDir}).replace(/\\s/g,'');
+      const output=run('java',['Runner',...args],{cwd:javaDir}).replace(/\s/g,'');
       const expected=Array.isArray(test.expected)?'['+test.expected.join(',')+']':String(test.expected);
       assert.equal(output,expected,problem.title+' Java '+JSON.stringify(test.args));
       total++;
@@ -99,7 +99,7 @@ for (const problem of ARRAYS_BATCH_01) {
     writeFileSync(file,problem.stages.implement.python+harness);
     for (const test of vectors) {
       const output=run('python3',[file],{input:JSON.stringify(test.args)});
-      assert.equal(output,normalize(test.expected),problem.title+' Python '+JSON.stringify(test.args));
+      assert.deepEqual(JSON.parse(output),test.expected,problem.title+' Python '+JSON.stringify(test.args));
       total++;
     }
   } finally { rmSync(pyDir,{recursive:true,force:true}); }

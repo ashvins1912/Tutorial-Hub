@@ -2,9 +2,9 @@ name: Validate Tutorial Hub
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio]
   push:
-    branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content]
+    branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio]
 
 jobs:
   validate:
@@ -32,5 +32,7 @@ jobs:
         run: npm run lint
       - name: Verify source-authored DSA solutions (Java, JavaScript, Python)
         run: npm run test:dsa:arrays:01
+      - name: Test Content Studio ingestion and classification
+        run: npm run test:content-authoring
       - name: Build frontend
         run: npm run build

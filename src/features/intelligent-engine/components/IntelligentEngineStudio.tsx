@@ -29,6 +29,7 @@ import type {
 } from '../../../core/intelligent-engine/intelligent-engine.types';
 import { DiagramCanvas } from './DiagramCanvas';
 import { CreateTopicModal } from './CreateTopicModal';
+import { ContentAuthoringPanel } from './ContentAuthoringPanel';
 
 const DIAGRAM_TABS: { type: DiagramType; label: string }[] = [
   { type: 'FLOWCHART', label: 'Logic Flowchart' },
