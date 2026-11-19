@@ -1,13 +1,29 @@
 import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { requireAuth } from '../middleware/requireAuth';
 import { isMongoConnected } from '../db/connectMongo';
 import { LearningProgress } from '../models/LearningProgress';
+import { ContentAuthoringJob } from '../modules/content-authoring/ContentAuthoringJob';
 
 const router = express.Router();
 router.use(requireAuth);
 
 function validLessonId(value: string) {
-  return /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+  return mongoose.Types.ObjectId.isValid(value);
+}
+
+async function findOwnedLesson(lessonId: string, userId: string) {
+  if (!validLessonId(lessonId)) return null;
+  return ContentAuthoringJob.findOne({ _id: lessonId, ownerId: userId }).select('generatedLesson.quiz').lean();
+}
+
+function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
+  if (Object.keys(answers).length !== quiz.length) return null;
+  return quiz.reduce((score, question, index) => {
+    const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
+    const actual = (answers[String(index)] || '').split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
+    return score + (expected.length === actual.length && expected.every((value, itemIndex) => value === actual[itemIndex]) ? 1 : 0);
+  }, 0);
 }
 
 function normalizeAnswers(value: unknown): Record<string, string> | null {
@@ -25,6 +41,8 @@ function normalizeAnswers(value: unknown): Record<string, string> | null {
 router.get('/:lessonId', async (req: Request, res: Response) => {
   if (!validLessonId(req.params.lessonId)) return res.status(400).json({ code: 'INVALID_LESSON_ID' });
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'Progress cannot be persisted while the database is unavailable.' });
+  const lesson = await findOwnedLesson(req.params.lessonId, req.authUser!.id);
+  if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const progress = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).lean();
   return res.json({ progress: progress || null });
 });
@@ -32,9 +50,12 @@ router.get('/:lessonId', async (req: Request, res: Response) => {
 router.put('/:lessonId', async (req: Request, res: Response) => {
   if (!validLessonId(req.params.lessonId)) return res.status(400).json({ code: 'INVALID_LESSON_ID' });
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'Progress cannot be persisted while the database is unavailable.' });
+  const lesson = await findOwnedLesson(req.params.lessonId, req.authUser!.id);
+  if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const body = req.body || {};
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
   let quizAccuracy: number | null = null;
+  let quizScore = 0;
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
   if (body.algorithm !== undefined) {
     if (!['binary-search', 'bubble-sort'].includes(body.algorithm)) return res.status(400).json({ code: 'INVALID_ALGORITHM' });
@@ -54,17 +75,21 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   }
   if (body.quizAttempt !== undefined) {
     const attempt = body.quizAttempt;
-    if (!attempt || !Number.isInteger(attempt.score) || !Number.isInteger(attempt.total) || attempt.total < 1 || attempt.total > 40 || attempt.score < 0 || attempt.score > attempt.total) {
+    const quiz = lesson.generatedLesson?.quiz;
+    if (!attempt || !Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40 || attempt.total !== quiz.length) {
       return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
     }
-    const accuracy = Math.round((attempt.score / attempt.total) * 100);
+    const normalizedAnswers = normalizeAnswers(attempt.answers);
+    if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
+    const calculatedScore = calculateQuizScore(quiz, normalizedAnswers);
+    if (calculatedScore === null) return res.status(400).json({ code: 'QUIZ_ANSWERS_INCOMPLETE' });
+    quizScore = calculatedScore;
+    const accuracy = Math.round((quizScore / quiz.length) * 100);
     const previous = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).select('bestScore').lean();
     const bestAccuracy = Math.max(previous?.bestScore || 0, accuracy);
-    const normalizedAnswers = attempt.answers === undefined ? {} : normalizeAnswers(attempt.answers);
-    if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
     quizAccuracy = accuracy;
     update.lastScore = accuracy;
-    update.quizTotal = attempt.total;
+    update.quizTotal = quiz.length;
     update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
     update.lastAnswers = normalizedAnswers;
   }
@@ -78,7 +103,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (quizAccuracy !== null) {
     atomicUpdate.$inc = { attempts: 1 };
     atomicUpdate.$max = { bestScore: quizAccuracy };
-    atomicUpdate.$push = { quizHistory: { $each: [{ score: (body.quizAttempt as { score: number }).score, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date() }], $slice: -30 } };
+    atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date() }], $slice: -30 } };
   }
   const progress = await LearningProgress.findOneAndUpdate(
     { userId: req.authUser!.id, lessonId: req.params.lessonId },
