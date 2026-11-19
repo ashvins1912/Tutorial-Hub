@@ -99,7 +99,7 @@ for (const problem of ARRAYS_BATCH_01) {
     writeFileSync(file,problem.stages.implement.python+harness);
     for (const test of vectors) {
       const output=run('python3',[file],{input:JSON.stringify(test.args)});
-      assert.equal(output,normalize(test.expected),problem.title+' Python '+JSON.stringify(test.args));
+      assert.deepEqual(JSON.parse(output),test.expected,problem.title+' Python '+JSON.stringify(test.args));
       total++;
     }
   } finally { rmSync(pyDir,{recursive:true,force:true}); }
