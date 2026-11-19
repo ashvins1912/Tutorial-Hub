@@ -1,5 +1,5 @@
 import { InterviewProblem } from '../models/InterviewProblem';
-import { MASTER_INTERVIEW_PROBLEM_ADDITIONS } from './masterInterviewProblemSeed';
+import { MASTER_INTERVIEW_PROBLEM_ADDITIONS } from '../seed/masterInterviewProblemSeed';
 import { normalizeProblemTitle } from '../services/problemResolutionService';
 import { isMongoConnected } from '../db/connectMongo';
 
