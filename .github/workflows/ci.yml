@@ -2,7 +2,7 @@ name: Validate Tutorial Hub
 
 on:
   pull_request:
-    branches: [main, enhancement/dsa-stage-learning-content]
+    branches: [main, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio]
   push:
     branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio]
 
