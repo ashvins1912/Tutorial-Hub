@@ -4,6 +4,7 @@ import { isMongoConnected } from '../db/connectMongo';
 import { UserAccount } from '../models/UserAccount';
 import { IUserPreferences, UserBrainProfile } from '../models/UserBrainProfile';
 import { CompanySprint } from '../models/CompanySprint';
+import { CommunityPost } from '../models/CommunityPost';
 import { getAllUserLearningStates } from './userStateRoutes';
 import { getDevCognitiveExtras } from './cognitiveRoutes';
 import { BIG_TECH_PROBLEMS } from '../seed/bigTechTopicSeed';
@@ -52,6 +53,7 @@ const PERSISTED_KEY_LABELS: Record<string, { label: string; category: string }> 
   'algorithms-implemented': { label: 'Algorithms Studio Implementations', category: 'Algorithms' },
   'fuzzy-modules-completed': { label: 'N-Gram / Fuzzy Curriculum Track', category: 'Search & N-Gram' },
   'system-design-academy-progress': { label: 'System Design Academy Modules', category: 'System Design' },
+  'system-design-roadmap-progress': { label: 'System Design & Distributed Algos Roadmap', category: 'System Design' },
   'topic-expertise-checks': { label: 'Topic Expertise Playbook Checks', category: 'Curriculum' },
   'mutation-graph-solved': { label: 'Mutation Graph & Ladder Milestones', category: 'Curriculum' },
   'solver-adaptive-telemetry': { label: 'Universal Solver SM-2 & Micro-Drills', category: 'Logic Solver' },
@@ -97,6 +99,20 @@ function summarizePayloadCount(key: string, val: unknown): number {
     const entries = Object.values(val as Record<string, { done?: boolean; note?: string }>);
     return entries.filter((e) => e?.done || (e?.note && e.note.trim().length > 0)).length;
   }
+  if (key === 'system-design-roadmap-progress') {
+    const r = val as {
+      completedFrameworkSteps?: unknown[];
+      reviewedModules?: unknown[];
+      reviewedAlgos?: unknown[];
+      quizAnswers?: Record<string, unknown>;
+    };
+    return (
+      (Array.isArray(r.completedFrameworkSteps) ? r.completedFrameworkSteps.length : 0) +
+      (Array.isArray(r.reviewedModules) ? r.reviewedModules.length : 0) +
+      (Array.isArray(r.reviewedAlgos) ? r.reviewedAlgos.length : 0) +
+      (r.quizAnswers && typeof r.quizAnswers === 'object' ? Object.keys(r.quizAnswers).length : 0)
+    );
+  }
   if (key === 'solver-adaptive-telemetry') {
     const t = val as {
       completedProblemIds?: unknown[];
@@ -131,10 +147,10 @@ router.get('/stats', async (req: Request, res: Response) => {
 
   let currentTier: RankTier = 'Noob';
   let cognitiveMetrics = {
-    signalRecognitionScore: 76,
-    bottleneckDiagnosisScore: 80,
-    logicAssemblyAccuracy: 74,
-    paperDryRunStreak: 2,
+    signalRecognitionScore: 0,
+    bottleneckDiagnosisScore: 0,
+    logicAssemblyAccuracy: 0,
+    paperDryRunStreak: 0,
   };
   let passedTopicQuizzes: string[] = [];
   let completedProblemIds: string[] = [];
@@ -190,10 +206,10 @@ router.get('/stats', async (req: Request, res: Response) => {
         : 'Noob') as RankTier;
       if (profileDoc.cognitiveMetrics) {
         cognitiveMetrics = {
-          signalRecognitionScore: profileDoc.cognitiveMetrics.signalRecognitionScore ?? 76,
-          bottleneckDiagnosisScore: profileDoc.cognitiveMetrics.bottleneckDiagnosisScore ?? 80,
-          logicAssemblyAccuracy: profileDoc.cognitiveMetrics.logicAssemblyAccuracy ?? 74,
-          paperDryRunStreak: profileDoc.cognitiveMetrics.paperDryRunStreak ?? 2,
+          signalRecognitionScore: profileDoc.cognitiveMetrics.signalRecognitionScore ?? 0,
+          bottleneckDiagnosisScore: profileDoc.cognitiveMetrics.bottleneckDiagnosisScore ?? 0,
+          logicAssemblyAccuracy: profileDoc.cognitiveMetrics.logicAssemblyAccuracy ?? 0,
+          paperDryRunStreak: profileDoc.cognitiveMetrics.paperDryRunStreak ?? 0,
         };
       }
       passedTopicQuizzes = profileDoc.passedTopicQuizzes ?? [];
@@ -346,6 +362,10 @@ router.get('/stats', async (req: Request, res: Response) => {
         >)
       : {};
   const sysDesignCompletedCount = Object.values(sysDesignProgress).filter((v) => v?.done).length;
+  const sysDesignRoadmapCount = summarizePayloadCount(
+    'system-design-roadmap-progress',
+    states['system-design-roadmap-progress'],
+  );
   const topicExpertiseChecksCount = countTruthyRecord(states['topic-expertise-checks']);
   const mutationGraphCount = countArrayItems(states['mutation-graph-solved']);
   const solverTelemetryRaw =
@@ -461,6 +481,13 @@ router.get('/stats', async (req: Request, res: Response) => {
     }
   }
 
+  let communityChallengesSolved = 0;
+  if (mongoReady) {
+    communityChallengesSolved = await CommunityPost.countDocuments({ completedBy: userId });
+  } else {
+    communityChallengesSolved = activityLog.filter((a) => a.kind === 'community-challenge').length;
+  }
+
   // 8. Total XP & Rank Progress Calculation
   const totalXp =
     completedLabsCount * 120 +
@@ -475,12 +502,14 @@ router.get('/stats', async (req: Request, res: Response) => {
     algorithmsImplCount * 50 +
     fuzzyModulesCount * 45 +
     sysDesignCompletedCount * 60 +
+    sysDesignRoadmapCount * 30 +
     topicExpertiseChecksCount * 10 +
     mutationGraphCount * 25 +
     solverCompletedCount * 40 +
     solverDrillsDone * 20 +
     customConceptsCount * 35 +
-    noteEntries.length * 15;
+    noteEntries.length * 15 +
+    communityChallengesSolved * 50;
 
   const tierIdx = Math.max(0, RANK_ORDER.indexOf(currentTier));
   const nextTier: RankTier | null =
@@ -514,7 +543,10 @@ router.get('/stats', async (req: Request, res: Response) => {
       b.xp += act.xp;
     }
   }
-  for (const ts of Object.values(updatedAtByKey)) {
+  for (const [stateKey, ts] of Object.entries(updatedAtByKey)) {
+    if (stateKey === 'ui-preferences') continue;
+    const itemCount = summarizePayloadCount(stateKey, states[stateKey]);
+    if (itemCount === 0) continue;
     const day = ts.slice(0, 10);
     const b = bucketMap.get(day);
     if (b && b.count === 0) {
@@ -548,8 +580,18 @@ router.get('/stats', async (req: Request, res: Response) => {
     matrixCompletedCount +
     solverCompletedCount;
 
+  const isFreshAccount =
+    totalXp === 0 &&
+    uniqueProblemsSolved === 0 &&
+    compositeAccuracy === 0 &&
+    cognitiveMetrics.paperDryRunStreak === 0 &&
+    spacedRepetitionQueue.length === 0 &&
+    activityLog.length === 0;
+
   return res.json({
     storageMode: mongoReady ? 'mongodb' : 'dev-memory',
+    isFreshAccount,
+    communityChallengesSolved,
     account: accountInfo,
     preferences,
     rank: {
@@ -597,6 +639,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       { id: 'algorithms', label: 'Algorithms Studio', completed: algorithmsImplCount, total: 16 },
       { id: 'fuzzy', label: 'N-Gram / Fuzzy Modules', completed: fuzzyModulesCount, total: 6 },
       { id: 'sys-design', label: 'System Design Academy', completed: sysDesignCompletedCount, total: 12 },
+      { id: 'sys-roadmap', label: 'System Design Master Roadmap', completed: sysDesignRoadmapCount, total: 19 },
       { id: 'mutations', label: 'Mutation Graph & Ladder', completed: mutationGraphCount, total: 24 },
       { id: 'solver-studio', label: 'Universal Logic Solver', completed: solverCompletedCount, total: 15 },
       { id: 'concept-engine', label: 'Knowledge Engine Concepts', completed: engineMasteryValues.length + customConceptsCount, total: 15 + customConceptsCount },

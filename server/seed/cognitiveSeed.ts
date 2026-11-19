@@ -270,22 +270,12 @@ export const INITIAL_BRAIN_PROFILE: UserBrainProfile = {
   userId: 'learner-default',
   currentTier: 'Noob',
   cognitiveMetrics: {
-    signalRecognitionScore: 76,
-    bottleneckDiagnosisScore: 80,
-    logicAssemblyAccuracy: 74,
-    paperDryRunStreak: 2,
+    signalRecognitionScore: 0,
+    bottleneckDiagnosisScore: 0,
+    logicAssemblyAccuracy: 0,
+    paperDryRunStreak: 0,
   },
   passedTopicQuizzes: [],
   completedProblemIds: [],
-  spacedRepetitionQueue: [
-    {
-      problemId: 'two-sum',
-      problemTitle: 'Two Sum',
-      patternTag: 'Arrays & Hashing',
-      intervalStage: 1,
-      nextReviewDate: new Date().toISOString(),
-      isDueNow: true,
-      twistConstraint: 'Now solve assuming the array IS sorted and you must use O(1) extra space.',
-    },
-  ],
+  spacedRepetitionQueue: [],
 };

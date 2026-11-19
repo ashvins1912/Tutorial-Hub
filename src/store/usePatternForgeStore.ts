@@ -23,6 +23,7 @@ export type TopView =
   | 'revision'
   | 'skill-tree'
   | 'schemas'
+  | 'community'
   | 'profile';
 
 interface ProblemLocalProgress {
@@ -121,6 +122,7 @@ export interface PatternForgeState {
   setHoveredBlockId: (blockId: string | null) => void;
   setSteppingSlot: (slot: PipelineSlotId | null) => void;
   setInterviewDrawerOpen: (open: boolean) => void;
+  setPromotionToast: (message: string | null) => void;
   clearPromotionToast: () => void;
 
   // Stage 1 Actions
@@ -162,9 +164,27 @@ export interface PatternForgeState {
   } | null>;
 }
 
-const initialProgressMap: Record<string, ProblemLocalProgress> = {};
-for (const p of PROBLEMS) {
-  initialProgressMap[p.id] = createInitialProblemProgress(p.id);
+function createInitialProgressMap(): Record<string, ProblemLocalProgress> {
+  const map: Record<string, ProblemLocalProgress> = {};
+  for (const p of PROBLEMS) {
+    map[p.id] = createInitialProblemProgress(p.id);
+  }
+  return map;
+}
+
+function createFreshBrainProfile(): UserBrainProfile {
+  return {
+    ...INITIAL_BRAIN_PROFILE,
+    cognitiveMetrics: {
+      signalRecognitionScore: 0,
+      bottleneckDiagnosisScore: 0,
+      logicAssemblyAccuracy: 0,
+      paperDryRunStreak: 0,
+    },
+    passedTopicQuizzes: [],
+    completedProblemIds: [],
+    spacedRepetitionQueue: [],
+  };
 }
 
 export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
@@ -189,10 +209,10 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
   quizModalOpen: false,
   promotionToast: null,
 
-  brainProfile: INITIAL_BRAIN_PROFILE,
+  brainProfile: createFreshBrainProfile(),
   isLoadingProfile: false,
 
-  problemProgress: initialProgressMap,
+  problemProgress: createInitialProgressMap(),
 
   setActiveView: (view) => set({ activeView: view }),
   setActiveAlgorithmId: (algoId) => set({ activeAlgorithmId: algoId }),
@@ -287,6 +307,7 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
   setHoveredBlockId: (blockId) => set({ hoveredBlockId: blockId }),
   setSteppingSlot: (slot) => set({ steppingSlot: slot }),
   setInterviewDrawerOpen: (open) => set({ interviewDrawerOpen: open }),
+  setPromotionToast: (message) => set({ promotionToast: message }),
   clearPromotionToast: () => set({ promotionToast: null }),
 
   selectSignal: (signalId) =>
@@ -520,10 +541,10 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
     }),
 
   resetForUser: () => set({
-    brainProfile: INITIAL_BRAIN_PROFILE,
+    brainProfile: createFreshBrainProfile(),
     isLoadingProfile: false,
     promotionToast: null,
-    problemProgress: initialProgressMap,
+    problemProgress: createInitialProgressMap(),
     activeTopicQuiz: null,
     quizModalOpen: false,
   }),

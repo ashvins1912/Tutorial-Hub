@@ -23,6 +23,8 @@ interface UserPreferences {
 
 interface ProfileStatsPayload {
   storageMode: 'mongodb' | 'dev-memory';
+  isFreshAccount?: boolean;
+  communityChallengesSolved?: number;
   account: {
     id: string;
     email: string;
@@ -160,6 +162,7 @@ const MODULE_NAV_MAP: Record<string, TopView> = {
   algorithms: 'algorithms',
   fuzzy: 'fuzzy-search',
   'sys-design': 'system-design',
+  'sys-roadmap': 'system-design',
   mutations: 'workspace',
   'solver-studio': 'solver',
   'concept-engine': 'knowledge-engine',
@@ -432,7 +435,15 @@ export function ProfileStatsView() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveView('community')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors whitespace-nowrap"
+            >
+              Community Leaderboard
+              <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
             <button
               type="button"
               onClick={() => void loadStats(true)}
@@ -629,6 +640,38 @@ export function ProfileStatsView() {
           </form>
         )}
       </section>
+
+      {/* Fresh Account Zero-State Verification Strip */}
+      {(stats.isFreshAccount || (stats.rank.totalXp === 0 && stats.uniqueProblemsSolved === 0)) && (
+        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              Fresh Account Active · 0 XP &amp; Clean Record
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl">
+              Your profile starts with zero pre-seeded progress, zero fake accuracy scores, and an
+              empty review queue. Complete your first interactive lab, curriculum drill, or
+              community challenge to start building your leaderboard rank.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveView('workspace')}
+              className="px-3.5 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap"
+            >
+              Start Curriculum
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView('community')}
+              className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors whitespace-nowrap"
+            >
+              Browse Community Challenges
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* 6-Column KPI Strip */}
       <section

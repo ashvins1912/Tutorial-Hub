@@ -47,7 +47,16 @@ export function getDevCognitiveExtras(userId: string) {
   };
 }
 
-async function appendActivity(userId: string, entry: Omit<IActivityLogEntry, 'date'>) {
+export function getAllDevCognitiveUserIds(): string[] {
+  const ids = new Set<string>();
+  for (const k of profileStore.keys()) ids.add(k);
+  for (const k of warmupStore.keys()) ids.add(k);
+  for (const k of masteredStore.keys()) ids.add(k);
+  for (const k of activityStore.keys()) ids.add(k);
+  return Array.from(ids);
+}
+
+export async function appendActivity(userId: string, entry: Omit<IActivityLogEntry, 'date'>) {
   const fullEntry: IActivityLogEntry = { ...entry, date: new Date() };
   if (isMongoConnected()) {
     await UserBrainProfileModel.updateOne(
@@ -223,27 +232,32 @@ router.post('/complete-problem', async (req: Request, res: Response) => {
     profile.completedProblemIds.push(problemId);
   }
 
-  const deltaAssembly = assemblyErrors === 0 ? 8 : Math.max(2, 6 - assemblyErrors * 2);
-  profile.cognitiveMetrics.logicAssemblyAccuracy = Math.min(
-    100,
-    Math.round(
-      profile.cognitiveMetrics.logicAssemblyAccuracy * 0.65 +
-        (100 - assemblyErrors * 10) * 0.35 +
-        (assemblyErrors === 0 ? 3 : 0)
-    )
-  );
-  if (profile.cognitiveMetrics.logicAssemblyAccuracy < 80 && assemblyErrors === 0) {
+  const currentAttemptAccuracy = Math.max(0, 100 - assemblyErrors * 10);
+  if (profile.cognitiveMetrics.logicAssemblyAccuracy === 0) {
+    profile.cognitiveMetrics.logicAssemblyAccuracy = currentAttemptAccuracy;
+  } else {
+    const deltaAssembly = assemblyErrors === 0 ? 8 : Math.max(2, 6 - assemblyErrors * 2);
     profile.cognitiveMetrics.logicAssemblyAccuracy = Math.min(
       100,
-      profile.cognitiveMetrics.logicAssemblyAccuracy + deltaAssembly
+      Math.round(
+        profile.cognitiveMetrics.logicAssemblyAccuracy * 0.65 +
+          currentAttemptAccuracy * 0.35 +
+          (assemblyErrors === 0 ? 3 : 0)
+      )
     );
+    if (profile.cognitiveMetrics.logicAssemblyAccuracy < 80 && assemblyErrors === 0) {
+      profile.cognitiveMetrics.logicAssemblyAccuracy = Math.min(
+        100,
+        profile.cognitiveMetrics.logicAssemblyAccuracy + deltaAssembly
+      );
+    }
   }
 
   if (bottleneckCorrect) {
-    profile.cognitiveMetrics.bottleneckDiagnosisScore = Math.min(
-      100,
-      profile.cognitiveMetrics.bottleneckDiagnosisScore + 5
-    );
+    profile.cognitiveMetrics.bottleneckDiagnosisScore =
+      profile.cognitiveMetrics.bottleneckDiagnosisScore === 0
+        ? 100
+        : Math.min(100, profile.cognitiveMetrics.bottleneckDiagnosisScore + 5);
   }
 
   if (dryRunCompleted) {
@@ -337,10 +351,13 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
   });
 
   const scorePct = Math.round((correctCount / Math.max(1, quiz.questions.length)) * 100);
-  profile.cognitiveMetrics.signalRecognitionScore = Math.min(
-    100,
-    Math.round(profile.cognitiveMetrics.signalRecognitionScore * 0.5 + scorePct * 0.5)
-  );
+  profile.cognitiveMetrics.signalRecognitionScore =
+    profile.cognitiveMetrics.signalRecognitionScore === 0
+      ? scorePct
+      : Math.min(
+          100,
+          Math.round(profile.cognitiveMetrics.signalRecognitionScore * 0.5 + scorePct * 0.5)
+        );
 
   const passed = scorePct >= 80;
   if (passed && !profile.passedTopicQuizzes.includes(topicId)) {
