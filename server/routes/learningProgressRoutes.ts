@@ -34,6 +34,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'Progress cannot be persisted while the database is unavailable.' });
   const body = req.body || {};
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
+  let quizAccuracy: number | null = null;
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
   if (body.algorithm !== undefined) {
     if (!['binary-search', 'bubble-sort'].includes(body.algorithm)) return res.status(400).json({ code: 'INVALID_ALGORITHM' });
@@ -57,14 +58,13 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
       return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
     }
     const accuracy = Math.round((attempt.score / attempt.total) * 100);
+    const normalizedAnswers = attempt.answers === undefined ? {} : normalizeAnswers(attempt.answers);
+    if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
+    quizAccuracy = accuracy;
     update.lastScore = accuracy;
     update.quizTotal = attempt.total;
-    update.bestScore = accuracy;
     update.masteryLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
-    update.lastAnswers = normalizeAnswers(attempt.answers) || {};
-    const existing = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).select('attempts bestScore').lean();
-    update.attempts = (existing?.attempts || 0) + 1;
-    update.bestScore = Math.max(existing?.bestScore || 0, accuracy);
+    update.lastAnswers = normalizedAnswers;
   }
   if (body.completedPracticeIds !== undefined) {
     if (!Array.isArray(body.completedPracticeIds) || body.completedPracticeIds.length > 100 || body.completedPracticeIds.some((id: unknown) => typeof id !== 'string' || id.length > 100)) {
@@ -72,9 +72,14 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     }
     update.completedPracticeIds = [...new Set(body.completedPracticeIds)];
   }
+  const atomicUpdate: Record<string, unknown> = { $set: update, $setOnInsert: { userId: req.authUser!.id, lessonId: req.params.lessonId } };
+  if (quizAccuracy !== null) {
+    atomicUpdate.$inc = { attempts: 1 };
+    atomicUpdate.$max = { bestScore: quizAccuracy };
+  }
   const progress = await LearningProgress.findOneAndUpdate(
     { userId: req.authUser!.id, lessonId: req.params.lessonId },
-    { $set: update, $setOnInsert: { userId: req.authUser!.id, lessonId: req.params.lessonId } },
+    atomicUpdate,
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   ).lean();
   return res.json({ ok: true, progress });
