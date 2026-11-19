@@ -3,6 +3,9 @@ import { apiFetch } from '../../../lib/apiFetch';
 import { CodeExecutionLab } from './CodeExecutionLab';
 import { binarySearchTrace, bubbleSortTrace, parseInput } from './learningAlgorithms';
 
+type QuizQuestion = { question: string; options: string[]; correctAnswer: string | string[]; explanation: string };
+type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
+
 export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[] }) {
   const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>('binary-search');
   const [rawValues, setRawValues] = useState('2, 5, 8, 12, 16, 23, 38');
