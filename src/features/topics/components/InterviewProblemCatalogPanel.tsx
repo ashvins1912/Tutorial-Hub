@@ -10,7 +10,8 @@ type ProblemRecord={
   examples?:Array<{input:string;output:string;explanation?:string}>;
   constraints?:string[];
   stages?:Record<string,any>;
-  authoringMetadata?:{status?:string;missingEvidence?:string[];sourcePolicy?:string;sourceReferences?:string[];qualityChecks?:Record<string,boolean>};\n  source?:{kind?:string;reference?:string};
+  authoringMetadata?:{status?:string;missingEvidence?:string[];sourcePolicy?:string;sourceReferences?:string[];qualityChecks?:Record<string,boolean>};
+  source?:{kind?:string;reference?:string};
 };
 const TOPICS=[
   ['arrays','Arrays'],['strings','Strings'],['two-pointers','Two Pointers'],['sliding-window','Sliding Window'],
@@ -155,8 +156,8 @@ export function InterviewProblemCatalogPanel(){
         {!problems.length&&!error&&<p className="p-4 text-sm text-slate-500">No matching questions.</p>}
       </div>
       {selected?<div className="min-w-0 space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="text-lg font-bold">{selected.title}</h3><p className="text-xs text-slate-500 mt-1">{selected.topic} · {selected.difficulty} · {selected.slug}</p></div><span className="rounded-full border border-amber-300 px-2.5 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">{selected.authoringMetadata?.status??'Draft lesson'}</span></div>
-        <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Problem brief</p><p className="text-sm leading-relaxed">{selected.statement??'Problem statement awaiting source verification.'}</p></div>
+        <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="text-lg font-bold">{selected.title}</h3><p className="text-xs text-slate-500 mt-1">{selected.topic} · {selected.difficulty} · {selected.slug}</p></div><span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${selected.contentStatus==='validated'?'border-emerald-300 text-emerald-700 dark:text-emerald-300':'border-amber-300 text-amber-700 dark:text-amber-300'}`}>{selected.contentStatus==='validated'?'Validated':selected.authoringMetadata?.status??'Draft lesson'}</span></div>
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 space-y-2"><p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Problem statement</p><p className="text-sm leading-relaxed">{selected.statement??'Problem statement awaiting source verification.'}</p>{selected.source?.reference&&<a className="text-xs text-sky-600 underline" href={selected.source.reference} target="_blank" rel="noreferrer">Verify original LeetCode statement ↗</a>}</div>
         <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold">Official source lookup</p><p className="text-[11px] text-slate-500">Optional LeetCode statement, sample tests, hints and Java starter code when a matching slug exists.</p></div><button onClick={()=>void loadOfficialReference()} disabled={referenceLoading} className="rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-xs font-semibold disabled:opacity-50">{referenceLoading?"Loading source...":"Fetch LeetCode reference"}</button></div>
           {referenceError&&<p className="text-xs text-amber-700">{referenceError}</p>}
@@ -165,7 +166,7 @@ export function InterviewProblemCatalogPanel(){
         <div className="flex gap-1 overflow-x-auto pb-1">{STAGES.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>setStage(item.id)} className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${stage===item.id?'bg-sky-600 text-white':'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}><Icon className="w-3.5 h-3.5"/>{item.label}</button>;})}</div>
         <p className="text-xs text-slate-500">{STAGES.find(s=>s.id===stage)?.description}</p>
         <StageContent problem={selected} stage={stage}/>
-        <div className="rounded-lg border border-amber-200 dark:border-amber-900 p-3 text-xs text-amber-800 dark:text-amber-200"><b>Content quality:</b> This is a generated topic-specific lesson blueprint. Official statement, sample I/O, numeric constraints, and accepted language submissions must be source-verified before marking this question validated. {(selected.authoringMetadata?.missingEvidence??[]).length} evidence items remain.</div>
+        <div className={`rounded-lg border p-3 text-xs ${selected.contentStatus==='validated'?'border-emerald-200 text-emerald-800 dark:border-emerald-900 dark:text-emerald-200':'border-amber-200 text-amber-800 dark:border-amber-900 dark:text-amber-200'}`}><b>Content quality:</b> {selected.contentStatus==='validated'?'Source, examples, constraints, three language submissions, executable tests, animation, proof and complexity checks passed.':'This lesson remains a draft until all source and executable quality gates pass.'} {(selected.authoringMetadata?.missingEvidence??[]).length} evidence items remain.</div>
       </div>:<div className="rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">Select a problem to open its five-stage lesson.</div>}
     </div>}
   </section>;
