@@ -2,25 +2,21 @@ import express, { Request, Response } from 'express';
 import { requireAuth } from '../middleware/requireAuth';
 import { isMongoConnected } from '../db/connectMongo';
 import { AIAcademyProgress } from '../models/AIAcademyProgress';
-import { AI_ENGINEERING_CURRICULUM } from '../../src/features/ai-academy/data/aiEngineeringCurriculum';
+import { AI_ACADEMY_QUIZ_ANSWERS } from '../data/aiAcademyQuizAnswers';
 
 const router = express.Router();
 router.use(requireAuth);
 
-const lessons = new Map(
-  AI_ENGINEERING_CURRICULUM.flatMap((phase) =>
-    phase.modules.flatMap((module) => module.lessons.map((lesson) => [lesson.id, lesson] as const))
-  )
-);
+const lessonIds = new Set(Object.keys(AI_ACADEMY_QUIZ_ANSWERS));
 
 export function gradeAcademyAnswer(lessonId: string, answer: unknown): boolean | null {
-  const lesson = lessons.get(lessonId);
-  if (!lesson || !Number.isInteger(answer) || (answer as number) < 0 || (answer as number) >= lesson.question.options.length) return null;
-  return answer === lesson.question.answer;
+  const correctAnswer = AI_ACADEMY_QUIZ_ANSWERS[lessonId];
+  if (correctAnswer === undefined || !Number.isInteger(answer) || (answer as number) < 0 || (answer as number) > 3) return null;
+  return answer === correctAnswer;
 }
 
 export function isKnownAcademyLesson(lessonId: string): boolean {
-  return lessons.has(lessonId);
+  return lessonIds.has(lessonId);
 }
 
 router.get('/', async (req: Request, res: Response) => {
@@ -31,7 +27,7 @@ router.get('/', async (req: Request, res: Response) => {
     .sort({ lastAccessedAt: -1 }).limit(500).lean();
   const completed = records.filter((item) => item.completed).map((item) => item.lessonId);
   const quizPassed = records.filter((item) => item.quizPassed).map((item) => item.lessonId);
-  const totalLessons = lessons.size;
+  const totalLessons = lessonIds.size;
   return res.json({
     progress: { completed, quizPassed, records },
     summary: {
