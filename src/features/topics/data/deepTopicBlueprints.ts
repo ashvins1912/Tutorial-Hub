@@ -1,4 +1,6 @@
 import type { CurriculumTopic } from '../types';
+import { DEEP_BLUEPRINTS_PART_1 } from './deepBlueprintsPart1';
+import { DEEP_BLUEPRINTS_PART_2 } from './deepBlueprintsPart2';
 
 export interface CommonBugTrap {
   bugTitle: string;
@@ -1079,6 +1081,8 @@ for (let a = 1; a <= amount; a++) {
       },
     ],
   },
+  ...DEEP_BLUEPRINTS_PART_1,
+  ...DEEP_BLUEPRINTS_PART_2,
 };
 
 /**

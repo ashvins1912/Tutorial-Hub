@@ -31,6 +31,7 @@ import { BlankPageProtocolWidget } from './BlankPageProtocolWidget';
 import { ProblemMutationGraph } from './ProblemMutationGraph';
 import { MutationLadderVisualizer } from './MutationLadderVisualizer';
 import { TopicExpertisePlaybook } from './TopicExpertisePlaybook';
+import { CurriculumDfdVisualizer } from './CurriculumDfdVisualizer';
 
 type ProgressiveTabId = 'intuition' | 'dryrun' | 'recall' | 'solutions';
 
@@ -53,7 +54,9 @@ interface TheoryMentalModelPaneProps {
   onOpenDeepLink: () => void;
   onOpenProblemTrainer: (slug: string) => void;
   onSelectTopic?: (topicId: string) => void;
-  onFocusPlaygroundTab?: (tab: 'visualizer' | 'recursion-lab' | 'logic-builder' | 'code') => void;
+  onFocusPlaygroundTab?: (tab: 'visualizer' | 'dfd' | 'recursion-lab' | 'logic-builder' | 'code') => void;
+  selectedDfdNodeId?: string | null;
+  onSelectDfdNode?: (nodeId: string) => void;
 }
 
 export function TheoryMentalModelPane({
@@ -64,6 +67,8 @@ export function TheoryMentalModelPane({
   onOpenProblemTrainer,
   onSelectTopic,
   onFocusPlaygroundTab,
+  selectedDfdNodeId = null,
+  onSelectDfdNode,
 }: TheoryMentalModelPaneProps) {
   const [activeTab, setActiveTab] = useState<ProgressiveTabId>('intuition');
   const [selectedRecallProblemId, setSelectedRecallProblemId] = useState<string | null>(null);
@@ -317,6 +322,20 @@ export function TheoryMentalModelPane({
                 ))}
               </div>
             </div>
+
+            {onSelectDfdNode && (
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <CurriculumDfdVisualizer
+                  topic={topic}
+                  selectedNodeId={selectedDfdNodeId}
+                  onSelectNode={onSelectDfdNode}
+                  variant="compact"
+                  onOpenFullDfdTab={
+                    onFocusPlaygroundTab ? () => onFocusPlaygroundTab('dfd') : undefined
+                  }
+                />
+              </div>
+            )}
 
             {/* Bidirectional Quick Jump Strip */}
             {(linkage.prerequisites.length > 0 || linkage.nextLevelUnlocks.length > 0) && (

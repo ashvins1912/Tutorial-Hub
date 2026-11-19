@@ -77,6 +77,58 @@ export interface VisualizerConfig {
   codeLines: string[];
 }
 
+export type CurriculumDfdNodeKind =
+  | 'external-input'
+  | 'process'
+  | 'data-store'
+  | 'external-output';
+
+export interface CurriculumDfdNode {
+  id: string;
+  stepNumber: number;
+  code: string;
+  label: string;
+  shortSummary: string;
+  kind: CurriculumDfdNodeKind;
+  timeComplexity: string;
+  spaceComplexity: string;
+  input: string;
+  output: string;
+  upstreamLabels: string[];
+  downstreamLabels: string[];
+  stageMechanics: string;
+  invariantNote: string;
+  bottleneckNote: string;
+  edgeCases: string[];
+  col: number;
+  row: number;
+}
+
+export interface CurriculumDfdEdge {
+  id: string;
+  from: string;
+  to: string;
+  label: string;
+  kind?: 'flow' | 'store-io';
+}
+
+export interface CurriculumDfdGraph {
+  topicId: string;
+  topicTitle: string;
+  tier: TopicDifficultyTier;
+  category: string;
+  inputConstraint: string;
+  recurrenceRelation: string;
+  bruteTime: string;
+  bruteSpace: string;
+  betterTime: string;
+  betterSpace: string;
+  optimalTime: string;
+  optimalSpace: string;
+  nodes: CurriculumDfdNode[];
+  edges: CurriculumDfdEdge[];
+}
+
 export interface CurriculumTopic {
   id: string;
   order: number;
@@ -92,6 +144,7 @@ export interface CurriculumTopic {
   problemLadder: ProblemLadderItem[];
   logicBlocks: LogicBlockItem[];
   visualizer: VisualizerConfig;
+  dfdGraph?: CurriculumDfdGraph;
   deepLink?: {
     kind: 'algorithm' | 'ngram-lab' | 'pruning-sim' | 'fuzzy-curriculum';
     targetId: string;

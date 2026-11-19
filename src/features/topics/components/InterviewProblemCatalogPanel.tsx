@@ -1,196 +1,631 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
+import {
+  ArrowUpRight,
+  BookOpen,
+  CheckCircle2,
+  ChevronDown,
+  Circle,
+  Compass,
+  ExternalLink,
+  Search,
+  ShieldAlert,
+  Target,
+} from 'lucide-react';
 import { apiFetch } from '../../../lib/apiFetch';
-import { BookOpen, Brain, CheckCircle2, Code2, Compass, FlaskConical, Loader2, Search, Sparkles } from 'lucide-react';
+import { useAccountState } from '../../../hooks/useAccountState';
+import {
+  CURATED_INTERVIEW_BANK,
+  CURATED_TOPIC_OPTIONS,
+  type CuratedInterviewQuestion,
+  type InterviewDifficulty,
+  type InterviewTrack,
+} from '../data/curatedInterviewBank';
 
-type StageKey='understand'|'visualize'|'implement'|'practice'|'master';
-type ProblemRecord={
-  slug:string; title:string; topicId:string; topic:string; difficulty:string;
-  contentStatus:string; catalogStatus:string; statement?:string;
-  examples?:Array<{input:string;output:string;explanation?:string}>;
-  constraints?:string[];
-  stages?:Record<string,any>;
-  authoringMetadata?:{status?:string;missingEvidence?:string[];sourcePolicy?:string;sourceReferences?:string[];qualityChecks?:Record<string,boolean>};
-  source?:{kind?:string;reference?:string};
-};
-const TOPICS=[
-  ['arrays','Arrays'],['strings','Strings'],['two-pointers','Two Pointers'],['sliding-window','Sliding Window'],
-  ['hashing','Hashing'],['binary-search','Binary Search'],['linked-lists','Linked Lists'],['stack-queue','Stack and Queue'],
-  ['binary-trees','Binary Trees'],['bst','Binary Search Tree'],['heaps','Heap / Priority Queue'],
-  ['backtracking','Recursion and Backtracking'],['dynamic-programming','Dynamic Programming'],['graphs','Graph Algorithms'],
-  ['greedy','Greedy'],['trie','Trie'],['bit-manipulation','Bit Manipulation'],['intervals','Intervals'],
-  ['prefix-sum','Prefix Sum and Difference Array'],['sorting','Sorting'],
-  ['advanced-data-structures','Advanced Data Structures'],['mathematics','Mathematical Algorithms']
-] as const;
-const STAGES:{id:StageKey;label:string;icon:any;description:string}[]=[
-  {id:'understand',label:'01 Understand',icon:BookOpen,description:'Concept, recognition signals, prerequisites, and invariant'},
-  {id:'visualize',label:'02 Visualize',icon:Compass,description:'Diagram model, animation sequence, and trace walkthrough'},
-  {id:'implement',label:'03 Implement',icon:Code2,description:'Brute force → better → optimal, pseudocode, and language checklist'},
-  {id:'practice',label:'04 Practice',icon:FlaskConical,description:'Progressive hints, edge cases, and test-design ladder'},
-  {id:'master',label:'05 Master',icon:Brain,description:'Correctness proof, complexity, interview follow-ups, and revision'}
+type TrackFilter = 'all' | InterviewTrack;
+type DifficultyFilter = 'all' | InterviewDifficulty;
+
+interface OfficialReference {
+  title: string;
+  questionId: string;
+  difficulty: string;
+  slug: string;
+  contentHtml?: string;
+  exampleTestcases?: string;
+  hints?: string[];
+}
+
+export interface InterviewProblemCatalogPanelProps {
+  activeTopicId?: string;
+  onSelectCurriculumTopic?: (topicId: string) => void;
+  onOpenProblemTrainer?: (slug: string) => void;
+}
+
+const TRACK_TABS: { id: TrackFilter; label: string }[] = [
+  { id: 'all', label: 'All Questions' },
+  { id: 'blind-75', label: 'Blind 75' },
+  { id: 'neetcode-150', label: 'NeetCode 150' },
+  { id: 'specialist-twist', label: 'Specialist Twists' },
 ];
-function TextList({items}:{items?:any[]}) {
-  if(!items?.length)return <p className="text-xs text-slate-500">Not authored yet.</p>;
-  return <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">{items.map((item,i)=><li key={i}>{typeof item==='string'?item:JSON.stringify(item)}</li>)}</ul>;
-}
-function Panel({title,children}:{title:string;children:ReactNode}) {
-  return <section className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2"><h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</h4>{children}</section>;
-}
-function AnimationSequence({steps}:{steps:string[]}) {
-  const [activeStep,setActiveStep]=useState(0);
-  const [playing,setPlaying]=useState(false);
-  useEffect(()=>{
-    if(!playing||steps.length<2)return;
-    const timer=window.setInterval(()=>setActiveStep(current=>current>=steps.length-1?0:current+1),1200);
-    return()=>window.clearInterval(timer);
-  },[playing,steps.length]);
-  const move=(next:number)=>{setPlaying(false);setActiveStep(Math.max(0,Math.min(steps.length-1,next)));};
-  return <Panel title="Problem-specific animation">
-    <div className="flex flex-wrap items-center gap-2">
-      <button type="button" onClick={()=>setPlaying(value=>!value)} disabled={steps.length<2} className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">{playing?'Pause':'Play animation'}</button>
-      <button type="button" onClick={()=>move(0)} className="rounded-md border px-3 py-1.5 text-xs">Restart</button>
-      <button type="button" onClick={()=>move(activeStep-1)} disabled={activeStep===0} className="rounded-md border px-3 py-1.5 text-xs disabled:opacity-40">Previous</button>
-      <button type="button" onClick={()=>move(activeStep+1)} disabled={activeStep>=steps.length-1} className="rounded-md border px-3 py-1.5 text-xs disabled:opacity-40">Next</button>
-      <span className="ml-auto text-xs tabular-nums text-slate-500">Step {steps.length?activeStep+1:0} / {steps.length}</span>
-    </div>
-    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-sky-500 transition-all duration-500" style={{width:steps.length?((activeStep+1)/steps.length*100)+'%':'0%'}}/></div>
-    <div className="min-h-20 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm leading-relaxed transition-all duration-300 dark:border-sky-900 dark:bg-sky-950/40">{steps[activeStep]??'No animation steps authored yet.'}</div>
-    <ol className="space-y-1 text-xs">{steps.map((step,index)=><li key={index} className={`rounded-md px-2 py-1.5 transition-colors ${index===activeStep?'bg-sky-100 font-semibold text-sky-900 dark:bg-sky-900/50 dark:text-sky-100':'text-slate-500'}`}><button type="button" onClick={()=>move(index)} className="w-full text-left">{index+1}. {step}</button></li>)}</ol>
-  </Panel>;
+
+const DIFFICULTY_TABS: { id: DifficultyFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'Easy', label: 'Easy' },
+  { id: 'Medium', label: 'Medium' },
+  { id: 'Hard', label: 'Hard' },
+];
+
+function formatTrackLabel(track: InterviewTrack): string {
+  if (track === 'blind-75') return 'Blind 75';
+  if (track === 'neetcode-150') return 'NeetCode 150';
+  return 'Specialist Twist';
 }
 
-function StageContent({problem,stage}:{problem:ProblemRecord;stage:StageKey}) {
-  const data=problem.stages?.[stage]??{};
-  if(stage==='understand')return <div className="grid md:grid-cols-2 gap-3">
-    <Panel title="Core concept"><p className="text-sm leading-relaxed">{data.concept}</p><p className="text-sm mt-2">{data.problemGoal}</p></Panel>
-    <Panel title="Recognition signals"><TextList items={data.recognitionSignals}/></Panel>
-    <Panel title="Prerequisites"><TextList items={data.prerequisites}/></Panel>
-    <Panel title="Invariant"><p className="text-sm leading-relaxed">{data.invariant}</p></Panel>
-    <Panel title="Clarify before coding"><TextList items={data.clarifyBeforeCoding}/></Panel>
-    <Panel title="Source verification"><p className="text-xs leading-relaxed">{data.sourceVerification}</p></Panel>
-  </div>;
-  if(stage==='visualize')return <div className="space-y-3">
-    <Panel title="Hand-drawn model / diagram"><pre className="whitespace-pre-wrap text-xs leading-relaxed font-mono bg-slate-50 dark:bg-slate-950 rounded-md p-3">{data.diagram}</pre><p className="text-xs text-slate-500">{data.diagramNotation}</p></Panel>
-    <AnimationSequence steps={data.animationSteps??[]}/>
-    <Panel title="Trace walkthrough"><p className="text-sm leading-relaxed">{data.traceWalkthrough}</p></Panel>
-  </div>;
-  if(stage==='implement')return <div className="space-y-3">
-    <div className="grid md:grid-cols-3 gap-3">
-      <Panel title="A. Brute force"><p className="text-sm">{data.bruteForce?.idea}</p><p className="text-xs text-amber-600 mt-2">{data.bruteForce?.bottleneck}</p></Panel>
-      <Panel title="B. Better"><p className="text-sm">{data.better?.idea}</p><p className="text-xs text-slate-500 mt-2">{data.better?.upgrade}</p></Panel>
-      <Panel title="C. Optimal pattern"><p className="text-sm">{data.optimal?.idea}</p><p className="text-xs text-slate-500 mt-2">{data.optimal?.invariant}</p></Panel>
-    </div>
-    <Panel title="Pseudocode"><pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed">{data.pseudocode}</pre></Panel>
-    <div className="grid md:grid-cols-3 gap-3">
-      <Panel title="Java solution"><pre className="whitespace-pre-wrap overflow-x-auto text-xs font-mono leading-relaxed">{data.java}</pre></Panel>
-      <Panel title="JavaScript solution"><pre className="whitespace-pre-wrap overflow-x-auto text-xs font-mono leading-relaxed">{data.javascript}</pre></Panel>
-      <Panel title="Python solution"><pre className="whitespace-pre-wrap overflow-x-auto text-xs font-mono leading-relaxed">{data.python}</pre></Panel>
-    </div>
-    <Panel title="Dry-run checklist"><TextList items={data.dryRunChecklist}/></Panel>
-    <p className="text-xs text-amber-700 dark:text-amber-400">{data.languageStatus==='blueprint-not-submission'?'These are implementation blueprints, not verified accepted submissions. Problem-specific executable code remains to be authored and tested.':data.languageStatus==='verified-submissions'?'Java, JavaScript and Python submissions are included and exercised by the batch test suite.':''}</p>
-  </div>;
-  if(stage==='practice')return <div className="grid md:grid-cols-2 gap-3">
-    <Panel title="Progressive hints"><TextList items={data.hints}/></Panel>
-    <Panel title="Edge-case checklist"><TextList items={data.edgeCases}/></Panel>
-    <Panel title="Test-design ladder"><TextList items={data.testDesign}/></Panel>
-    <Panel title="Official examples and constraints"><div className="space-y-3">{(problem.examples??[]).map((example,i)=><div key={i} className="text-xs space-y-1"><b>Example {i+1}</b><p><b>Input:</b> {example.input}</p><p><b>Output:</b> {example.output}</p>{example.explanation&&<p><b>Explanation:</b> {example.explanation}</p>}</div>)}</div><ul className="list-disc pl-5 text-xs space-y-1">{(problem.constraints??[]).map((constraint,i)=><li key={i}>{constraint}</li>)}</ul><p className="text-xs text-amber-700 dark:text-amber-400">{data.validationNote}</p></Panel><Panel title="Executable regression cases"><TextList items={(data.testCases??[]).map((test:any)=>test.input+" → "+test.expected)}/></Panel>
-  </div>;
-  return <div className="space-y-3">
-    <Panel title="Correctness proof strategy"><p className="text-sm leading-relaxed">{data.proof}</p></Panel>
-    <div className="grid md:grid-cols-2 gap-3">
-      <Panel title="Complexity"><p className="text-sm"><b>Time:</b> {data.timeComplexity}</p><p className="text-sm mt-1"><b>Space:</b> {data.spaceComplexity}</p><p className="text-xs text-slate-500 mt-2">{data.complexityDerivation}</p></Panel>
-      <Panel title="Invariant"><p className="text-sm">{data.invariant}</p></Panel>
-      <Panel title="Correctness checklist"><TextList items={data.correctnessChecklist}/></Panel>
-      <Panel title="Common pitfalls"><TextList items={data.pitfalls}/></Panel>
-      <Panel title="Interview follow-ups"><TextList items={data.interviewFollowUps}/></Panel>
-      <Panel title="Mastery gate"><TextList items={data.masteryGate}/><p className="text-xs text-slate-500">Target score: {data.targetScore}%</p></Panel>
-    </div>
-    <Panel title="Knowledge-check quiz">{(data.quiz??[]).map((q:any,i:number)=><div key={i} className="border-b last:border-0 border-slate-100 dark:border-slate-800 py-2"><p className="text-sm font-semibold">{i+1}. {q.question}</p><details className="mt-1 text-xs"><summary className="cursor-pointer text-sky-600">Reveal reasoning</summary><p className="mt-2 text-slate-600 dark:text-slate-300">{q.answer}</p></details></div>)}</Panel>
-    <Panel title="Spaced revision"><div className="flex flex-wrap gap-2">{(data.revisionDays??[1,3,7,14,30]).map((day:number)=><span key={day} className="rounded-full border px-3 py-1 text-xs">Day {day}</span>)}</div></Panel>
-  </div>;
+function difficultyTextClass(difficulty: InterviewDifficulty): string {
+  if (difficulty === 'Easy') return 'text-emerald-700 dark:text-emerald-400';
+  if (difficulty === 'Medium') return 'text-amber-700 dark:text-amber-400';
+  return 'text-rose-700 dark:text-rose-400';
 }
 
-export function InterviewProblemCatalogPanel(){
-  const [topicId,setTopicId]=useState<string>('arrays');
-  const [query,setQuery]=useState('');
-  const [problems,setProblems]=useState<ProblemRecord[]>([]);
-  const [selectedSlug,setSelectedSlug]=useState('');
-  const [stage,setStage]=useState<StageKey>('understand');
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState('');
-  const [apiUnavailable,setApiUnavailable]=useState(false);
-  const [reference,setReference]=useState<any>(null);
-  const [referenceLoading,setReferenceLoading]=useState(false);
-  const [referenceError,setReferenceError]=useState('');
-  const selected=useMemo(()=>problems.find(p=>p.slug===selectedSlug)??problems[0],[problems,selectedSlug]);
-  useEffect(()=>{setReference(null);setReferenceError('');},[selectedSlug]);
-  const loadOfficialReference=async()=>{
-    if(!selected)return;
-    setReferenceLoading(true);setReferenceError('');
-    const sourceSlug=selected.title.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    try{const response=await apiFetch('/api/leetcode/problem/'+sourceSlug);if(!response.ok)throw new Error('No LeetCode source was found for this title.');const payload=await response.json();setReference(payload.problem);}
-    catch(e){setReferenceError(e instanceof Error?e.message:'Unable to load the official reference.');}
-    finally{setReferenceLoading(false);}
+export function InterviewProblemCatalogPanel({
+  activeTopicId,
+  onSelectCurriculumTopic,
+  onOpenProblemTrainer,
+}: InterviewProblemCatalogPanelProps) {
+  const [syncWithActiveTopic, setSyncWithActiveTopic] = useState(false);
+  const [manualTopicId, setManualTopicId] = useState<string>('all');
+  const [trackFilter, setTrackFilter] = useState<TrackFilter>('all');
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all');
+  const [query, setQuery] = useState('');
+  const [selectedSlug, setSelectedSlug] = useState<string>(CURATED_INTERVIEW_BANK[0]?.slug ?? '');
+  const [revealedTwistIndices, setRevealedTwistIndices] = useState<number[]>([]);
+
+  const [solvedSlugs, setSolvedSlugs] = useAccountState<string[]>(
+    'curated-interview-solved',
+    [],
+    'patternforge_curated_solved_v1'
+  );
+
+  // Optional official LeetCode lookup (on-demand only, never blocks UI)
+  const [reference, setReference] = useState<OfficialReference | null>(null);
+  const [referenceLoading, setReferenceLoading] = useState(false);
+  const [referenceError, setReferenceError] = useState('');
+
+  const effectiveTopicId = syncWithActiveTopic && activeTopicId ? activeTopicId : manualTopicId;
+
+  const filteredQuestions = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return CURATED_INTERVIEW_BANK.filter((item) => {
+      if (effectiveTopicId !== 'all' && item.topicId !== effectiveTopicId) return false;
+      if (trackFilter !== 'all' && !item.tracks.includes(trackFilter)) return false;
+      if (difficultyFilter !== 'all' && item.difficulty !== difficultyFilter) return false;
+      if (!q) return true;
+      return (
+        item.title.toLowerCase().includes(q) ||
+        item.topicLabel.toLowerCase().includes(q) ||
+        item.plainEnglishGoal.toLowerCase().includes(q) ||
+        item.patternTrigger.toLowerCase().includes(q) ||
+        (item.leetcodeNumber ? String(item.leetcodeNumber).includes(q) : false)
+      );
+    });
+  }, [effectiveTopicId, trackFilter, difficultyFilter, query]);
+
+  const selected: CuratedInterviewQuestion | undefined = useMemo(() => {
+    return (
+      filteredQuestions.find((item) => item.slug === selectedSlug) ?? filteredQuestions[0]
+    );
+  }, [filteredQuestions, selectedSlug]);
+
+  useEffect(() => {
+    if (selected && selected.slug !== selectedSlug) {
+      setSelectedSlug(selected.slug);
+    }
+  }, [selected, selectedSlug]);
+
+  useEffect(() => {
+    setRevealedTwistIndices([]);
+    setReference(null);
+    setReferenceError('');
+  }, [selected?.slug]);
+
+  const toggleSolved = (slug: string) => {
+    const next = solvedSlugs.includes(slug)
+      ? solvedSlugs.filter((s) => s !== slug)
+      : [...solvedSlugs, slug];
+    setSolvedSlugs(next);
   };
 
-  useEffect(()=>{
-    let active=true;
-    const load=async()=>{
-      setLoading(true);setError('');setApiUnavailable(false);
-      try{
-        const params=new URLSearchParams({topicId,page:'1',limit:'100'});
-        if(query.trim())params.set('q',query.trim());
-        const response=await apiFetch(`/api/interview-problems?${params.toString()}`);
-        if(!response.ok)throw new Error(response.status===503?'MongoDB problem catalog is unavailable.':'Unable to load interview problems.');
-        const payload=await response.json();
-        if(!active)return;
-        const rows:ProblemRecord[]=payload.problems??[];
-        setProblems(rows);
-        setSelectedSlug((current)=>rows.some(p=>p.slug===current)?current:(rows[0]?.slug??''));
-      }catch(e){if(active){setProblems([]);setError(e instanceof Error?e.message:'Problem catalog request failed.');setApiUnavailable(true);}}
-      finally{if(active)setLoading(false);}
-    };
-    void load();
-    return()=>{active=false;};
-  },[topicId,query]);
+  const blind75Count = useMemo(
+    () => CURATED_INTERVIEW_BANK.filter((q) => q.tracks.includes('blind-75')).length,
+    []
+  );
+  const neetcodeCount = useMemo(
+    () => CURATED_INTERVIEW_BANK.filter((q) => q.tracks.includes('neetcode-150')).length,
+    []
+  );
+  const solvedInBank = useMemo(
+    () => CURATED_INTERVIEW_BANK.filter((q) => solvedSlugs.includes(q.slug)).length,
+    [solvedSlugs]
+  );
 
-  return <section className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 space-y-4">
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div><div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-sky-500"/><h2 className="text-base font-bold">293-Question Interview Master Bank</h2></div><p className="text-xs text-slate-500 mt-1">Topic-first lessons with five stages, source-verification flags, and spaced revision.</p></div>
-      <span className="text-xs rounded-full border px-2.5 py-1 text-slate-500">22 topics · 293 questions</span>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-[minmax(180px,0.7fr)_minmax(220px,1fr)] gap-3">
-      <label className="text-xs font-semibold text-slate-500">Topic
-        <select value={topicId} onChange={e=>setTopicId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-2.5 text-sm">
-          {TOPICS.map(([id,label])=><option key={id} value={id}>{label}</option>)}
-        </select>
-      </label>
-      <label className="text-xs font-semibold text-slate-500">Search questions
-        <div className="mt-1 flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 px-3"><Search className="w-4 h-4 text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search within selected topic..." className="w-full bg-transparent py-2.5 text-sm outline-none"/></div>
-      </label>
-    </div>
-    {error&&<div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-800 dark:text-amber-200">{error}{apiUnavailable?' The app can still use the existing curriculum, but this catalog requires a connected MongoDB API.':''}</div>}
-    {loading?<div className="flex items-center gap-2 py-8 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin"/>Loading topic questions...</div>:<div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,0.65fr)_minmax(0,1.6fr)] gap-4">
-      <div className="max-h-[560px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-        <div className="px-3 py-2 text-xs text-slate-500">{problems.length} questions in {TOPICS.find(t=>t[0]===topicId)?.[1]}</div>
-        {problems.map(problem=><button key={problem.slug} onClick={()=>setSelectedSlug(problem.slug)} className={`w-full text-left px-3 py-3 transition-colors ${selected?.slug===problem.slug?'bg-sky-50 dark:bg-sky-950/40':'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`}>
-          <span className="block text-sm font-semibold">{problem.title}</span><span className="mt-1 flex flex-wrap gap-2 text-[10px] text-slate-500"><span>{problem.difficulty}</span><span>·</span><span>{problem.contentStatus}</span></span>
-        </button>)}
-        {!problems.length&&!error&&<p className="p-4 text-sm text-slate-500">No matching questions.</p>}
-      </div>
-      {selected?<div className="min-w-0 space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="text-lg font-bold">{selected.title}</h3><p className="text-xs text-slate-500 mt-1">{selected.topic} · {selected.difficulty} · {selected.slug}</p></div><span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${selected.contentStatus==='validated'?'border-emerald-300 text-emerald-700 dark:text-emerald-300':'border-amber-300 text-amber-700 dark:text-amber-300'}`}>{selected.contentStatus==='validated'?'Validated':selected.authoringMetadata?.status??'Draft lesson'}</span></div>
-        <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 space-y-2"><p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Problem statement</p><p className="text-sm leading-relaxed">{selected.statement??'Problem statement awaiting source verification.'}</p>{selected.source?.reference&&<a className="text-xs text-sky-600 underline" href={selected.source.reference} target="_blank" rel="noreferrer">Verify original LeetCode statement ↗</a>}</div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold">Official source lookup</p><p className="text-[11px] text-slate-500">Optional LeetCode statement, sample tests, hints and Java starter code when a matching slug exists.</p></div><button onClick={()=>void loadOfficialReference()} disabled={referenceLoading} className="rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-xs font-semibold disabled:opacity-50">{referenceLoading?"Loading source...":"Fetch LeetCode reference"}</button></div>
-          {referenceError&&<p className="text-xs text-amber-700">{referenceError}</p>}
-          {reference&&<div className="space-y-2 text-xs"><p className="font-semibold">{reference.title} · #{reference.questionId} · {reference.difficulty}</p><a className="text-sky-600 underline" href={"https://leetcode.com/problems/"+reference.slug+"/"} target="_blank" rel="noreferrer">Open original problem</a><details><summary className="cursor-pointer font-semibold">Statement text</summary><pre className="mt-2 whitespace-pre-wrap text-xs">{String(reference.contentHtml??"").replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/\s+/g," ").trim()}</pre></details><details><summary className="cursor-pointer font-semibold">Official sample test input</summary><pre className="mt-2 whitespace-pre-wrap">{reference.exampleTestcases||"No sample tests returned."}</pre></details><Panel title="LeetCode hints"><TextList items={reference.hints}/></Panel></div>}
+  const loadOfficialReference = async () => {
+    if (!selected) return;
+    setReferenceLoading(true);
+    setReferenceError('');
+    const sourceSlug = selected.title
+      .replace(/\(.*?\)/g, '')
+      .normalize('NFKD')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    try {
+      const response = await apiFetch('/api/leetcode/problem/' + sourceSlug);
+      if (!response.ok) {
+        throw new Error('Official LeetCode lookup is unavailable for this problem slug.');
+      }
+      const payload = await response.json();
+      setReference(payload.problem ?? null);
+    } catch (e) {
+      setReferenceError(
+        e instanceof Error ? e.message : 'Unable to load the official reference.'
+      );
+    } finally {
+      setReferenceLoading(false);
+    }
+  };
+
+  const activeTopicLabel =
+    CURATED_TOPIC_OPTIONS.find((t) => t.id === effectiveTopicId)?.label ?? 'All 22 Topics';
+
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 space-y-5">
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold text-sky-700 dark:text-sky-400">
+            <Target className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>DSA Specialist Interview Master Bank</span>
+          </div>
+          <h2 className="text-base sm:text-lg font-display font-bold text-slate-900 dark:text-slate-100">
+            Blind 75, NeetCode 150 &amp; Follow-Up Twist Trainer
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-[70ch]">
+            Every flagship interview question across all 22 curriculum topics—paired with plain-English goals, pattern triggers, brute-to-optimal reasoning, edge cases, and interactive follow-up twists.
+          </p>
         </div>
-        <div className="flex gap-1 overflow-x-auto pb-1">{STAGES.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>setStage(item.id)} className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${stage===item.id?'bg-sky-600 text-white':'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}><Icon className="w-3.5 h-3.5"/>{item.label}</button>;})}</div>
-        <p className="text-xs text-slate-500">{STAGES.find(s=>s.id===stage)?.description}</p>
-        <StageContent problem={selected} stage={stage}/>
-        <div className={`rounded-lg border p-3 text-xs ${selected.contentStatus==='validated'?'border-emerald-200 text-emerald-800 dark:border-emerald-900 dark:text-emerald-200':'border-amber-200 text-amber-800 dark:border-amber-900 dark:text-amber-200'}`}><b>Content quality:</b> {selected.contentStatus==='validated'?'Source, examples, constraints, three language submissions, executable tests, animation, proof and complexity checks passed.':'This lesson remains a draft until all source and executable quality gates pass.'} {(selected.authoringMetadata?.missingEvidence??[]).length} evidence items remain.</div>
-      </div>:<div className="rounded-xl border border-dashed p-8 text-center text-sm text-slate-500">Select a problem to open its five-stage lesson.</div>}
-    </div>}
-  </section>;
+
+        <div className="flex flex-col sm:items-end gap-1 text-xs font-mono text-slate-600 dark:text-slate-400 tabular-nums">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
+            {solvedInBank} / {CURATED_INTERVIEW_BANK.length} mastered
+          </span>
+          <span>
+            22 topics · {blind75Count} Blind 75 · {neetcodeCount} NeetCode 150
+          </span>
+        </div>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Track Filter */}
+          <div
+            role="tablist"
+            aria-label="Filter by interview track"
+            className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950"
+          >
+            {TRACK_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={trackFilter === tab.id}
+                onClick={() => setTrackFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+                  trackFilter === tab.id
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Difficulty Filter */}
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
+            {DIFFICULTY_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setDifficultyFilter(tab.id)}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+                  difficultyFilter === tab.id
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Topic Selector + Sync Toggle + Search */}
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(200px,0.75fr)_minmax(220px,1fr)] gap-3">
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Filter by curriculum topic"
+              value={effectiveTopicId}
+              onChange={(e) => {
+                setSyncWithActiveTopic(false);
+                setManualTopicId(e.target.value);
+              }}
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            >
+              {CURATED_TOPIC_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+
+            {activeTopicId && (
+              <button
+                type="button"
+                onClick={() => setSyncWithActiveTopic((v) => !v)}
+                className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                  syncWithActiveTopic
+                    ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300'
+                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:border-sky-400'
+                }`}
+              >
+                {syncWithActiveTopic ? 'Synced to Topic' : 'Sync Topic'}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by title, LC #, pattern trigger, or topic..."
+              className="w-full bg-transparent py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Master-Detail Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,0.72fr)_minmax(0,1.6fr)] gap-4">
+        {/* Question List */}
+        <div className="max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="sticky top-0 z-10 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+            <span>
+              {filteredQuestions.length} questions · {activeTopicLabel}
+            </span>
+          </div>
+
+          {filteredQuestions.map((item) => {
+            const isSelected = selected?.slug === item.slug;
+            const isSolved = solvedSlugs.includes(item.slug);
+            return (
+              <button
+                key={item.slug}
+                type="button"
+                onClick={() => setSelectedSlug(item.slug)}
+                className={`w-full text-left px-3.5 py-3 transition-colors flex items-start gap-2.5 ${
+                  isSelected
+                    ? 'bg-sky-50/90 dark:bg-sky-950/40'
+                    : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                }`}
+              >
+                <span className="mt-0.5 shrink-0">
+                  {isSolved ? (
+                    <CheckCircle2
+                      className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Circle className="w-4 h-4 text-slate-300 dark:text-slate-700" aria-hidden="true" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1 space-y-0.5">
+                  <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
+                    {item.leetcodeNumber ? `#${item.leetcodeNumber} ` : ''}
+                    {item.title}
+                  </span>
+                  <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    <span className={difficultyTextClass(item.difficulty)}>{item.difficulty}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.topicLabel}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{item.tracks.map(formatTrackLabel).join(' / ')}</span>
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+
+          {filteredQuestions.length === 0 && (
+            <div className="p-6 text-center space-y-2">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                No questions match the current filters.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSyncWithActiveTopic(false);
+                  setManualTopicId('all');
+                  setTrackFilter('all');
+                  setDifficultyFilter('all');
+                  setQuery('');
+                }}
+                className="text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline"
+              >
+                Reset all filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Detail Pane */}
+        {selected ? (
+          <div className="min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-5">
+            {/* Title + Actions */}
+            <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                  {selected.leetcodeNumber && <span>LC #{selected.leetcodeNumber}</span>}
+                  {selected.leetcodeNumber && <span aria-hidden="true">·</span>}
+                  <span className={`font-semibold ${difficultyTextClass(selected.difficulty)}`}>
+                    {selected.difficulty}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span>{selected.topicLabel}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{selected.tracks.map(formatTrackLabel).join(' · ')}</span>
+                </div>
+                <h3 className="text-lg font-display font-bold text-slate-900 dark:text-slate-100">
+                  {selected.title}
+                </h3>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleSolved(selected.slug)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                    solvedSlugs.includes(selected.slug)
+                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-emerald-400'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  {solvedSlugs.includes(selected.slug) ? 'Mastered' : 'Mark Solved'}
+                </button>
+
+                {onSelectCurriculumTopic && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectCurriculumTopic(selected.topicId)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-400 transition-colors whitespace-nowrap"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+                    Jump to Topic
+                  </button>
+                )}
+
+                {selected.trainerSlug && onOpenProblemTrainer && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenProblemTrainer(selected.trainerSlug!)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap"
+                  >
+                    Open Trainer
+                    <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Plain-English Goal + Pattern Trigger */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-3.5 space-y-1.5">
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  Plain-English Goal
+                </div>
+                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  {selected.plainEnglishGoal}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-3.5 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-800 dark:text-sky-300">
+                  <Compass className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Interview Recognition Trigger</span>
+                </div>
+                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  {selected.patternTrigger}
+                </p>
+              </div>
+            </div>
+
+            {/* Brute vs Optimal + Complexity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 space-y-1.5">
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  Brute-Force Baseline
+                </div>
+                <p className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  {selected.bruteApproach}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/35 dark:bg-emerald-950/20 p-3.5 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                    Optimal Specialist Invariant
+                  </span>
+                  <span className="text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                    Time {selected.timeComplexity} · Space {selected.spaceComplexity}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  {selected.optimalApproach}
+                </p>
+              </div>
+            </div>
+
+            {/* Edge Cases */}
+            <div className="rounded-lg border border-amber-200/80 dark:border-amber-900/60 bg-amber-50/35 dark:bg-amber-950/15 p-3.5 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-300">
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>Edge Cases &amp; Interviewer Bug Traps</span>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                {selected.edgeCases.map((edge, idx) => (
+                  <li key={idx} className="leading-relaxed">
+                    {edge}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Follow-Up Twists (Active Recall) */}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  Interviewer Follow-Up Twists (Click to Reveal Invariant Shift)
+                </h4>
+                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                  {selected.followUpTwists.length} twist{selected.followUpTwists.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                {selected.followUpTwists.map((twist, idx) => {
+                  const isOpen = revealedTwistIndices.includes(idx);
+                  return (
+                    <div key={idx} className="bg-white dark:bg-slate-900">
+                      <button
+                        type="button"
+                        aria-expanded={isOpen}
+                        onClick={() =>
+                          setRevealedTwistIndices((prev) =>
+                            prev.includes(idx)
+                              ? prev.filter((i) => i !== idx)
+                              : [...prev, idx]
+                          )
+                        }
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-950/60 transition-colors"
+                      >
+                        <span className="flex items-start gap-2.5 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100">
+                          <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400 tabular-nums pt-0.5">
+                            T{idx + 1}
+                          </span>
+                          <span>{twist.prompt}</span>
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                            isOpen ? 'rotate-180 text-sky-500' : ''
+                          }`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-3.5 pt-1.5 bg-slate-50/70 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5 text-xs">
+                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">
+                              Invariant Shift:{' '}
+                            </span>
+                            {twist.invariantShift}
+                          </p>
+                          <p className="font-mono text-sky-700 dark:text-sky-400 tabular-nums">
+                            Complexity Impact: {twist.complexityImpact}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Optional Official Source Lookup */}
+            {selected.leetcodeNumber && (
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Need the verbatim prompt or sample testcases from LeetCode?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void loadOfficialReference()}
+                    disabled={referenceLoading}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-400 transition-colors disabled:opacity-50"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                    {referenceLoading ? 'Fetching...' : 'Fetch LeetCode Reference'}
+                  </button>
+                </div>
+
+                {referenceError && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400">{referenceError}</p>
+                )}
+
+                {reference && (
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 space-y-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                        {reference.title} · #{reference.questionId} · {reference.difficulty}
+                      </span>
+                      <a
+                        className="text-sky-700 dark:text-sky-400 hover:underline font-semibold"
+                        href={`https://leetcode.com/problems/${reference.slug}/`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open on LeetCode ↗
+                      </a>
+                    </div>
+                    {reference.contentHtml && (
+                      <details>
+                        <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-300">
+                          Statement Text
+                        </summary>
+                        <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                          {String(reference.contentHtml)
+                            .replace(/<[^>]*>/g, ' ')
+                            .replace(/&nbsp;/g, ' ')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&amp;/g, '&')
+                            .replace(/\s+/g, ' ')
+                            .trim()}
+                        </pre>
+                      </details>
+                    )}
+                    {reference.exampleTestcases && (
+                      <details>
+                        <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-300">
+                          Sample Test Input
+                        </summary>
+                        <pre className="mt-2 whitespace-pre-wrap font-mono text-xs text-slate-600 dark:text-slate-300">
+                          {reference.exampleTestcases}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            Select a question from the list to inspect its specialist breakdown and follow-up twists.
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }

@@ -17,6 +17,7 @@ import {
 import { usePatternForgeStore } from '../../../store/usePatternForgeStore';
 import { PROBLEMS } from '../../../data/problems';
 import { CurriculumTopic } from '../../topics/types';
+import { PatternDecisionMatrix } from './PatternDecisionMatrix';
 
 interface AlgorithmMatcherPanelProps {
   mode: 'embedded' | 'modal';
@@ -457,6 +458,21 @@ export function AlgorithmMatcherPanel({
           ))}
         </div>
       </div>
+
+      <PatternDecisionMatrix
+        onOpenTopic={
+          onSelectTopic
+            ? (topicId) => {
+                onSelectTopic(topicId);
+                onNavigateDone?.();
+              }
+            : undefined
+        }
+        onOpenAlgorithm={(algorithmId) => {
+          openAlgorithm(algorithmId, 'mental');
+          onNavigateDone?.();
+        }}
+      />
     </div>
   );
 }

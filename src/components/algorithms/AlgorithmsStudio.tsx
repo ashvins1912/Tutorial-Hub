@@ -3,11 +3,15 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
+  ChevronDown,
   Code2,
   Copy,
+  Lightbulb,
+  MessageSquareQuote,
   Pause,
   Play,
   RotateCcw,
+  ShieldAlert,
   SkipBack,
   SkipForward,
   Terminal,
@@ -35,6 +39,7 @@ import { RecursionBacktrackingLab } from '../../features/recursion-lab/component
 import { ComplexityDepthToggle } from '../../features/visualizer/components/ComplexityDepthToggle';
 import { useAccountState } from '../../hooks/useAccountState';
 import { getAlgorithmComplexityProfile } from '../../features/visualizer/data/complexityComparisonData';
+import { getAlgorithmTutorGuide } from '../../data/algorithmTutorGuides';
 
 type TierFilter = 'all' | 'core' | 'advanced';
 type DetailTab = 'mental' | 'triggers' | 'code' | 'practice';
@@ -96,6 +101,7 @@ export function AlgorithmsStudio({
   const [detailTab, setDetailTab] = useState<DetailTab>(activeAlgorithmTab);
   const [codeLang, setCodeLang] = useState<CodeLanguage>('python');
   const [copied, setCopied] = useState(false);
+  const [revealedTwistIndices, setRevealedTwistIndices] = useState<number[]>([]);
 
   // Practice Implementation Lab state (DB-persisted)
   const [implementedIds, setImplementedIds] = useAccountState<string[]>(
@@ -147,9 +153,12 @@ export function AlgorithmsStudio({
   const safeFrameIndex = Math.min(frameIndex, Math.max(0, totalFrames - 1));
   const currentFrame = algorithm.frames[safeFrameIndex] ?? algorithm.frames[0];
 
+  const tutorGuide = useMemo(() => getAlgorithmTutorGuide(algorithm.id), [algorithm.id]);
+
   useEffect(() => {
     setFrameIndex(0);
     setIsPlaying(false);
+    setRevealedTwistIndices([]);
   }, [selectedAlgoId]);
 
   useEffect(() => {
@@ -783,39 +792,154 @@ export function AlgorithmsStudio({
         </div>
 
         {detailTab === 'mental' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Core Algorithmic Intuition
-              </h3>
-              <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                {algorithm.coreIdea}
-              </p>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
-                <div className="text-xs font-semibold text-sky-700 dark:text-sky-400">
-                  Formal Loop Invariant
-                </div>
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  {algorithm.loopInvariant}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Core Algorithmic Intuition
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  {algorithm.coreIdea}
                 </p>
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+                  <div className="text-xs font-semibold text-sky-700 dark:text-sky-400">
+                    Formal Loop Invariant
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                    {algorithm.loopInvariant}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Repeatable Step-by-Step Execution Recipe
+                </h3>
+                <ol className="space-y-2.5">
+                  {algorithm.mentalModelSteps.map((stepText, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300">
+                      <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400 pt-0.5 tabular-nums">
+                        0{idx + 1}.
+                      </span>
+                      <span className="leading-relaxed">{stepText}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Repeatable Step-by-Step Execution Recipe
-              </h3>
-              <ol className="space-y-2.5">
-                {algorithm.mentalModelSteps.map((stepText, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300">
-                    <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400 pt-0.5 tabular-nums">
-                      0{idx + 1}.
-                    </span>
-                    <span className="leading-relaxed">{stepText}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            {tutorGuide && (
+              <div className="pt-5 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Specialist Tutor Companion
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Plain-English intuition paired with senior interview verbalization and follow-up twists.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                    {tutorGuide.followUpTwists.length} interview twists · click to test recall
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-4 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      <Lightbulb className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      <span>Simple Everyday Analogy</span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                      {tutorGuide.simpleAnalogy}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-4 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-800 dark:text-sky-300">
+                      <MessageSquareQuote className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      <span>30-Second Senior Interview Script</span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                      {tutorGuide.interviewScript30s}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div className="rounded-lg border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 space-y-1">
+                    <div className="font-semibold text-emerald-800 dark:text-emerald-300">
+                      Choose This Pattern When
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {tutorGuide.chooseWhen}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-rose-200/80 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-3.5 space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-rose-800 dark:text-rose-300">
+                      <ShieldAlert className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      <span>Avoid / Pivot When</span>
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {tutorGuide.avoidWhen}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    Interviewer Follow-Up Twists (Active Recall)
+                  </div>
+                  <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    {tutorGuide.followUpTwists.map((twist, idx) => {
+                      const isRevealed = revealedTwistIndices.includes(idx);
+                      return (
+                        <div key={idx} className="bg-white dark:bg-slate-900">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRevealedTwistIndices((prev) =>
+                                prev.includes(idx)
+                                  ? prev.filter((i) => i !== idx)
+                                  : [...prev, idx]
+                              )
+                            }
+                            aria-expanded={isRevealed}
+                            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-950/60 transition-colors"
+                          >
+                            <span className="flex items-start gap-2.5 text-xs sm:text-sm font-medium text-slate-900 dark:text-slate-100">
+                              <span className="font-mono text-xs font-bold text-sky-600 dark:text-sky-400 tabular-nums pt-0.5">
+                                T{idx + 1}
+                              </span>
+                              <span>{twist.question}</span>
+                            </span>
+                            <ChevronDown
+                              className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                                isRevealed ? 'rotate-180 text-sky-500' : ''
+                              }`}
+                              aria-hidden="true"
+                            />
+                          </button>
+                          {isRevealed && (
+                            <div className="px-4 pb-3.5 pt-1 bg-slate-50/70 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5 text-xs">
+                              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                  Invariant Shift:{' '}
+                                </span>
+                                {twist.invariantShift}
+                              </p>
+                              <p className="font-mono text-sky-700 dark:text-sky-400 tabular-nums">
+                                Complexity Impact: {twist.complexityImpact}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
