@@ -1,8 +1,9 @@
 import express, { Request, Response } from 'express';
 import { requireAuth } from '../middleware/requireAuth';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../seed/cognitiveSeed';
-import { RankTier, UserBrainProfile as UserBrainProfileType } from '../../src/types/dsa';
-import { UserBrainProfile as UserBrainProfileModel } from '../models/UserBrainProfile';
+import { RankTier, TopicQuiz as TopicQuizType, UserBrainProfile as UserBrainProfileType } from '../../src/types/dsa';
+import { IActivityLogEntry, UserBrainProfile as UserBrainProfileModel } from '../models/UserBrainProfile';
+import { TopicQuiz as TopicQuizModel } from '../models/TopicQuiz';
 import { isMongoConnected } from '../db/connectMongo';
 
 const router = express.Router();
@@ -33,6 +34,48 @@ const INTERVAL_PROGRESSION: (1 | 3 | 7 | 21)[] = [1, 3, 7, 21];
 const profileStore = new Map<string, UserBrainProfileType>();
 const notesStore = new Map<string, Record<string, string>>();
 const warmupStore = new Map<string, string[]>();
+const masteredStore = new Map<string, string[]>();
+const activityStore = new Map<string, IActivityLogEntry[]>();
+
+export function getDevCognitiveExtras(userId: string) {
+  return {
+    profile: profileStore.get(userId) ?? cloneSeedProfile(userId),
+    notes: notesStore.get(userId) ?? {},
+    completedWarmupDrills: warmupStore.get(userId) ?? [],
+    masteredProblemSlugs: masteredStore.get(userId) ?? [],
+    activityLog: activityStore.get(userId) ?? [],
+  };
+}
+
+async function appendActivity(userId: string, entry: Omit<IActivityLogEntry, 'date'>) {
+  const fullEntry: IActivityLogEntry = { ...entry, date: new Date() };
+  if (isMongoConnected()) {
+    await UserBrainProfileModel.updateOne(
+      { userId },
+      { $push: { activityLog: { $each: [fullEntry], $slice: -200 } } }
+    );
+    return;
+  }
+  const list = activityStore.get(userId) ?? [];
+  list.push(fullEntry);
+  if (list.length > 200) list.splice(0, list.length - 200);
+  activityStore.set(userId, list);
+}
+
+async function loadAllQuizzes(): Promise<TopicQuizType[]> {
+  if (isMongoConnected()) {
+    const docs = await TopicQuizModel.find().lean();
+    if (docs.length > 0) {
+      return docs.map((d) => ({
+        topicId: d.topicId,
+        topicTitle: d.topicTitle,
+        tier: d.tier,
+        questions: d.questions,
+      })) as TopicQuizType[];
+    }
+  }
+  return SEED_TOPIC_QUIZZES;
+}
 
 function cloneSeedProfile(userId: string): UserBrainProfileType {
   return {
@@ -237,6 +280,12 @@ router.post('/complete-problem', async (req: Request, res: Response) => {
 
   const promoted = evaluateRankPromotion(profile);
   await saveProfile(profile);
+  await appendActivity(userId, {
+    kind: 'lab-complete',
+    label: `Completed 5-Stage Lab: ${problemTitle || problemId}`,
+    xp: assemblyErrors === 0 ? 120 : 85,
+    score: Math.max(0, 100 - assemblyErrors * 10),
+  });
 
   return res.json({
     profile,
@@ -247,9 +296,10 @@ router.post('/complete-problem', async (req: Request, res: Response) => {
 });
 
 // GET /api/cognitive/quiz/:topicId
-router.get('/quiz/:topicId', (req: Request, res: Response) => {
+router.get('/quiz/:topicId', async (req: Request, res: Response) => {
   const { topicId } = req.params;
-  const quiz = SEED_TOPIC_QUIZZES.find((q) => q.topicId === topicId);
+  const quizzes = await loadAllQuizzes();
+  const quiz = quizzes.find((q) => q.topicId === topicId);
   if (!quiz) {
     return res.status(404).json({ error: `Quiz for topic "${topicId}" not found` });
   }
@@ -257,8 +307,9 @@ router.get('/quiz/:topicId', (req: Request, res: Response) => {
 });
 
 // GET /api/cognitive/quizzes
-router.get('/quizzes', (_req: Request, res: Response) => {
-  return res.json({ quizzes: SEED_TOPIC_QUIZZES });
+router.get('/quizzes', async (_req: Request, res: Response) => {
+  const quizzes = await loadAllQuizzes();
+  return res.json({ quizzes });
 });
 
 // POST /api/cognitive/quiz/submit
@@ -298,6 +349,12 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
 
   const promoted = evaluateRankPromotion(profile);
   await saveProfile(profile);
+  await appendActivity(userId, {
+    kind: 'quiz-submit',
+    label: `Topic Quiz: ${quiz.topicTitle} (${scorePct}%)`,
+    xp: passed ? 90 : 30,
+    score: scorePct,
+  });
 
   return res.json({
     scorePct,
@@ -359,23 +416,44 @@ router.post('/notes', async (req: Request, res: Response) => {
 
 // GET /api/cognitive/mastered-problems
 router.get('/mastered-problems', async (req: Request, res: Response) => {
-  const profile = await UserBrainProfileModel.findOne({ userId: req.authUser!.id }).select('masteredProblemSlugs');
-  return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [] });
+  const userId = req.authUser!.id;
+  if (isMongoConnected()) {
+    const profile = await UserBrainProfileModel.findOne({ userId }).select('masteredProblemSlugs');
+    return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [] });
+  }
+  return res.json({ masteredProblemSlugs: masteredStore.get(userId) ?? [] });
 });
 
 // POST /api/cognitive/mastered-problems
 router.post('/mastered-problems', async (req: Request, res: Response) => {
   const { problemSlug } = req.body ?? {};
+  const userId = req.authUser!.id;
   if (typeof problemSlug !== 'string' || !/^[a-z0-9-]{2,120}$/.test(problemSlug)) {
     return res.status(400).json({ error: 'A valid problemSlug is required' });
   }
-  await getOrCreateProfile(req.authUser!.id);
-  const profile = await UserBrainProfileModel.findOneAndUpdate(
-    { userId: req.authUser!.id },
-    { $addToSet: { masteredProblemSlugs: problemSlug } },
-    { new: true, projection: { masteredProblemSlugs: 1 } }
-  );
-  return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [problemSlug] });
+  if (isMongoConnected()) {
+    await getOrCreateProfile(userId);
+    const profile = await UserBrainProfileModel.findOneAndUpdate(
+      { userId },
+      { $addToSet: { masteredProblemSlugs: problemSlug } },
+      { new: true, projection: { masteredProblemSlugs: 1 } }
+    );
+    await appendActivity(userId, {
+      kind: 'problem-mastered',
+      label: `Mastered Big Tech Problem: ${problemSlug}`,
+      xp: 60,
+    });
+    return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [problemSlug] });
+  }
+  const current = masteredStore.get(userId) ?? [];
+  if (!current.includes(problemSlug)) current.push(problemSlug);
+  masteredStore.set(userId, current);
+  await appendActivity(userId, {
+    kind: 'problem-mastered',
+    label: `Mastered Big Tech Problem: ${problemSlug}`,
+    xp: 60,
+  });
+  return res.json({ masteredProblemSlugs: current });
 });
 
 router.post('/warmup/complete', async (req: Request, res: Response) => {
@@ -390,12 +468,22 @@ router.post('/warmup/complete', async (req: Request, res: Response) => {
       { $addToSet: { completedWarmupDrills: drillId } },
       { new: true }
     );
+    await appendActivity(userId, {
+      kind: 'warmup-complete',
+      label: `Completed Logic Warmup: ${drillId}`,
+      xp: 25,
+    });
     return res.json({ completedWarmupDrills: updated?.completedWarmupDrills ?? [drillId] });
   }
 
   const current = warmupStore.get(userId) ?? [];
   if (!current.includes(drillId)) current.push(drillId);
   warmupStore.set(userId, current);
+  await appendActivity(userId, {
+    kind: 'warmup-complete',
+    label: `Completed Logic Warmup: ${drillId}`,
+    xp: 25,
+  });
   return res.json({ completedWarmupDrills: current });
 });
 

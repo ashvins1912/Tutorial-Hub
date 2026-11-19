@@ -101,10 +101,6 @@ const curriculum: Category[] = [
 
 const storageKey = 'patternforge-system-design-academy-v1';
 type Progress = Record<string, { done: boolean; note: string }>;
-function readProgress(): Progress {
-  if (typeof window === 'undefined') return {};
-  try { return JSON.parse(window.localStorage.getItem(storageKey) || '{}') as Progress; } catch { return {}; }
-}
 export function SystemDesignLearningAcademy() {
   const [categoryId, setCategoryId] = useState(curriculum[0].id);
   const [topicId, setTopicId] = useState(curriculum[0].topics[0].id);
@@ -114,7 +110,11 @@ export function SystemDesignLearningAcademy() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [activeStage, setActiveStage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useAccountState<Progress>('system-design-academy-progress', {});
+  const [progress, setProgress] = useAccountState<Progress>(
+    'system-design-academy-progress',
+    {},
+    storageKey
+  );
   const category = curriculum.find(c => c.id === categoryId) ?? curriculum[0];
   const topic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
   const allTopics = useMemo(() => curriculum.flatMap(c => c.topics.map(x => ({...x, categoryId:c.id, categoryTitle:c.title}))), []);

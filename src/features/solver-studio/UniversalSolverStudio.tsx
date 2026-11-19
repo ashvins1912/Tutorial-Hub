@@ -32,12 +32,14 @@ import type {
   ArrayTracePresetId,
   InvariantPresetId,
 } from '../../core/step-generators/workspaceGenerators';
+import type { AdaptiveTelemetryState } from '../../core/knowledge-base/types';
 import {
-  completeMicroDrill,
-  loadTelemetryState,
-  trackProblemComplete,
-  trackProblemDrop,
+  completeMicroDrillFromState,
+  getInitialTelemetryState,
+  trackProblemCompleteFromState,
+  trackProblemDropFromState,
 } from '../../core/telemetry/adaptiveTelemetry';
+import { useAccountState } from '../../hooks/useAccountState';
 import { ArrayPointerVisualizer } from '../workspaces/ArrayPointerVisualizer';
 import { InvariantTrackerTable } from '../workspaces/InvariantTrackerTable';
 import { LogicPieceBuilder } from '../workspaces/LogicPieceBuilder';
@@ -80,7 +82,11 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   const [completedPhases, setCompletedPhases] = useState<SocraticPhase[]>([]);
   const [hintsUsed, setHintsUsed] = useState<number>(0);
   const [revealedPhases, setRevealedPhases] = useState<SocraticPhase[]>(['DECONSTRUCT']);
-  const [telemetry, setTelemetry] = useState(() => loadTelemetryState());
+  const [telemetry, setTelemetry] = useAccountState<AdaptiveTelemetryState>(
+    'solver-adaptive-telemetry',
+    getInitialTelemetryState(),
+    'patternforge_universal_adaptive_telemetry_v1',
+  );
   const [toast, setToast] = useState<{ kind: 'success' | 'warn'; text: string } | null>(null);
 
   useEffect(() => {
@@ -158,7 +164,8 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   };
 
   const handleLogDrop = (phase: SocraticPhase) => {
-    const res = trackProblemDrop(
+    const res = trackProblemDropFromState(
+      telemetry,
       selectedSampleId || `custom-${problemTitle.slice(0, 16)}`,
       problemTitle || 'Custom Problem',
       analysis.deconstruction.primaryDomain,
@@ -174,7 +181,8 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
 
   const handleCompleteProblem = () => {
     const independent = hintsUsed === 0;
-    const res = trackProblemComplete(
+    const res = trackProblemCompleteFromState(
+      telemetry,
       selectedSampleId || `custom-${problemTitle.slice(0, 16)}`,
       problemTitle || 'Custom Problem',
       analysis.deconstruction.primaryDomain,
@@ -189,7 +197,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   };
 
   const handleCompleteDrill = (drillId: string) => {
-    const next = completeMicroDrill(drillId);
+    const next = completeMicroDrillFromState(telemetry, drillId);
     setTelemetry(next);
     setToast({
       kind: 'success',

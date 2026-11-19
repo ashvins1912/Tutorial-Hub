@@ -9,6 +9,7 @@ import {
   Moon,
   NotebookPen,
   Sun,
+  User,
   X,
 } from 'lucide-react';
 import { usePatternForgeStore, TopView } from './store/usePatternForgeStore';
@@ -50,6 +51,7 @@ import { PatternRecognitionQuizModal } from './features/quiz/components/PatternR
 import { UniversalSolverStudio } from './features/solver-studio/UniversalSolverStudio';
 import { ProductCompanyMasterBankView } from './components/interview/ProductCompanyMasterBankView';
 import { IntelligentEngineStudio } from './features/intelligent-engine/components/IntelligentEngineStudio';
+import { ProfileStatsView } from './components/ProfileStatsView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -117,7 +119,17 @@ export default function App() {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ value: state.problemProgress }),
-        }).catch(() => {});
+        })
+          .then((res) => {
+            if (res.ok && typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('patternforge:db-sync', {
+                  detail: { stateKey: 'problem-progress' },
+                }),
+              );
+            }
+          })
+          .catch(() => {});
       }, 500);
     });
 
@@ -132,6 +144,92 @@ export default function App() {
       })
       .catch(() => {
         // Do not overwrite server state when it could not be loaded.
+      });
+
+    return () => {
+      unsubscribe();
+      window.clearTimeout(saveTimer);
+    };
+  }, []);
+
+  // Persist workspace UI preferences (theme, activeLanguage, compareAllLanguages) in DB
+  useEffect(() => {
+    let hydrated = false;
+    let saveTimer: number | undefined;
+    const unsubscribe = usePatternForgeStore.subscribe((state, previous) => {
+      if (
+        !hydrated ||
+        (state.theme === previous.theme &&
+          state.activeLanguage === previous.activeLanguage &&
+          state.compareAllLanguages === previous.compareAllLanguages)
+      ) {
+        return;
+      }
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(() => {
+        void apiFetch('/api/user-state/ui-preferences', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            value: {
+              theme: state.theme,
+              activeLanguage: state.activeLanguage,
+              compareAllLanguages: state.compareAllLanguages,
+            },
+          }),
+        })
+          .then((res) => {
+            if (res.ok && typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('patternforge:db-sync', {
+                  detail: { stateKey: 'ui-preferences' },
+                }),
+              );
+            }
+          })
+          .catch(() => {});
+      }, 300);
+    });
+
+    apiFetch('/api/user-state/ui-preferences')
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (payload.value && typeof payload.value === 'object') {
+          const prefs = payload.value as {
+            theme?: 'light' | 'dark';
+            activeLanguage?: 'python' | 'js' | 'java';
+            compareAllLanguages?: boolean;
+          };
+          const patch: Partial<{
+            theme: 'light' | 'dark';
+            activeLanguage: 'python' | 'js' | 'java';
+            compareAllLanguages: boolean;
+          }> = {};
+          if (prefs.theme === 'light' || prefs.theme === 'dark') {
+            patch.theme = prefs.theme;
+            if (typeof document !== 'undefined') {
+              document.documentElement.classList.toggle('dark', prefs.theme === 'dark');
+            }
+          }
+          if (
+            prefs.activeLanguage === 'python' ||
+            prefs.activeLanguage === 'js' ||
+            prefs.activeLanguage === 'java'
+          ) {
+            patch.activeLanguage = prefs.activeLanguage;
+          }
+          if (typeof prefs.compareAllLanguages === 'boolean') {
+            patch.compareAllLanguages = prefs.compareAllLanguages;
+          }
+          if (Object.keys(patch).length > 0) {
+            usePatternForgeStore.setState(patch);
+          }
+        }
+        hydrated = true;
+      })
+      .catch(() => {
+        hydrated = true;
       });
 
     return () => {
@@ -208,8 +306,28 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden xl:block max-w-40 truncate text-xs text-slate-500">{user?.email}</span>
-            <button type="button" onClick={() => void signOut()} className="rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-rose-400">Sign out</button>
+            <button
+              type="button"
+              onClick={() => setActiveView('profile')}
+              aria-label="Open profile and statistics"
+              className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                activeView === 'profile'
+                  ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-200'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
+              }`}
+            >
+              <User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span className="hidden xl:inline max-w-32 truncate">
+                {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Profile'}
+              </span>
+              <span className="hidden 2xl:inline text-slate-400" aria-hidden="true">
+                ·
+              </span>
+              <span className="hidden 2xl:inline font-mono tabular-nums text-sky-700 dark:text-sky-400">
+                {brainProfile.currentTier}
+              </span>
+            </button>
+            <button type="button" onClick={() => void signOut()} className="rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-rose-400 whitespace-nowrap shrink-0">Sign out</button>
             <button
               type="button"
               onClick={toggleTheme}
@@ -249,6 +367,17 @@ export default function App() {
             {item.label}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setActiveView('profile')}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap shrink-0 ${
+            activeView === 'profile'
+              ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+              : 'text-slate-600 dark:text-slate-400'
+          }`}
+        >
+          Profile & Stats
+        </button>
       </div>
 
       {/* Feedback Banner */}
@@ -408,6 +537,8 @@ export default function App() {
           {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
+
+          {activeView === 'profile' && <ProfileStatsView />}
 
           {activeView === 'sprint' && (
             <div className="space-y-5">

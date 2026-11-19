@@ -12,6 +12,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
+import { useAuth } from '../auth/AuthContext';
 import { PROBLEMS } from '../data/problems';
 import { PairProgrammingCanvas } from './PairProgrammingCanvas';
 import { CallStackVisualizer } from '../features/recursion-lab/components/CallStackVisualizer';
@@ -43,38 +44,37 @@ interface CanvasStroke {
   points: { x: number; y: number }[];
 }
 
-const MOCK_IDENTITIES = [
-  { name: 'Alex Chen', initials: 'AC', color: '#0284c7' },
-  { name: 'Priya Nair', initials: 'PN', color: '#059669' },
-  { name: 'Jordan Lee', initials: 'JL', color: '#d97706' },
-  { name: 'Samira Khan', initials: 'SK', color: '#e11d48' },
-];
+const AVATAR_PALETTE = ['#0284c7', '#059669', '#d97706', '#e11d48', '#4f46e5'];
 
-function getOrCreateLocalIdentity(): PairUser {
-  const storageKey = 'patternforge_pair_mock_user';
-  try {
-    const existing = sessionStorage.getItem(storageKey);
-    if (existing) return JSON.parse(existing) as PairUser;
-  } catch {
-    // ignore sessionStorage error
-  }
-  const pick = MOCK_IDENTITIES[Math.floor(Math.random() * MOCK_IDENTITIES.length)];
-  const created: PairUser = {
-    userId: `usr-${Math.random().toString(36).slice(2, 7)}`,
-    name: pick.name,
-    initials: pick.initials,
-    color: pick.color,
+function buildIdentityFromAccount(
+  user: { id?: string; email?: string; user_metadata?: Record<string, unknown> } | null,
+  colorIndex = 0
+): PairUser {
+  const rawName = String(
+    user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.email?.split('@')[0] ||
+      'Learner'
+  ).trim();
+  const parts = rawName.split(/\s+/).filter(Boolean);
+  const initials =
+    parts.length >= 2
+      ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+      : rawName.slice(0, 2).toUpperCase() || 'LR';
+  const seedHash = (user?.id || rawName)
+    .split('')
+    .reduce((acc, ch) => acc + ch.charCodeAt(0), colorIndex);
+  return {
+    userId: user?.id || `usr-${Math.random().toString(36).slice(2, 7)}`,
+    name: rawName,
+    initials,
+    color: AVATAR_PALETTE[Math.abs(seedHash) % AVATAR_PALETTE.length],
     cursor: null,
   };
-  try {
-    sessionStorage.setItem(storageKey, JSON.stringify(created));
-  } catch {
-    // ignore
-  }
-  return created;
 }
 
 export function VisualSandbox({ curriculumModuleId }: VisualSandboxProps = {}) {
+  const { user } = useAuth();
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);
   const markSandboxSolved = usePatternForgeStore((s) => s.markSandboxSolved);
@@ -152,7 +152,11 @@ export function VisualSandbox({ curriculumModuleId }: VisualSandboxProps = {}) {
     if (typeof window === 'undefined') return `${problem.id}-pair`;
     return new URLSearchParams(window.location.search).get('room') || `${problem.id}-pair`;
   });
-  const [localUser, setLocalUser] = useState<PairUser>(() => getOrCreateLocalIdentity());
+  const [colorCycleIdx, setColorCycleIdx] = useState(0);
+  const localUser = useMemo(
+    () => buildIdentityFromAccount(user, colorCycleIdx),
+    [user, colorCycleIdx]
+  );
   const [roomUsers, setRoomUsers] = useState<PairUser[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
   const [drawMode, setDrawMode] = useState(false);
@@ -314,20 +318,7 @@ export function VisualSandbox({ curriculumModuleId }: VisualSandboxProps = {}) {
   );
 
   const cycleMockIdentity = () => {
-    const idx = MOCK_IDENTITIES.findIndex((m) => m.name === localUser.name);
-    const nextMock = MOCK_IDENTITIES[(idx + 1) % MOCK_IDENTITIES.length];
-    const nextUser: PairUser = {
-      ...localUser,
-      name: nextMock.name,
-      initials: nextMock.initials,
-      color: nextMock.color,
-    };
-    setLocalUser(nextUser);
-    try {
-      sessionStorage.setItem('patternforge_pair_mock_user', JSON.stringify(nextUser));
-    } catch {
-      // ignore
-    }
+    setColorCycleIdx((prev) => (prev + 1) % AVATAR_PALETTE.length);
   };
 
   const handleCopyRoomLink = async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ArrowUpRight,
   Briefcase,
@@ -15,6 +15,7 @@ import {
 } from '../../data/fuzzyCurriculumModules';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
 import { useSprintStore } from '../../store/useSprintStore';
+import { useAccountState } from '../../hooks/useAccountState';
 
 interface TestOutcome {
   label: string;
@@ -26,17 +27,6 @@ interface TestOutcome {
 
 const MODULE_STORAGE_KEY = 'patternforge_fuzzy_modules_done_v1';
 
-function loadCompletedModules(): string[] {
-  try {
-    const raw = window.localStorage.getItem(MODULE_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
 export function FuzzyCurriculumTrack() {
   const setActiveView = usePatternForgeStore((s) => s.setActiveView);
   const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
@@ -45,21 +35,15 @@ export function FuzzyCurriculumTrack() {
   const openTrainerForProblem = useSprintStore((s) => s.openTrainerForProblem);
 
   const [activeModId, setActiveModId] = useState<string>(FUZZY_CURRICULUM_MODULES[0].id);
-  const [completedIds, setCompletedIds] = useState<string[]>(() =>
-    typeof window !== 'undefined' ? loadCompletedModules() : []
+  const [completedIds, setCompletedIds] = useAccountState<string[]>(
+    'fuzzy-modules-completed',
+    [],
+    MODULE_STORAGE_KEY
   );
   const [codeByModule, setCodeByModule] = useState<Record<string, string>>({});
   const [testRunByModule, setTestRunByModule] = useState<
     Record<string, { outcomes: TestOutcome[]; compileError?: string; allPassed: boolean }>
   >({});
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(MODULE_STORAGE_KEY, JSON.stringify(completedIds));
-    } catch {
-      // ignore storage quota errors
-    }
-  }, [completedIds]);
 
   const mod: FuzzyCurriculumModule =
     FUZZY_CURRICULUM_MODULES.find((m) => m.id === activeModId) ?? FUZZY_CURRICULUM_MODULES[0];

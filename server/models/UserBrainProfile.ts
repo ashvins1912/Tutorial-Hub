@@ -12,6 +12,22 @@ export interface ISpacedRepetitionItem {
   twistConstraint: string;
 }
 
+export interface IActivityLogEntry {
+  date: Date;
+  kind: 'lab-complete' | 'quiz-submit' | 'problem-mastered' | 'warmup-complete' | 'state-sync';
+  label: string;
+  xp: number;
+  score?: number;
+}
+
+export interface IUserPreferences {
+  targetRole: string;
+  targetCompany: 'Google' | 'Meta' | 'Amazon' | 'Microsoft' | 'Apple' | 'Any';
+  dailyGoalMinutes: number;
+  preferredLanguage: 'python' | 'js' | 'java';
+  bio: string;
+}
+
 export interface IUserBrainProfile extends Document {
   userId: string;
   currentTier: RankTier;
@@ -21,6 +37,8 @@ export interface IUserBrainProfile extends Document {
     logicAssemblyAccuracy: number;
     paperDryRunStreak: number;
   };
+  preferences: IUserPreferences;
+  activityLog: IActivityLogEntry[];
   passedTopicQuizzes: string[];
   completedProblemIds: string[];
   completedWarmupDrills: string[];
@@ -42,6 +60,21 @@ const SpacedRepetitionItemSchema = new Schema<ISpacedRepetitionItem>(
   { _id: false }
 );
 
+const ActivityLogSchema = new Schema<IActivityLogEntry>(
+  {
+    date: { type: Date, default: Date.now },
+    kind: {
+      type: String,
+      enum: ['lab-complete', 'quiz-submit', 'problem-mastered', 'warmup-complete', 'state-sync'],
+      required: true,
+    },
+    label: { type: String, required: true },
+    xp: { type: Number, default: 10 },
+    score: { type: Number },
+  },
+  { _id: false }
+);
+
 const UserBrainProfileSchema = new Schema<IUserBrainProfile>(
   {
     userId: { type: String, required: true, unique: true, index: true },
@@ -56,6 +89,18 @@ const UserBrainProfileSchema = new Schema<IUserBrainProfile>(
       logicAssemblyAccuracy: { type: Number, min: 0, max: 100, default: 74 },
       paperDryRunStreak: { type: Number, min: 0, default: 2 },
     },
+    preferences: {
+      targetRole: { type: String, default: 'Senior Software Engineer' },
+      targetCompany: {
+        type: String,
+        enum: ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple', 'Any'],
+        default: 'Google',
+      },
+      dailyGoalMinutes: { type: Number, min: 15, max: 360, default: 60 },
+      preferredLanguage: { type: String, enum: ['python', 'js', 'java'], default: 'python' },
+      bio: { type: String, default: '' },
+    },
+    activityLog: { type: [ActivityLogSchema], default: [] },
     passedTopicQuizzes: [{ type: String }],
     completedProblemIds: [{ type: String }],
     completedWarmupDrills: [{ type: String }],

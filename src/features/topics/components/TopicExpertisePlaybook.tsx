@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   AlertTriangle,
   Award,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { CurriculumTopic } from '../types';
 import { getTopicExpertiseGuide } from '../data/topicExpertisePlaybooks';
+import { useAccountState } from '../../../hooks/useAccountState';
 
 const STORAGE_KEY = 'patternforge_topic_checkpoints_v1';
 
@@ -21,25 +22,16 @@ interface TopicExpertisePlaybookProps {
   onToggleMastered: () => void;
 }
 
-function readStoredCheckpoints(): Record<string, boolean[]> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, boolean[]>;
-  } catch {
-    return {};
-  }
-}
-
 export function TopicExpertisePlaybook({
   topic,
   isMastered,
   onToggleMastered,
 }: TopicExpertisePlaybookProps) {
   const guide = getTopicExpertiseGuide(topic);
-  const [checkedMap, setCheckedMap] = useState<Record<string, boolean[]>>(() =>
-    readStoredCheckpoints(),
+  const [checkedMap, setCheckedMap] = useAccountState<Record<string, boolean[]>>(
+    'topic-expertise-checks',
+    {},
+    STORAGE_KEY
   );
   const [copiedScript, setCopiedScript] = useState(false);
 
@@ -48,14 +40,6 @@ export function TopicExpertisePlaybook({
   const completedCount = normalizedChecks.filter(Boolean).length;
   const totalCount = guide.masteryCheckpoints.length;
   const allReady = totalCount > 0 && completedCount === totalCount;
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(checkedMap));
-    } catch {
-      // ignore localStorage quota errors
-    }
-  }, [checkedMap]);
 
   const toggleCheckpoint = (index: number) => {
     setCheckedMap((prev) => {

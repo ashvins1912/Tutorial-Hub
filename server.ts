@@ -5,12 +5,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { connectMongo, isMongoConnected } from './server/db/connectMongo';
+import { seedCatalogToDb } from './server/db/seedCatalog';
 import cognitiveRoutes from './server/routes/cognitiveRoutes';
 import problemRoutes from './server/routes/problemRoutes';
 import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
 import authRoutes from './server/routes/authRoutes';
 import userStateRoutes from './server/routes/userStateRoutes';
+import profileRoutes from './server/routes/profileRoutes';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +20,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
 async function startServer() {
   await connectMongo();
+  await seedCatalogToDb();
 
   const app = express();
   const httpServer = http.createServer(app);
@@ -27,6 +30,7 @@ async function startServer() {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/user-state', userStateRoutes);
+  app.use('/api/profile', profileRoutes);
 
   // Cognitive Brain-Training & Spaced Repetition API
   app.use('/api/cognitive', cognitiveRoutes);

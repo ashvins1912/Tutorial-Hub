@@ -22,7 +22,8 @@ export type TopView =
   | 'system-design'
   | 'revision'
   | 'skill-tree'
-  | 'schemas';
+  | 'schemas'
+  | 'profile';
 
 interface ProblemLocalProgress {
   selectedSignalId: string | null;

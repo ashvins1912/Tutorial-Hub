@@ -14,29 +14,9 @@ export interface StorageAdapter {
   setItem(key: string, value: string): void;
 }
 
-const STORAGE_KEY = 'patternforge_universal_adaptive_telemetry_v1';
-
 const memoryFallback = new Map<string, string>();
 
 export function createSafeStorageAdapter(): StorageAdapter {
-  if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
-    return {
-      getItem: (k) => {
-        try {
-          return window.localStorage.getItem(k);
-        } catch {
-          return memoryFallback.get(k) ?? null;
-        }
-      },
-      setItem: (k, v) => {
-        try {
-          window.localStorage.setItem(k, v);
-        } catch {
-          memoryFallback.set(k, v);
-        }
-      },
-    };
-  }
   return {
     getItem: (k) => memoryFallback.get(k) ?? null,
     setItem: (k, v) => {
@@ -56,7 +36,7 @@ export function getInitialTelemetryState(): AdaptiveTelemetryState {
 }
 
 export function loadTelemetryState(storage: StorageAdapter = createSafeStorageAdapter()): AdaptiveTelemetryState {
-  const raw = storage.getItem(STORAGE_KEY);
+  const raw = storage.getItem('adaptive_telemetry');
   if (!raw) return getInitialTelemetryState();
   try {
     const parsed = JSON.parse(raw) as Partial<AdaptiveTelemetryState>;
@@ -76,7 +56,7 @@ export function saveTelemetryState(
   state: AdaptiveTelemetryState,
   storage: StorageAdapter = createSafeStorageAdapter(),
 ): void {
-  storage.setItem(STORAGE_KEY, JSON.stringify(state));
+  storage.setItem('adaptive_telemetry', JSON.stringify(state));
 }
 
 interface GapDiagnosis {
@@ -227,14 +207,13 @@ function computeUnlockedTier(queue: Sm2ReviewItem[]): ProgressionTier {
  * Logs problem abandonment at a specific Socratic phase, diagnoses the exact
  * cognitive gap, and auto-queues a targeted 2-minute Micro-Drill.
  */
-export function trackProblemDrop(
+export function trackProblemDropFromState(
+  state: AdaptiveTelemetryState,
   problemId: string,
   problemTitle: string,
   domain: CognitiveDomain,
   droppedAtPhase: SocraticPhase,
-  storage: StorageAdapter = createSafeStorageAdapter(),
 ): { state: AdaptiveTelemetryState; createdDrill: MicroDrillSpec; dropRecord: DropRecord } {
-  const state = loadTelemetryState(storage);
   const now = new Date().toISOString();
   const diagnosis = diagnoseDropPhase(droppedAtPhase, domain);
 
@@ -261,7 +240,6 @@ export function trackProblemDrop(
     questions: diagnosis.questions,
   };
 
-  // Avoid duplicate active micro-drills for the exact same phase + source problem
   const filteredDrills = state.microDrills.filter(
     (d) => !(d.targetPhase === droppedAtPhase && d.sourceProblemId === problemId && !d.completed),
   );
@@ -272,28 +250,34 @@ export function trackProblemDrop(
     microDrills: [createdDrill, ...filteredDrills].slice(0, 12),
   };
 
-  saveTelemetryState(nextState, storage);
   return { state: nextState, createdDrill, dropRecord };
 }
 
-/**
- * Computes mastery score, schedules SM-2 spaced repetition review, and unlocks
- * progressive mastery tiers (Easy -> Medium -> Hard -> System Design).
- */
-export function trackProblemComplete(
+export function trackProblemDrop(
+  problemId: string,
+  problemTitle: string,
+  domain: CognitiveDomain,
+  droppedAtPhase: SocraticPhase,
+  storage: StorageAdapter = createSafeStorageAdapter(),
+): { state: AdaptiveTelemetryState; createdDrill: MicroDrillSpec; dropRecord: DropRecord } {
+  const state = loadTelemetryState(storage);
+  const res = trackProblemDropFromState(state, problemId, problemTitle, domain, droppedAtPhase);
+  saveTelemetryState(res.state, storage);
+  return res;
+}
+
+export function trackProblemCompleteFromState(
+  state: AdaptiveTelemetryState,
   problemId: string,
   problemTitle: string,
   domain: CognitiveDomain,
   hintsUsed: number,
   independent: boolean,
-  storage: StorageAdapter = createSafeStorageAdapter(),
 ): { state: AdaptiveTelemetryState; reviewItem: Sm2ReviewItem } {
-  const state = loadTelemetryState(storage);
   const now = new Date();
   const baseScore = independent ? 96 : 78;
   const masteryScore = Math.max(35, Math.min(100, baseScore - hintsUsed * 9));
 
-  // SM-2 quality mapping [0..5]
   const quality = Math.max(0, Math.min(5, Math.round(masteryScore / 20)));
   const existing = state.sm2Queue.find((item) => item.problemId === problemId);
 
@@ -346,8 +330,33 @@ export function trackProblemComplete(
     unlockedTier,
   };
 
-  saveTelemetryState(nextState, storage);
   return { state: nextState, reviewItem };
+}
+
+export function trackProblemComplete(
+  problemId: string,
+  problemTitle: string,
+  domain: CognitiveDomain,
+  hintsUsed: number,
+  independent: boolean,
+  storage: StorageAdapter = createSafeStorageAdapter(),
+): { state: AdaptiveTelemetryState; reviewItem: Sm2ReviewItem } {
+  const state = loadTelemetryState(storage);
+  const res = trackProblemCompleteFromState(state, problemId, problemTitle, domain, hintsUsed, independent);
+  saveTelemetryState(res.state, storage);
+  return res;
+}
+
+export function completeMicroDrillFromState(
+  state: AdaptiveTelemetryState,
+  drillId: string,
+): AdaptiveTelemetryState {
+  return {
+    ...state,
+    microDrills: state.microDrills.map((d) =>
+      d.id === drillId ? { ...d, completed: true } : d,
+    ),
+  };
 }
 
 export function completeMicroDrill(
@@ -355,12 +364,7 @@ export function completeMicroDrill(
   storage: StorageAdapter = createSafeStorageAdapter(),
 ): AdaptiveTelemetryState {
   const state = loadTelemetryState(storage);
-  const nextState: AdaptiveTelemetryState = {
-    ...state,
-    microDrills: state.microDrills.map((d) =>
-      d.id === drillId ? { ...d, completed: true } : d,
-    ),
-  };
+  const nextState = completeMicroDrillFromState(state, drillId);
   saveTelemetryState(nextState, storage);
   return nextState;
 }

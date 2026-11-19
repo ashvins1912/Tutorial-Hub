@@ -1,29 +1,10 @@
-import { useState } from 'react';
 import { ArrowRight, CheckCircle2, Eye, Gauge, Lock, XCircle } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
 import { ConstraintComplexityDecoder } from './ConstraintComplexityDecoder';
+import { useAccountState } from '../hooks/useAccountState';
 
-const XRAY_DECODED_KEY = 'patternforge_xray_decoded_v1';
-
-function readDecodedProblemIds(): string[] {
-  try {
-    const raw = window.localStorage.getItem(XRAY_DECODED_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveDecodedProblemIds(ids: string[]) {
-  try {
-    window.localStorage.setItem(XRAY_DECODED_KEY, JSON.stringify(ids));
-  } catch {
-    // ignore storage errors
-  }
-}
+const LEGACY_XRAY_DECODED_KEY = 'patternforge_xray_decoded_v1';
 
 interface ComplexityCheck {
   label: string;
@@ -83,7 +64,11 @@ export function ProblemXRayReader() {
   const answerPatternQuiz = usePatternForgeStore((s) => s.answerPatternQuiz);
   const setCurrentStage = usePatternForgeStore((s) => s.setCurrentStage);
 
-  const [decodedIds, setDecodedIds] = useState<string[]>(() => readDecodedProblemIds());
+  const [decodedIds, setDecodedIds] = useAccountState<string[]>(
+    'xray-decoded-constraints',
+    [],
+    LEGACY_XRAY_DECODED_KEY
+  );
 
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
   const isConstraintUnlocked = decodedIds.includes(problem.id);
@@ -93,20 +78,11 @@ export function ProblemXRayReader() {
   const nValue = Math.pow(10, progress.constraintExponent);
 
   const handleUnlockConstraints = () => {
-    setDecodedIds((prev) => {
-      if (prev.includes(problem.id)) return prev;
-      const next = [...prev, problem.id];
-      saveDecodedProblemIds(next);
-      return next;
-    });
+    setDecodedIds((prev) => (prev.includes(problem.id) ? prev : [...prev, problem.id]));
   };
 
   const handleRelockConstraints = () => {
-    setDecodedIds((prev) => {
-      const next = prev.filter((id) => id !== problem.id);
-      saveDecodedProblemIds(next);
-      return next;
-    });
+    setDecodedIds((prev) => prev.filter((id) => id !== problem.id));
   };
 
   return (

@@ -12,6 +12,7 @@ import type {
   DeepTopicContent,
   LinkedCodingProblem,
 } from '../../../core/schema/deepTopic.types';
+import { useAccountState } from '../../../hooks/useAccountState';
 
 interface MutationLadderVisualizerProps {
   topicId: string;
@@ -21,17 +22,6 @@ interface MutationLadderVisualizerProps {
 }
 
 const STORAGE_KEY = 'patternforge_solved_mutations_v1';
-
-function readSolvedIds(): string[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 /** Extracts a concise edge mutation label like "+ Circular Wrap" or "+ Negatives" from mutation text */
 function summarizeEdgeConstraint(problem: LinkedCodingProblem, index: number): string {
@@ -60,11 +50,10 @@ export function MutationLadderVisualizer({
 }: MutationLadderVisualizerProps) {
   const ladder = deepTopic.problemMutationLadder;
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [solvedIds, setSolvedIds] = useState<string[]>(() => readSolvedIds());
+  const [solvedIds] = useAccountState<string[]>('mutation-graph-solved', [], STORAGE_KEY);
 
   useEffect(() => {
     setSelectedIdx(0);
-    setSolvedIds(readSolvedIds());
   }, [topicId]);
 
   if (!ladder || ladder.length === 0) return null;

@@ -8,8 +8,8 @@ import type {
 import { VisualDiagramSynthesizer } from './VisualDiagramSynthesizer';
 import { SEED_CONCEPT_PACK } from './seedConceptPack';
 
-const CUSTOM_CONCEPTS_STORAGE_KEY = 'patternforge_custom_concepts_v1';
-const MASTERY_STORAGE_KEY = 'patternforge_engine_mastery_v1';
+export const LEGACY_CUSTOM_CONCEPTS_KEY = 'patternforge_custom_concepts_v1';
+export const LEGACY_ENGINE_MASTERY_KEY = 'patternforge_engine_mastery_v1';
 
 /**
  * Wraps any user-authored JSON/Form CustomConceptInput into a live ConceptNode
@@ -288,55 +288,17 @@ export class IntelligentLearningEngine {
   }
 }
 
-export function loadPersistedCustomSpecs(): CustomConceptInput[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(CUSTOM_CONCEPTS_STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as CustomConceptInput[];
-  } catch {
-    return [];
-  }
-}
-
-export function savePersistedCustomSpecs(specs: CustomConceptInput[]): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(CUSTOM_CONCEPTS_STORAGE_KEY, JSON.stringify(specs));
-  } catch {
-    // ignore storage errors
-  }
-}
-
-export function loadPersistedMastery(): Record<string, number> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(MASTERY_STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, number>;
-  } catch {
-    return {};
-  }
-}
-
-export function savePersistedMastery(snapshot: Record<string, number>): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(MASTERY_STORAGE_KEY, JSON.stringify(snapshot));
-  } catch {
-    // ignore storage errors
-  }
-}
-
-export function createSeededLearningEngine(): IntelligentLearningEngine {
+export function createSeededLearningEngine(
+  customSpecs: CustomConceptInput[] = [],
+  masterySnapshot: Record<string, number> = {},
+): IntelligentLearningEngine {
   const engine = new IntelligentLearningEngine();
   for (const concept of SEED_CONCEPT_PACK) {
     engine.registerOrUpgradeConcept(concept);
   }
-  const customSpecs = loadPersistedCustomSpecs();
   for (const spec of customSpecs) {
     engine.registerCustomConceptFromSpec(spec);
   }
-  engine.setMasterySnapshot(loadPersistedMastery());
+  engine.setMasterySnapshot(masterySnapshot);
   return engine;
 }

@@ -33,6 +33,7 @@ import {
 import { SortingAlgorithmLab } from './SortingAlgorithmLab';
 import { RecursionBacktrackingLab } from '../../features/recursion-lab/components/RecursionBacktrackingLab';
 import { ComplexityDepthToggle } from '../../features/visualizer/components/ComplexityDepthToggle';
+import { useAccountState } from '../../hooks/useAccountState';
 import { getAlgorithmComplexityProfile } from '../../features/visualizer/data/complexityComparisonData';
 
 type TierFilter = 'all' | 'core' | 'advanced';
@@ -54,17 +55,6 @@ const SPEEDS = [
   { label: '1×', ms: 1400 },
   { label: '2×', ms: 750 },
 ] as const;
-
-function loadImplementedIds(): string[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 function deepClone<T>(val: T): T {
   return JSON.parse(JSON.stringify(val));
@@ -107,23 +97,17 @@ export function AlgorithmsStudio({
   const [codeLang, setCodeLang] = useState<CodeLanguage>('python');
   const [copied, setCopied] = useState(false);
 
-  // Practice Implementation Lab state
-  const [implementedIds, setImplementedIds] = useState<string[]>(() =>
-    typeof window !== 'undefined' ? loadImplementedIds() : []
+  // Practice Implementation Lab state (DB-persisted)
+  const [implementedIds, setImplementedIds] = useAccountState<string[]>(
+    'algorithms-implemented',
+    [],
+    STORAGE_KEY
   );
   const [userCodeByAlgo, setUserCodeByAlgo] = useState<Record<string, string>>({});
   const [testResultsByAlgo, setTestResultsByAlgo] = useState<
     Record<string, { results: TestCaseRunResult[]; compileError?: string; allPassed: boolean }>
   >({});
   const detailSectionRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(implementedIds));
-    } catch {
-      // ignore storage quota issues
-    }
-  }, [implementedIds]);
 
   const coreCount = useMemo(
     () => ALGORITHMS_CATALOG.filter((a) => CORE_ALGORITHM_CATEGORIES.includes(a.category)).length,

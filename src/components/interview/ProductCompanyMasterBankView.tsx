@@ -17,6 +17,7 @@ import {
   MASTER_13_TOPIC_BANK,
   PRODUCT_COMPANY_HIGH_YIELD,
 } from '../../data/productCompanyMasterBank';
+import { useAccountState } from '../../hooks/useAccountState';
 
 const SOLVED_STORAGE_KEY = 'patternforge_product_master95_solved_v1';
 
@@ -50,29 +51,14 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [collapsedTopics, setCollapsedTopics] = useState<Record<string, boolean>>({});
 
-  const [solvedIds, setSolvedIds] = useState<string[]>(() => {
-    try {
-      const raw = window.localStorage.getItem(SOLVED_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {
-      // ignore storage errors
-    }
-    return [];
-  });
+  const [solvedIds, setSolvedIds] = useAccountState<string[]>(
+    'product-company-solved',
+    [],
+    SOLVED_STORAGE_KEY
+  );
 
   const toggleSolved = (id: string) => {
-    setSolvedIds((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      try {
-        window.localStorage.setItem(SOLVED_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // ignore storage errors
-      }
-      return next;
-    });
+    setSolvedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const totalMasterCount = useMemo(

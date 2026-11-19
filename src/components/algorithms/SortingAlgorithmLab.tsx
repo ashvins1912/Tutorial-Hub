@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart3,
+  Check,
+  Code2,
+  Copy,
   Flame,
   Pause,
   Play,
@@ -15,10 +18,13 @@ import {
   buildMergeSortTrace,
   buildQuickSortTrace,
   generatePresetArray,
+  SORTING_CODE_SPECS,
   SortAlgorithmKey,
   SortStepFrame,
   SortTrace,
 } from './sortingEngine';
+import { usePatternForgeStore } from '../../store/usePatternForgeStore';
+import type { CodeLanguage } from '../../types/dsa';
 
 type LabMode = 'race' | 'single';
 
@@ -344,9 +350,212 @@ function RaceComparisonChart({
   );
 }
 
+const CODE_LANGS: { id: CodeLanguage; label: string }[] = [
+  { id: 'python', label: 'Python' },
+  { id: 'js', label: 'JavaScript' },
+  { id: 'java', label: 'Java' },
+];
+
+function SortingCodeLevelPanel({
+  algorithm,
+  frame,
+  lang,
+  onChangeLang,
+  onSelectAlgorithm,
+  showAlgoTabs = false,
+}: {
+  algorithm: SortAlgorithmKey;
+  frame: SortStepFrame;
+  lang: CodeLanguage;
+  onChangeLang: (l: CodeLanguage) => void;
+  onSelectAlgorithm?: (a: SortAlgorithmKey) => void;
+  showAlgoTabs?: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+  const spec = SORTING_CODE_SPECS[algorithm];
+  const lines = spec.code[lang];
+  const activeLines = new Set(spec.highlightLines[lang][frame.codePhase] ?? []);
+  const varEntries = Object.entries(frame.vars ?? {});
+
+  const handleCopy = () => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+    void navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    });
+  };
+
+  return (
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 text-xs text-sky-700 dark:text-sky-400 font-medium">
+            <Code2 className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Code-Level Execution Sync</span>
+            <span aria-hidden="true" className="text-slate-400">
+              ·
+            </span>
+            <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
+              Step {frame.step}
+            </span>
+          </div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {spec.title}
+          </h3>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {showAlgoTabs && onSelectAlgorithm && (
+            <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
+              {(
+                [
+                  { id: 'bubble', label: 'Bubble' },
+                  { id: 'merge', label: 'Merge' },
+                  { id: 'quick', label: 'Quick' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => onSelectAlgorithm(tab.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+                    algorithm === tab.id
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
+            {CODE_LANGS.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => onChangeLang(l.id)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                  lang === l.id
+                    ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-sky-500 whitespace-nowrap"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                Copy
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Complexity & Property Metadata Strip */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono tabular-nums text-slate-600 dark:text-slate-400 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <span>
+          Best <strong className="text-slate-900 dark:text-slate-100">{spec.bestCase}</strong>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>
+          Avg <strong className="text-slate-900 dark:text-slate-100">{spec.averageCase}</strong>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>
+          Worst <strong className="text-slate-900 dark:text-slate-100">{spec.worstCase}</strong>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>
+          Space <strong className="text-slate-900 dark:text-slate-100">{spec.space}</strong>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>{spec.stable ? 'Stable' : 'Unstable'}</span>
+        <span aria-hidden="true">·</span>
+        <span>{spec.inPlace ? 'In-Place' : 'Auxiliary Buffer'}</span>
+      </div>
+
+      {/* Live Highlighted Source Code */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-x-auto">
+        <pre className="py-2.5 text-xs font-mono leading-relaxed">
+          {lines.map((line, idx) => {
+            const lineNum = idx + 1;
+            const isActive = activeLines.has(lineNum);
+            return (
+              <div
+                key={lineNum}
+                className={`px-3 py-0.5 flex items-baseline gap-3 transition-colors ${
+                  isActive
+                    ? 'bg-sky-100/90 dark:bg-sky-900/40 text-slate-950 dark:text-sky-100 font-semibold'
+                    : 'text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <span className="w-6 text-right select-none tabular-nums text-[11px] text-slate-400 dark:text-slate-500 shrink-0">
+                  {lineNum}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`w-2.5 shrink-0 text-[11px] ${
+                    isActive ? 'text-sky-600 dark:text-sky-400' : 'text-transparent'
+                  }`}
+                >
+                  ▸
+                </span>
+                <code className="whitespace-pre">{line}</code>
+              </div>
+            );
+          })}
+        </pre>
+      </div>
+
+      {/* Live Variable Watch + Loop Invariant */}
+      <div className="space-y-2.5 text-xs">
+        {varEntries.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono tabular-nums text-slate-600 dark:text-slate-400">
+            <span className="font-sans font-semibold text-slate-900 dark:text-slate-100">
+              Live Variables:
+            </span>
+            {varEntries.map(([k, v]) => (
+              <span key={k}>
+                {k}=<strong className="text-sky-700 dark:text-sky-300">{String(v)}</strong>
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+          <strong className="text-slate-900 dark:text-slate-100">Loop Invariant:</strong>{' '}
+          {spec.invariant}
+        </p>
+        <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+          <strong className="text-slate-800 dark:text-slate-200">Interview Note:</strong>{' '}
+          {spec.interviewTip}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export function SortingAlgorithmLab() {
+  const storeLang = usePatternForgeStore((s) => s.activeLanguage);
+  const setStoreLang = usePatternForgeStore((s) => s.setActiveLanguage);
   const [labMode, setLabMode] = useState<LabMode>('race');
   const [selectedAlgo, setSelectedAlgo] = useState<SortAlgorithmKey>('quick');
+  const [raceCodeAlgo, setRaceCodeAlgo] = useState<SortAlgorithmKey>('quick');
   const [arraySize, setArraySize] = useState(14);
   const [preset, setPreset] = useState<ArrayPresetKey>('random');
   const [seed, setSeed] = useState(42);
@@ -584,94 +793,144 @@ export function SortingAlgorithmLab() {
         </div>
       </section>
 
-      {/* Race Mode: 3 Side-by-Side Live Tracks */}
+      {/* Race Mode: 3 Side-by-Side Live Tracks + Synchronized Code View */}
       {labMode === 'race' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {raceCards.map(({ key, trace, accent }) => {
-            const frame = trace.frames[Math.min(step, trace.frames.length - 1)];
-            const finished = step >= trace.frames.length - 1;
-            return (
-              <div
-                key={key}
-                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className={`text-xs font-mono font-bold ${accent}`}>
-                      {trace.complexity} · Space {trace.space}
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {raceCards.map(({ key, trace, accent }) => {
+              const frame = trace.frames[Math.min(step, trace.frames.length - 1)];
+              const finished = step >= trace.frames.length - 1;
+              return (
+                <div
+                  key={key}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className={`text-xs font-mono font-bold ${accent}`}>
+                        {trace.complexity} · Space {trace.space}
+                      </div>
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {trace.name}
+                      </h3>
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {trace.name}
-                    </h3>
+                    <span
+                      className={`text-[11px] font-mono font-semibold tabular-nums ${
+                        finished
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {finished
+                        ? `Done (${trace.frames.length - 1} steps)`
+                        : `Step ${frame.step}/${trace.frames.length - 1}`}
+                    </span>
                   </div>
-                  <span
-                    className={`text-[11px] font-mono font-semibold tabular-nums ${
-                      finished
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {finished
-                      ? `Done (${trace.frames.length - 1} steps)`
-                      : `Step ${frame.step}/${trace.frames.length - 1}`}
-                  </span>
+
+                  <SortBarsCanvas frame={frame} compact />
+
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-300 tabular-nums">
+                    <span>Comparisons: {frame.comparisons}</span>
+                    <span>Swaps/Writes: {frame.swaps}</span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug min-h-[2.25rem]">
+                    {frame.note}
+                  </p>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setRaceCodeAlgo(key)}
+                      className={`font-medium transition-colors ${
+                        raceCodeAlgo === key
+                          ? 'text-sky-700 dark:text-sky-400 font-semibold'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {raceCodeAlgo === key ? 'Showing code below' : 'Sync code below'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedAlgo(key);
+                        setLabMode('single');
+                      }}
+                      className="font-semibold text-slate-800 dark:text-slate-200 hover:text-sky-700 dark:hover:text-sky-400 whitespace-nowrap"
+                    >
+                      Inspect Full Code →
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <SortBarsCanvas frame={frame} compact />
-
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-300 tabular-nums">
-                  <span>Comparisons: {frame.comparisons}</span>
-                  <span>Swaps/Writes: {frame.swaps}</span>
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug min-h-[2.25rem]">
-                  {frame.note}
-                </p>
-              </div>
-            );
-          })}
+          <SortingCodeLevelPanel
+            algorithm={raceCodeAlgo}
+            frame={
+              traces[raceCodeAlgo].frames[
+                Math.min(step, traces[raceCodeAlgo].frames.length - 1)
+              ]
+            }
+            lang={storeLang}
+            onChangeLang={setStoreLang}
+            onSelectAlgorithm={setRaceCodeAlgo}
+            showAlgoTabs
+          />
         </div>
       ) : (
-        /* Single Algorithm Deep Inspector */
-        <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5">
-              {(
-                [
-                  { id: 'bubble', label: 'Bubble Sort · O(n²)' },
-                  { id: 'merge', label: 'Merge Sort · O(n log n)' },
-                  { id: 'quick', label: 'Quick Sort · O(n log n)' },
-                ] as const
-              ).map((algo) => (
-                <button
-                  key={algo.id}
-                  type="button"
-                  onClick={() => setSelectedAlgo(algo.id)}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
-                    selectedAlgo === algo.id
-                      ? 'border-sky-600 bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
-                >
-                  {algo.label}
-                </button>
-              ))}
+        /* Single Algorithm Deep Inspector: Visual Bars + Live Synchronized Code Side-by-Side */
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
+          <section className="xl:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(
+                  [
+                    { id: 'bubble', label: 'Bubble Sort · O(n²)' },
+                    { id: 'merge', label: 'Merge Sort · O(n log n)' },
+                    { id: 'quick', label: 'Quick Sort · O(n log n)' },
+                  ] as const
+                ).map((algo) => (
+                  <button
+                    key={algo.id}
+                    type="button"
+                    onClick={() => setSelectedAlgo(algo.id)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                      selectedAlgo === algo.id
+                        ? 'border-sky-600 bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {algo.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-xs font-mono text-slate-600 dark:text-slate-300 tabular-nums">
+                Step {activeSingleFrame.step} / {activeSingleTrace.frames.length - 1} · Comparisons{' '}
+                <strong>{activeSingleFrame.comparisons}</strong> · Swaps/Writes{' '}
+                <strong>{activeSingleFrame.swaps}</strong>
+              </div>
             </div>
 
-            <div className="text-xs font-mono text-slate-600 dark:text-slate-300 tabular-nums">
-              Step {activeSingleFrame.step} / {activeSingleTrace.frames.length - 1} · Comparisons{' '}
-              <strong>{activeSingleFrame.comparisons}</strong> · Swaps/Writes{' '}
-              <strong>{activeSingleFrame.swaps}</strong>
+            <SortBarsCanvas frame={activeSingleFrame} />
+
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 text-xs text-slate-700 dark:text-slate-300">
+              <strong className="text-slate-900 dark:text-slate-100">Active Step:</strong>{' '}
+              {activeSingleFrame.note}
             </div>
-          </div>
+          </section>
 
-          <SortBarsCanvas frame={activeSingleFrame} />
-
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 text-xs text-slate-700 dark:text-slate-300">
-            <strong className="text-slate-900 dark:text-slate-100">Active Step:</strong>{' '}
-            {activeSingleFrame.note}
+          <div className="xl:col-span-6">
+            <SortingCodeLevelPanel
+              algorithm={selectedAlgo}
+              frame={activeSingleFrame}
+              lang={storeLang}
+              onChangeLang={setStoreLang}
+            />
           </div>
-        </section>
+        </div>
       )}
 
       {/* Real-Time Comparison & Asymptotic Complexity Chart */}

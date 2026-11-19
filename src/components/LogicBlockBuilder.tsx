@@ -26,27 +26,9 @@ import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
 import { CodeLanguage, LogicBlock, PipelineSlotId, ProblemDefinition } from '../types/dsa';
 import { ActiveRecallCodeEditor } from './ActiveRecallCodeEditor';
+import { useAccountState } from '../hooks/useAccountState';
 
-const RECALL_UNLOCKED_STORAGE_KEY = 'patternforge_logic_recall_unlocked_v1';
-
-function readUnlockedRecallProblems(): string[] {
-  try {
-    const raw = window.localStorage.getItem(RECALL_UNLOCKED_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeUnlockedRecallProblems(ids: string[]) {
-  try {
-    window.localStorage.setItem(RECALL_UNLOCKED_STORAGE_KEY, JSON.stringify(ids));
-  } catch {
-    // ignore storage errors
-  }
-}
+const LEGACY_RECALL_UNLOCKED_KEY = 'patternforge_logic_recall_unlocked_v1';
 
 /**
  * Builds the full optimal code template string and selects 2-3 critical
@@ -274,8 +256,10 @@ export function LogicBlockBuilder() {
   const setCurrentStage = usePatternForgeStore((s) => s.setCurrentStage);
 
   const [stepFeedback, setStepFeedback] = useState<string | null>(null);
-  const [unlockedRecallIds, setUnlockedRecallIds] = useState<string[]>(() =>
-    readUnlockedRecallProblems(),
+  const [unlockedRecallIds, setUnlockedRecallIds] = useAccountState<string[]>(
+    'active-recall-unlocked',
+    [],
+    LEGACY_RECALL_UNLOCKED_KEY
   );
 
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
@@ -289,20 +273,11 @@ export function LogicBlockBuilder() {
   );
 
   const handleUnlockOptimalRecall = () => {
-    setUnlockedRecallIds((prev) => {
-      if (prev.includes(problem.id)) return prev;
-      const next = [...prev, problem.id];
-      writeUnlockedRecallProblems(next);
-      return next;
-    });
+    setUnlockedRecallIds((prev) => (prev.includes(problem.id) ? prev : [...prev, problem.id]));
   };
 
   const handleRelockOptimalRecall = () => {
-    setUnlockedRecallIds((prev) => {
-      const next = prev.filter((id) => id !== problem.id);
-      writeUnlockedRecallProblems(next);
-      return next;
-    });
+    setUnlockedRecallIds((prev) => prev.filter((id) => id !== problem.id));
   };
 
   // Shuffle distractors and valid blocks cleanly in recall mode or normal order

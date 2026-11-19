@@ -18,31 +18,9 @@ import type {
   LinkedCodingProblem,
   TopicGraphLinkage,
 } from '../../../core/schema/deepTopic.types';
+import { useAccountState } from '../../../hooks/useAccountState';
 
 const STORAGE_KEY = 'patternforge_solved_mutations_v1';
-
-function readSolvedIds(): string[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveSolvedId(problemId: string): string[] {
-  const current = new Set(readSolvedIds());
-  current.add(problemId);
-  const next = Array.from(current);
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // ignore storage errors in restricted iframes
-  }
-  return next;
-}
 
 function normalizeCode(str: string): string {
   return str
@@ -124,7 +102,11 @@ export function ProblemMutationGraph({
 }: ProblemMutationGraphProps) {
   const problems = deepTopic.problemMutationLadder;
   const [activeProblemIdx, setActiveProblemIdx] = useState(0);
-  const [solvedIds, setSolvedIds] = useState<string[]>(() => readSolvedIds());
+  const [solvedIds, setSolvedIds] = useAccountState<string[]>(
+    'mutation-graph-solved',
+    [],
+    STORAGE_KEY
+  );
   const [blankInputs, setBlankInputs] = useState<string[]>([]);
   const [focusedBlankIdx, setFocusedBlankIdx] = useState(0);
   const [revealedHints, setRevealedHints] = useState<Record<number, boolean>>({});
@@ -194,8 +176,9 @@ export function ProblemMutationGraph({
     const allCorrect = perBlank.every(Boolean);
     setCheckResult({ checked: true, perBlank, allCorrect });
     if (allCorrect) {
-      const updated = saveSolvedId(activeProblem.problemId);
-      setSolvedIds(updated);
+      setSolvedIds((prev) =>
+        prev.includes(activeProblem.problemId) ? prev : [...prev, activeProblem.problemId]
+      );
       onSolvedMutation?.();
     }
   };

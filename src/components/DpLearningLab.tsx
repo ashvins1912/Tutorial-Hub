@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Code2, Lightbulb, RotateCcw } from 'lucide-react';
+import { useAccountState } from '../hooks/useAccountState';
 
 type Lesson = { title: string; idea: string; state: string; recurrence: string; base: string; order: string; complexity: string; java: string; checkpoint: string };
 const lessons: Lesson[] = [
@@ -41,24 +42,18 @@ export function DpLearningLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [stair, setStair] = useState(6);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [completed, setCompleted] = useState<string[]>(() => {
-    try { return JSON.parse(window.localStorage.getItem('patternforge-dp-practice-v1') || '[]') as string[]; } catch { return []; }
-  });
+  const [completed, setCompleted] = useAccountState<string[]>(
+    'dp-practice-completed',
+    [],
+    'patternforge-dp-practice-v1'
+  );
   const [filter, setFilter] = useState('All');
   const lesson = lessons[lessonIndex];
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
   const visibleProblems = problems.filter((p) => filter === 'All' || p[0] === filter);
   const toggle = (item: string) =>
-    setCompleted((old) => {
-      const next = old.includes(item) ? old.filter((x) => x !== item) : [...old, item];
-      try {
-        window.localStorage.setItem('patternforge-dp-practice-v1', JSON.stringify(next));
-      } catch {
-        /* keep session progress */
-      }
-      return next;
-    });
+    setCompleted((old) => (old.includes(item) ? old.filter((x) => x !== item) : [...old, item]));
   return <section className="space-y-5">
     <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 text-white sm:p-8">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-300"><Lightbulb className="h-4 w-4" /> Interactive DP learning path</div>

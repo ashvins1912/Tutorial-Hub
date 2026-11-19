@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Compass,
@@ -17,10 +17,10 @@ import {
 } from 'lucide-react';
 import {
   createSeededLearningEngine,
-  loadPersistedCustomSpecs,
-  savePersistedCustomSpecs,
-  savePersistedMastery,
+  LEGACY_CUSTOM_CONCEPTS_KEY,
+  LEGACY_ENGINE_MASTERY_KEY,
 } from '../../../core/intelligent-engine/IntelligentLearningEngine';
+import { useAccountState } from '../../../hooks/useAccountState';
 import type {
   CustomConceptInput,
   DiagramType,
@@ -47,7 +47,25 @@ const DIFFICULTIES: ('AUTO' | DifficultyTier)[] = [
 
 export function IntelligentEngineStudio() {
   const [engine] = useState(() => createSeededLearningEngine());
+  const [customSpecs, setCustomSpecs] = useAccountState<CustomConceptInput[]>(
+    'engine-custom-concepts',
+    [],
+    LEGACY_CUSTOM_CONCEPTS_KEY,
+  );
+  const [masterySnapshot, setMasterySnapshot] = useAccountState<Record<string, number>>(
+    'engine-concept-mastery',
+    {},
+    LEGACY_ENGINE_MASTERY_KEY,
+  );
   const [registryVersion, setRegistryVersion] = useState(0);
+
+  useEffect(() => {
+    for (const spec of customSpecs) {
+      engine.registerCustomConceptFromSpec(spec);
+    }
+    engine.setMasterySnapshot(masterySnapshot);
+    setRegistryVersion((v) => v + 1);
+  }, [engine, customSpecs, masterySnapshot]);
   const [query, setQuery] = useState('');
   const [selectedConceptId, setSelectedConceptId] = useState<string>('ngram-two-stage-search');
   const [studioTab, setStudioTab] = useState<'diagrams' | 'practice'>('diagrams');
@@ -102,8 +120,7 @@ export function IntelligentEngineStudio() {
   };
 
   const handleRegisterCustomConcepts = (specs: CustomConceptInput[]) => {
-    const existingSpecs = loadPersistedCustomSpecs();
-    const merged = [...existingSpecs];
+    const merged = [...customSpecs];
     let lastId = selectedConceptId;
 
     for (const spec of specs) {
@@ -114,7 +131,7 @@ export function IntelligentEngineStudio() {
       else merged.push(spec);
     }
 
-    savePersistedCustomSpecs(merged);
+    setCustomSpecs(merged);
     setRegistryVersion((v) => v + 1);
     setSelectedConceptId(lastId);
     generateFreshProblem(lastId, difficultyMode);
@@ -129,7 +146,7 @@ export function IntelligentEngineStudio() {
 
   const handleRecordOutcome = (completed: boolean) => {
     const updated = engine.recordAttempt(selectedConceptId, completed, hintsUsedCount);
-    savePersistedMastery(engine.getMasterySnapshot());
+    setMasterySnapshot(engine.getMasterySnapshot());
     setRegistryVersion((v) => v + 1);
     setAttemptBanner(
       completed
