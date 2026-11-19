@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -46,6 +46,8 @@ import { AdaptiveCoachPanel } from './AdaptiveCoachPanel';
 
 interface UniversalSolverStudioProps {
   onOpenCurriculumTopic?: (topicId: string) => void;
+  externalProblem?: { id: string; title: string; statement: string } | null;
+  onConsumeExternalProblem?: () => void;
 }
 
 const DOMAIN_LABELS: Record<CognitiveDomain, string> = {
@@ -60,6 +62,8 @@ type MobilePane = 'problem' | 'builder' | 'visualizer' | 'code';
 
 export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   onOpenCurriculumTopic,
+  externalProblem,
+  onConsumeExternalProblem,
 }) => {
   const [selectedSampleId, setSelectedSampleId] = useState<string>(SAMPLE_PROBLEMS[0].id);
   const [problemInput, setProblemInput] = useState<string>(SAMPLE_PROBLEMS[0].statement);
@@ -78,6 +82,23 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   const [revealedPhases, setRevealedPhases] = useState<SocraticPhase[]>(['DECONSTRUCT']);
   const [telemetry, setTelemetry] = useState(() => loadTelemetryState());
   const [toast, setToast] = useState<{ kind: 'success' | 'warn'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (externalProblem) {
+      setSelectedSampleId(externalProblem.id);
+      setProblemTitle(externalProblem.title);
+      setProblemInput(externalProblem.statement);
+      setActiveWorkspaceOverride(null);
+      setCompletedPhases([]);
+      setRevealedPhases(['DECONSTRUCT']);
+      setHintsUsed(0);
+      setToast({
+        kind: 'success',
+        text: `Loaded "${externalProblem.title}" into Universal Logic Solver.`,
+      });
+      onConsumeExternalProblem?.();
+    }
+  }, [externalProblem, onConsumeExternalProblem]);
 
   const analysis = useMemo(() => analyzeProblemStatement(problemInput), [problemInput]);
 

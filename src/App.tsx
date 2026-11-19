@@ -46,6 +46,7 @@ import { AlgorithmMatcherModal } from './components/AlgorithmMatcherModal';
 import { CurriculumWorkbench } from './features/topics/components/CurriculumWorkbench';
 import { PatternRecognitionQuizModal } from './features/quiz/components/PatternRecognitionQuizModal';
 import { UniversalSolverStudio } from './features/solver-studio/UniversalSolverStudio';
+import { ProductCompanyMasterBankView } from './components/interview/ProductCompanyMasterBankView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -79,7 +80,14 @@ export default function App() {
   const [scratchpadOpen, setScratchpadOpen] = useState(false);
   const [srtbotOpen, setSrtbotOpen] = useState(false);
   const [matcherOpen, setMatcherOpen] = useState(false);
-  const [bankSubTab, setBankSubTab] = useState<'bigtech48' | 'highroi45' | 'skilltree'>('bigtech48');
+  const [solverExternalProblem, setSolverExternalProblem] = useState<{
+    id: string;
+    title: string;
+    statement: string;
+  } | null>(null);
+  const [bankSubTab, setBankSubTab] = useState<
+    'product-master' | 'bigtech48' | 'highroi45' | 'skilltree'
+  >('product-master');
   const [hubSubTab, setHubSubTab] = useState<HubSubTab>('notes');
 
   const activeProblem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
@@ -221,6 +229,8 @@ export default function App() {
       {activeView === 'solver' ? (
         <main className="flex-1 w-full">
           <UniversalSolverStudio
+            externalProblem={solverExternalProblem}
+            onConsumeExternalProblem={() => setSolverExternalProblem(null)}
             onOpenCurriculumTopic={(topicId) => {
               setJumpTopicId(topicId);
               setWorkspaceMode('curriculum');
@@ -407,6 +417,7 @@ export default function App() {
                 <>
                   <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
                     {[
+                      { id: 'product-master' as const, label: 'Product Co. 75 & Master 95' },
                       { id: 'bigtech48' as const, label: 'Topic & Company Bank (48)' },
                       { id: 'highroi45' as const, label: '45 High-ROI Sheet' },
                       { id: 'skilltree' as const, label: 'Noob-to-Pro Skill Tree' },
@@ -426,6 +437,19 @@ export default function App() {
                     ))}
                   </div>
 
+                  {bankSubTab === 'product-master' && (
+                    <ProductCompanyMasterBankView
+                      onAnalyzeInSolver={(prob) => {
+                        setSolverExternalProblem(prob);
+                        setActiveView('solver');
+                      }}
+                      onOpenCurriculumTopic={(topicId) => {
+                        setJumpTopicId(topicId);
+                        setWorkspaceMode('curriculum');
+                        setActiveView('workspace');
+                      }}
+                    />
+                  )}
                   {bankSubTab === 'bigtech48' && <TopicPatternExplorer />}
                   {bankSubTab === 'highroi45' && <ProblemBank45View />}
                   {bankSubTab === 'skilltree' && <NoobToProSkillTree />}

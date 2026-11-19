@@ -23,8 +23,10 @@ import {
   BuildingBlockItem,
 } from '../data/recursionLabData';
 import { RecursionBacktrackingVisualizer } from './RecursionBacktrackingVisualizer';
+import { CallStackVisualizer } from './CallStackVisualizer';
 
 export { RecursionBacktrackingVisualizer } from './RecursionBacktrackingVisualizer';
+export { CallStackVisualizer } from './CallStackVisualizer';
 
 function DraggableLogicCard({
   block,
@@ -197,7 +199,7 @@ export function RecursionBacktrackingLab({
   onOpenCurriculumModule?: (topicId: 'backtracking' | 'recursion-divide-conquer') => void;
   activeCurriculumTopicId?: string;
 }) {
-  const [section, setSection] = useState<'stack' | 'blocks'>('stack');
+  const [section, setSection] = useState<'call-stack' | 'tree-board' | 'blocks'>('call-stack');
 
   // Building blocks challenge state
   const [challengeId, setChallengeId] = useState<string>(BUILDING_BLOCKS_CHALLENGES[0].id);
@@ -269,20 +271,32 @@ export function RecursionBacktrackingLab({
 
   return (
     <div className="space-y-4">
-      {/* Sub-mode Toggle: Call Stack Depth Visualizer vs Building Blocks Challenge */}
+      {/* Sub-mode Toggle: Call Stack Visualizer vs Tree & Board Visualizer vs Building Blocks Challenge */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 w-fit">
+        <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 w-fit">
           <button
             type="button"
-            onClick={() => setSection('stack')}
+            onClick={() => setSection('call-stack')}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-              section === 'stack'
+              section === 'call-stack'
                 ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400'
             }`}
           >
             <Layers className="w-3.5 h-3.5 text-sky-500" aria-hidden="true" />
-            Call Stack & Tree Visualizer
+            Call Stack Visualizer
+          </button>
+          <button
+            type="button"
+            onClick={() => setSection('tree-board')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+              section === 'tree-board'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
+            SVG Tree & Board Lab
           </button>
           <button
             type="button"
@@ -294,12 +308,14 @@ export function RecursionBacktrackingLab({
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
-            Building Blocks Challenge (Base vs Recursive)
+            Building Blocks Challenge
           </button>
         </div>
       </div>
 
-      {section === 'stack' ? (
+      {section === 'call-stack' ? (
+        <CallStackVisualizer />
+      ) : section === 'tree-board' ? (
         <RecursionBacktrackingVisualizer
           onOpenCurriculumModule={onOpenCurriculumModule}
           activeCurriculumTopicId={activeCurriculumTopicId}
