@@ -34,6 +34,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'Progress cannot be persisted while the database is unavailable.' });
   const body = req.body || {};
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
+  if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
   if (body.algorithm !== undefined) {
     if (!['binary-search', 'bubble-sort'].includes(body.algorithm)) return res.status(400).json({ code: 'INVALID_ALGORITHM' });
     update.algorithm = body.algorithm;
