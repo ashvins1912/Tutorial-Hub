@@ -16,16 +16,24 @@ export function AuthGate() {
     setProfileError('');
     usePatternForgeStore.getState().resetForUser();
     useSprintStore.getState().resetForUser();
-    if (!session?.access_token) return;
-    fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    }).then(async response => {
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.message || 'Unable to initialize your account.');
-      if (active) setProfileReady(true);
-    }).catch(error => {
-      if (active) setProfileError(error instanceof Error ? error.message : 'Account setup failed.');
-    });
+
+    if (!session?.access_token) return () => { active = false; };
+
+    // PatternForge currently uses direct Supabase sessions (unlike Pharma's
+    // first-party Pharma cookie session). Keep its existing API contract, but
+    // let the shared API helper attach the latest refreshed bearer token.
+    import('../lib/apiFetch').then(({ apiFetch }) => apiFetch('/api/auth/me'))
+      .then(async response => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const code = payload.code ? ` (${payload.code})` : '';
+          throw new Error((payload.message || 'Unable to initialize your account.') + code);
+        }
+        if (active) setProfileReady(true);
+      }).catch(error => {
+        if (active) setProfileError(error instanceof Error ? error.message : 'Account setup failed.');
+      });
+
     return () => { active = false; };
   }, [session?.access_token]);
 
