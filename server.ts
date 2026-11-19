@@ -21,6 +21,7 @@ import communityRoutes from './server/routes/communityRoutes';
 import learningProgressRoutes from './server/routes/learningProgressRoutes';
 import aiAcademyProgressRoutes from './server/routes/aiAcademyProgressRoutes';
 import { AIAcademyProgress } from './server/models/AIAcademyProgress';
+import { AIAcademyRateLimit } from './server/models/AIAcademyRateLimit';
 import codeExecutionRoutes from './server/routes/codeExecutionRoutes';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
@@ -29,7 +30,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
 async function startServer() {
   await connectMongo();
-  if (isMongoConnected()) await AIAcademyProgress.init();
+  if (isMongoConnected()) await Promise.all([AIAcademyProgress.init(), AIAcademyRateLimit.init()]);
   await seedCatalogToDb();
   await seedMasterInterviewProblems();
   await seedVerifiedProblemBatches();
