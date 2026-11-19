@@ -95,7 +95,19 @@ export function InterviewProblemCatalogPanel(){
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
   const [apiUnavailable,setApiUnavailable]=useState(false);
+  const [reference,setReference]=useState<any>(null);
+  const [referenceLoading,setReferenceLoading]=useState(false);
+  const [referenceError,setReferenceError]=useState('');
   const selected=useMemo(()=>problems.find(p=>p.slug===selectedSlug)??problems[0],[problems,selectedSlug]);
+  useEffect(()=>{setReference(null);setReferenceError('');},[selectedSlug]);
+  const loadOfficialReference=async()=>{
+    if(!selected)return;
+    setReferenceLoading(true);setReferenceError('');
+    const sourceSlug=selected.title.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    try{const response=await apiFetch('/api/leetcode/problem/'+sourceSlug);if(!response.ok)throw new Error('No LeetCode source was found for this title.');const payload=await response.json();setReference(payload.problem);}
+    catch(e){setReferenceError(e instanceof Error?e.message:'Unable to load the official reference.');}
+    finally{setReferenceLoading(false);}
+  };
 
   useEffect(()=>{
     let active=true;
@@ -145,6 +157,11 @@ export function InterviewProblemCatalogPanel(){
       {selected?<div className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="text-lg font-bold">{selected.title}</h3><p className="text-xs text-slate-500 mt-1">{selected.topic} · {selected.difficulty} · {selected.slug}</p></div><span className="rounded-full border border-amber-300 px-2.5 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">{selected.authoringMetadata?.status??'Draft lesson'}</span></div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Problem brief</p><p className="text-sm leading-relaxed">{selected.statement??'Problem statement awaiting source verification.'}</p></div>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold">Official source lookup</p><p className="text-[11px] text-slate-500">Optional LeetCode statement, sample tests, hints and Java starter code when a matching slug exists.</p></div><button onClick={()=>void loadOfficialReference()} disabled={referenceLoading} className="rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-2 text-xs font-semibold disabled:opacity-50">{referenceLoading?"Loading source...":"Fetch LeetCode reference"}</button></div>
+          {referenceError&&<p className="text-xs text-amber-700">{referenceError}</p>}
+          {reference&&<div className="space-y-2 text-xs"><p className="font-semibold">{reference.title} · #{reference.questionId} · {reference.difficulty}</p><a className="text-sky-600 underline" href={"https://leetcode.com/problems/"+reference.slug+"/"} target="_blank" rel="noreferrer">Open original problem</a><details><summary className="cursor-pointer font-semibold">Statement text</summary><pre className="mt-2 whitespace-pre-wrap text-xs">{String(reference.contentHtml??"").replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/\s+/g," ").trim()}</pre></details><details><summary className="cursor-pointer font-semibold">Official sample test input</summary><pre className="mt-2 whitespace-pre-wrap">{reference.exampleTestcases||"No sample tests returned."}</pre></details><Panel title="LeetCode hints"><TextList items={reference.hints}/></Panel></div>}
+        </div>
         <div className="flex gap-1 overflow-x-auto pb-1">{STAGES.map(item=>{const Icon=item.icon;return <button key={item.id} onClick={()=>setStage(item.id)} className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${stage===item.id?'bg-sky-600 text-white':'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}><Icon className="w-3.5 h-3.5"/>{item.label}</button>;})}</div>
         <p className="text-xs text-slate-500">{STAGES.find(s=>s.id===stage)?.description}</p>
         <StageContent problem={selected} stage={stage}/>
