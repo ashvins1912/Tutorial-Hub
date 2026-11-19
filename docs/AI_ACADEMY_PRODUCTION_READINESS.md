@@ -4,7 +4,7 @@ This document describes the current Academy release boundary. It deliberately us
 
 ## Curriculum delivered in this branch
 
-The Academy now contains seven sequential phases and at least 70 structured lessons:
+The Academy now contains seven sequential phases and 68 structured lessons:
 
 1. **Foundations** — Python, numerical computing, linear algebra, probability, statistics, data contracts and reproducible pipelines.
 2. **Classical Machine Learning** — supervised and unsupervised learning, model selection, regularization, imbalance, thresholding and calibration.
