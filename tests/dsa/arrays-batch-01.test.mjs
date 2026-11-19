@@ -78,7 +78,7 @@ for (const problem of ARRAYS_BATCH_01) {
     const invocation=problem.slug==='arrays-two-sum'
       ? `int[] result = solution.twoSum(nums, Integer.parseInt(args[1])); ${javaMain}`
       : `var result = solution.${method.java}(nums); ${javaMain}`;
-    const runner=`import java.util.*; class Runner { public static void main(String[] args) { int[] nums=Arrays.stream(args[0].split(",")).mapToInt(Integer::parseInt).toArray(); Solution solution=new Solution(); ${invocation} } }`;
+    const runner=`class Runner { public static void main(String[] args) { int[] nums=java.util.Arrays.stream(args[0].split(",")).mapToInt(Integer::parseInt).toArray(); Solution solution=new Solution(); ${invocation} } }`;
     writeFileSync(path.join(javaDir,'Solution.java'),problem.stages.implement.java+'\n'+runner);
     run('javac',['Solution.java'],{cwd:javaDir});
     for (const test of vectors) {
