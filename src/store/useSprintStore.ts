@@ -181,9 +181,9 @@ export const useSprintStore = create<SprintState>((set, get) => ({
   closeMock45: () => set({ mock45Open: false, mock45DayNumber: null }),
   clearSprintBanner: () => set({ sprintBannerMessage: null }),
 
-  fetchActiveSprint: async (userId = 'learner-default') => {
+  fetchActiveSprint: async () => {
     try {
-      const res = await apiFetch(`/api/sprints/active/${encodeURIComponent(userId)}`);
+      const res = await apiFetch('/api/sprints/active');
       if (res.ok) {
         const data = await res.json();
         if (data.sprint) {
@@ -200,7 +200,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     }
   },
 
-  createSprint: async (targetCompany, dailyMinutesBudget, userId = 'learner-default') => {
+  createSprint: async (targetCompany, dailyMinutesBudget) => {
     set({ isCreatingSprint: true });
     let created: CompanySprint | null = null;
 
@@ -208,7 +208,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
       const res = await apiFetch('/api/sprints/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, targetCompany, dailyMinutesBudget }),
+        body: JSON.stringify({ targetCompany, dailyMinutesBudget }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -219,7 +219,7 @@ export const useSprintStore = create<SprintState>((set, get) => ({
     }
 
     if (!created) {
-      created = generate14DaySprint(userId, targetCompany, dailyMinutesBudget);
+      created = generate14DaySprint('local-preview', targetCompany, dailyMinutesBudget);
     }
 
     saveSprintLocal(created);
