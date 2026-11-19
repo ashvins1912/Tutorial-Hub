@@ -53,6 +53,7 @@ import { ProductCompanyMasterBankView } from './components/interview/ProductComp
 import { IntelligentEngineStudio } from './features/intelligent-engine/components/IntelligentEngineStudio';
 import { ProfileStatsView } from './components/ProfileStatsView';
 import { CommunityHubView } from './components/CommunityHubView';
+import { PublishedLessonView } from './features/intelligent-engine/components/PublishedLessonView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -276,6 +277,9 @@ export default function App() {
   };
 
   const isCurriculumFullBleed = activeView === 'workspace' && workspaceMode === 'curriculum';
+  const publishedLessonId = new URLSearchParams(window.location.search).get('lesson');
+
+  if (publishedLessonId) return <PublishedLessonView lessonId={publishedLessonId} />;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors">
