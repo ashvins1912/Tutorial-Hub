@@ -24,7 +24,7 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   const quiz = asArray(raw.quiz);
   const practiceTasks = asArray(raw.practiceTasks);
   const warnings: string[] = [];
-  const sourceUrls = new Set((sourceText.match(/https?:\\/\\/[^\\s)\\]>]+/g) || []).map((url) => url.replace(/[.,;]+$/, ''));
+  const sourceUrls = new Set((sourceText.match(/https?:\/\/[^\s)\]>]+/g) || []).map((url) => url.replace(/[.,;]+$/, ''));
   const candidateReferences = asArray(raw.references).filter((ref): ref is Record<string, unknown> => !!ref && typeof ref === 'object' && isText((ref as Record<string, unknown>).label) && isText((ref as Record<string, unknown>).url));
   const allowedReferences = candidateReferences.filter((ref) => sourceUrls.has(String(ref.url).replace(/[.,;]+$/, '')));
   if (candidateReferences.length !== allowedReferences.length) warnings.push('One or more AI-suggested references were omitted because their URLs were not present in the author-supplied source.');
