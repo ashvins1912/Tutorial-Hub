@@ -49,16 +49,20 @@ export function LoginPage() {
     if (!supabase) return;
     setBusy(true);
     setError('');
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        // Explicit post-OAuth destination. Configure this as the public app URL
-        // in Render; fall back to the current origin for local development.
-        redirectTo: (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim().replace(/\/+$/, '') || window.location.origin,
-      },
-    });
-    if (authError) {
-      setError(authError.message);
+    try {
+      // Match Pharma: use the current browser host/path, never a hard-coded
+      // production origin or a stale localhost build-time environment value.
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: { access_type: 'offline', prompt: 'select_account' },
+        },
+      });
+      if (authError) throw authError;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in could not be started.');
       setBusy(false);
     }
   }
