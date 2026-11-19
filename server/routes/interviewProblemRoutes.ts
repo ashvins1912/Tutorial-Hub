@@ -56,10 +56,15 @@ router.patch('/:slug',requireCatalogAdmin,async(req:Request,res:Response)=>{
   const update:any={};
   for(const key of allowed)if(req.body?.[key]!==undefined)update[key]=req.body[key];
   if(!Object.keys(update).length)return res.status(400).json({error:'No editable problem fields supplied.'});
-  if(update.contentStatus==='validated' && (!update.statement || !update.examples?.length || !update.constraints?.length || !update.stages?.implement || !update.stages?.practice || !update.stages?.master))
-    return res.status(400).json({error:'A problem cannot be marked validated until its statement, examples, constraints and five-stage lesson evidence are present.'});
-  const problem=await InterviewProblem.findOneAndUpdate({slug:req.params.slug},{$set:update,$setOnInsert:{updatedAt:new Date()}},{new:true,runValidators:true});
-  if(!problem)return res.status(404).json({error:'Problem not found'});
+  const current=await InterviewProblem.findOne({slug:req.params.slug});
+  if(!current)return res.status(404).json({error:'Problem not found'});
+  if(update.contentStatus==='validated') {
+    const merged={statement:update.statement??current.statement,examples:update.examples??current.examples,constraints:update.constraints??current.constraints,stages:update.stages??current.stages};
+    const stages:any=merged.stages??{};
+    if(!merged.statement || !merged.examples?.length || !merged.constraints?.length || !stages.understand || !stages.visualize || !stages.implement || !stages.practice || !stages.master)
+      return res.status(400).json({error:'A problem cannot be marked validated until its statement, examples, constraints and all five learning stages are present.'});
+  }
+  const problem=await InterviewProblem.findOneAndUpdate({slug:req.params.slug},{$set:update},{new:true,runValidators:true});
   res.json({problem});
 });
 
