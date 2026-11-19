@@ -126,6 +126,6 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
 
     {practiceTasks.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2"><h4 className="text-sm font-semibold">Practice checklist</h4>{practiceTasks.map((task, index) => <div key={index} className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={completedPracticeIds.includes("task-" + index)} onChange={(event) => setCompletedPracticeIds((currentIds) => event.target.checked ? [...currentIds, "task-" + index] : currentIds.filter((id) => id !== "task-" + index))}/>{task.title}</label><p className="mt-2 text-xs text-slate-500">{task.instructions}</p><p className="mt-1 text-xs text-slate-500">Expected outcome: {task.expectedOutcome}</p></div>)}</div>}
     <CodeExecutionLab />
-    <p className="text-[10px] text-slate-500">Progress is saved to your authenticated account when the database is configured. Code runs only through the separately configured isolated Judge0 service; this application server never evaluates submitted code.</p>
+    <p className="text-[10px] text-slate-500">Progress is saved to your authenticated account when the database is configured. The code editor is available, but arbitrary code execution is disabled on Render Free until a verified sandbox can be hosted safely.</p>
   </section>;
 }
