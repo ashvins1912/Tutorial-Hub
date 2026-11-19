@@ -67,6 +67,7 @@ export default function App() {
   const clearPromotionToast = usePatternForgeStore((s) => s.clearPromotionToast);
 
   const fetchActiveSprint = useSprintStore((s) => s.fetchActiveSprint);
+  const fetchMasteredSlugs = useSprintStore((s) => s.fetchMasteredSlugs);
   const activeTrainerSlug = useSprintStore((s) => s.activeTrainerSlug);
   const closeTrainer = useSprintStore((s) => s.closeTrainer);
   const activeRubricResult = useSprintStore((s) => s.activeRubricResult);
@@ -100,7 +101,8 @@ export default function App() {
   useEffect(() => {
     fetchBrainProfile();
     fetchActiveSprint();
-  }, [fetchBrainProfile, fetchActiveSprint]);
+    fetchMasteredSlugs();
+  }, [fetchBrainProfile, fetchActiveSprint, fetchMasteredSlugs]);
 
   const isHubView =
     activeView === 'revision' ||
