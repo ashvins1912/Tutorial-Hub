@@ -28,6 +28,12 @@ export async function executeInJudge0(input: { language: SupportedCodeLanguage; 
   const configuredProvider = (process.env.CODE_EXECUTION_PROVIDER || '').trim().toLowerCase();
   const baseUrl = (process.env.CODE_EXECUTION_BASE_URL || '').trim().replace(/\/+$/, '');
   if (configuredProvider !== 'judge0' || !baseUrl) throw new Error('CODE_EXECUTION_NOT_CONFIGURED');
+  let endpoint: URL;
+  try { endpoint = new URL(baseUrl); } catch { throw new Error('CODE_EXECUTION_ENDPOINT_INVALID'); }
+  const localDevelopmentEndpoint = process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1'].includes(endpoint.hostname);
+  if ((endpoint.protocol !== 'https:' && !localDevelopmentEndpoint) || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+    throw new Error('CODE_EXECUTION_ENDPOINT_MUST_USE_HTTPS');
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 18_000);
