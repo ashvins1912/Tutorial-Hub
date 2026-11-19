@@ -48,7 +48,14 @@ router.get('/:lessonId', async (req: Request, res: Response) => {
   const lesson = await findAccessibleLesson(req.params.lessonId, req.authUser!.id);
   if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const progress = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).lean();
-  return res.json({ progress: progress || null });
+  const latestAttempt = progress?.quizHistory?.[progress.quizHistory.length - 1];
+  const grading = latestAttempt && Array.isArray(lesson.generatedLesson?.quiz) ? {
+    score: latestAttempt.score,
+    total: latestAttempt.total,
+    accuracy: latestAttempt.accuracy,
+    correctAnswers: lesson.generatedLesson.quiz.map((question: any) => question.correctAnswer),
+  } : null;
+  return res.json({ progress: progress || null, grading });
 });
 
 router.put('/:lessonId', async (req: Request, res: Response) => {
@@ -60,6 +67,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
   let quizAccuracy: number | null = null;
   let quizScore = 0;
+  let quizGrading: { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]> } | null = null;
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
   if (body.algorithm !== undefined) {
     if (!['binary-search', 'bubble-sort'].includes(body.algorithm)) return res.status(400).json({ code: 'INVALID_ALGORITHM' });
@@ -96,6 +104,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     update.quizTotal = quiz.length;
     update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
     update.lastAnswers = normalizedAnswers;
+    quizGrading = { score: quizScore, total: quiz.length, accuracy, correctAnswers: quiz.map((question: any) => question.correctAnswer) };
   }
   if (body.completedPracticeIds !== undefined) {
     if (!Array.isArray(body.completedPracticeIds) || body.completedPracticeIds.length > 100 || body.completedPracticeIds.some((id: unknown) => typeof id !== 'string' || id.length > 100)) {
@@ -114,7 +123,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     atomicUpdate,
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   ).lean();
-  return res.json({ ok: true, progress });
+  return res.json({ ok: true, progress, grading: quizGrading });
 });
 
 router.get('/', async (req: Request, res: Response) => {
