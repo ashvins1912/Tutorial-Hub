@@ -333,3 +333,18 @@ The follow-up implementation is now on the PR branch:
 - New inventory records are explicitly `needs-authoring`. The existing 99 exact title matches remain in their existing learning sources; this implementation does not claim their five-stage content has been migrated or validated.
 
 See [Interview Problem Catalog API](INTERVIEW_PROBLEM_CATALOG_API.md) for endpoint and matching details. CI/build verification is still required before merge; no deployment was triggered.
+
+## Five-stage authoring and topic UI update — 2026-11-19
+
+- The canonical startup inventory now contains all **293 questions across 22 topics**, with 293 unique topic-scoped slugs.
+- Startup creates or safely enriches a MongoDB record for each question and generates a structured five-stage learning blueprint:
+  1. Understand — concept, goal, recognition cues, prerequisites, invariant, clarifying questions.
+  2. Visualize — diagram model, animation sequence, trace walkthrough.
+  3. Implement — brute-force, better, optimal strategy, pseudocode, and Java/JavaScript/Python implementation checklists.
+  4. Practice — progressive hints, edge cases, test-design ladder.
+  5. Master — proof strategy, complexity derivation, correctness checklist, pitfalls, interview follow-ups, quiz, and 1/3/7/14/30-day revision.
+- The Curriculum workspace now includes a topic-first 22-topic problem catalog, search, problem selection, five stage tabs, content-quality messaging, and optional per-problem LeetCode source lookup.
+- The startup import is idempotent and uses $ifNull pipeline updates so existing authored fields are preserved. A count and slug uniqueness assertion protects the 293-question inventory.
+- GitHub Actions validation passed: TypeScript type-check and Vite production build.
+
+**Content-quality limitation:** These are deterministic topic-specific lesson blueprints, not 293 fully source-verified accepted solutions. Official statements, sample I/O, numeric constraints, problem-specific Java/JavaScript/Python submissions, executable tests, and verified visual traces remain explicit evidence gaps. They are not represented as validated. The UI shows this status. No deployment was triggered.
