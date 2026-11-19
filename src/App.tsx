@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -54,7 +54,7 @@ import { IntelligentEngineStudio } from './features/intelligent-engine/component
 import { ProfileStatsView } from './components/ProfileStatsView';
 import { CommunityHubView } from './components/CommunityHubView';
 import { OodPrinciplesStudio } from './components/OodPrinciplesStudio';
-import { AIEngineeringAcademy } from './features/ai-academy/components/AIEngineeringAcademy';
+const AIEngineeringAcademy = lazy(() => import('./features/ai-academy/components/AIEngineeringAcademy').then((module) => ({ default: module.AIEngineeringAcademy })));
 import { PublishedLessonView } from './features/intelligent-engine/components/PublishedLessonView';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
@@ -549,7 +549,7 @@ export default function App() {
           )}
 
           {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
-          {activeView === 'ai-academy' && <AIEngineeringAcademy />}
+          {activeView === 'ai-academy' && <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading AI Engineering Academy…</div>}><AIEngineeringAcademy /></Suspense>}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 
