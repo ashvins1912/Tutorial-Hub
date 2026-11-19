@@ -1,0 +1,55 @@
+# Interview Problem Catalog API
+
+The catalog is MongoDB-backed and starts with the topic-wise master inventory. Inventory-only entries are deliberately marked `contentStatus: needs-authoring`; the importer does not fabricate official statements, examples, constraints, or solutions.
+
+## Endpoints
+
+- `GET /api/interview-problems?topicId=&q=&contentStatus=&page=&limit=` — paginated catalog.
+- `GET /api/interview-problems/:slug` — fetch one record.
+- `POST /api/interview-problems/upsert` — create/update with hybrid duplicate resolution.
+- `PATCH /api/interview-problems/:slug` — enrich an existing record by stable slug.
+
+Write endpoints require `x-problem-catalog-token`, configured server-side as `PROBLEM_CATALOG_ADMIN_TOKEN`. Do not expose this token to browser code.
+
+### Upsert body
+
+```json
+{
+  "title": "Longest Common Subsequence",
+  "topicId": "dynamic-programming",
+  "topic": "Dynamic Programming",
+  "difficulty": "Medium",
+  "statement": "Full verified problem statement...",
+  "examples": [{"input":"text1 = \"abcde\", text2 = \"ace\"","output":"3","explanation":"\"ace\" is the longest common subsequence."}],
+  "constraints": ["1 <= text1.length, text2.length <= 1000"],
+  "stages": {
+    "understand": {"concept":"...","prerequisites":["..."]},
+    "visualize": {"diagram":"...","animationSteps":["..."]},
+    "implement": {"bruteForce":"...","better":"...","optimal":"...","java":"...","javascript":"...","python":"..."},
+    "practice": {"hints":["..."],"testCases":[{"input":"...","expected":"..."}]},
+    "master": {"proof":"...","timeComplexity":"...","spaceComplexity":"...","quiz":["..."],"revisionDays":[1,3,7,14,30]}
+  }
+}
+```
+
+### Resolution policy
+
+1. Normalize Unicode, punctuation, case, and whitespace; exact normalized title wins.
+2. Explicit aliases are accepted only within the same topic, and only for known equivalent title variants. Related-but-different problems are stored separately in `relatedTitles` and never auto-merged.
+3. Otherwise combine token Jaccard (0.38), character trigram Dice (0.34), edit similarity (0.18), and topic agreement (0.10).
+4. Fuzzy auto-update requires confidence >= 0.96, same topic, and >= 0.08 margin over the runner-up. Explicit aliases must resolve to exactly one candidate.
+5. Scores >= 0.82 that are not safe matches return HTTP 409 with candidates for human review. Lower scores create a distinct record.
+6. Startup imports use the unique (topicId, normalizedTitle) key and `$setOnInsert`, so restarts never overwrite authored content.
+
+The startup seed contains **194 topic-specific records**: 173 previously missing entries plus 21 exact requested variants for the partial/related cases. The 21 related-title relationships are retained as metadata; only genuinely equivalent variants are aliases. Existing 99 title matches remain in their existing repository learning sources and are not falsely marked as fully authored in this new catalog.
+
+A record can only be marked `validated` after statement, examples, constraints, and implementation/practice/master stage evidence are supplied.
+
+ 
+## Five-stage lesson authoring and topic UI
+
+The startup importer generates a structured five-stage topic blueprint for all 293 records. It includes topic-specific invariant, recognition cues, brute-force/better/optimal strategy, pseudocode, visual trace guidance, progressive hints, test-design checklists, proof strategy, complexity framework, interview follow-ups, quizzes, and 1/3/7/14/30-day revision checkpoints.
+
+These deterministic blueprints are marked `draft-needs-problem-specific-verification`. They do not invent official statements, numeric constraints, sample input/output, or accepted submissions. The topic UI labels Java/JavaScript/Python material as implementation checklists rather than passing them off as runnable accepted code. A LeetCode source lookup is available per selected problem when a matching source slug exists.
+
+The Curriculum workspace includes a topic-first 22-topic catalog panel backed by `GET /api/interview-problems`, with search, problem selection, five stage tabs, source verification messaging, and quality status. Existing curriculum visualizers and progress controls remain intact.

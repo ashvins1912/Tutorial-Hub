@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, fix/api-integration]
+    branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content]
 
 jobs:
   validate:
@@ -17,9 +17,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
       - name: Install dependencies
         run: npm install
       - name: Type-check
         run: npm run lint
+      - name: Verify source-authored DSA solutions (Java, JavaScript, Python)
+        run: npm run test:dsa:arrays:01
       - name: Build frontend
         run: npm run build

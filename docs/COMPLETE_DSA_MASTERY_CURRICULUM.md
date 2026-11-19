@@ -268,3 +268,7 @@ Avoid teaching a pattern as a magic keyword. For example, sliding window require
 - All code examples compile/run against stated examples and edge cases.
 - Learners can practise in Java, JavaScript/TypeScript, and Python.
 - Curriculum has no hidden dead ends: every topic maps to lessons, practice, assessment, and revision.
+
+## Learning experience implementation guide
+
+The curriculum's five learner-facing stages, level gates, teaching scripts, visual lab contract, practice progression, reasoning prompts, quiz design, and spaced-revision protocol are specified in [DSA Learning Stage Playbook](./DSA_LEARNING_STAGE_PLAYBOOK.md). Treat that playbook as the content contract for every topic page and every curriculum stage. A topic is not complete merely because it has a title, summary, or list of links: it must provide the complete learning loop and evidence of learner understanding.

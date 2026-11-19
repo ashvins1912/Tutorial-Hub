@@ -20,6 +20,7 @@ import { RecursionBacktrackingLab } from '../../recursion-lab/components/Recursi
 import { usePatternForgeStore } from '../../../store/usePatternForgeStore';
 import { useSprintStore } from '../../../store/useSprintStore';
 import { useAccountState } from '../../../hooks/useAccountState';
+import { InterviewProblemCatalogPanel } from './InterviewProblemCatalogPanel';
 
 type PlaygroundTab = 'visualizer' | 'recursion-lab' | 'logic-builder' | 'code' | 'matcher';
 type MobilePane = 'theory' | 'playground';
@@ -322,6 +323,7 @@ export function CurriculumWorkbench({
             </section>
           </div>
         </div>
+        <InterviewProblemCatalogPanel />
       </div>
     </div>
   );
