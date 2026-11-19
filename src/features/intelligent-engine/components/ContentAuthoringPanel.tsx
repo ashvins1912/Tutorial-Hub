@@ -119,7 +119,7 @@ export function ContentAuthoringPanel() {
     }
   };
 
-  const saveStructure = async () => {
+  const updateAnalysis = (patch: Partial<AuthoringJob['analysis']>) => {\n    setSelected((current) => current ? { ...current, analysis: { ...current.analysis, ...patch } } : current);\n  };\n\n  const saveStructure = async () => {
     if (!selected) return;
     setSaving(true);
     setError('');
@@ -127,7 +127,7 @@ export function ContentAuthoringPanel() {
       const response = await apiFetch(`/api/authoring/jobs/${selected.id}/structure`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections }),
+        body: JSON.stringify({ sections, metadata: { title: selected.analysis.title, domain: selected.analysis.domain, kind: selected.analysis.kind, level: selected.analysis.level } }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Unable to save learning structure.');
@@ -200,10 +200,10 @@ export function ContentAuthoringPanel() {
                   <h3 className="font-semibold text-sm">{selected.analysis.title}</h3>
                   <span className="rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 px-2 py-1 text-[10px] font-semibold">DRAFT · REVIEW REQUIRED</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500">Domain</span><strong>{selected.analysis.domain.replaceAll('_',' ')}</strong></div>
-                  <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500">Content type</span><strong>{selected.analysis.kind.replaceAll('_',' ')}</strong></div>
-                  <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500">Level</span><strong>{selected.analysis.level}</strong></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500 mb-1">Topic domain</span><select value={selected.analysis.domain} onChange={(event) => updateAnalysis({ domain: event.target.value })} className="w-full bg-transparent font-semibold outline-none"><option value="DSA">DSA</option><option value="MACHINE_LEARNING">Machine Learning</option><option value="AI">Artificial Intelligence</option><option value="DATABASE">Database</option><option value="SYSTEM_DESIGN">System Design</option><option value="SOFTWARE_ENGINEERING">Software Engineering</option><option value="GENERAL">General / Other</option></select></label>
+                  <label className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500 mb-1">Content type</span><select value={selected.analysis.kind} onChange={(event) => updateAnalysis({ kind: event.target.value })} className="w-full bg-transparent font-semibold outline-none"><option value="algorithm">Algorithm</option><option value="coding_problem">Coding problem</option><option value="concept">Concept</option><option value="model">Model</option><option value="architecture">Architecture</option><option value="database_concept">Database concept</option><option value="case_study">Case study</option><option value="tutorial">Tutorial</option><option value="question_bank">Question bank</option><option value="custom">Custom</option></select></label>
+                  <label className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500 mb-1">Learning level</span><select value={selected.analysis.level} onChange={(event) => updateAnalysis({ level: event.target.value })} className="w-full bg-transparent font-semibold outline-none"><option value="undetermined">Choose level</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option><option value="expert">Expert</option></select></label>
                   <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-2"><span className="block text-slate-500">Detection confidence</span><strong>{Math.round(selected.analysis.confidence * 100)}% heuristic</strong></div>
                 </div>
                 <div className="text-xs"><span className="text-slate-500">Suggested visuals: </span>{selected.analysis.recommendedVisualizations.join(' · ')}</div>
