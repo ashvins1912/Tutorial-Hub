@@ -10,6 +10,7 @@ import problemRoutes from './server/routes/problemRoutes';
 import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
 import authRoutes from './server/routes/authRoutes';
+import userStateRoutes from './server/routes/userStateRoutes';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,6 +26,7 @@ async function startServer() {
   app.use(express.json());
 
   app.use('/api/auth', authRoutes);
+  app.use('/api/user-state', userStateRoutes);
 
   // Cognitive Brain-Training & Spaced Repetition API
   app.use('/api/cognitive', cognitiveRoutes);
@@ -38,10 +40,14 @@ async function startServer() {
   app.use('/api/sprints', sprintRoutes);
 
   app.get('/api/health', (_req, res) => {
-    res.json({
-      ok: true,
+    const databaseReady = isMongoConnected();
+    const production = process.env.NODE_ENV === 'production';
+    const status = databaseReady || !production ? 200 : 503;
+    res.status(status).json({
+      ok: databaseReady || !production,
       service: 'patternforge-dsa',
-      storageMode: isMongoConnected() ? 'mongodb' : 'in-memory',
+      storageMode: databaseReady ? 'mongodb' : 'in-memory',
+      databaseReady,
       pairWs: '/ws/pair',
     });
   });

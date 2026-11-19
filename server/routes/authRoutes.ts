@@ -38,6 +38,7 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
         passedTopicQuizzes: [],
         completedProblemIds: [],
         completedWarmupDrills: [],
+        masteredProblemSlugs: [],
         spacedRepetitionQueue: [],
       },
     },

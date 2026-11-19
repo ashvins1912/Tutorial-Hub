@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CompleteDsaCourse } from './CompleteDsaCourse';
+import { useAccountState } from '../hooks/useAccountState';
 import { Search, CheckCircle2, Circle, BookOpen, Target, Brain, Filter } from 'lucide-react';
 import { COMPLETE_DSA_ROADMAP, DSA_LEVELS, LESSON_FLOW, MASTERY_CHECKLIST, type DsaLevel, type DsaRoadmapTopic } from '../data/completeDsaRoadmap';
 
@@ -10,22 +11,13 @@ const levelStyles: Record<DsaLevel, string> = {
   Advanced: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
   Expert: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
 };
-const storageKey = 'patternforge-dsa-roadmap-v1';
 type Progress = Record<string, { completed: boolean; gates: string[] }>;
-
-function loadProgress(): Progress {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    return raw ? JSON.parse(raw) as Progress : {};
-  } catch { return {}; }
-}
 
 export function CompleteDsaRoadmap() {
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'All' | DsaLevel>('All');
   const [activeTopicId, setActiveTopicId] = useState(COMPLETE_DSA_ROADMAP[0].id);
-  const [progress, setProgress] = useState<Progress>(loadProgress);
+  const [progress, setProgress] = useAccountState<Progress>('dsa-roadmap-progress', {});
   const activeTopic = COMPLETE_DSA_ROADMAP.find((item) => item.id === activeTopicId) ?? COMPLETE_DSA_ROADMAP[0];
 
   const filtered = useMemo(() => {
@@ -40,7 +32,6 @@ export function CompleteDsaRoadmap() {
   const completedCount = Object.values(progress).filter((item) => item.completed).length;
   const persist = (next: Progress) => {
     setProgress(next);
-    try { window.localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* in-memory fallback */ }
   };
   const toggleGate = (topic: DsaRoadmapTopic, gate: string) => {
     const current = progress[topic.id] ?? { completed: false, gates: [] };

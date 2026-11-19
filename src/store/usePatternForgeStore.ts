@@ -142,6 +142,7 @@ export interface PatternForgeState {
   answerBottleneck: (optionId: string) => void;
 
   // Polya Reflect + Backend Cognitive Sync
+  resetForUser: () => void;
   fetchBrainProfile: () => Promise<void>;
   submitFeynmanReflection: (choiceId: string) => Promise<void>;
   openTopicQuiz: (topicId: string) => Promise<void>;
@@ -516,10 +517,19 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
       };
     }),
 
+  resetForUser: () => set({
+    brainProfile: INITIAL_BRAIN_PROFILE,
+    isLoadingProfile: false,
+    promotionToast: null,
+    problemProgress: initialProgressMap,
+    activeTopicQuiz: null,
+    quizModalOpen: false,
+  }),
+
   fetchBrainProfile: async () => {
     set({ isLoadingProfile: true });
     try {
-      const res = await apiFetch('/api/cognitive/profile/learner-default');
+      const res = await apiFetch('/api/cognitive/profile');
       if (res.ok) {
         const data = await res.json();
         if (data.profile) {
@@ -559,7 +569,6 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: state.brainProfile.userId,
           problemId: problem.id,
           problemTitle: problem.title,
           patternTag: problem.patternName,
@@ -612,7 +621,6 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: state.brainProfile.userId,
           topicId: quiz.topicId,
           answers,
         }),

@@ -1,17 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useAccountState } from '../hooks/useAccountState';
 import { ExternalLink, Search, Target, Trophy, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { LEETCODE_75_CATEGORIES, LEETCODE_75_PROBLEMS, leetCode75Url, type LeetCode75Difficulty } from '../data/leetcode75';
 
 type Status = 'Not started' | 'In progress' | 'Solved';
 type Progress = Record<number, { status: Status; notes: string }>;
-const STORAGE_KEY = 'patternforge-leetcode75-progress-v1';
-function readProgress(): Progress {
-  if (typeof window === 'undefined') return {};
-  try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}') as Progress; } catch { return {}; }
-}
-
 export function LeetCode75Track() {
-  const [progress, setProgress] = useState<Progress>(readProgress);
+  const [progress, setProgress] = useAccountState<Progress>('leetcode75-progress', {});
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All categories');
   const [difficulty, setDifficulty] = useState<'All' | LeetCode75Difficulty>('All');
@@ -31,7 +26,6 @@ export function LeetCode75Track() {
     const current = progress[number] ?? { status: 'Not started' as Status, notes: '' };
     const next = { ...progress, [number]: { ...current, ...patch } };
     setProgress(next);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
   const active = LEETCODE_75_PROBLEMS.find((problem) => problem.number === activeNumber);
 

@@ -7,6 +7,15 @@ import { isMongoConnected } from '../db/connectMongo';
 
 const router = express.Router();
 router.use(requireAuth);
+router.use((_req: Request, res: Response, next: import('express').NextFunction) => {
+  if (process.env.NODE_ENV === 'production' && !isMongoConnected()) {
+    return res.status(503).json({
+      code: 'DATABASE_UNAVAILABLE',
+      message: 'Persistent learning storage is temporarily unavailable. Please retry shortly.',
+    });
+  }
+  return next();
+});
 
 const RANK_ORDER: RankTier[] = ['Noob', 'Apprentice', 'Practitioner', 'Strategist', 'Pro'];
 
@@ -140,8 +149,8 @@ function evaluateRankPromotion(profile: UserBrainProfileType): boolean {
   return false;
 }
 
-// GET /api/cognitive/profile/:userId
-router.get('/profile/:userId', async (req: Request, res: Response) => {
+// GET /api/cognitive/profile — identity comes from the verified access token
+router.get('/profile', async (req: Request, res: Response) => {
   const userId = req.authUser!.id;
   const profile = await getOrCreateProfile(userId);
   res.json({ profile });
@@ -299,7 +308,19 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
   });
 });
 
-router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
+router.get('/notes', async (req: Request, res: Response) => {
+  const userId = req.authUser!.id;
+  if (isMongoConnected()) {
+    const doc = await UserBrainProfileModel.findOne({ userId }).select('notes');
+    const notes = doc?.notes instanceof Map
+      ? Object.fromEntries(doc.notes.entries())
+      : doc?.notes ?? {};
+    return res.json({ notes });
+  }
+  return res.json({ notes: notesStore.get(userId) ?? {} });
+});
+
+router.get('/notes/:problemId', async (req: Request, res: Response) => {
   const { problemId } = req.params;
   const userId = req.authUser!.id;
   if (isMongoConnected()) {
@@ -314,7 +335,12 @@ router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
 router.post('/notes', async (req: Request, res: Response) => {
   const { problemId, note = '' } = req.body ?? {};
   const userId = req.authUser!.id;
-  if (!problemId) return res.status(400).json({ error: 'problemId is required' });
+  if (typeof problemId !== 'string' || !/^[a-zA-Z0-9_-]{1,120}$/.test(problemId)) {
+    return res.status(400).json({ error: 'A valid problemId is required' });
+  }
+  if (typeof note !== 'string' || note.length > 20000) {
+    return res.status(400).json({ error: 'Note must be text up to 20,000 characters' });
+  }
 
   if (isMongoConnected()) {
     await getOrCreateProfile(userId);
@@ -329,6 +355,27 @@ router.post('/notes', async (req: Request, res: Response) => {
   existing[problemId] = note;
   notesStore.set(userId, existing);
   return res.json({ ok: true, problemId, note });
+});
+
+// GET /api/cognitive/mastered-problems
+router.get('/mastered-problems', async (req: Request, res: Response) => {
+  const profile = await UserBrainProfileModel.findOne({ userId: req.authUser!.id }).select('masteredProblemSlugs');
+  return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [] });
+});
+
+// POST /api/cognitive/mastered-problems
+router.post('/mastered-problems', async (req: Request, res: Response) => {
+  const { problemSlug } = req.body ?? {};
+  if (typeof problemSlug !== 'string' || !/^[a-z0-9-]{2,120}$/.test(problemSlug)) {
+    return res.status(400).json({ error: 'A valid problemSlug is required' });
+  }
+  await getOrCreateProfile(req.authUser!.id);
+  const profile = await UserBrainProfileModel.findOneAndUpdate(
+    { userId: req.authUser!.id },
+    { $addToSet: { masteredProblemSlugs: problemSlug } },
+    { new: true, projection: { masteredProblemSlugs: 1 } }
+  );
+  return res.json({ masteredProblemSlugs: profile?.masteredProblemSlugs ?? [problemSlug] });
 });
 
 router.post('/warmup/complete', async (req: Request, res: Response) => {

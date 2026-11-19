@@ -15,6 +15,15 @@ import { requireAuth } from '../middleware/requireAuth';
 
 const router = express.Router();
 router.use(requireAuth);
+router.use((_req: Request, res: Response, next: import('express').NextFunction) => {
+  if (process.env.NODE_ENV === 'production' && !isMongoConnected()) {
+    return res.status(503).json({
+      code: 'DATABASE_UNAVAILABLE',
+      message: 'Persistent sprint storage is temporarily unavailable. Please retry shortly.',
+    });
+  }
+  return next();
+});
 
 // In-memory store fallback when MONGODB_URI is not set
 const activeSprintByUser = new Map<string, CompanySprintType>();
@@ -85,8 +94,8 @@ router.post('/create', async (req: Request, res: Response) => {
   return res.status(201).json({ sprint });
 });
 
-// GET /api/sprints/active/:userId
-router.get('/active/:userId', async (req: Request, res: Response) => {
+// GET /api/sprints/active — identity comes from the verified access token
+router.get('/active', async (req: Request, res: Response) => {
   const userId = req.authUser!.id;
 
   let sprint: CompanySprintType | null = null;
@@ -124,6 +133,11 @@ router.get('/active/:userId', async (req: Request, res: Response) => {
 router.patch('/:sprintId/complete-task', async (req: Request, res: Response) => {
   const { sprintId } = req.params;
   const { dayNumber, taskId, scoreEarned = 90 } = req.body ?? {};
+  if (!Number.isInteger(Number(dayNumber)) || Number(dayNumber) < 1 || Number(dayNumber) > 14 ||
+      typeof taskId !== 'string' || taskId.length > 120 ||
+      !Number.isFinite(Number(scoreEarned)) || Number(scoreEarned) < 0 || Number(scoreEarned) > 100) {
+    return res.status(400).json({ error: 'Valid dayNumber, taskId and scoreEarned (0-100) are required' });
+  }
 
   if (isMongoConnected()) {
     const doc = await CompanySprintModel.findOne({ _id: sprintId, userId: req.authUser!.id });
@@ -139,7 +153,7 @@ router.patch('/:sprintId/complete-task', async (req: Request, res: Response) => 
     if (!task) return res.status(404).json({ error: 'Sprint task not found' });
 
     task.isCompleted = true;
-    task.scoreEarned = Math.max(task.scoreEarned, Number(scoreEarned) || 90);
+    task.scoreEarned = Math.max(task.scoreEarned, Math.min(100, Math.max(0, Number(scoreEarned))));
 
     const allDayTasksComplete = dayObj.tasks.every((t: ISprintTask) => t.isCompleted);
     let unlockedNextDay = false;
@@ -182,7 +196,7 @@ router.patch('/:sprintId/complete-task', async (req: Request, res: Response) => 
   }
 
   task.isCompleted = true;
-  task.scoreEarned = Math.max(task.scoreEarned, Number(scoreEarned) || 90);
+  task.scoreEarned = Math.max(task.scoreEarned, Math.min(100, Math.max(0, Number(scoreEarned))));
 
   const allDayTasksComplete = dayObj.tasks.every((t) => t.isCompleted);
   let unlockedNextDay = false;

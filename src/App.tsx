@@ -14,6 +14,7 @@ import {
 import { usePatternForgeStore, TopView } from './store/usePatternForgeStore';
 import { useSprintStore } from './store/useSprintStore';
 import { useAuth } from './auth/AuthContext';
+import { apiFetch } from './lib/apiFetch';
 import { PROBLEMS } from './data/problems';
 import { BIG_TECH_36_PROBLEMS } from '../server/seed/bigTechTopicSeed';
 import { MasteryStepper } from './components/MasteryStepper';
@@ -67,6 +68,7 @@ export default function App() {
   const clearPromotionToast = usePatternForgeStore((s) => s.clearPromotionToast);
 
   const fetchActiveSprint = useSprintStore((s) => s.fetchActiveSprint);
+  const fetchMasteredSlugs = useSprintStore((s) => s.fetchMasteredSlugs);
   const activeTrainerSlug = useSprintStore((s) => s.activeTrainerSlug);
   const closeTrainer = useSprintStore((s) => s.closeTrainer);
   const activeRubricResult = useSprintStore((s) => s.activeRubricResult);
@@ -100,7 +102,42 @@ export default function App() {
   useEffect(() => {
     fetchBrainProfile();
     fetchActiveSprint();
-  }, [fetchBrainProfile, fetchActiveSprint]);
+    fetchMasteredSlugs();
+  }, [fetchBrainProfile, fetchActiveSprint, fetchMasteredSlugs]);
+
+  useEffect(() => {
+    let hydrated = false;
+    let saveTimer: number | undefined;
+    const unsubscribe = usePatternForgeStore.subscribe((state, previous) => {
+      if (!hydrated || state.problemProgress === previous.problemProgress) return;
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(() => {
+        void apiFetch('/api/user-state/problem-progress', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ value: state.problemProgress }),
+        }).catch(() => {});
+      }, 500);
+    });
+
+    apiFetch('/api/user-state/problem-progress')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load saved problem progress.');
+        const payload = await response.json();
+        if (payload.value && typeof payload.value === 'object') {
+          usePatternForgeStore.setState({ problemProgress: payload.value });
+        }
+        hydrated = true;
+      })
+      .catch(() => {
+        // Do not overwrite server state when it could not be loaded.
+      });
+
+    return () => {
+      unsubscribe();
+      window.clearTimeout(saveTimer);
+    };
+  }, []);
 
   const isHubView =
     activeView === 'revision' ||
