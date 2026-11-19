@@ -23,6 +23,7 @@ function hasCompleteLesson(body:any):boolean {
   const stages=body?.stages??{};
   const implementation=stages.implement??{};
   const checks=body?.authoringMetadata?.qualityChecks??{};
+  const authoringStatus=body?.authoringMetadata?.status;
   const requiredChecks=['statement','examples','constraints','java','javascript','python','tests','animation','complexity'];
   const sourceReference=body?.source?.reference;
   return typeof body?.statement==='string' && body.statement.trim().length>40 &&
@@ -34,7 +35,7 @@ function hasCompleteLesson(body:any):boolean {
     Array.isArray(stages.practice?.testCases) && stages.practice.testCases.length>0 &&
     Array.isArray(stages.visualize?.animationSteps) && stages.visualize.animationSteps.length>=4 &&
     typeof stages.master?.proof==='string' && !!stages.master.timeComplexity && !!stages.master.spaceComplexity &&
-    requiredChecks.every((key:string)=>checks[key]===true);
+    authoringStatus==='validated' && requiredChecks.every((key:string)=>checks[key]===true);
 }
 
 // GET /api/interview-problems?topicId=&q=&contentStatus=&page=&limit=
