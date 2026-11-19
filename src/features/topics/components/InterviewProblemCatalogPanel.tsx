@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { apiFetch } from '../../../lib/apiFetch';
 import { BookOpen, Brain, CheckCircle2, Code2, Compass, FlaskConical, Loader2, Search, Sparkles } from 'lucide-react';
 
@@ -31,7 +32,7 @@ function TextList({items}:{items?:any[]}) {
   if(!items?.length)return <p className="text-xs text-slate-500">Not authored yet.</p>;
   return <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">{items.map((item,i)=><li key={i}>{typeof item==='string'?item:JSON.stringify(item)}</li>)}</ul>;
 }
-function Panel({title,children}:{title:string;children:React.ReactNode}) {
+function Panel({title,children}:{title:string;children:ReactNode}) {
   return <section className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2"><h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">{title}</h4>{children}</section>;
 }
 function StageContent({problem,stage}:{problem:ProblemRecord;stage:StageKey}) {
