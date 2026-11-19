@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import type { AuthoringStatus, ContentAnalysis, CanonicalLearningDraft } from './contentAuthoring.types';
+import type { AuthoringStatus, ContentAnalysis, CanonicalLearningDraft, GeneratedLesson, GenerationMetadata } from './contentAuthoring.types';
 
 export interface IContentAuthoringJob extends Document {
   ownerId: string;
