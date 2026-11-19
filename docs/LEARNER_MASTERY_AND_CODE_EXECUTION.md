@@ -14,7 +14,7 @@ The MongoDB `LearningProgress` collection is uniquely indexed by `userId + lesso
 - Quiz attempt count, latest score, best score, mastery band, selected answers and the latest 30 score-history entries.
 - Completed practice task identifiers and last activity timestamp.
 
-The server derives mastery bands from quiz accuracy: below 50% = beginner, 50–79% = intermediate, 80%+ = advanced. The client cannot set the mastery score directly. Every database query is scoped to the authenticated Supabase user ID. The progress API fails closed with HTTP 503 when MongoDB is unavailable; it does not silently pretend that in-memory state is persistent.
+The server derives mastery bands from quiz accuracy: below 50% = beginner, 50–79% = intermediate, 80%+ = advanced. The client cannot set the mastery score directly: the API loads the owned lesson's stored quiz answer key and grades submitted selections server-side. Quiz history retains the latest 30 attempts. Every database query is scoped to the authenticated Supabase user ID. The progress API fails closed with HTTP 503 when MongoDB is unavailable; it does not silently pretend that in-memory state is persistent.
 
 ## Phase 6: Secure multi-language code execution
 
