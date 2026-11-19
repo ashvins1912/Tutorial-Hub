@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -15,14 +15,95 @@ import {
   CheckCircle2,
   Code2,
   GripVertical,
+  Lock,
   Play,
   Plus,
   Trash2,
+  Unlock,
   Wand2,
 } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
-import { CodeLanguage, LogicBlock, PipelineSlotId } from '../types/dsa';
+import { CodeLanguage, LogicBlock, PipelineSlotId, ProblemDefinition } from '../types/dsa';
+import { ActiveRecallCodeEditor } from './ActiveRecallCodeEditor';
+
+const RECALL_UNLOCKED_STORAGE_KEY = 'patternforge_logic_recall_unlocked_v1';
+
+function readUnlockedRecallProblems(): string[] {
+  try {
+    const raw = window.localStorage.getItem(RECALL_UNLOCKED_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeUnlockedRecallProblems(ids: string[]) {
+  try {
+    window.localStorage.setItem(RECALL_UNLOCKED_STORAGE_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+/**
+ * Builds the full optimal code template string and selects 2-3 critical
+ * line indices (from init, loop, and update blocks) for Active Recall.
+ */
+function buildOptimalRecallSpec(problem: ProblemDefinition, lang: CodeLanguage) {
+  const sig = problem.functionSignature[lang];
+  const slotOrder: PipelineSlotId[] = ['init', 'loop', 'update'];
+  const allLines: string[] = [sig.header];
+  const blankIndices: number[] = [];
+  const hints: string[] = [];
+
+  const isSubstantiveLine = (line: string) => {
+    const t = line.trim();
+    return t.length >= 6 && t !== '{' && t !== '}' && !t.startsWith('//') && !t.startsWith('#');
+  };
+
+  for (const slotId of slotOrder) {
+    const block = problem.blocks.find((b) => b.mode === 'optimal' && b.targetSlot === slotId);
+    if (!block) continue;
+    const blockLines = block.code[lang];
+    const startIdx = allLines.length;
+    allLines.push(...blockLines);
+
+    // Pick the single most meaningful line in this block for Active Recall
+    const candidateOffsets = blockLines
+      .map((line, offset) => ({ line, offset }))
+      .filter(({ line }) => isSubstantiveLine(line));
+
+    if (candidateOffsets.length > 0 && blankIndices.length < 3) {
+      // Prefer the core operation line (second substantive line if available in update, otherwise first)
+      const chosen =
+        slotId === 'update' && candidateOffsets.length > 1
+          ? candidateOffsets[Math.min(1, candidateOffsets.length - 1)]
+          : candidateOffsets[0];
+      blankIndices.push(startIdx + chosen.offset);
+      hints.push(`${block.label} — ${block.summary}`);
+    }
+  }
+
+  for (const fLine of sig.footer.split('\n')) {
+    allLines.push(fLine);
+  }
+
+  const distractorLines = problem.blocks
+    .filter((b) => b.mode === 'distractor')
+    .flatMap((b) => b.code[lang])
+    .filter(isSubstantiveLine)
+    .slice(0, 2);
+
+  return {
+    codeTemplate: allLines.join('\n'),
+    blankIndices,
+    hints,
+    distractorLines,
+  };
+}
 
 const SLOTS: { id: PipelineSlotId; title: string; prompt: string }[] = [
   { id: 'init', title: 'Piece 1: Initialize State', prompt: 'Drop variables or data structures here' },
@@ -193,10 +274,36 @@ export function LogicBlockBuilder() {
   const setCurrentStage = usePatternForgeStore((s) => s.setCurrentStage);
 
   const [stepFeedback, setStepFeedback] = useState<string | null>(null);
+  const [unlockedRecallIds, setUnlockedRecallIds] = useState<string[]>(() =>
+    readUnlockedRecallProblems(),
+  );
 
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
   const mode = progress.pipelineMode;
   const currentPlaced = progress.placedBlocks[mode];
+  const isOptimalUnlocked = unlockedRecallIds.includes(problem.id);
+
+  const optimalRecallSpec = useMemo(
+    () => buildOptimalRecallSpec(problem, activeLanguage),
+    [problem, activeLanguage],
+  );
+
+  const handleUnlockOptimalRecall = () => {
+    setUnlockedRecallIds((prev) => {
+      if (prev.includes(problem.id)) return prev;
+      const next = [...prev, problem.id];
+      writeUnlockedRecallProblems(next);
+      return next;
+    });
+  };
+
+  const handleRelockOptimalRecall = () => {
+    setUnlockedRecallIds((prev) => {
+      const next = prev.filter((id) => id !== problem.id);
+      writeUnlockedRecallProblems(next);
+      return next;
+    });
+  };
 
   // Shuffle distractors and valid blocks cleanly in recall mode or normal order
   const paletteBlocks = problem.blocks.filter(
@@ -448,25 +555,54 @@ export function LogicBlockBuilder() {
             </div>
           </div>
 
-          {/* Right Panel: Synchronized Multi-Language Code Viewer */}
+          {/* Right Panel: Synchronized Multi-Language Code Viewer (Active Recall Gated in Optimal Mode) */}
           <div className="lg:col-span-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Code2 className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Synchronized Code
+                  {mode === 'optimal' && !isOptimalUnlocked
+                    ? 'Optimal Active Recall Gate'
+                    : 'Synchronized Code'}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setCompareAllLanguages(!compareAllLanguages)}
-                className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
-              >
-                {compareAllLanguages ? 'Single Tab View' : 'Compare All 3'}
-              </button>
+
+              {mode === 'optimal' && isOptimalUnlocked ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRelockOptimalRecall}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap shrink-0"
+                  >
+                    <Lock className="w-3 h-3" aria-hidden="true" />
+                    Re-lock Recall
+                  </button>
+                  <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+                  <button
+                    type="button"
+                    onClick={() => setCompareAllLanguages(!compareAllLanguages)}
+                    className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
+                  >
+                    {compareAllLanguages ? 'Single Tab View' : 'Compare All 3'}
+                  </button>
+                </div>
+              ) : mode === 'brute' ? (
+                <button
+                  type="button"
+                  onClick={() => setCompareAllLanguages(!compareAllLanguages)}
+                  className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
+                >
+                  {compareAllLanguages ? 'Single Tab View' : 'Compare All 3'}
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400">
+                  <Lock className="w-3 h-3" aria-hidden="true" />
+                  Fill {optimalRecallSpec.blankIndices.length} lines
+                </span>
+              )}
             </div>
 
-            {!compareAllLanguages && (
+            {(!compareAllLanguages || (mode === 'optimal' && !isOptimalUnlocked)) && (
               <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
                 {(['python', 'js', 'java'] as CodeLanguage[]).map((lang) => (
                   <button
@@ -485,21 +621,51 @@ export function LogicBlockBuilder() {
               </div>
             )}
 
-            <div className="space-y-3">
-              {compareAllLanguages ? (
-                <>
-                  {renderCodePanel('python')}
-                  {renderCodePanel('js')}
-                  {renderCodePanel('java')}
-                </>
-              ) : (
-                renderCodePanel(activeLanguage)
-              )}
-            </div>
+            {mode === 'optimal' && !isOptimalUnlocked ? (
+              <ActiveRecallCodeEditor
+                codeTemplate={optimalRecallSpec.codeTemplate}
+                blankIndices={optimalRecallSpec.blankIndices}
+                languageLabel={
+                  activeLanguage === 'java'
+                    ? 'Solution.java'
+                    : activeLanguage === 'js'
+                      ? 'solution.js'
+                      : 'solution.py'
+                }
+                complexityLabel={problem.targetBigO}
+                hints={optimalRecallSpec.hints}
+                distractorLines={optimalRecallSpec.distractorLines}
+                resetKey={`${problem.id}-${activeLanguage}`}
+                isUnlocked={isOptimalUnlocked}
+                onUnlockOptimal={handleUnlockOptimalRecall}
+                onRelock={handleRelockOptimalRecall}
+              />
+            ) : (
+              <>
+                {mode === 'optimal' && isOptimalUnlocked && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/60 dark:bg-emerald-950/25 text-xs text-emerald-800 dark:text-emerald-300 font-medium">
+                    <Unlock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span>Active Recall verified — Optimal solution unlocked across all 3 languages.</span>
+                  </div>
+                )}
 
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Hover any block or code line to synchronize highlighting across Java, JavaScript, and Python.
-            </p>
+                <div className="space-y-3">
+                  {compareAllLanguages ? (
+                    <>
+                      {renderCodePanel('python')}
+                      {renderCodePanel('js')}
+                      {renderCodePanel('java')}
+                    </>
+                  ) : (
+                    renderCodePanel(activeLanguage)
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Hover any block or code line to synchronize highlighting across Java, JavaScript, and Python.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </DndContext>

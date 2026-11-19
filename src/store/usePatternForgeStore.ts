@@ -13,6 +13,7 @@ import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../../server/seed/cog
 
 export type TopView =
   | 'solver'
+  | 'knowledge-engine'
   | 'workspace'
   | 'algorithms'
   | 'fuzzy-search'

@@ -791,3 +791,36 @@ export const HIGH_ROI_45_PROBLEMS: HighRoiProblemEntry[] = [
     followUpTwist: 'Delete Operation for Two Strings removes the replace branch.',
   },
 ];
+
+const LAB_PROBLEM_ID_BY_NUMBER: Record<number, string> = {
+  1: 'two-sum',
+  3: 'longest-substring',
+  11: 'container-with-most-water',
+  15: 'three-sum',
+  20: 'valid-parentheses',
+  33: 'search-rotated-sorted-array',
+  42: 'trapping-rain-water',
+  53: 'maximum-subarray',
+  56: 'merge-intervals',
+  70: 'climbing-stairs',
+  102: 'binary-tree-level-order',
+  121: 'best-time-buy-sell-stock',
+  141: 'linked-list-cycle',
+  146: 'lru-cache',
+  198: 'house-robber',
+  200: 'number-of-islands',
+  206: 'reverse-linked-list',
+  207: 'course-schedule',
+  215: 'kth-largest-element',
+  238: 'product-except-self',
+  322: 'coin-change',
+  560: 'subarray-sum-equals-k',
+  739: 'daily-temperatures',
+};
+
+for (const entry of HIGH_ROI_45_PROBLEMS) {
+  if (!entry.labProblemId && LAB_PROBLEM_ID_BY_NUMBER[entry.number]) {
+    entry.labProblemId = LAB_PROBLEM_ID_BY_NUMBER[entry.number];
+  }
+}
+

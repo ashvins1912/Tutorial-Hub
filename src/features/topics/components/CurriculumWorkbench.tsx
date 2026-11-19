@@ -226,6 +226,14 @@ export function CurriculumWorkbench({
               onToggleMastered={() => toggleMastered(topic.id)}
               onOpenDeepLink={handleOpenDeepLink}
               onOpenProblemTrainer={handleOpenProblemTrainer}
+              onSelectTopic={(topicId) => {
+                setActiveTopicId(topicId);
+                setMobilePane('theory');
+              }}
+              onFocusPlaygroundTab={(tab) => {
+                setPlaygroundTab(tab);
+                setMobilePane('playground');
+              }}
             />
           </div>
 

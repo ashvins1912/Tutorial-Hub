@@ -120,7 +120,13 @@ export interface ProblemDefinition {
   feynmanPrompt: FeynmanPrompt;
   hasDpLadder?: boolean;
   sandboxConfig: {
-    type: 'two-sum' | 'sliding-window' | 'rain-water' | 'monotonic-stack' | 'coin-change';
+    type:
+      | 'two-sum'
+      | 'sliding-window'
+      | 'rain-water'
+      | 'monotonic-stack'
+      | 'coin-change'
+      | 'interactive-trace';
     instruction: string;
     hint: string;
     sampleArray?: number[];

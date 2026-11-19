@@ -24,6 +24,7 @@ import {
 } from '../data/recursionLabData';
 import { RecursionBacktrackingVisualizer } from './RecursionBacktrackingVisualizer';
 import { CallStackVisualizer } from './CallStackVisualizer';
+import { VisualSandbox } from '../../../components/VisualSandbox';
 
 export { RecursionBacktrackingVisualizer } from './RecursionBacktrackingVisualizer';
 export { CallStackVisualizer } from './CallStackVisualizer';
@@ -314,7 +315,7 @@ export function RecursionBacktrackingLab({
       </div>
 
       {section === 'call-stack' ? (
-        <CallStackVisualizer />
+        <VisualSandbox curriculumModuleId={activeCurriculumTopicId ?? 'backtracking'} />
       ) : section === 'tree-board' ? (
         <RecursionBacktrackingVisualizer
           onOpenCurriculumModule={onOpenCurriculumModule}

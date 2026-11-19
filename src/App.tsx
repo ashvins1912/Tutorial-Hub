@@ -49,6 +49,7 @@ import { CurriculumWorkbench } from './features/topics/components/CurriculumWork
 import { PatternRecognitionQuizModal } from './features/quiz/components/PatternRecognitionQuizModal';
 import { UniversalSolverStudio } from './features/solver-studio/UniversalSolverStudio';
 import { ProductCompanyMasterBankView } from './components/interview/ProductCompanyMasterBankView';
+import { IntelligentEngineStudio } from './features/intelligent-engine/components/IntelligentEngineStudio';
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -156,6 +157,7 @@ export default function App() {
 
   const navItems: { id: TopView; label: string; isActive: boolean }[] = [
     { id: 'solver', label: 'Logic Solver', isActive: activeView === 'solver' },
+    { id: 'knowledge-engine', label: 'Concept Engine', isActive: activeView === 'knowledge-engine' },
     { id: 'workspace', label: 'Curriculum', isActive: activeView === 'workspace' },
     { id: 'algorithms', label: 'Algorithms', isActive: activeView === 'algorithms' },
     { id: 'fuzzy-search', label: 'N-Gram Lab', isActive: activeView === 'fuzzy-search' },
@@ -303,7 +305,7 @@ export default function App() {
                     Curriculum
                   </button>
                   <label htmlFor="problem-select" className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    Active Lab:
+                    Active Lab ({PROBLEMS.length}):
                   </label>
                   <select
                     id="problem-select"
@@ -402,6 +404,8 @@ export default function App() {
               }}
             />
           )}
+
+          {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 

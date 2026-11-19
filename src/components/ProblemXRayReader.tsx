@@ -1,6 +1,29 @@
-import { ArrowRight, CheckCircle2, Eye, Gauge, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, CheckCircle2, Eye, Gauge, Lock, XCircle } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
+import { ConstraintComplexityDecoder } from './ConstraintComplexityDecoder';
+
+const XRAY_DECODED_KEY = 'patternforge_xray_decoded_v1';
+
+function readDecodedProblemIds(): string[] {
+  try {
+    const raw = window.localStorage.getItem(XRAY_DECODED_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDecodedProblemIds(ids: string[]) {
+  try {
+    window.localStorage.setItem(XRAY_DECODED_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore storage errors
+  }
+}
 
 interface ComplexityCheck {
   label: string;
@@ -60,14 +83,45 @@ export function ProblemXRayReader() {
   const answerPatternQuiz = usePatternForgeStore((s) => s.answerPatternQuiz);
   const setCurrentStage = usePatternForgeStore((s) => s.setCurrentStage);
 
+  const [decodedIds, setDecodedIds] = useState<string[]>(() => readDecodedProblemIds());
+
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
+  const isConstraintUnlocked = decodedIds.includes(problem.id);
   const activeSignal =
     problem.signals.find((sig) => sig.id === progress.selectedSignalId) ?? problem.signals[0];
 
   const nValue = Math.pow(10, progress.constraintExponent);
 
+  const handleUnlockConstraints = () => {
+    setDecodedIds((prev) => {
+      if (prev.includes(problem.id)) return prev;
+      const next = [...prev, problem.id];
+      saveDecodedProblemIds(next);
+      return next;
+    });
+  };
+
+  const handleRelockConstraints = () => {
+    setDecodedIds((prev) => {
+      const next = prev.filter((id) => id !== problem.id);
+      saveDecodedProblemIds(next);
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Step 0 Gate: Constraint-to-Complexity Decoder (Must pass before unlocking hints & patterns) */}
+      <ConstraintComplexityDecoder
+        problemId={problem.id}
+        inputSizeExponent={problem.inputSizeExponent}
+        targetBigO={problem.targetBigO}
+        bruteBigO={problem.bruteBigO}
+        isUnlocked={isConstraintUnlocked}
+        onUnlock={handleUnlockConstraints}
+        onRelock={handleRelockConstraints}
+      />
+
       {/* Top Split: Interactive Signal Reader + Signal Decoder Card */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         <div className="lg:col-span-7 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 flex flex-col justify-between">
@@ -116,21 +170,57 @@ export function ProblemXRayReader() {
           </div>
 
           <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-            <span>Pattern: {problem.patternName}</span>
+            <span>
+              Pattern:{' '}
+              {isConstraintUnlocked ? (
+                <strong className="font-semibold text-slate-800 dark:text-slate-200">
+                  {problem.patternName}
+                </strong>
+              ) : (
+                <span className="font-mono text-amber-700 dark:text-amber-400">Locked (Step 0)</span>
+              )}
+            </span>
             <span aria-hidden="true">·</span>
             <span>Brute: {problem.bruteBigO}</span>
             <span aria-hidden="true">·</span>
-            <span>Optimal: {problem.targetBigO}</span>
+            <span>
+              Optimal:{' '}
+              {isConstraintUnlocked ? (
+                <strong className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                  {problem.targetBigO}
+                </strong>
+              ) : (
+                <span className="font-mono text-amber-700 dark:text-amber-400">Decode Above</span>
+              )}
+            </span>
           </div>
         </div>
 
-        {/* Signal Decoder Inspector */}
+        {/* Signal Decoder Inspector (Gated behind Step 0 Constraint Decoder) */}
         <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 flex flex-col justify-between">
-          {activeSignal ? (
+          {!isConstraintUnlocked ? (
+            <div className="h-full flex flex-col items-center justify-center text-center py-8 px-4 space-y-3">
+              <div className="w-10 h-10 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                <Lock className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div className="space-y-1 max-w-sm">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Signal Phrase Hints Locked
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Select the expected complexity class for{' '}
+                  <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                    N ≤ 10^{problem.inputSizeExponent}
+                  </span>{' '}
+                  in Step 0 above before revealing eliminated patterns and signal clues.
+                </p>
+              </div>
+            </div>
+          ) : activeSignal ? (
             <div className="space-y-4">
               <div>
                 <p className="text-xs font-mono text-sky-600 dark:text-sky-400 mb-1">
-                  SIGNAL PHRASE DECODER
+                  Signal Phrase Decoder
                 </p>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   “{activeSignal.phrase}”
@@ -149,7 +239,7 @@ export function ProblemXRayReader() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg border border-rose-200 dark:border-rose-900/70 bg-rose-50/50 dark:bg-rose-950/20">
                   <p className="text-xs font-mono font-semibold text-rose-700 dark:text-rose-400 mb-1.5">
-                    ELIMINATED
+                    Eliminated
                   </p>
                   <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
                     {activeSignal.eliminatedPatterns.map((p) => (
@@ -160,7 +250,7 @@ export function ProblemXRayReader() {
 
                 <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/50 dark:bg-emerald-950/20">
                   <p className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 mb-1.5">
-                    TRIGGERED
+                    Triggered
                   </p>
                   <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-300">
                     {activeSignal.triggeredPatterns.map((p) => (
@@ -179,174 +269,195 @@ export function ProblemXRayReader() {
         </div>
       </div>
 
-      {/* Bottom Split: Constraint-to-Big-O Calculator + Pattern Identification Quiz */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <Gauge className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Constraint-to-Big-O Reverse Calculator
+      {/* Bottom Split: Constraint-to-Big-O Calculator + Pattern Identification Quiz (Unlocked after Step 0) */}
+      {!isConstraintUnlocked ? (
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Reverse Big-O Calculator &amp; Pattern Identification Locked
               </h3>
-            </div>
-            <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
-              Judge limit: 10^8 ops/sec
-            </span>
-          </div>
-
-          <div className="mb-5 p-3.5 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-2">
-              <label
-                htmlFor="constraint-n-slider"
-                className="text-xs font-medium text-slate-700 dark:text-slate-300"
-              >
-                Input Size (N):{' '}
-                <span className="font-mono font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
-                  N = 10^{progress.constraintExponent} ({nValue.toLocaleString()})
-                </span>
-              </label>
-              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                Problem default: 10^{problem.inputSizeExponent}
-              </span>
-            </div>
-            <input
-              id="constraint-n-slider"
-              type="range"
-              min={2}
-              max={6}
-              step={1}
-              value={progress.constraintExponent}
-              onChange={(e) => setConstraintExponent(Number(e.target.value))}
-              className="w-full accent-sky-600 cursor-pointer"
-            />
-            <div className="flex justify-between text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-1">
-              <span>10^2</span>
-              <span>10^3</span>
-              <span>10^4</span>
-              <span>10^5</span>
-              <span>10^6</span>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
+                Complete the Step 0 Constraint-to-Complexity Decoder above for{' '}
+                <span className="font-mono font-semibold">N ≤ 10^{problem.inputSizeExponent}</span>{' '}
+                to unlock the interactive operations simulator and Pattern Identification Check.
+              </p>
             </div>
           </div>
-
-          <div className="space-y-2.5">
-            {COMPLEXITIES.map((c) => {
-              const ops = c.calcOps(nValue);
-              const passes = ops <= OPS_BUDGET_PER_SEC;
-              const isBorderline = ops > 10_000_000 && ops <= OPS_BUDGET_PER_SEC;
-              return (
-                <div
-                  key={c.notation}
-                  className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {c.notation}
-                      </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {c.note}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
-                      {formatOps(ops)}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs font-mono font-semibold ${
-                        !passes
-                          ? 'text-rose-700 dark:text-rose-400'
-                          : isBorderline
-                            ? 'text-amber-700 dark:text-amber-400'
-                            : 'text-emerald-700 dark:text-emerald-400'
-                      }`}
-                    >
-                      {passes ? (
-                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      ) : (
-                        <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      )}
-                      {!passes ? 'TLE' : isBorderline ? 'TIGHT' : 'PASS'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <span className="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400 whitespace-nowrap shrink-0">
+            Step 0 Required
+          </span>
         </div>
-
-        {/* Pattern Identification Micro-Quiz */}
-        <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Pattern Identification Check
-              </h3>
-              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                {progress.quizSolved ? 'UNLOCKED' : 'SELECT PATTERN'}
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Constraint-to-Big-O Reverse Calculator
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                Judge limit: 10^8 ops/sec
               </span>
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{problem.quizPrompt}</p>
+
+            <div className="mb-5 p-3.5 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="constraint-n-slider"
+                  className="text-xs font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Input Size (N):{' '}
+                  <span className="font-mono font-semibold text-sky-700 dark:text-sky-400 tabular-nums">
+                    N = 10^{progress.constraintExponent} ({nValue.toLocaleString()})
+                  </span>
+                </label>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                  Problem default: 10^{problem.inputSizeExponent}
+                </span>
+              </div>
+              <input
+                id="constraint-n-slider"
+                type="range"
+                min={2}
+                max={6}
+                step={1}
+                value={progress.constraintExponent}
+                onChange={(e) => setConstraintExponent(Number(e.target.value))}
+                className="w-full accent-sky-600 cursor-pointer"
+              />
+              <div className="flex justify-between text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-1">
+                <span>10^2</span>
+                <span>10^3</span>
+                <span>10^4</span>
+                <span>10^5</span>
+                <span>10^6</span>
+              </div>
+            </div>
 
             <div className="space-y-2.5">
-              {problem.quizOptions.map((opt) => {
-                const selected = progress.quizOptionId === opt.id;
+              {COMPLEXITIES.map((c) => {
+                const ops = c.calcOps(nValue);
+                const passes = ops <= OPS_BUDGET_PER_SEC;
+                const isBorderline = ops > 10_000_000 && ops <= OPS_BUDGET_PER_SEC;
                 return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => answerPatternQuiz(opt.id)}
-                    className={`w-full p-3.5 rounded-lg border text-left transition-colors ${
-                      selected
-                        ? opt.isCorrect
-                          ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30'
-                          : 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-950/30'
-                    }`}
+                  <div
+                    key={c.notation}
+                    className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {opt.pattern}
-                      </span>
-                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                        {opt.dataStructure}
-                      </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {c.notation}
+                        </span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {c.note}
+                        </span>
+                      </div>
                     </div>
-                    {selected && (
-                      <p
-                        className={`mt-2 text-xs leading-relaxed font-medium ${
-                          opt.isCorrect
-                            ? 'text-emerald-700 dark:text-emerald-300'
-                            : 'text-rose-700 dark:text-rose-300'
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                        {formatOps(ops)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 text-xs font-mono font-semibold ${
+                          !passes
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : isBorderline
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-emerald-700 dark:text-emerald-400'
                         }`}
                       >
-                        {opt.isCorrect ? 'CORRECT: ' : 'NOT QUITE: '}
-                        {opt.feedback}
-                      </p>
-                    )}
-                  </button>
+                        {passes ? (
+                          <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        ) : (
+                          <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                        )}
+                        {!passes ? 'TLE' : isBorderline ? 'TIGHT' : 'PASS'}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {progress.quizSolved
-                ? 'Pattern verified. Ready to simulate manually.'
-                : 'Select the matching pattern to verify your intuition.'}
-            </span>
-            <button
-              type="button"
-              onClick={() => setCurrentStage(2)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
-            >
-              Open Visual Sandbox
-              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
+          {/* Pattern Identification Micro-Quiz */}
+          <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Pattern Identification Check
+                </h3>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                  {progress.quizSolved ? 'Unlocked' : 'Select Pattern'}
+                </span>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{problem.quizPrompt}</p>
+
+              <div className="space-y-2.5">
+                {problem.quizOptions.map((opt) => {
+                  const selected = progress.quizOptionId === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => answerPatternQuiz(opt.id)}
+                      className={`w-full p-3.5 rounded-lg border text-left transition-colors ${
+                        selected
+                          ? opt.isCorrect
+                            ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30'
+                            : 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-950/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {opt.pattern}
+                        </span>
+                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                          {opt.dataStructure}
+                        </span>
+                      </div>
+                      {selected && (
+                        <p
+                          className={`mt-2 text-xs leading-relaxed font-medium ${
+                            opt.isCorrect
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-rose-700 dark:text-rose-300'
+                          }`}
+                        >
+                          {opt.isCorrect ? 'Correct: ' : 'Not quite: '}
+                          {opt.feedback}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {progress.quizSolved
+                  ? 'Pattern verified. Ready to simulate manually.'
+                  : 'Select the matching pattern to verify your intuition.'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentStage(2)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
+              >
+                Open Visual Sandbox
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

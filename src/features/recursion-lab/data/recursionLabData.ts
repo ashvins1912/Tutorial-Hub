@@ -61,6 +61,12 @@ export interface RecursionTraceStep {
   activeCandidateIdx?: number;
   prunedFromIdx?: number;
   emittedCombinations?: number[][];
+  /** For Word Search 2D Grid DFS backtracking visualization */
+  wordGrid?: string[][];
+  targetWord?: string;
+  visitedCells?: [number, number][];
+  activeCell?: [number, number];
+  matchedPrefix?: string;
 }
 
 export interface BuildingBlockItem {

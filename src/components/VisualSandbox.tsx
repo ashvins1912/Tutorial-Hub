@@ -4,6 +4,7 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  Layers,
   RotateCcw,
   Sparkles,
   Users,
@@ -13,6 +14,18 @@ import {
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
 import { PairProgrammingCanvas } from './PairProgrammingCanvas';
+import { CallStackVisualizer } from '../features/recursion-lab/components/CallStackVisualizer';
+import {
+  generateExecutionTrace,
+  type GeneratedExecutionTrace,
+  type LiveRecursionAlgorithm,
+} from '../core/step-generators/recursionTraceMachine';
+import type { RecursionTraceStep } from '../features/recursion-lab/data/recursionLabData';
+
+export interface VisualSandboxProps {
+  /** Optional curriculum module ID; auto-enables live Recursion & Backtracking trace generation */
+  curriculumModuleId?: string;
+}
 
 interface PairUser {
   userId: string;
@@ -61,7 +74,7 @@ function getOrCreateLocalIdentity(): PairUser {
   return created;
 }
 
-export function VisualSandbox() {
+export function VisualSandbox({ curriculumModuleId }: VisualSandboxProps = {}) {
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);
   const markSandboxSolved = usePatternForgeStore((s) => s.markSandboxSolved);
@@ -69,6 +82,66 @@ export function VisualSandbox() {
 
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
   const cfg = problem.sandboxConfig;
+
+  // Recursion & Backtracking Curriculum Auto-Trace State Machine
+  const isRecursionCurriculum =
+    curriculumModuleId === 'recursion-divide-conquer' || curriculumModuleId === 'backtracking';
+  const [recursionSyncEnabled, setRecursionSyncEnabled] = useState<boolean>(isRecursionCurriculum);
+  const [recAlgorithm, setRecAlgorithm] = useState<LiveRecursionAlgorithm>(
+    curriculumModuleId === 'recursion-divide-conquer' ? 'subsets' : 'n-queens',
+  );
+  const [recBoardSize, setRecBoardSize] = useState<3 | 4>(4);
+  const [recTargetWord, setRecTargetWord] = useState<'ABCCED' | 'SEE' | 'ABCB'>('ABCCED');
+  const [recElements, setRecElements] = useState<number[]>([1, 2, 3]);
+  const [recTarget, setRecTarget] = useState<number>(6);
+  const [traceBundle, setTraceBundle] = useState<GeneratedExecutionTrace>(() =>
+    generateExecutionTrace({
+      algorithm: curriculumModuleId === 'recursion-divide-conquer' ? 'subsets' : 'n-queens',
+      boardSize: 4,
+      targetWord: 'ABCCED',
+      elements: [1, 2, 3],
+      candidates: [2, 3, 6],
+      target: 6,
+    }),
+  );
+  const [executionTrace, setExecutionTrace] = useState<RecursionTraceStep[]>(
+    () => traceBundle.executionTrace,
+  );
+  const [traceStepIndex, setTraceStepIndex] = useState<number>(0);
+
+  // Auto-enable recursion trace mode whenever user enters the Recursion & Backtracking curriculum module
+  useEffect(() => {
+    if (isRecursionCurriculum) {
+      setRecursionSyncEnabled(true);
+      setRecAlgorithm(curriculumModuleId === 'recursion-divide-conquer' ? 'subsets' : 'n-queens');
+    }
+  }, [isRecursionCurriculum, curriculumModuleId]);
+
+  // Real-time auto-generation of executionTrace from the active algorithm's state machine
+  useEffect(() => {
+    if (!recursionSyncEnabled) return;
+    const nextBundle = generateExecutionTrace({
+      algorithm: recAlgorithm,
+      boardSize: recBoardSize,
+      targetWord: recTargetWord,
+      elements: recElements,
+      candidates: [2, 3, 6],
+      target: recTarget,
+    });
+    setTraceBundle(nextBundle);
+    setExecutionTrace(nextBundle.executionTrace);
+    setTraceStepIndex(0);
+  }, [recursionSyncEnabled, recAlgorithm, recBoardSize, recTargetWord, recElements, recTarget]);
+
+  const activeTraceStep =
+    executionTrace[Math.min(traceStepIndex, Math.max(0, executionTrace.length - 1))] ?? null;
+
+  // Mark sandbox verified once learner steps onto a solution base case in live recursion mode
+  useEffect(() => {
+    if (recursionSyncEnabled && activeTraceStep?.action === 'solution') {
+      markSandboxSolved();
+    }
+  }, [recursionSyncEnabled, activeTraceStep, markSandboxSolved]);
 
   // Pair Programming WebSocket & Mock Identity state
   const [pairMode, setPairMode] = useState<boolean>(() => {
@@ -118,6 +191,13 @@ export function VisualSandbox() {
   const [ccDp, setCcDp] = useState<(number | null)[]>([0, null, null, null, null, null, null]);
   const [ccActiveAmount, setCcActiveAmount] = useState(1);
 
+  // Generic Interactive Dry-Run Trace state (used by Top 22 Lab problems)
+  const [interactiveTraceIdx, setInteractiveTraceIdx] = useState(0);
+
+  useEffect(() => {
+    setInteractiveTraceIdx(0);
+  }, [problem.id]);
+
   const applySharedSandboxState = useCallback(
     (s: any) => {
       if (!s || s.problemId !== problem.id) return;
@@ -138,6 +218,7 @@ export function VisualSandbox() {
       if (s.rwWarning !== undefined) setRwWarning(s.rwWarning);
       if (s.ccDp !== undefined) setCcDp(s.ccDp);
       if (s.ccActiveAmount !== undefined) setCcActiveAmount(s.ccActiveAmount);
+      if (s.interactiveTraceIdx !== undefined) setInteractiveTraceIdx(s.interactiveTraceIdx);
     },
     [problem.id]
   );
@@ -280,6 +361,8 @@ export function VisualSandbox() {
     setRwWarning(null);
     setCcDp([0, null, null, null, null, null, null]);
     setCcActiveAmount(1);
+    setInteractiveTraceIdx(0);
+    setTraceStepIndex(0);
 
     emitSandboxSync({
       tsMap: {},
@@ -444,15 +527,36 @@ export function VisualSandbox() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <p className="text-xs font-mono text-sky-600 dark:text-sky-400 mb-1">
-            HANDS-ON DRY-RUN SANDBOX
+            {recursionSyncEnabled
+              ? 'LIVE RECURSION STATE MACHINE · AUTO-TRACE SYNC'
+              : 'HANDS-ON DRY-RUN SANDBOX'}
           </p>
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-            Solve the Small Sample by Hand
+            {recursionSyncEnabled
+              ? 'Live Call-Stack & Backtracking Execution Sandbox'
+              : 'Solve the Small Sample by Hand'}
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{cfg.instruction}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            {recursionSyncEnabled
+              ? 'Mutate algorithm inputs below to auto-regenerate executionTrace from the live state machine and pipe frames directly into CallStackVisualizer.'
+              : cfg.instruction}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setRecursionSyncEnabled((v) => !v)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              recursionSyncEnabled
+                ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300'
+                : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" aria-hidden="true" />
+            {recursionSyncEnabled ? 'Recursion Trace Sync: ON' : 'Recursion Call-Stack Sync'}
+          </button>
+
           <button
             type="button"
             onClick={() => setPairMode((v) => !v)}
@@ -475,14 +579,16 @@ export function VisualSandbox() {
             Reset
           </button>
 
-          <button
-            type="button"
-            onClick={() => setPolyaStep('plan')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
-          >
-            Lock Loop Invariant
-            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-          </button>
+          {!isRecursionCurriculum && (
+            <button
+              type="button"
+              onClick={() => setPolyaStep('plan')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
+            >
+              Lock Loop Invariant
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -603,6 +709,269 @@ export function VisualSandbox() {
           }}
         />
 
+        {recursionSyncEnabled ? (
+          <div className="space-y-4 relative z-10">
+            {/* Live Algorithm State Machine Controls */}
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(
+                  [
+                    { id: 'n-queens', label: 'N-Queens' },
+                    { id: 'word-search', label: 'Word Search' },
+                    { id: 'subsets', label: 'Subsets' },
+                    { id: 'combination-sum', label: 'Combination Sum' },
+                    { id: 'permutations', label: 'Permutations' },
+                  ] as const
+                ).map((algo) => (
+                  <button
+                    key={algo.id}
+                    type="button"
+                    onClick={() => setRecAlgorithm(algo.id)}
+                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+                      recAlgorithm === algo.id
+                        ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+                        : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-sky-400'
+                    }`}
+                  >
+                    {algo.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Dynamic State-Machine Input Parameters */}
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                {recAlgorithm === 'n-queens' && (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400">Board N:</span>
+                    {([3, 4] as const).map((sz) => (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => setRecBoardSize(sz)}
+                        className={`px-2 py-1 rounded border text-[11px] font-semibold tabular-nums ${
+                          recBoardSize === sz
+                            ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-200'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {sz}×{sz}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {recAlgorithm === 'word-search' && (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400">Word:</span>
+                    {(['ABCCED', 'SEE', 'ABCB'] as const).map((w) => (
+                      <button
+                        key={w}
+                        type="button"
+                        onClick={() => setRecTargetWord(w)}
+                        className={`px-2 py-1 rounded border text-[11px] font-semibold ${
+                          recTargetWord === w
+                            ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-200'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        &ldquo;{w}&rdquo;
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {(recAlgorithm === 'subsets' || recAlgorithm === 'permutations') && (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400">Input:</span>
+                    {(
+                      [
+                        { label: '[1, 2]', vals: [1, 2] },
+                        { label: '[1, 2, 3]', vals: [1, 2, 3] },
+                      ] as const
+                    ).map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setRecElements([...preset.vals])}
+                        className={`px-2 py-1 rounded border text-[11px] font-semibold ${
+                          recElements.length === preset.vals.length
+                            ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-200'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {recAlgorithm === 'combination-sum' && (
+                  <>
+                    <span className="text-slate-500 dark:text-slate-400">Target:</span>
+                    {[5, 6, 7].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setRecTarget(t)}
+                        className={`px-2 py-1 rounded border text-[11px] font-semibold tabular-nums ${
+                          recTarget === t
+                            ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-200'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        T={t}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                <span className="text-slate-400">·</span>
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-400 tabular-nums font-semibold">
+                  {executionTrace.length} trace frames emitted
+                </span>
+              </div>
+            </div>
+
+            {/* Live State Snapshot Mirror (Board, Word Grid, or Active Path synced to traceStepIndex) */}
+            {activeTraceStep && (
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Synchronized State Snapshot · Step {traceStepIndex + 1}/{executionTrace.length}
+                  </div>
+                  <div className="text-xs font-mono text-slate-800 dark:text-slate-200">
+                    {recAlgorithm === 'n-queens' ? (
+                      <>
+                        Active Queens: <strong className="text-sky-700 dark:text-sky-400">[{activeTraceStep.queens?.join(', ') || 'empty'}]</strong> · Depth D{activeTraceStep.depth}
+                      </>
+                    ) : recAlgorithm === 'word-search' ? (
+                      <>
+                        Matched Prefix:{' '}
+                        <strong className="text-sky-700 dark:text-sky-400">
+                          &ldquo;{activeTraceStep.matchedPrefix || ''}&rdquo;
+                        </strong>{' '}
+                        / &ldquo;{activeTraceStep.targetWord ?? recTargetWord}&rdquo; · Active Cell{' '}
+                        <strong>
+                          ({activeTraceStep.activeCell?.[0] ?? 0},{activeTraceStep.activeCell?.[1] ?? 0})
+                        </strong>
+                      </>
+                    ) : (
+                      <>
+                        Active Path: <strong className="text-sky-700 dark:text-sky-400">[{activeTraceStep.currentPath?.join(', ') || '∅'}]</strong>
+                        {typeof activeTraceStep.remainingTarget === 'number' && (
+                          <> · Remaining: <strong className="text-amber-700 dark:text-amber-400">{activeTraceStep.remainingTarget}</strong></>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {recAlgorithm === 'n-queens' && (
+                  <div
+                    className="grid gap-1 shrink-0"
+                    style={{ gridTemplateColumns: `repeat(${recBoardSize}, minmax(0, 1fr))` }}
+                    aria-label="Synchronized N-Queens mini board"
+                  >
+                    {Array.from({ length: recBoardSize * recBoardSize }).map((_, cellIdx) => {
+                      const r = Math.floor(cellIdx / recBoardSize);
+                      const c = cellIdx % recBoardSize;
+                      const hasQueen = activeTraceStep.queens?.[r] === c;
+                      const isDark = (r + c) % 2 === 1;
+                      return (
+                        <div
+                          key={`${r}-${c}`}
+                          className={`w-7 h-7 rounded flex items-center justify-center text-xs font-mono font-bold border ${
+                            hasQueen
+                              ? 'border-emerald-500 bg-emerald-500 text-white'
+                              : isDark
+                                ? 'border-slate-200 dark:border-slate-700 bg-slate-200/70 dark:bg-slate-800 text-slate-400'
+                                : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-400'
+                          }`}
+                        >
+                          {hasQueen ? 'Q' : ''}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {recAlgorithm === 'word-search' && activeTraceStep.wordGrid && (
+                  <div
+                    className="grid gap-1 shrink-0"
+                    style={{ gridTemplateColumns: `repeat(${activeTraceStep.wordGrid[0].length}, minmax(0, 1fr))` }}
+                    aria-label="Synchronized Word Search 3x4 grid"
+                  >
+                    {activeTraceStep.wordGrid.flatMap((row, r) =>
+                      row.map((ch, c) => {
+                        const isHead =
+                          activeTraceStep.activeCell?.[0] === r &&
+                          activeTraceStep.activeCell?.[1] === c;
+                        const visitOrder = (activeTraceStep.visitedCells ?? []).findIndex(
+                          ([vr, vc]) => vr === r && vc === c,
+                        );
+                        const isVisited = visitOrder >= 0;
+                        return (
+                          <div
+                            key={`${r}-${c}`}
+                            className={`w-8 h-8 rounded flex flex-col items-center justify-center font-mono border text-xs font-bold leading-none ${
+                              isHead
+                                ? activeTraceStep.action === 'prune'
+                                  ? 'border-rose-500 bg-rose-500 text-white'
+                                  : activeTraceStep.action === 'solution'
+                                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                                    : 'border-sky-600 bg-sky-600 text-white'
+                                : isVisited
+                                  ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-200'
+                                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400'
+                            }`}
+                          >
+                            <span>{ch}</span>
+                            {isVisited && (
+                              <span className="text-[8px] opacity-80">D{visitOrder + 1}</span>
+                            )}
+                          </div>
+                        );
+                      }),
+                    )}
+                  </div>
+                )}
+
+                {recAlgorithm !== 'n-queens' && recAlgorithm !== 'word-search' && (
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+                    <span className="text-slate-500 dark:text-slate-400">Captured:</span>
+                    {(activeTraceStep.emittedSubsets ?? activeTraceStep.emittedCombinations ?? [])
+                      .slice(-5)
+                      .map((arr, i) => (
+                        <span
+                          key={i}
+                          className="px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300"
+                        >
+                          [{arr.join(',')}]
+                        </span>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Piped CallStackVisualizer synchronized bidirectionally with executionTrace */}
+            <CallStackVisualizer
+              externalTrace={executionTrace}
+              externalTreeNodes={traceBundle.treeNodes}
+              externalCodeLines={traceBundle.codeLines}
+              externalTitle={traceBundle.title}
+              externalComplexity={traceBundle.complexitySummary}
+              syncedStepIndex={traceStepIndex}
+              onStepIndexChange={setTraceStepIndex}
+              syncBadgeText={
+                isRecursionCurriculum
+                  ? 'Auto-Piped from Recursion Curriculum State Machine'
+                  : 'Live Synced with VisualSandbox State Machine'
+              }
+            />
+          </div>
+        ) : (
+          <>
         {cfg.type === 'two-sum' && (
           <div className="space-y-5 relative z-10">
             <div className="flex flex-wrap items-center justify-center gap-4">
@@ -860,6 +1229,110 @@ export function VisualSandbox() {
               </button>
             </div>
           </div>
+        )}
+
+        {cfg.type === 'interactive-trace' && (() => {
+          const frames = problem.raceDataset.optimalTrace;
+          const safeIdx = Math.min(interactiveTraceIdx, Math.max(0, frames.length - 1));
+          const frame = frames[safeIdx];
+          const values = problem.raceDataset.values;
+          const totalSteps = frames.length;
+
+          const pointerColorClass = (color: 'sky' | 'amber' | 'rose' | 'emerald') => {
+            if (color === 'emerald') return 'bg-emerald-600 text-white';
+            if (color === 'amber') return 'bg-amber-600 text-white';
+            if (color === 'rose') return 'bg-rose-600 text-white';
+            return 'bg-sky-600 text-white';
+          };
+
+          const handleStep = (nextIdx: number) => {
+            const clamped = Math.max(0, Math.min(totalSteps - 1, nextIdx));
+            setInteractiveTraceIdx(clamped);
+            emitSandboxSync({ interactiveTraceIdx: clamped });
+            if (clamped >= totalSteps - 1 || clamped >= 2) {
+              markSandboxSolved();
+            }
+          };
+
+          return (
+            <div className="space-y-5 relative z-10">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-600 dark:text-slate-400">
+                <span>
+                  Dataset: <strong className="text-slate-900 dark:text-slate-100">{problem.raceDataset.label}</strong>
+                </span>
+                <span className="tabular-nums">
+                  Step <strong className="text-slate-900 dark:text-slate-100">{safeIdx + 1}/{totalSteps}</strong>
+                  {' · '}Ops: <strong className="text-sky-700 dark:text-sky-300">{frame?.operationsCount ?? 0}</strong>
+                  {' · '}Mem: <strong className="text-slate-900 dark:text-slate-100">{frame?.memoryUnits ?? 0}</strong>
+                  {' · '}State: <strong className="text-emerald-700 dark:text-emerald-300">{frame?.bestValueLabel ?? '-'}</strong>
+                </span>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2.5 py-2">
+                {values.map((val, idx) => {
+                  const isActive = frame?.activeIndices.includes(idx) ?? false;
+                  const isRedundant = frame?.redundantIndices.includes(idx) ?? false;
+                  const cellPointers = frame?.pointers.filter((p) => p.index === idx) ?? [];
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-1.5 min-w-[64px]">
+                      <div className="min-h-[20px] flex items-center justify-center gap-1">
+                        {cellPointers.map((pt, pIdx) => (
+                          <span
+                            key={`${pt.label}-${pIdx}`}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold leading-none ${pointerColorClass(pt.color)}`}
+                          >
+                            {pt.label}
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleStep(safeIdx + 1)}
+                        className={`w-full px-3 py-3 rounded-lg border text-center font-mono transition-colors ${
+                          isActive
+                            ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-slate-900 dark:text-white shadow-sm'
+                            : isRedundant
+                              ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 text-slate-400 dark:text-slate-600 line-through'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 hover:border-slate-400 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        <div className="text-sm font-bold tabular-nums">{String(val)}</div>
+                      </button>
+                      <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                        [{idx}]
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <div className="text-xs text-slate-700 dark:text-slate-300 font-mono leading-relaxed flex-1 min-w-[220px]">
+                  {frame?.statusText}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleStep(safeIdx - 1)}
+                    disabled={safeIdx <= 0}
+                    className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 disabled:opacity-40 hover:border-sky-500 transition-colors"
+                  >
+                    Prev Step
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStep(safeIdx + 1)}
+                    disabled={safeIdx >= totalSteps - 1}
+                    className="px-4 py-2 rounded-lg bg-sky-600 text-white text-xs font-semibold disabled:opacity-40 hover:bg-sky-700 transition-colors"
+                  >
+                    {safeIdx >= totalSteps - 1 ? 'Dry-Run Complete' : 'Next Step'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+          </>
         )}
       </div>
 

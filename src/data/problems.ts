@@ -1,4 +1,7 @@
 import { ProblemDefinition, RaceFrame } from '../types/dsa';
+import { TOP_INTERVIEW_PROBLEMS_A } from './topInterviewProblemsA';
+import { TOP_INTERVIEW_PROBLEMS_B } from './topInterviewProblemsB';
+import { TOP_INTERVIEW_PROBLEMS_C } from './topInterviewProblemsC';
 
 // Trace Generators for 20-element Race Mode
 function generateTwoSumBruteTrace(nums: number[], target: number): RaceFrame[] {
@@ -1825,4 +1828,7 @@ export const PROBLEMS: ProblemDefinition[] = [
       ],
     },
   },
+  ...TOP_INTERVIEW_PROBLEMS_A,
+  ...TOP_INTERVIEW_PROBLEMS_B,
+  ...TOP_INTERVIEW_PROBLEMS_C,
 ];
