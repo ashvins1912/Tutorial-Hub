@@ -1,17 +1,17 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Request, Response, NextFunction } from 'express';
 
-// Resolve configuration lazily so dotenv/runtime environment setup has completed
+// Resolve configuration lazily so runtime environment setup has completed
 // before the first authenticated request is handled.
 let verifier: SupabaseClient | null | undefined;
 
 function getVerifier(): { client: SupabaseClient | null; projectUrl: string | null } {
+  const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
+
   if (verifier !== undefined) {
-    const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim().replace(/\\/+$/, '');
     return { client: verifier, projectUrl: configuredUrl || null };
   }
 
-  const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim().replace(/\\/+$/, '');
   const apiKey = (
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_ANON_KEY ||
@@ -41,7 +41,7 @@ function readTokenIssuer(token: string): string | null {
     const payload = token.split('.')[1];
     if (!payload) return null;
     const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { iss?: unknown };
-    return typeof claims.iss === 'string' ? claims.iss.replace(/\\/+$/, '') : null;
+    return typeof claims.iss === 'string' ? claims.iss.replace(/\/+$/, '') : null;
   } catch {
     return null;
   }
