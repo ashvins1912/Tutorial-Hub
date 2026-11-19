@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronRight, Code2, Eye, GraduationCap, Search, Target } from 'lucide-react';
 import { SHARED_TOPIC_LESSONS, SHARED_TOPIC_PROBLEMS, type SharedProblem } from '../data/sharedTopicAcademy';
+import { useAccountState } from '../hooks/useAccountState';
 
-const PROGRESS_KEY = 'patternforge-shared-topic-mastery-v1';
-const SOLVED_KEY = 'patternforge-shared-topic-solved-v1';
-function readRecord<T,>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
-  try { return JSON.parse(window.localStorage.getItem(key) || 'null') as T || fallback; } catch { return fallback; }
-}
 type Mastery = Record<string, boolean>;
 type Solved = Record<string, boolean>;
 interface LeetCodeProblemDetails {
@@ -30,8 +25,8 @@ export function SharedTopicAcademy() {
   const [company, setCompany] = useState('Google');
   const [rubricScores, setRubricScores] = useState<Record<string, number>>({ recognition: 3, correctness: 3, complexity: 3, communication: 3, edgeCases: 3 });
   const [identifiedSignals, setIdentifiedSignals] = useState<string[]>([]);
-  const [mastery, setMastery] = useState<Mastery>(() => readRecord(PROGRESS_KEY, {}));
-  const [solved, setSolved] = useState<Solved>(() => readRecord(SOLVED_KEY, {}));
+  const [mastery, setMastery] = useAccountState<Mastery>('shared-topic-mastery', {});
+  const [solved, setSolved] = useAccountState<Solved>('shared-topic-solved', {});
   useEffect(() => {
     if (!activeProblem) {
       setLeetcodeDetails(null);
@@ -69,11 +64,9 @@ export function SharedTopicAcademy() {
   const solvedCount = Object.values(solved).filter(Boolean).length;
   const setMastered = (value: boolean) => {
     const next = { ...mastery, [topic.id]: value }; setMastery(next);
-    window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
   };
   const setProblemSolved = (problem: SharedProblem, value: boolean) => {
     const next = { ...solved, [problem.id]: value }; setSolved(next);
-    window.localStorage.setItem(SOLVED_KEY, JSON.stringify(next));
   };
   const currentStep = topic.demo.steps[step];
   const topicSolved = topicProblems.filter(problem => solved[problem.id]).length;
