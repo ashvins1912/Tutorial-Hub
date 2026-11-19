@@ -12,6 +12,7 @@ import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
 import interviewProblemRoutes from './server/routes/interviewProblemRoutes';
 import { seedMasterInterviewProblems } from './server/db/seedMasterInterviewProblems';
+import { seedVerifiedProblemBatches } from './server/db/seedVerifiedProblemBatches';
 import authRoutes from './server/routes/authRoutes';
 import userStateRoutes from './server/routes/userStateRoutes';
 import profileRoutes from './server/routes/profileRoutes';
@@ -24,6 +25,7 @@ async function startServer() {
   await connectMongo();
   await seedCatalogToDb();
   await seedMasterInterviewProblems();
+  await seedVerifiedProblemBatches();
 
   const app = express();
   const httpServer = http.createServer(app);
