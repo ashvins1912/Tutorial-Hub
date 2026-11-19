@@ -12,7 +12,7 @@ export type MatchCandidate = { slug:string; title:string; topicId:string; confid
 
 export function normalizeProblemTitle(value: string): string {
   return value.normalize('NFKD').toLowerCase()
-    .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\\s+/g, ' ');
+    .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
 }
 function tokens(value:string): Set<string> { return new Set(normalizeProblemTitle(value).split(' ').filter(Boolean)); }
 function tokenJaccard(a:string,b:string):number {
@@ -33,7 +33,7 @@ function editSimilarity(a:string,b:string):number {
 }
 function scoreCandidate(input:ProblemInput, candidate:{title:string;topicId:string;aliases?:string[];slug:string}):MatchCandidate {
   const a=normalizeProblemTitle(input.title), b=normalizeProblemTitle(candidate.title);
-  if(a===b)return {slug:candidate.slug,title:candidate.title,topicId:candidate.topicId,confidence:1,method:'normalized-exact'};
+  if(a===b && candidate.topicId===input.topicId)return {slug:candidate.slug,title:candidate.title,topicId:candidate.topicId,confidence:1,method:'normalized-exact'};
   if(candidate.topicId===input.topicId && (candidate.aliases??[]).some(alias=>normalizeProblemTitle(alias)===a))
     return {slug:candidate.slug,title:candidate.title,topicId:candidate.topicId,confidence:.985,method:'explicit-alias'};
   const topic=input.topicId===candidate.topicId?1:0;
@@ -57,6 +57,7 @@ export async function resolveAndUpsertProblem(input:ProblemInput) {
   if(shouldUpdate) {
     const update:any={...input,normalizedTitle,catalogStatus:input.contentStatus==='validated'?'authored':'inventory',matchReview:{status:'clear',confidence:best.confidence,matchedSlug:best.slug,reason:best.method}};
     delete update.slug;
+    delete update.aliases;
     const updated=await InterviewProblem.findOneAndUpdate({slug:best.slug},{$set:update,$addToSet:{aliases:{$each:input.aliases??[]}}},{new:true,runValidators:true});
     return {action:'updated' as const,confidence:best.confidence,problem:updated};
   }
