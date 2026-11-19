@@ -39,7 +39,7 @@ router.post('/run', async (req: Request, res: Response) => {
     return res.json({ result });
   } catch (error) {
     const code = error instanceof Error ? error.message : 'CODE_EXECUTION_FAILED';
-    if (code === 'CODE_EXECUTION_NOT_CONFIGURED') return res.status(503).json({ code, message: 'The isolated Judge0 execution service is not configured yet.' });
+    if (code === 'CODE_EXECUTION_NOT_CONFIGURED' || code === 'CODE_EXECUTION_ENDPOINT_INVALID' || code === 'CODE_EXECUTION_ENDPOINT_MUST_USE_HTTPS') return res.status(503).json({ code: 'CODE_EXECUTION_CONFIGURATION_INVALID', message: 'Configure a valid HTTPS Judge0 endpoint before running code.' });
     if (code === 'JUDGE0_TIMEOUT' || code === 'JUDGE0_EXECUTION_PENDING') return res.status(504).json({ code, message: 'Execution exceeded the response time limit. Try a smaller program.' });
     console.error('[code-execution] Provider request failed:', code);
     return res.status(502).json({ code: 'CODE_EXECUTION_PROVIDER_UNAVAILABLE', message: 'The isolated execution provider is temporarily unavailable.' });
