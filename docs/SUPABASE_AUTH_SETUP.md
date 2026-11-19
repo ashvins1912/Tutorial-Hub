@@ -48,7 +48,31 @@ Redeploy after setting the `VITE_*` values because Vite embeds them into the fro
 
 Supabase Auth remains the source of truth for credentials. Do not store passwords in MongoDB.
 
-## 5. Verify
+## 5. Authenticated API surface
+
+All user-specific routes require `Authorization: Bearer <Supabase access token>`. The server verifies the token and derives the owner from its Supabase user ID; clients must not send a user ID to select an account.
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/auth/me` | Upsert the account and initialise its learning profile |
+| `GET /api/cognitive/profile` | Read the signed-in learner's cognitive profile |
+| `POST /api/cognitive/complete-problem` | Record a completed problem and spaced-repetition update |
+| `GET /api/cognitive/quiz/:topicId` / `GET /api/cognitive/quizzes` | Read quiz content |
+| `POST /api/cognitive/quiz/submit` | Grade and persist quiz progress |
+| `GET /api/cognitive/notes` / `GET /api/cognitive/notes/:problemId` | Read the learner's notes |
+| `POST /api/cognitive/notes` | Create or update a note |
+| `GET /api/cognitive/mastered-problems` / `POST /api/cognitive/mastered-problems` | Read or record mastered Big Tech problems |
+| `POST /api/cognitive/warmup/complete` | Record a completed warm-up drill |
+| `GET /api/sprints/companies/meta` | Read sprint company metadata |
+| `POST /api/sprints/create` | Create a 14-day sprint for the signed-in user |
+| `GET /api/sprints/active` | Read the signed-in user's active sprint |
+| `PATCH /api/sprints/:sprintId/complete-task` | Complete a task belonging to the signed-in user's sprint |
+
+The public read-only `/api/problems` catalogue and cached `/api/leetcode/problem/:slug` statement proxy do not contain user data and do not require a session.
+
+In production, MongoDB is required. The service fails startup when `MONGODB_URI` is missing or unreachable, and `/api/health` reports HTTP 503 if database readiness is lost. Learning progress and sprint mutations are not silently replaced with browser-only writes.
+
+## 6. Verify
 
 After deployment:
 
