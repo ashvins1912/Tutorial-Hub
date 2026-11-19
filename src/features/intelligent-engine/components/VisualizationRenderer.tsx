@@ -48,13 +48,13 @@ function parseGraph(source: string) {
 }
 
 function SequenceDiagram({ source }: { source: string }) {
-  const lines = source.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean).slice(1);
+  const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(1);
   const participants: string[] = [];
   const messages: Array<{ from: string; to: string; label: string }> = [];
   for (const line of lines) {
-    const participant = line.match(/^(?:participant|actor)\\s+([\\w-]+)(?:\\s+as\\s+(.+))?/i);
+    const participant = line.match(/^(?:participant|actor)\s+([\w-]+)(?:\s+as\s+(.+))?/i);
     if (participant) { if (!participants.includes(participant[1])) participants.push(participant[1]); continue; }
-    const message = line.match(/^([\\w-]+)\\s*(?:->>|-->>|->|-->)\\s*([\\w-]+)\\s*:\\s*(.+)$/);
+    const message = line.match(/^([\w-]+)\s*(?:->>|-->>|->|-->)\s*([\w-]+)\s*:\s*(.+)$/);
     if (message) {
       if (!participants.includes(message[1])) participants.push(message[1]);
       if (!participants.includes(message[2])) participants.push(message[2]);
@@ -73,16 +73,16 @@ function SequenceDiagram({ source }: { source: string }) {
 }
 
 function EntityRelationshipDiagram({ source }: { source: string }) {
-  const lines = source.split(/\\r?\\n/).map((line) => line.trim()).filter(Boolean).slice(1);
+  const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(1);
   const entities = new Map<string, string[]>();
   const relationships: Array<{ from: string; to: string; label: string }> = [];
   let current = '';
   for (const line of lines) {
-    const entity = line.match(/^([A-Za-z][\\w-]*)\\s*\\{$/);
+    const entity = line.match(/^([A-Za-z][\w-]*)\s*\{$/);
     if (entity) { current = entity[1]; if (!entities.has(current)) entities.set(current, []); continue; }
     if (line === '}') { current = ''; continue; }
-    if (current) { entities.get(current)?.push(line.replace(/\\s+/g, ' ')); continue; }
-    const relation = line.match(/^([A-Za-z][\\w-]*)\\s+[^ ]+\\s+([A-Za-z][\\w-]*)\\s*:\\s*(.+)$/);
+    if (current) { entities.get(current)?.push(line.replace(/\s+/g, ' ')); continue; }
+    const relation = line.match(/^([A-Za-z][\w-]*)\s+[^ ]+\s+([A-Za-z][\w-]*)\s*:\s*(.+)$/);
     if (relation) { entities.set(relation[1], entities.get(relation[1]) || []); entities.set(relation[2], entities.get(relation[2]) || []); relationships.push({ from: relation[1], to: relation[2], label: relation[3] }); }
   }
   const names = [...entities.keys()].slice(0, 16);
