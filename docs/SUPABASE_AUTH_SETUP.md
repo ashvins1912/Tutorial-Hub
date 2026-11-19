@@ -65,6 +65,7 @@ All user-specific routes require `Authorization: Bearer <Supabase access token>`
 | `POST /api/cognitive/warmup/complete` | Record a completed warm-up drill |
 | `GET /api/sprints/companies/meta` | Read sprint company metadata |
 | `POST /api/sprints/create` | Create a 14-day sprint for the signed-in user |
+| `GET /api/user-state/:stateKey` / `PUT /api/user-state/:stateKey` | Read and persist account-scoped curriculum, track and academy progress |
 | `GET /api/sprints/active` | Read the signed-in user's active sprint |
 | `PATCH /api/sprints/:sprintId/complete-task` | Complete a task belonging to the signed-in user's sprint |
 
