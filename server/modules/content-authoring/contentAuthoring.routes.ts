@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { requireAuth } from '../../middleware/requireAuth';
 import { isMongoConnected } from '../../db/connectMongo';
 import { ContentAuthoringJob } from './ContentAuthoringJob';
@@ -62,6 +63,7 @@ router.get('/jobs', requireAuth, requireContentAuthor, async (req: Request, res:
 
 router.get('/jobs/:id', requireAuth, requireContentAuthor, async (req: Request, res: Response) => {
   if (!isMongoConnected()) return res.status(503).json({ error: 'MongoDB is unavailable.' });
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Authoring job not found.' });
   const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id }).select('-sourceText -draft.sourceText').lean();
   if (!job) return res.status(404).json({ error: 'Authoring job not found.' });
   return res.json({ job });
@@ -74,10 +76,13 @@ router.put('/jobs/:id/structure', requireAuth, requireContentAuthor, async (req:
     !section || typeof section.id !== 'string' || typeof section.title !== 'string' || typeof section.purpose !== 'string' ||
     typeof section.required !== 'boolean' || !['explanation','reasoning','visualization','code','quiz','exercise','assessment','reference'].includes(section.blockType)
   )) return res.status(400).json({ error: 'sections must be a valid learning section array (maximum 80).' });
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Authoring draft not found.' });
   const job = await ContentAuthoringJob.findOne({ _id: req.params.id, ownerId: req.authUser!.id });
   if (!job?.draft || !job.analysis) return res.status(404).json({ error: 'Authoring draft not found.' });
   job.analysis.outline = sections;
   job.draft.sections = sections;
+  job.markModified('analysis');
+  job.markModified('draft');
   await job.save();
   return res.json({ job: { id: job.id, status: job.status, analysis: job.analysis, draft: { ...job.draft, sourceText: undefined } } });
 });
