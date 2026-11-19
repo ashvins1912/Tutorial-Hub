@@ -84,7 +84,7 @@ for (const problem of ARRAYS_BATCH_01) {
     for (const test of vectors) {
       const args=[test.args[0].join(',')];
       if(test.args.length>1)args.push(String(test.args[1]));
-      const output=run('java',['Runner',...args],{cwd:javaDir}).replace(/\\s/g,'');
+      const output=run('java',['Runner',...args],{cwd:javaDir}).replace(/\s/g,'');
       const expected=Array.isArray(test.expected)?'['+test.expected.join(',')+']':String(test.expected);
       assert.equal(output,expected,problem.title+' Java '+JSON.stringify(test.args));
       total++;
