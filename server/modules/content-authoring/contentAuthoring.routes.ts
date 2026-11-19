@@ -193,7 +193,15 @@ router.get('/published/:id', requireAuth, async (req: Request, res: Response) =>
     .select('generatedLesson publishedAt fileName')
     .lean();
   if (!job?.generatedLesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
-  return res.json({ lesson: job.generatedLesson, publishedAt: job.publishedAt, fileName: job.fileName });
+  const publishedLesson = {
+    ...job.generatedLesson,
+    quiz: Array.isArray(job.generatedLesson.quiz) ? job.generatedLesson.quiz.map((question: any) => ({
+      question: question.question,
+      options: question.options,
+      explanation: question.explanation,
+    })) : [],
+  };
+  return res.json({ lesson: publishedLesson, publishedAt: job.publishedAt, fileName: job.fileName });
 });
 
 export default router;
