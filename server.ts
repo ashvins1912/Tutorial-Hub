@@ -10,6 +10,8 @@ import cognitiveRoutes from './server/routes/cognitiveRoutes';
 import problemRoutes from './server/routes/problemRoutes';
 import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
+import interviewProblemRoutes from './server/routes/interviewProblemRoutes';
+import { seedMasterInterviewProblems } from './server/db/seedMasterInterviewProblems';
 import authRoutes from './server/routes/authRoutes';
 import userStateRoutes from './server/routes/userStateRoutes';
 import profileRoutes from './server/routes/profileRoutes';
@@ -21,6 +23,7 @@ const PORT = Number(process.env.PORT) || 3000;
 async function startServer() {
   await connectMongo();
   await seedCatalogToDb();
+  await seedMasterInterviewProblems();
 
   const app = express();
   const httpServer = http.createServer(app);
@@ -37,6 +40,8 @@ async function startServer() {
 
   // Big Tech Topic-Wise 36 Problem Bank API
   app.use('/api/problems', problemRoutes);
+  // Canonical topic-wise interview problem inventory and authoring API
+  app.use('/api/interview-problems', interviewProblemRoutes);
   // Cached, read-only LeetCode statement/examples/constraints source
   app.use('/api/leetcode/problem', leetcodeProblemRoutes);
 
