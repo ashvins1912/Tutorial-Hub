@@ -119,7 +119,11 @@ export function ContentAuthoringPanel() {
     }
   };
 
-  const updateAnalysis = (patch: Partial<AuthoringJob['analysis']>) => {\n    setSelected((current) => current ? { ...current, analysis: { ...current.analysis, ...patch } } : current);\n  };\n\n  const saveStructure = async () => {
+  const updateAnalysis = (patch: Partial<AuthoringJob['analysis']>) => {
+    setSelected((current) => current ? { ...current, analysis: { ...current.analysis, ...patch } } : current);
+  };
+
+  const saveStructure = async () => {
     if (!selected) return;
     setSaving(true);
     setError('');
