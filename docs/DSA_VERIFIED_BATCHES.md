@@ -1,0 +1,37 @@
+# Source-verified DSA authoring batches
+
+The 293-question inventory is authored in bounded batches. A catalog record remains `in-progress` until all required evidence is present and the language solutions pass executable checks.
+
+## Promotion gate
+
+A batch record may be promoted to `validated` only when all of these are true:
+
+1. The statement, official examples, numeric constraints, and follow-up requirements are checked against the linked primary problem source.
+2. Java, JavaScript, and Python submissions are problem-specific implementations, not generic checklists.
+3. Executable regression tests cover the official examples, boundary cases, and pattern-specific edge cases.
+4. CI compiles/runs each language submission against the same test vectors.
+5. The visualization includes a problem-specific diagram, animation sequence, and hand-worked trace.
+6. The correctness proof and time/space analysis match the submitted algorithm.
+7. The catalog API rejects promotion if any evidence category is missing.
+
+The canonical batch data records source URLs and individual quality flags. The startup importer refuses to mark a batch validated while its metadata is still `quality-check-pending`.
+
+## Batch 01 — Arrays
+
+Five source-verified problems are authored in `server/seed/verifiedProblemBatches/arraysBatch01.ts`:
+
+| Problem | LeetCode | Core pattern |
+|---|---:|---|
+| Two Sum | 1 | Complement lookup with a prefix hash map |
+| Best Time to Buy and Sell Stock | 121 | Running minimum / greedy scan |
+| Contains Duplicate | 217 | Set membership |
+| Maximum Subarray (Kadane's Algorithm) | 53 | Dynamic programming recurrence |
+| Product of Array Except Self | 238 | Exclusive prefix and suffix products |
+
+The test runner `tests/dsa/arrays-batch-01.test.mjs` executes the exact stored submissions in Java, JavaScript, and Python. Run it with:
+
+```bash
+npm run test:dsa:arrays:01
+```
+
+The CI job provisions Node.js, Python, and Java and runs the batch test suite before the production build. The next batch should continue with the remaining Arrays problems, then proceed topic-wise. No records in later batches should be promoted based solely on generated topic templates.
