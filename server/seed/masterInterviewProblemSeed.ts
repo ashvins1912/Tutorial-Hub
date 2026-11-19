@@ -45,7 +45,7 @@ function inferDifficulty(title: string): 'Easy'|'Medium'|'Hard' {
 
 export const MASTER_INTERVIEW_PROBLEM_ADDITIONS: MasterProblemSeed[] = TOPIC_ROWS.flatMap(([topicId, topic, titles]) =>
   titles.map((title) => {
-    const slug = slugify(title);
+    const titleKey = slugify(title);\n    const slug = `${topicId}-${titleKey}`;
     return {
       slug,
       title,
@@ -54,7 +54,7 @@ export const MASTER_INTERVIEW_PROBLEM_ADDITIONS: MasterProblemSeed[] = TOPIC_ROW
       difficulty: inferDifficulty(title),
       catalogStatus: 'inventory' as const,
       contentStatus: 'needs-authoring' as const,
-      aliases: PARTIAL_TITLE_ALIASES[slug] ?? [],
+      aliases: PARTIAL_TITLE_ALIASES[titleKey] ?? [],
     };
   })
 );
