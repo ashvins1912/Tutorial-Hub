@@ -16,6 +16,7 @@ type ChartData = { chartType: 'bar' | 'line' | 'scatter' | 'pie'; xKey: string; 
 
 export function parseGraph(source: string) {
   const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (/^(sequenceDiagram|erDiagram)/i.test(lines[0] || '')) return { direction: 'TD' as const, nodes: [], edges: [] };
   const direction = /^(flowchart|graph)\s+LR/i.test(lines[0] || '') ? 'LR' : 'TD';
   const nodes = new Map<string, GraphNode>();
   const edges: GraphEdge[] = [];
