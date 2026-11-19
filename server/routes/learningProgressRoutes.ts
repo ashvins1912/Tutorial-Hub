@@ -12,9 +12,13 @@ function validLessonId(value: string) {
   return mongoose.Types.ObjectId.isValid(value);
 }
 
-async function findOwnedLesson(lessonId: string, userId: string) {
+export function buildAccessibleLessonFilter(lessonId: string, userId: string) {
+  return { _id: lessonId, $or: [{ ownerId: userId }, { publishedAt: { $type: 'date' } }] };
+}
+
+async function findAccessibleLesson(lessonId: string, userId: string) {
   if (!validLessonId(lessonId)) return null;
-  return ContentAuthoringJob.findOne({ _id: lessonId, ownerId: userId }).select('generatedLesson.quiz').lean();
+  return ContentAuthoringJob.findOne(buildAccessibleLessonFilter(lessonId, userId)).select('generatedLesson.quiz').lean();
 }
 
 export function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
@@ -41,7 +45,7 @@ function normalizeAnswers(value: unknown): Record<string, string> | null {
 router.get('/:lessonId', async (req: Request, res: Response) => {
   if (!validLessonId(req.params.lessonId)) return res.status(400).json({ code: 'INVALID_LESSON_ID' });
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'Progress cannot be persisted while the database is unavailable.' });
-  const lesson = await findOwnedLesson(req.params.lessonId, req.authUser!.id);
+  const lesson = await findAccessibleLesson(req.params.lessonId, req.authUser!.id);
   if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const progress = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).lean();
   return res.json({ progress: progress || null });
@@ -50,7 +54,7 @@ router.get('/:lessonId', async (req: Request, res: Response) => {
 router.put('/:lessonId', async (req: Request, res: Response) => {
   if (!validLessonId(req.params.lessonId)) return res.status(400).json({ code: 'INVALID_LESSON_ID' });
   if (!isMongoConnected()) return res.status(503).json({ code: 'DATABASE_UNAVAILABLE', message: 'Progress cannot be persisted while the database is unavailable.' });
-  const lesson = await findOwnedLesson(req.params.lessonId, req.authUser!.id);
+  const lesson = await findAccessibleLesson(req.params.lessonId, req.authUser!.id);
   if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const body = req.body || {};
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
