@@ -1,17 +1,15 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Request, Response, NextFunction } from 'express';
 
-// Resolve configuration lazily so runtime environment setup has completed
-// before the first authenticated request is handled.
-let verifier: SupabaseClient | null | undefined;
+// Keep a single verifier instance, but bind it to the same project used by
+// the browser. Backend environment is loaded by server.ts before routes run.
+let verifier: SupabaseClient | null = null;
+let verifierProjectUrl: string | null = null;
 
 function getVerifier(): { client: SupabaseClient | null; projectUrl: string | null } {
-  const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
-
-  if (verifier !== undefined) {
-    return { client: verifier, projectUrl: configuredUrl || null };
-  }
-
+  const projectUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '')
+    .trim()
+    .replace(/\/+$/, '');
   const apiKey = (
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_ANON_KEY ||
@@ -19,13 +17,16 @@ function getVerifier(): { client: SupabaseClient | null; projectUrl: string | nu
     ''
   ).trim();
 
-  verifier = configuredUrl && apiKey
-    ? createClient(configuredUrl, apiKey, {
-        auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-      })
-    : null;
+  if (!projectUrl || !apiKey) return { client: null, projectUrl: projectUrl || null };
 
-  return { client: verifier, projectUrl: configuredUrl || null };
+  if (!verifier || verifierProjectUrl !== projectUrl) {
+    verifier = createClient(projectUrl, apiKey, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    });
+    verifierProjectUrl = projectUrl;
+  }
+
+  return { client: verifier, projectUrl };
 }
 
 declare global {
@@ -58,16 +59,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   const authorization = req.headers.authorization;
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  if (!token) {
-    return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'Sign in to continue.' });
-  }
+  if (!token) return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'Sign in to continue.' });
 
-  // Detect the common production misconfiguration where the browser and API
-  // are configured against different Supabase projects.
   const issuer = readTokenIssuer(token);
   const expectedIssuer = `${projectUrl}/auth/v1`;
   if (issuer && issuer !== expectedIssuer) {
-    console.error('[auth] Supabase project mismatch: token issuer does not match SUPABASE_URL.');
+    console.error('[auth] Supabase project mismatch: token issuer does not match configured Supabase project.');
     return res.status(503).json({
       code: 'SUPABASE_PROJECT_MISMATCH',
       message: 'The frontend and backend are configured for different Supabase projects.',
@@ -77,7 +74,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   try {
     const { data, error } = await client.auth.getUser(token);
     if (error || !data.user) {
-      // Log only the provider error code; never log access tokens or user secrets.
       console.error('[auth] Supabase token verification failed:', error?.code || error?.name || 'USER_NOT_FOUND');
       return res.status(401).json({
         code: 'INVALID_SESSION',
