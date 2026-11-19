@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import { timingSafeEqual } from 'node:crypto';
 import { InterviewProblem } from '../models/InterviewProblem';
 import { resolveAndUpsertProblem } from '../services/problemResolutionService';
 import type { ProblemInput } from '../services/problemResolutionService';
@@ -9,7 +10,8 @@ function requireCatalogAdmin(req:Request,res:Response,next:express.NextFunction)
   const expected=process.env.PROBLEM_CATALOG_ADMIN_TOKEN?.trim();
   if(!expected)return res.status(503).json({error:'Problem catalog writes are disabled. Configure PROBLEM_CATALOG_ADMIN_TOKEN.'});
   const supplied=req.header('x-problem-catalog-token');
-  if(!supplied || supplied!==expected)return res.status(401).json({error:'Unauthorized problem catalog write.'});
+  const matches=!!supplied && Buffer.byteLength(supplied)===Buffer.byteLength(expected) && timingSafeEqual(Buffer.from(supplied),Buffer.from(expected));
+  if(!matches)return res.status(401).json({error:'Unauthorized problem catalog write.'});
   next();
 }
 function validInput(body:any): body is ProblemInput {
@@ -32,7 +34,10 @@ router.get('/',async(req:Request,res:Response)=>{
   const filter:any={};
   if(req.query.topicId)filter.topicId=String(req.query.topicId);
   if(req.query.contentStatus)filter.contentStatus=String(req.query.contentStatus);
-  if(req.query.q)filter.$or=[{title:{$regex:String(req.query.q),$options:'i'}},{statement:{$regex:String(req.query.q),$options:'i'}}];
+  if(req.query.q){
+    const query=String(req.query.q).slice(0,100);
+    filter.$or=[{title:{$regex:query,$options:'i'}},{statement:{$regex:query,$options:'i'}}];
+  }
   const [problems,total]=await Promise.all([
     InterviewProblem.find(filter).sort({topic:1,title:1}).skip((page-1)*limit).limit(limit).lean(),
     InterviewProblem.countDocuments(filter)
