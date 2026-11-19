@@ -22,6 +22,7 @@ export interface ICommunityPost extends Document {
   difficulty: CommunityDifficulty;
   problemRef?: string;
   externalUrl?: string;
+  sourcePlatform?: string;
   targetTimeMinutes?: number;
   upvotedBy: string[];
   completedBy: string[];
@@ -62,6 +63,7 @@ const CommunityPostSchema = new Schema<ICommunityPost>(
     },
     problemRef: { type: String, default: '' },
     externalUrl: { type: String, default: '' },
+    sourcePlatform: { type: String, default: '', index: true },
     targetTimeMinutes: { type: Number, min: 5, max: 180 },
     upvotedBy: { type: [String], default: [] },
     completedBy: { type: [String], default: [] },

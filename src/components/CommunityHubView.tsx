@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  Globe,
+  Link2,
   MessageSquare,
   Plus,
   RefreshCw,
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../lib/apiFetch';
 import { PROBLEMS } from '../data/problems';
+import { parsePlatformUrl } from '../utils/platformUrlParser';
 
 type CommunityTab = 'leaderboard' | 'feed' | 'invites';
 type PostType = 'problem' | 'challenge' | 'read';
@@ -75,6 +78,7 @@ interface CommunityPostItem {
   difficulty: Difficulty;
   problemRef: string;
   externalUrl: string;
+  sourcePlatform: string;
   targetTimeMinutes: number | null;
   upvoteCount: number;
   completedCount: number;
@@ -171,6 +175,7 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
   // Feed state
   const [posts, setPosts] = useState<CommunityPostItem[]>([]);
   const [feedType, setFeedType] = useState<'all' | PostType>('all');
+  const [feedPlatform, setFeedPlatform] = useState<string>('all');
   const [feedSort, setFeedSort] = useState<'recent' | 'top'>('recent');
   const [feedSearch, setFeedSearch] = useState('');
   const [loadingFeed, setLoadingFeed] = useState(true);
@@ -186,6 +191,9 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
   const [newDifficulty, setNewDifficulty] = useState<Difficulty>('Medium');
   const [newExternalUrl, setNewExternalUrl] = useState('');
   const [newTargetMinutes, setNewTargetMinutes] = useState('30');
+  const [fetchingUrlMeta, setFetchingUrlMeta] = useState(false);
+  const [urlAutoFillNote, setUrlAutoFillNote] = useState<string | null>(null);
+  const [lastAutoTitle, setLastAutoTitle] = useState('');
   const [submittingPost, setSubmittingPost] = useState(false);
   const [composerFeedback, setComposerFeedback] = useState<string | null>(null);
 
@@ -229,7 +237,11 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
     setLoadingFeed(true);
     setFeedError(null);
     try {
-      const params = new URLSearchParams({ type: feedType, sort: feedSort });
+      const params = new URLSearchParams({
+        type: feedType,
+        platform: feedPlatform,
+        sort: feedSort,
+      });
       if (feedSearch.trim()) params.set('q', feedSearch.trim());
       const res = await apiFetch(`/api/community/posts?${params.toString()}`);
       if (!res.ok) throw new Error('Unable to load shared community items.');
@@ -240,7 +252,7 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
     } finally {
       setLoadingFeed(false);
     }
-  }, [feedType, feedSort, feedSearch]);
+  }, [feedType, feedPlatform, feedSort, feedSearch]);
 
   const loadInvites = useCallback(async () => {
     setLoadingInvites(true);
@@ -278,15 +290,90 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
     }
   };
 
+  const parsedExternalUrl = useMemo(
+    () => (newExternalUrl.trim() ? parsePlatformUrl(newExternalUrl) : null),
+    [newExternalUrl]
+  );
+
+  // Instant platform detection + auto-fill title/difficulty/topic from LeetCode, GeeksforGeeks, or any URL
+  useEffect(() => {
+    if (!parsedExternalUrl) {
+      setUrlAutoFillNote(null);
+      setFetchingUrlMeta(false);
+      return;
+    }
+
+    if (
+      parsedExternalUrl.suggestedTitle &&
+      (!newTitle.trim() || newTitle === lastAutoTitle)
+    ) {
+      setNewTitle(parsedExternalUrl.suggestedTitle);
+      setLastAutoTitle(parsedExternalUrl.suggestedTitle);
+    }
+
+    if (!newDescription.trim() && parsedExternalUrl.suggestedTitle) {
+      const prompt =
+        newPostType === 'read'
+          ? `Recommended read from ${parsedExternalUrl.platform}: "${parsedExternalUrl.suggestedTitle}".`
+          : `Challenge from ${parsedExternalUrl.platform}: Solve "${parsedExternalUrl.suggestedTitle}" cleanly and share your time/space complexity in the discussion.`;
+      setNewDescription(prompt);
+    }
+
+    setUrlAutoFillNote(
+      `Detected ${parsedExternalUrl.platform}${parsedExternalUrl.suggestedTitle ? ` · "${parsedExternalUrl.suggestedTitle}"` : ''}`
+    );
+
+    if (!parsedExternalUrl.leetcodeSlug) {
+      setFetchingUrlMeta(false);
+      return;
+    }
+
+    let cancelled = false;
+    const slug = parsedExternalUrl.leetcodeSlug;
+    setFetchingUrlMeta(true);
+
+    const timer = window.setTimeout(() => {
+      void apiFetch(`/api/leetcode/problem/${encodeURIComponent(slug)}`)
+        .then(async (res) => {
+          if (!res.ok || cancelled) return;
+          const payload = await res.json();
+          const prob = payload?.problem;
+          if (!prob || cancelled) return;
+          const formattedTitle = prob.questionId ? `#${prob.questionId} ${prob.title}` : prob.title;
+          setNewTitle((cur) => (!cur.trim() || cur === parsedExternalUrl.suggestedTitle || cur === lastAutoTitle ? formattedTitle : cur));
+          setLastAutoTitle(formattedTitle);
+          if (prob.difficulty === 'Easy' || prob.difficulty === 'Medium' || prob.difficulty === 'Hard') {
+            setNewDifficulty(prob.difficulty);
+          }
+          if (Array.isArray(prob.topics) && prob.topics.length > 0) {
+            setNewTopicTag(prob.topics[0]);
+          }
+          setUrlAutoFillNote(
+            `LeetCode metadata loaded · ${formattedTitle} (${prob.difficulty || 'Problem'})`
+          );
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setFetchingUrlMeta(false);
+        });
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [parsedExternalUrl?.normalizedUrl]);
+
   const handleSelectLabProblem = (problemId: string) => {
     setSelectedLabProblemId(problemId);
     const found = PROBLEMS.find((p) => p.id === problemId);
     if (found) {
-      setNewTitle(
+      const nextTitle =
         newPostType === 'challenge'
           ? `Solve #${found.number} ${found.title} without hints`
-          : `#${found.number} ${found.title}`
-      );
+          : `#${found.number} ${found.title}`;
+      setNewTitle(nextTitle);
+      setLastAutoTitle(nextTitle);
       setNewTopicTag(found.patternName);
       setNewDifficulty(found.difficulty as Difficulty);
       if (!newDescription.trim()) {
@@ -300,6 +387,12 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     setComposerFeedback(null);
+    if (newExternalUrl.trim() && !parsedExternalUrl) {
+      setComposerFeedback(
+        'Please enter a valid URL (e.g. https://leetcode.com/problems/two-sum or https://www.geeksforgeeks.org/problems/...).'
+      );
+      return;
+    }
     setSubmittingPost(true);
     try {
       const res = await apiFetch('/api/community/posts', {
@@ -312,7 +405,7 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
           topicTag: newTopicTag,
           difficulty: newPostType === 'read' ? 'All' : newDifficulty,
           problemRef: selectedLabProblemId || undefined,
-          externalUrl: newExternalUrl.trim() || undefined,
+          externalUrl: parsedExternalUrl?.normalizedUrl || undefined,
           targetTimeMinutes:
             newPostType === 'challenge' && newTargetMinutes
               ? Number(newTargetMinutes)
@@ -323,8 +416,10 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
       if (!res.ok) throw new Error(data.error || 'Could not publish item.');
       setPosts((prev) => [data.post, ...prev]);
       setNewTitle('');
+      setLastAutoTitle('');
       setNewDescription('');
       setNewExternalUrl('');
+      setUrlAutoFillNote(null);
       setSelectedLabProblemId('');
       setComposerOpen(false);
       setComposerFeedback(null);
@@ -830,6 +925,21 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                 </div>
 
                 <select
+                  aria-label="Filter by platform"
+                  value={feedPlatform}
+                  onChange={(e) => setFeedPlatform(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs font-medium text-slate-800 dark:text-slate-200"
+                >
+                  <option value="all">Platform: All</option>
+                  <option value="leetcode">LeetCode</option>
+                  <option value="geeksforgeeks">GeeksforGeeks</option>
+                  <option value="codeforces">Codeforces</option>
+                  <option value="hackerrank">HackerRank</option>
+                  <option value="patternforge lab">PatternForge Lab</option>
+                  <option value="other">Other Platforms</option>
+                </select>
+
+                <select
                   aria-label="Sort community feed"
                   value={feedSort}
                   onChange={(e) => setFeedSort(e.target.value as 'recent' | 'top')}
@@ -850,7 +960,7 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                     type="search"
                     value={feedSearch}
                     onChange={(e) => setFeedSearch(e.target.value)}
-                    placeholder="Search title, topic, author..."
+                    placeholder="Search title, platform, topic..."
                     className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
@@ -909,18 +1019,58 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                   ))}
                 </div>
 
+                {/* Primary Platform URL Input — supports LeetCode, GeeksforGeeks, Codeforces, HackerRank, or any URL */}
+                <div className="space-y-1.5">
+                  <label className="block space-y-1.5 text-xs">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                      {newPostType === 'read'
+                        ? 'Article / Paper / Blog URL (Medium, GeeksforGeeks, Substack, arXiv, or any URL)'
+                        : 'Platform Challenge URL (LeetCode, GeeksforGeeks, Codeforces, HackerRank, or any URL)'}
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="url"
+                      value={newExternalUrl}
+                      onChange={(e) => setNewExternalUrl(e.target.value)}
+                      placeholder="Paste e.g. https://leetcode.com/problems/trapping-rain-water/ or https://www.geeksforgeeks.org/problems/kadanes-algorithm-1587115620/1"
+                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                  </label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    {newExternalUrl.trim() ? (
+                      parsedExternalUrl ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
+                          <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                          {fetchingUrlMeta
+                            ? `Detected ${parsedExternalUrl.platform} · fetching official title & difficulty...`
+                            : urlAutoFillNote || `Detected ${parsedExternalUrl.platform}`}
+                        </span>
+                      ) : (
+                        <span className="text-rose-600 dark:text-rose-400">
+                          Enter a valid website URL (e.g. leetcode.com/problems/two-sum or geeksforgeeks.org/problems/...)
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Supports LeetCode, GeeksforGeeks, Codeforces, HackerRank, CodeChef, AtCoder, NeetCode, InterviewBit, CSES, or any web link. Auto-fills title on paste.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {newPostType !== 'read' && (
                     <label className="space-y-1.5 text-xs">
                       <span className="font-medium text-slate-700 dark:text-slate-300">
-                        Link an In-App Problem (Optional)
+                        Or Link an In-App Lab (Optional)
                       </span>
                       <select
                         value={selectedLabProblemId}
                         onChange={(e) => handleSelectLabProblem(e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
                       >
-                        <option value="">Custom problem / no lab link</option>
+                        <option value="">External URL / custom problem</option>
                         {PROBLEMS.map((p) => (
                           <option key={p.id} value={p.id}>
                             #{p.number} {p.title} ({p.difficulty} · {p.patternName})
@@ -945,8 +1095,8 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                         newPostType === 'read'
                           ? 'e.g. Designing Data-Intensive Applications — Ch. 5 Replication Notes'
                           : newPostType === 'challenge'
-                            ? 'e.g. 25-Min Monotonic Stack Speed Challenge: Largest Rectangle'
-                            : 'e.g. Subarray Sum Equals K with Negative Numbers'
+                            ? 'e.g. Trapping Rain Water — 25-Min Optimal O(1) Space Challenge'
+                            : 'e.g. Kadane’s Algorithm — Maximum Subarray Sum'
                       }
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
@@ -1007,23 +1157,8 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                   <label className="space-y-1.5 text-xs md:col-span-2 lg:col-span-3">
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       {newPostType === 'read'
-                        ? 'Article / Paper / Book URL (https://...)'
-                        : 'External Problem Link (Optional, https://...)'}
-                    </span>
-                    <input
-                      type="url"
-                      value={newExternalUrl}
-                      onChange={(e) => setNewExternalUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
-                  </label>
-
-                  <label className="space-y-1.5 text-xs md:col-span-2 lg:col-span-3">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">
-                      {newPostType === 'read'
                         ? 'Why do you recommend this read? Key takeaways *'
-                        : 'Problem Prompt, Constraints, or Challenge Rules *'}
+                        : 'Challenge Rules, Hints, or Constraints *'}
                     </span>
                     <textarea
                       required
@@ -1121,6 +1256,14 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                         >
                           {POST_TYPE_LABELS[post.postType]}
                         </span>
+                        {post.sourcePlatform && post.sourcePlatform !== 'Community' && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                              {post.sourcePlatform}
+                            </span>
+                          </>
+                        )}
                         <span aria-hidden="true">·</span>
                         <span className="font-medium text-slate-700 dark:text-slate-300">
                           {post.topicTag}
@@ -1236,15 +1379,38 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
                           </button>
                         )}
                         {post.externalUrl && (
-                          <a
-                            href={post.externalUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:border-sky-500"
-                          >
-                            {post.postType === 'read' ? 'Open Article' : 'External Link'}
-                            <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                          </a>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleCopyText(`post-url-${post.id}`, post.externalUrl)
+                              }
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-slate-300"
+                            >
+                              {copiedKey === `post-url-${post.id}` ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                                  Copied URL
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                                  Copy URL
+                                </>
+                              )}
+                            </button>
+                            <a
+                              href={post.externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400"
+                            >
+                              {post.postType === 'read'
+                                ? `Read on ${post.sourcePlatform}`
+                                : `Solve on ${post.sourcePlatform}`}
+                              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                            </a>
+                          </>
                         )}
                       </div>
                     </div>

@@ -11,6 +11,7 @@ import { appendActivity, getAllDevCognitiveUserIds, getDevCognitiveExtras } from
 import { getAllDevAccounts, upsertDevAccount } from './authRoutes';
 import { getAllUserLearningStates } from './userStateRoutes';
 import { computeUserProgressSummary } from '../services/userStatsService';
+import { parsePlatformUrl } from '../../src/utils/platformUrlParser';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -54,6 +55,7 @@ interface DevPost {
   difficulty: CommunityDifficulty;
   problemRef?: string;
   externalUrl?: string;
+  sourcePlatform?: string;
   targetTimeMinutes?: number;
   upvotedBy: string[];
   completedBy: string[];
@@ -84,15 +86,13 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
-function sanitizeExternalUrl(raw?: unknown): string | null {
-  if (typeof raw !== 'string' || !raw.trim()) return '';
-  try {
-    const parsed = new URL(raw.trim());
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    return parsed.toString();
-  } catch {
-    return null;
-  }
+function parseAndSanitizeExternalUrl(
+  raw?: unknown
+): { url: string; platform: string } | null {
+  if (typeof raw !== 'string' || !raw.trim()) return { url: '', platform: '' };
+  const parsed = parsePlatformUrl(raw);
+  if (!parsed) return null;
+  return { url: parsed.normalizedUrl, platform: parsed.platform };
 }
 
 async function resolveCurrentUserIdentity(req: Request) {
@@ -657,6 +657,9 @@ function serializePost(doc: any, currentUserId: string) {
     difficulty: (doc.difficulty || 'Medium') as CommunityDifficulty,
     problemRef: doc.problemRef || '',
     externalUrl: doc.externalUrl || '',
+    sourcePlatform:
+      doc.sourcePlatform ||
+      (doc.externalUrl ? parsePlatformUrl(doc.externalUrl)?.platform ?? 'External' : doc.problemRef ? 'PatternForge Lab' : 'Community'),
     targetTimeMinutes: doc.targetTimeMinutes ?? null,
     upvoteCount: upvotedBy.length,
     completedCount: completedBy.length,
@@ -677,6 +680,7 @@ router.get('/posts', async (req: Request, res: Response) => {
   try {
     const userId = req.authUser!.id;
     const typeFilter = String(req.query.type ?? 'all'); // all | problem | challenge | read
+    const platformFilter = String(req.query.platform ?? 'all').trim().toLowerCase();
     const topic = String(req.query.topic ?? '').trim().toLowerCase();
     const q = String(req.query.q ?? '').trim().toLowerCase();
     const sort = String(req.query.sort ?? 'recent'); // recent | top
@@ -697,6 +701,23 @@ router.get('/posts', async (req: Request, res: Response) => {
 
     let serialized = rawPosts.map((d) => serializePost(d, userId));
 
+    if (platformFilter && platformFilter !== 'all') {
+      if (platformFilter === 'other') {
+        const major = new Set([
+          'leetcode',
+          'geeksforgeeks',
+          'codeforces',
+          'hackerrank',
+          'patternforge lab',
+        ]);
+        serialized = serialized.filter((p) => !major.has(p.sourcePlatform.toLowerCase()));
+      } else {
+        serialized = serialized.filter(
+          (p) => p.sourcePlatform.toLowerCase() === platformFilter
+        );
+      }
+    }
+
     if (topic) {
       serialized = serialized.filter((p) => p.topicTag.toLowerCase().includes(topic));
     }
@@ -706,7 +727,9 @@ router.get('/posts', async (req: Request, res: Response) => {
           p.title.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
           p.topicTag.toLowerCase().includes(q) ||
-          p.authorName.toLowerCase().includes(q)
+          p.authorName.toLowerCase().includes(q) ||
+          p.sourcePlatform.toLowerCase().includes(q) ||
+          p.externalUrl.toLowerCase().includes(q)
       );
     }
 
@@ -751,9 +774,11 @@ router.post('/posts', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Description must be between 5 and 2,000 characters.' });
     }
 
-    const cleanUrl = sanitizeExternalUrl(externalUrl);
-    if (cleanUrl === null) {
-      return res.status(400).json({ error: 'External URL must start with http:// or https://.' });
+    const parsedUrl = parseAndSanitizeExternalUrl(externalUrl);
+    if (parsedUrl === null) {
+      return res
+        .status(400)
+        .json({ error: 'Please provide a valid URL (e.g. https://leetcode.com/problems/... or https://geeksforgeeks.org/...).' });
     }
 
     const validDiffs: CommunityDifficulty[] = ['Easy', 'Medium', 'Hard', 'All'];
@@ -767,6 +792,8 @@ router.post('/posts', async (req: Request, res: Response) => {
       typeof topicTag === 'string' && topicTag.trim() ? topicTag.trim().slice(0, 60) : 'General DSA';
     const cleanProblemRef =
       typeof problemRef === 'string' ? problemRef.trim().slice(0, 120) : '';
+    const sourcePlatform =
+      parsedUrl.platform || (cleanProblemRef ? 'PatternForge Lab' : 'Community');
     const parsedMinutes =
       targetTimeMinutes !== undefined && targetTimeMinutes !== null && targetTimeMinutes !== ''
         ? Math.min(180, Math.max(5, Math.round(Number(targetTimeMinutes))))
@@ -784,7 +811,8 @@ router.post('/posts', async (req: Request, res: Response) => {
         topicTag: cleanTopic,
         difficulty: cleanDifficulty,
         problemRef: cleanProblemRef,
-        externalUrl: cleanUrl,
+        externalUrl: parsedUrl.url,
+        sourcePlatform,
         targetTimeMinutes: Number.isFinite(parsedMinutes) ? parsedMinutes : undefined,
         upvotedBy: [me.userId],
         completedBy: [],
@@ -806,7 +834,8 @@ router.post('/posts', async (req: Request, res: Response) => {
       topicTag: cleanTopic,
       difficulty: cleanDifficulty,
       problemRef: cleanProblemRef,
-      externalUrl: cleanUrl,
+      externalUrl: parsedUrl.url,
+      sourcePlatform,
       targetTimeMinutes: Number.isFinite(parsedMinutes) ? parsedMinutes : undefined,
       upvotedBy: [me.userId],
       completedBy: [],
