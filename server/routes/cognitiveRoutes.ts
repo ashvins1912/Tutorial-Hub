@@ -159,6 +159,7 @@ router.post('/complete-problem', async (req: Request, res: Response) => {
     assemblyErrors = 0,
     bottleneckCorrect = true,
   } = req.body ?? {};
+  const userId = req.authUser!.id;
 
   if (!problemId) {
     return res.status(400).json({ error: 'problemId is required' });
@@ -253,7 +254,8 @@ router.get('/quizzes', (_req: Request, res: Response) => {
 
 // POST /api/cognitive/quiz/submit
 router.post('/quiz/submit', async (req: Request, res: Response) => {
-  const { userId = 'learner-default', topicId, answers } = req.body ?? {};
+  const { topicId, answers } = req.body ?? {};
+  const userId = req.authUser!.id;
   const quiz = SEED_TOPIC_QUIZZES.find((q) => q.topicId === topicId);
   if (!quiz) {
     return res.status(404).json({ error: `Quiz "${topicId}" not found` });
@@ -298,7 +300,8 @@ router.post('/quiz/submit', async (req: Request, res: Response) => {
 });
 
 router.get('/notes/:userId/:problemId', async (req: Request, res: Response) => {
-  const { userId, problemId } = req.params;
+  const { problemId } = req.params;
+  const userId = req.authUser!.id;
   if (isMongoConnected()) {
     const doc = await UserBrainProfileModel.findOne({ userId });
     const note = doc?.notes?.get(problemId) ?? '';
