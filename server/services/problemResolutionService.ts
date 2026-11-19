@@ -61,7 +61,8 @@ export async function resolveAndUpsertProblem(input:ProblemInput) {
     if(input.contentStatus)update.catalogStatus=input.contentStatus==='validated'?'authored':'inventory';
     delete update.slug;
     delete update.aliases;
-    const updated=await InterviewProblem.findOneAndUpdate({slug:best.slug},{$set:update,$addToSet:{aliases:{$each:input.aliases??[]}}},{new:true,runValidators:true});
+    const aliasesToKeep=[...(input.aliases??[]),...(best.method==='explicit-alias'?[best.title]:[])];
+    const updated=await InterviewProblem.findOneAndUpdate({slug:best.slug},{$set:update,$addToSet:{aliases:{$each:aliasesToKeep}}},{new:true,runValidators:true});
     return {action:'updated' as const,confidence:best.confidence,problem:updated};
   }
   const slug=input.slug || `${input.topicId}-${normalizedTitle.replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}`;
