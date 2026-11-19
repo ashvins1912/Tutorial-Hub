@@ -23,7 +23,11 @@ export function LoginPage() {
         const { data, error: authError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { data: { full_name: fullName.trim() } },
+          options: {
+            data: { full_name: fullName.trim() },
+            // Send confirmation links back to the host serving this build.
+            emailRedirectTo: window.location.origin,
+          },
         });
         if (authError) throw authError;
         if (!data.session) {
@@ -50,9 +54,10 @@ export function LoginPage() {
     setBusy(true);
     setError('');
     try {
-      // Match Pharma: use the current browser host/path, never a hard-coded
-      // production origin or a stale localhost build-time environment value.
-      const redirectTo = window.location.origin + window.location.pathname;
+      // Resolve the callback from the browser at runtime. Production returns
+      // to the deployed Render host; local development returns to localhost.
+      // Do not use a localhost build-time URL in a deployed bundle.
+      const redirectTo = window.location.origin;
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
