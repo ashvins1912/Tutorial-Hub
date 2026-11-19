@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/requireAuth';
 import { isMongoConnected } from '../db/connectMongo';
 import { AIAcademyProgress } from '../models/AIAcademyProgress';
 import { AI_ACADEMY_QUIZ_ANSWERS } from '../data/aiAcademyQuizAnswers';
+import { consumeAcademyProgressRequest } from '../services/aiAcademyRateLimit';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -23,12 +24,17 @@ export function isKnownAcademyLesson(lessonId: string): boolean {
   return lessonIds.has(lessonId);
 }
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   if (!isMongoConnected()) {
     return unavailable(res, 'AI Academy progress is temporarily unavailable.');
   }
   try {
-    const records = await AIAcademyProgress.find({ userId: _req.authUser!.id })
+    const rate = await consumeAcademyProgressRequest(req.authUser!.id);
+    if (!rate.allowed) {
+      res.set('Retry-After', String(rate.retryAfterSeconds));
+      return res.status(429).json({ code: 'PROGRESS_RATE_LIMITED', message: 'Too many progress requests. Please retry shortly.' });
+    }
+    const records = await AIAcademyProgress.find({ userId: req.authUser!.id })
       .sort({ lastAccessedAt: -1 }).limit(500).lean();
     const completed = records.filter((item) => item.completed).map((item) => item.lessonId);
     const quizPassed = records.filter((item) => item.quizPassed).map((item) => item.lessonId);
@@ -87,6 +93,11 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   }
 
   try {
+    const rate = await consumeAcademyProgressRequest(req.authUser!.id);
+    if (!rate.allowed) {
+      res.set('Retry-After', String(rate.retryAfterSeconds));
+      return res.status(429).json({ code: 'PROGRESS_RATE_LIMITED', message: 'Too many progress requests. Please retry shortly.' });
+    }
     const record = await AIAcademyProgress.findOneAndUpdate(
       { userId: req.authUser!.id, lessonId }, update,
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
