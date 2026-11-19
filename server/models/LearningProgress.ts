@@ -10,6 +10,7 @@ export interface ILearningProgress extends Document {
   target: string;
   currentStep: number;
   attempts: number;
+  quizHistory: Array<{ score: number; total: number; accuracy: number; attemptedAt: Date }>;
   bestScore: number;
   lastScore: number | null;
   quizTotal: number;
@@ -19,6 +20,13 @@ export interface ILearningProgress extends Document {
   lastAccessedAt: Date;
 }
 
+const QuizAttemptSchema = new Schema({
+  score: { type: Number, required: true, min: 0 },
+  total: { type: Number, required: true, min: 1, max: 40 },
+  accuracy: { type: Number, required: true, min: 0, max: 100 },
+  attemptedAt: { type: Date, default: Date.now },
+}, { _id: false });
+
 const LearningProgressSchema = new Schema<ILearningProgress>({
   userId: { type: String, required: true },
   lessonId: { type: String, required: true },
@@ -27,6 +35,7 @@ const LearningProgressSchema = new Schema<ILearningProgress>({
   target: { type: String, default: '16', maxlength: 32 },
   currentStep: { type: Number, min: 0, max: 100, default: 0 },
   attempts: { type: Number, min: 0, default: 0 },
+  quizHistory: { type: [QuizAttemptSchema], default: [] },
   bestScore: { type: Number, min: 0, max: 100, default: 0 },
   lastScore: { type: Number, min: 0, max: 100, default: null },
   quizTotal: { type: Number, min: 0, default: 0 },
