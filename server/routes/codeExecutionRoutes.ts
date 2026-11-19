@@ -22,7 +22,7 @@ function allowExecution(userId: string) {
 }
 
 router.get('/status', (_req, res) => {
-  const configured = process.env.CODE_EXECUTION_PROVIDER === 'judge0' && Boolean(process.env.CODE_EXECUTION_BASE_URL?.trim());
+  const configured = (process.env.CODE_EXECUTION_PROVIDER || '').trim().toLowerCase() === 'judge0' && Boolean(process.env.CODE_EXECUTION_BASE_URL?.trim());
   return res.json({ configured, provider: configured ? 'judge0' : null, languages: ['java', 'javascript', 'python'] });
 });
 
