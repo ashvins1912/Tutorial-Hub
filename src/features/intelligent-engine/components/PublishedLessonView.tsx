@@ -3,7 +3,7 @@ import { apiFetch } from '../../../lib/apiFetch';
 import { LearningRuntime } from './LearningRuntime';
 import { VisualizationRenderer, type LessonVisual } from './VisualizationRenderer';
 
-type QuizQuestion = { question: string; options: string[]; correctAnswer: string | string[]; explanation: string };
+type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 type PublishedLesson = {
   title: string;
