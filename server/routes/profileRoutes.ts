@@ -55,6 +55,7 @@ const PERSISTED_KEY_LABELS: Record<string, { label: string; category: string }> 
   'system-design-academy-progress': { label: 'System Design Academy Modules', category: 'System Design' },
   'system-design-roadmap-progress': { label: 'System Design & Distributed Algos Roadmap', category: 'System Design' },
   'ood-mastery-progress': { label: 'OOPs, SOLID & OOD Visual Studio', category: 'OOD & Principles' },
+  'ai-engineering-progress': { label: 'AI Engineering 5-Phase Studio', category: 'AI Engineering' },
   'topic-expertise-checks': { label: 'Topic Expertise Playbook Checks', category: 'Curriculum' },
   'mutation-graph-solved': { label: 'Mutation Graph & Ladder Milestones', category: 'Curriculum' },
   'solver-adaptive-telemetry': { label: 'Universal Solver SM-2 & Micro-Drills', category: 'Logic Solver' },
@@ -124,6 +125,13 @@ function summarizePayloadCount(key: string, val: unknown): number {
       (Array.isArray(t.completedProblemIds) ? t.completedProblemIds.length : 0) +
       (Array.isArray(t.microDrills) ? t.microDrills.length : 0) +
       (Array.isArray(t.drops) ? t.drops.length : 0)
+    );
+  }
+  if (key === 'ai-engineering-progress') {
+    const ai = val as { completedPhases?: unknown[]; solvedQuizIds?: unknown[] };
+    return (
+      (Array.isArray(ai.completedPhases) ? ai.completedPhases.length : 0) +
+      (Array.isArray(ai.solvedQuizIds) ? ai.solvedQuizIds.length : 0)
     );
   }
   return countTruthyRecord(val);
@@ -368,6 +376,19 @@ router.get('/stats', async (req: Request, res: Response) => {
     states['system-design-roadmap-progress'],
   );
   const oodMasteredCount = countArrayItems(states['ood-mastery-progress']);
+  const aiProgressRaw =
+    states['ai-engineering-progress'] && typeof states['ai-engineering-progress'] === 'object'
+      ? (states['ai-engineering-progress'] as {
+          completedPhases?: unknown[];
+          solvedQuizIds?: unknown[];
+        })
+      : null;
+  const aiPhasesCount = Array.isArray(aiProgressRaw?.completedPhases)
+    ? aiProgressRaw.completedPhases.length
+    : 0;
+  const aiQuizzesCount = Array.isArray(aiProgressRaw?.solvedQuizIds)
+    ? aiProgressRaw.solvedQuizIds.length
+    : 0;
   const topicExpertiseChecksCount = countTruthyRecord(states['topic-expertise-checks']);
   const mutationGraphCount = countArrayItems(states['mutation-graph-solved']);
   const solverTelemetryRaw =
@@ -506,6 +527,8 @@ router.get('/stats', async (req: Request, res: Response) => {
     sysDesignCompletedCount * 60 +
     sysDesignRoadmapCount * 30 +
     oodMasteredCount * 45 +
+    aiPhasesCount * 40 +
+    aiQuizzesCount * 25 +
     topicExpertiseChecksCount * 10 +
     mutationGraphCount * 25 +
     solverCompletedCount * 40 +
@@ -644,6 +667,7 @@ router.get('/stats', async (req: Request, res: Response) => {
       { id: 'sys-design', label: 'System Design Academy', completed: sysDesignCompletedCount, total: 12 },
       { id: 'sys-roadmap', label: 'System Design Master Roadmap', completed: sysDesignRoadmapCount, total: 19 },
       { id: 'ood-studio', label: 'OOPs, SOLID & OOD Studio', completed: oodMasteredCount, total: 32 },
+      { id: 'ai-engineering', label: 'AI Engineering 5-Phase Studio', completed: aiPhasesCount + aiQuizzesCount, total: 15 },
       { id: 'mutations', label: 'Mutation Graph & Ladder', completed: mutationGraphCount, total: 24 },
       { id: 'solver-studio', label: 'Universal Logic Solver', completed: solverCompletedCount, total: 15 },
       { id: 'concept-engine', label: 'Knowledge Engine Concepts', completed: engineMasteryValues.length + customConceptsCount, total: 15 + customConceptsCount },
