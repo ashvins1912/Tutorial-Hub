@@ -24,6 +24,10 @@ function assertVerifiedBatchRecord(item:any):void {
 /** Import only content that passed source, code, test, animation and complexity gates. */
 export async function seedVerifiedProblemBatches():Promise<void> {
   if(!isMongoConnected())return;
+  if(!ARRAYS_BATCH_01.every(item=>item.authoringMetadata?.status==='validated')) {
+    console.log('[Problem Catalog] Arrays batch 01 is awaiting CI quality-gate promotion; no records were marked validated.');
+    return;
+  }
   if(ARRAYS_BATCH_01.length!==5)throw new Error('Arrays batch 01 must contain exactly five authored problems.');
   for(const item of ARRAYS_BATCH_01) {
     assertVerifiedBatchRecord(item);
