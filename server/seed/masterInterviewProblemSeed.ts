@@ -1,7 +1,7 @@
 /**
  * Canonical additions from the 293-question topic-wise interview inventory.
- * These records intentionally start as inventory drafts: no fabricated problem
- * statements, examples, constraints, or solutions are presented as authoritative.
+ * These canonical records receive five-stage topic blueprints at startup. Official
+ * statements/examples/constraints and accepted code remain explicitly unverified.
  * The startup importer is idempotent and the authoring API can enrich them later.
  */
 export type MasterProblemSeed = { slug: string; title: string; topicId: string; topic: string; difficulty: 'Easy'|'Medium'|'Hard'; catalogStatus: 'review'; contentStatus: 'in-progress'; aliases: string[]; relatedTitles: string[] };
