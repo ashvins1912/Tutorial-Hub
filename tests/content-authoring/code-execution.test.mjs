@@ -25,3 +25,16 @@ test('does not execute code when the isolated provider is not configured', async
   if (previousProvider === undefined) delete process.env.CODE_EXECUTION_PROVIDER; else process.env.CODE_EXECUTION_PROVIDER = previousProvider;
   if (previousUrl === undefined) delete process.env.CODE_EXECUTION_BASE_URL; else process.env.CODE_EXECUTION_BASE_URL = previousUrl;
 });
+
+test('rejects insecure sandbox endpoints in production without making a network call', async () => {
+  const previousProvider = process.env.CODE_EXECUTION_PROVIDER;
+  const previousUrl = process.env.CODE_EXECUTION_BASE_URL;
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.CODE_EXECUTION_PROVIDER = 'judge0';
+  process.env.CODE_EXECUTION_BASE_URL = 'http://untrusted-runner.example';
+  process.env.NODE_ENV = 'production';
+  await assert.rejects(() => executeInJudge0({ language: 'python', sourceCode: 'print(1)', stdin: '' }), /CODE_EXECUTION_ENDPOINT_MUST_USE_HTTPS/);
+  if (previousProvider === undefined) delete process.env.CODE_EXECUTION_PROVIDER; else process.env.CODE_EXECUTION_PROVIDER = previousProvider;
+  if (previousUrl === undefined) delete process.env.CODE_EXECUTION_BASE_URL; else process.env.CODE_EXECUTION_BASE_URL = previousUrl;
+  if (previousNodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previousNodeEnv;
+});
