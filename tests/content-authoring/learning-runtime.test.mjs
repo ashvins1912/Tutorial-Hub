@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { binarySearchTrace, bubbleSortTrace, parseInput } from '../../src/features/intelligent-engine/components/LearningRuntime.tsx';
+import { binarySearchTrace, bubbleSortTrace, parseInput } from '../../src/features/intelligent-engine/components/learningAlgorithms.ts';
 
 test('binary search trace finds a target in sorted values', () => {
   const trace = binarySearchTrace([1, 3, 5, 7, 9], 7);
