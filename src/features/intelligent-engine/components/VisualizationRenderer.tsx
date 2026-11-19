@@ -14,7 +14,7 @@ type GraphNode = { id: string; label: string; shape: 'rect' | 'round' | 'diamond
 type GraphEdge = { from: string; to: string; label?: string };
 type ChartData = { chartType: 'bar' | 'line' | 'scatter' | 'pie'; xKey: string; nameKey?: string; valueKey?: string; series: Array<{ dataKey: string; label?: string; valuePrefix?: string; valueSuffix?: string }>; data: Array<Record<string, string | number>>; xAxisLabel?: string; axisLabel?: string; valueSuffix?: string };
 
-function parseGraph(source: string) {
+export function parseGraph(source: string) {
   const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const direction = /^(flowchart|graph)\s+LR/i.test(lines[0] || '') ? 'LR' : 'TD';
   const nodes = new Map<string, GraphNode>();
