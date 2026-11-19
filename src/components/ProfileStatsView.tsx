@@ -164,6 +164,7 @@ const MODULE_NAV_MAP: Record<string, TopView> = {
   'sys-design': 'system-design',
   'sys-roadmap': 'system-design',
   'ood-studio': 'ood',
+  'ai-engineering': 'ai-engineering',
   mutations: 'workspace',
   'solver-studio': 'solver',
   'concept-engine': 'knowledge-engine',

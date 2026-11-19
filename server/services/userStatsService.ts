@@ -51,6 +51,7 @@ export interface ComputedProgressSummary {
     sysDesignCompletedCount: number;
     sysDesignRoadmapCount: number;
     oodMasteredCount: number;
+    aiEngineeringMilestones: number;
     topicExpertiseChecksCount: number;
     mutationGraphCount: number;
     solverCompletedCount: number;
@@ -123,6 +124,13 @@ export function summarizePayloadCount(key: string, val: unknown): number {
       (Array.isArray(t.drops) ? t.drops.length : 0)
     );
   }
+  if (key === 'ai-engineering-progress') {
+    const ai = val as { completedPhases?: unknown[]; solvedQuizIds?: unknown[] };
+    return (
+      (Array.isArray(ai.completedPhases) ? ai.completedPhases.length : 0) +
+      (Array.isArray(ai.solvedQuizIds) ? ai.solvedQuizIds.length : 0)
+    );
+  }
   return countTruthyRecord(val);
 }
 
@@ -187,6 +195,20 @@ export function computeUserProgressSummary(
     states['system-design-roadmap-progress']
   );
   const oodMasteredCount = countArrayItems(states['ood-mastery-progress']);
+  const aiProgressRaw =
+    states['ai-engineering-progress'] && typeof states['ai-engineering-progress'] === 'object'
+      ? (states['ai-engineering-progress'] as {
+          completedPhases?: unknown[];
+          solvedQuizIds?: unknown[];
+        })
+      : null;
+  const aiPhasesCount = Array.isArray(aiProgressRaw?.completedPhases)
+    ? aiProgressRaw.completedPhases.length
+    : 0;
+  const aiQuizzesCount = Array.isArray(aiProgressRaw?.solvedQuizIds)
+    ? aiProgressRaw.solvedQuizIds.length
+    : 0;
+  const aiEngineeringMilestones = aiPhasesCount + aiQuizzesCount;
   const topicExpertiseChecksCount = countTruthyRecord(states['topic-expertise-checks']);
   const mutationGraphCount = countArrayItems(states['mutation-graph-solved']);
   const solverTelemetryRaw =
@@ -219,6 +241,8 @@ export function computeUserProgressSummary(
     sysDesignCompletedCount * 60 +
     sysDesignRoadmapCount * 30 +
     oodMasteredCount * 45 +
+    aiPhasesCount * 40 +
+    aiQuizzesCount * 25 +
     topicExpertiseChecksCount * 10 +
     mutationGraphCount * 25 +
     solverCompletedCount * 40 +
@@ -270,6 +294,7 @@ export function computeUserProgressSummary(
       sysDesignCompletedCount,
       sysDesignRoadmapCount,
       oodMasteredCount,
+      aiEngineeringMilestones,
       topicExpertiseChecksCount,
       mutationGraphCount,
       solverCompletedCount,
