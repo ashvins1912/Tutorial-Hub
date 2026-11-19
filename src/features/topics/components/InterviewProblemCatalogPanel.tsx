@@ -10,7 +10,7 @@ type ProblemRecord={
   examples?:Array<{input:string;output:string;explanation?:string}>;
   constraints?:string[];
   stages?:Record<string,any>;
-  authoringMetadata?:{status?:string;missingEvidence?:string[];sourcePolicy?:string};
+  authoringMetadata?:{status?:string;missingEvidence?:string[];sourcePolicy?:string;sourceReferences?:string[];qualityChecks?:Record<string,boolean>};\n  source?:{kind?:string;reference?:string};
 };
 const TOPICS=[
   ['arrays','Arrays'],['strings','Strings'],['two-pointers','Two Pointers'],['sliding-window','Sliding Window'],
@@ -58,18 +58,18 @@ function StageContent({problem,stage}:{problem:ProblemRecord;stage:StageKey}) {
     </div>
     <Panel title="Pseudocode"><pre className="whitespace-pre-wrap text-xs font-mono leading-relaxed">{data.pseudocode}</pre></Panel>
     <div className="grid md:grid-cols-3 gap-3">
-      <Panel title="Java implementation checklist"><p className="text-xs leading-relaxed">{data.java}</p></Panel>
-      <Panel title="JavaScript implementation checklist"><p className="text-xs leading-relaxed">{data.javascript}</p></Panel>
-      <Panel title="Python implementation checklist"><p className="text-xs leading-relaxed">{data.python}</p></Panel>
+      <Panel title="Java solution"><pre className="whitespace-pre-wrap overflow-x-auto text-xs font-mono leading-relaxed">{data.java}</pre></Panel>
+      <Panel title="JavaScript solution"><pre className="whitespace-pre-wrap overflow-x-auto text-xs font-mono leading-relaxed">{data.javascript}</pre></Panel>
+      <Panel title="Python solution"><pre className="whitespace-pre-wrap overflow-x-auto text-xs font-mono leading-relaxed">{data.python}</pre></Panel>
     </div>
     <Panel title="Dry-run checklist"><TextList items={data.dryRunChecklist}/></Panel>
-    <p className="text-xs text-amber-700 dark:text-amber-400">{data.languageStatus==='blueprint-not-submission'?'These are implementation blueprints, not verified accepted submissions. Problem-specific executable code remains to be authored and tested.':''}</p>
+    <p className="text-xs text-amber-700 dark:text-amber-400">{data.languageStatus==='blueprint-not-submission'?'These are implementation blueprints, not verified accepted submissions. Problem-specific executable code remains to be authored and tested.':data.languageStatus==='verified-submissions'?'Java, JavaScript and Python submissions are included and exercised by the batch test suite.':''}</p>
   </div>;
   if(stage==='practice')return <div className="grid md:grid-cols-2 gap-3">
     <Panel title="Progressive hints"><TextList items={data.hints}/></Panel>
     <Panel title="Edge-case checklist"><TextList items={data.edgeCases}/></Panel>
     <Panel title="Test-design ladder"><TextList items={data.testDesign}/></Panel>
-    <Panel title="Official examples and constraints"><p className="text-sm">Verified examples: {problem.examples?.length??0}. Verified constraints: {problem.constraints?.length??0}.</p><p className="text-xs text-amber-700 dark:text-amber-400">{data.validationNote}</p></Panel>
+    <Panel title="Official examples and constraints"><div className="space-y-3">{(problem.examples??[]).map((example,i)=><div key={i} className="text-xs space-y-1"><b>Example {i+1}</b><p><b>Input:</b> {example.input}</p><p><b>Output:</b> {example.output}</p>{example.explanation&&<p><b>Explanation:</b> {example.explanation}</p>}</div>)}</div><ul className="list-disc pl-5 text-xs space-y-1">{(problem.constraints??[]).map((constraint,i)=><li key={i}>{constraint}</li>)}</ul><p className="text-xs text-amber-700 dark:text-amber-400">{data.validationNote}</p></Panel><Panel title="Executable regression cases"><TextList items={(data.testCases??[]).map((test:any)=>test.input+" → "+test.expected)}/></Panel>
   </div>;
   return <div className="space-y-3">
     <Panel title="Correctness proof strategy"><p className="text-sm leading-relaxed">{data.proof}</p></Panel>
