@@ -20,9 +20,8 @@ export function AuthGate() {
 
     if (!session?.access_token) return () => { active = false; };
 
-    // PatternForge currently uses direct Supabase sessions (unlike Pharma's
-    // first-party Pharma cookie session). Keep its existing API contract, but
-    // let the shared API helper attach the latest refreshed bearer token.
+    // PatternForge keeps Supabase as its session authority. Verify the current
+    // user before loading any user-scoped learning state.
     apiFetchWithFreshSession('/api/auth/me')
       .then(async response => {
         const payload = await response.json().catch(() => ({}));
@@ -45,7 +44,7 @@ export function AuthGate() {
       <div className="max-w-md rounded-2xl border border-rose-500/30 bg-slate-900 p-7">
         <h1 className="text-xl font-bold">Account setup unavailable</h1>
         <p className="mt-3 text-sm text-slate-300">{profileError}</p>
-        <p className="mt-3 text-xs text-slate-500">Check MongoDB connectivity and the Supabase server environment variables in Render.</p>
+        <p className="mt-3 text-xs text-slate-500">Check the Render MongoDB connection and confirm the frontend and backend use the same Supabase project URL and matching API keys.</p>
         <button onClick={() => window.location.reload()} className="mt-5 rounded-lg bg-sky-500 px-4 py-2 font-semibold text-slate-950">Retry</button>
         <button onClick={() => void signOut()} className="ml-3 text-sm text-slate-400">Sign out</button>
       </div>
