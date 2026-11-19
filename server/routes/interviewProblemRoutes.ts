@@ -21,10 +21,20 @@ function validInput(body:any): body is ProblemInput {
 }
 function hasCompleteLesson(body:any):boolean {
   const stages=body?.stages??{};
-  return typeof body?.statement==='string' && body.statement.trim().length>0 &&
+  const implementation=stages.implement??{};
+  const checks=body?.authoringMetadata?.qualityChecks??{};
+  const requiredChecks=['statement','examples','constraints','java','javascript','python','tests','animation','complexity'];
+  const sourceReference=body?.source?.reference;
+  return typeof body?.statement==='string' && body.statement.trim().length>40 &&
     Array.isArray(body.examples) && body.examples.length>0 &&
     Array.isArray(body.constraints) && body.constraints.length>0 &&
-    !!stages.understand && !!stages.visualize && !!stages.implement && !!stages.practice && !!stages.master;
+    typeof sourceReference==='string' && sourceReference.startsWith('https://leetcode.com/problems/') &&
+    ['java','javascript','python'].every((language:string)=>typeof implementation[language]==='string' && implementation[language].trim().length>40) &&
+    implementation.languageStatus==='verified-submissions' &&
+    Array.isArray(stages.practice?.testCases) && stages.practice.testCases.length>0 &&
+    Array.isArray(stages.visualize?.animationSteps) && stages.visualize.animationSteps.length>=4 &&
+    typeof stages.master?.proof==='string' && !!stages.master.timeComplexity && !!stages.master.spaceComplexity &&
+    requiredChecks.every((key:string)=>checks[key]===true);
 }
 
 // GET /api/interview-problems?topicId=&q=&contentStatus=&page=&limit=
@@ -66,17 +76,23 @@ router.post('/upsert',requireCatalogAdmin,async(req:Request,res:Response)=>{
 // PATCH /api/interview-problems/:slug — enrich a known record without changing its identity.
 router.patch('/:slug',requireCatalogAdmin,async(req:Request,res:Response)=>{
   if(!isMongoConnected())return res.status(503).json({error:'MongoDB is required for catalog writes.'});
-  const allowed=['statement','examples','constraints','stages','difficulty','contentStatus','aliases','relatedTitles'];
+  const allowed=['statement','examples','constraints','stages','difficulty','contentStatus','aliases','relatedTitles','source','authoringMetadata'];
   const update:any={};
   for(const key of allowed)if(req.body?.[key]!==undefined)update[key]=req.body[key];
   if(!Object.keys(update).length)return res.status(400).json({error:'No editable problem fields supplied.'});
   const current=await InterviewProblem.findOne({slug:req.params.slug});
   if(!current)return res.status(404).json({error:'Problem not found'});
   if(update.contentStatus==='validated') {
-    const merged={statement:update.statement??current.statement,examples:update.examples??current.examples,constraints:update.constraints??current.constraints,stages:update.stages??current.stages};
-    const stages:any=merged.stages??{};
-    if(!merged.statement || !merged.examples?.length || !merged.constraints?.length || !stages.understand || !stages.visualize || !stages.implement || !stages.practice || !stages.master)
-      return res.status(400).json({error:'A problem cannot be marked validated until its statement, examples, constraints and all five learning stages are present.'});
+    const merged={
+      statement:update.statement??current.statement,
+      examples:update.examples??current.examples,
+      constraints:update.constraints??current.constraints,
+      stages:update.stages??current.stages,
+      source:update.source??current.source,
+      authoringMetadata:update.authoringMetadata??current.authoringMetadata
+    };
+    if(!hasCompleteLesson(merged))
+      return res.status(400).json({error:'Validation requires an official LeetCode source, statement, examples, constraints, three problem-specific language submissions, executable test evidence, at least four animation steps, a correctness proof, complexity analysis, and all quality checks.'});
   }
   if(update.contentStatus)update.catalogStatus=update.contentStatus==='validated'?'authored':'inventory';
   const problem=await InterviewProblem.findOneAndUpdate({slug:req.params.slug},{$set:update},{new:true,runValidators:true});
