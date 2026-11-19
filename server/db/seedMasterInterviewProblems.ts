@@ -1,5 +1,6 @@
 import { InterviewProblem } from '../models/InterviewProblem';
 import { MASTER_INTERVIEW_PROBLEM_ADDITIONS } from '../seed/masterInterviewProblemSeed';
+import { buildMasterProblemLesson } from '../seed/masterProblemLessonAuthor';
 import { normalizeProblemTitle } from '../services/problemResolutionService';
 import { isMongoConnected } from '../db/connectMongo';
 
@@ -12,25 +13,46 @@ let completed=false;
 export async function seedMasterInterviewProblems():Promise<void>{
   if(completed || !isMongoConnected())return;
   try{
-    // Ensure the unique topic/title and slug indexes exist before any upserts.
     await InterviewProblem.init();
     const operations=MASTER_INTERVIEW_PROBLEM_ADDITIONS.map(item=>{
       const normalizedTitle=normalizeProblemTitle(item.title);
+      const lesson=buildMasterProblemLesson(item);
       return {
         updateOne:{
           filter:{topicId:item.topicId,normalizedTitle},
-          update:{$setOnInsert:{
-            ...item,normalizedTitle,examples:[],constraints:[],stages:{},
-            source:{kind:'293-question-master-inventory'}
-          }},
+          // Pipeline $ifNull enriches missing fields but never replaces authored content.
+          update:[{$set:{
+            slug:{$ifNull:['$slug',item.slug]},
+            title:{$ifNull:['$title',item.title]},
+            normalizedTitle:{$ifNull:['$normalizedTitle',normalizedTitle]},
+            topicId:{$ifNull:['$topicId',item.topicId]},
+            topic:{$ifNull:['$topic',item.topic]},
+            difficulty:{$ifNull:['$difficulty',item.difficulty]},
+            aliases:{$ifNull:['$aliases',item.aliases]},
+            relatedTitles:{$ifNull:['$relatedTitles',item.relatedTitles]},
+            catalogStatus:{$cond:[{$eq:['$catalogStatus','authored']},'authored',{$ifNull:['$catalogStatus','review']}]},
+            contentStatus:{$cond:[{$eq:['$contentStatus','validated']},'validated',{$ifNull:['$contentStatus','in-progress']}]},
+            statement:{$ifNull:['$statement',lesson.statement]},
+            examples:{$ifNull:['$examples',[]]},
+            constraints:{$ifNull:['$constraints',[]]},
+            stages:{
+              understand:{$ifNull:['$stages.understand',lesson.stages.understand]},
+              visualize:{$ifNull:['$stages.visualize',lesson.stages.visualize]},
+              implement:{$ifNull:['$stages.implement',lesson.stages.implement]},
+              practice:{$ifNull:['$stages.practice',lesson.stages.practice]},
+              master:{$ifNull:['$stages.master',lesson.stages.master]}
+            },
+            authoringMetadata:{$ifNull:['$authoringMetadata',lesson.authoringMetadata]},
+            source:{$ifNull:['$source',{kind:'293-question-master-inventory'}]}
+          }}],
           upsert:true
         }
       };
     });
     const result=await InterviewProblem.bulkWrite(operations,{ordered:false});
     completed=true;
-    console.log(`[Problem Catalog] Startup import complete: ${result.upsertedCount} inserted, ${result.matchedCount} already present, ${MASTER_INTERVIEW_PROBLEM_ADDITIONS.length} source rows.`);
+    console.log(`[Problem Catalog] Five-stage authoring import complete: ${result.upsertedCount} inserted, ${result.matchedCount} enriched/preserved, ${MASTER_INTERVIEW_PROBLEM_ADDITIONS.length} questions.`);
   }catch(error){
-    console.error('[Problem Catalog] Startup import failed; server will continue and retry on next process start:',error instanceof Error?error.message:String(error));
+    console.error('[Problem Catalog] Startup authoring import failed; server will continue and retry on next process start:',error instanceof Error?error.message:String(error));
   }
 }
