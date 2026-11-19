@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { InterviewProblem } from '../models/InterviewProblem';
-import { resolveAndUpsertProblem, ProblemInput } from '../services/problemResolutionService';
+import { resolveAndUpsertProblem } from '../services/problemResolutionService';
+import type { ProblemInput } from '../services/problemResolutionService';
 import { isMongoConnected } from '../db/connectMongo';
 
 const router=express.Router();
@@ -52,7 +53,7 @@ router.post('/upsert',requireCatalogAdmin,async(req:Request,res:Response)=>{
 // PATCH /api/interview-problems/:slug — enrich a known record without changing its identity.
 router.patch('/:slug',requireCatalogAdmin,async(req:Request,res:Response)=>{
   if(!isMongoConnected())return res.status(503).json({error:'MongoDB is required for catalog writes.'});
-  const allowed=['statement','examples','constraints','stages','difficulty','contentStatus','aliases'];
+  const allowed=['statement','examples','constraints','stages','difficulty','contentStatus','aliases','relatedTitles'];
   const update:any={};
   for(const key of allowed)if(req.body?.[key]!==undefined)update[key]=req.body[key];
   if(!Object.keys(update).length)return res.status(400).json({error:'No editable problem fields supplied.'});
