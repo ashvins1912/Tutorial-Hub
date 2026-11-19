@@ -118,8 +118,8 @@ export function HowToIdentifyTrainer({ problem, onBack }: HowToIdentifyTrainerPr
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Problem Summary */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+      {/* Top Breadcrumb & Complete Problem Specification */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
@@ -127,7 +127,7 @@ export function HowToIdentifyTrainer({ problem, onBack }: HowToIdentifyTrainerPr
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
           >
             <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-            Back
+            Back to Topic Bank
           </button>
 
           {activeSprintTaskContext && (
@@ -137,7 +137,7 @@ export function HowToIdentifyTrainer({ problem, onBack }: HowToIdentifyTrainerPr
           )}
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
               #{problem.number}
@@ -149,11 +149,88 @@ export function HowToIdentifyTrainer({ problem, onBack }: HowToIdentifyTrainerPr
             <span className="font-semibold text-sky-700 dark:text-sky-400">{problem.difficulty}</span>
             <span aria-hidden="true">·</span>
             <span>{problem.topicCategory}</span>
+            {problem.studySheets && problem.studySheets.length > 0 && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="font-mono text-slate-700 dark:text-slate-300">
+                  {problem.studySheets.join(' · ')}
+                </span>
+              </>
+            )}
           </div>
-          <p className="text-sm text-slate-700 dark:text-slate-300">{problem.promptSummary}</p>
-          <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
-            Constraints: {problem.constraintsText}
+
+          <p className="text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+            {problem.fullDescription || problem.promptSummary}
           </p>
+        </div>
+
+        {problem.examples && problem.examples.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {problem.examples.map((ex, idx) => (
+              <div
+                key={idx}
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 space-y-1 text-xs"
+              >
+                <div className="font-mono font-semibold text-slate-500 dark:text-slate-400">
+                  Example {idx + 1}
+                </div>
+                <div className="font-mono text-slate-800 dark:text-slate-200">
+                  <span className="text-slate-500">Input: </span>
+                  {ex.input}
+                </div>
+                <div className="font-mono text-emerald-700 dark:text-emerald-400">
+                  <span className="text-slate-500">Output: </span>
+                  {ex.output}
+                </div>
+                {ex.explanation && (
+                  <p className="text-slate-600 dark:text-slate-400 pt-0.5">{ex.explanation}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-1">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-3 space-y-1.5">
+            <div className="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400">
+              CONSTRAINTS
+            </div>
+            {problem.constraintsList && problem.constraintsList.length > 0 ? (
+              <ul className="space-y-1 text-xs font-mono text-slate-700 dark:text-slate-300 list-disc list-inside">
+                {problem.constraintsList.map((c) => (
+                  <li key={c}>{c}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs font-mono text-slate-700 dark:text-slate-300">
+                {problem.constraintsText}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-3 space-y-1.5">
+            <div className="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400">
+              COMPANY INTERVIEW FREQUENCY
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {problem.bigTechFrequency.map((f) => (
+                <div
+                  key={f.company}
+                  className="px-2.5 py-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                >
+                  <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-slate-100">
+                    <span>{f.company}</span>
+                    <span className="font-mono text-sky-600 dark:text-sky-400 tabular-nums">
+                      {f.frequencyScore}%
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    {f.lastAskedTag}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {activeSprintTaskContext?.twistConstraint && (

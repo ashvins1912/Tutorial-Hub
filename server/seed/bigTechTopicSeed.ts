@@ -1,4 +1,5 @@
 import { BigTechProblem, BigTechTopicSummary } from '../../src/types/dsa';
+import { CORE_36_ENRICHMENTS, EXTRA_12_BIG_TECH_PROBLEMS } from './bigTechDetailsAndExtra';
 
 export const BIG_TECH_TOPICS: BigTechTopicSummary[] = [
   {
@@ -87,7 +88,7 @@ export const BIG_TECH_TOPICS: BigTechTopicSummary[] = [
   },
 ];
 
-export const BIG_TECH_36_PROBLEMS: BigTechProblem[] = [
+const BASE_36_PROBLEMS: BigTechProblem[] = [
   // 1. Arrays & Prefix Sum
   {
     slug: 'two-sum',
@@ -1920,3 +1921,13 @@ export const BIG_TECH_36_PROBLEMS: BigTechProblem[] = [
     },
   },
 ];
+
+export const BIG_TECH_36_PROBLEMS: BigTechProblem[] = [
+  ...BASE_36_PROBLEMS.map((p) => ({
+    ...p,
+    ...(CORE_36_ENRICHMENTS[p.slug] ?? {}),
+  })),
+  ...EXTRA_12_BIG_TECH_PROBLEMS,
+];
+
+export const BIG_TECH_PROBLEMS = BIG_TECH_36_PROBLEMS;

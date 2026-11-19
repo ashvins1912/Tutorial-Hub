@@ -9,9 +9,9 @@ router.get('/topics/summary', (_req: Request, res: Response) => {
   res.json({ topics: BIG_TECH_TOPICS, totalProblems: BIG_TECH_36_PROBLEMS.length });
 });
 
-// GET /api/problems?topic=...&company=...&difficulty=...&q=...
+// GET /api/problems?topic=...&company=...&difficulty=...&sheet=...&q=...
 router.get('/', (req: Request, res: Response) => {
-  const { topic, company, difficulty, q } = req.query as Record<string, string | undefined>;
+  const { topic, company, difficulty, sheet, q } = req.query as Record<string, string | undefined>;
 
   let results = [...BIG_TECH_36_PROBLEMS];
 
@@ -21,6 +21,12 @@ router.get('/', (req: Request, res: Response) => {
 
   if (difficulty && difficulty !== 'All') {
     results = results.filter((p) => p.difficulty.toLowerCase() === difficulty.toLowerCase());
+  }
+
+  if (sheet && sheet !== 'All') {
+    results = results.filter((p) =>
+      p.studySheets?.some((s) => s.toLowerCase() === sheet.toLowerCase())
+    );
   }
 
   if (company && company !== 'All') {
@@ -41,6 +47,7 @@ router.get('/', (req: Request, res: Response) => {
         p.title.toLowerCase().includes(query) ||
         p.primaryPattern.toLowerCase().includes(query) ||
         p.topicCategory.toLowerCase().includes(query) ||
+        (p.fullDescription && p.fullDescription.toLowerCase().includes(query)) ||
         p.howToIdentify.keywordTriggers.some((k) => k.toLowerCase().includes(query))
     );
   }

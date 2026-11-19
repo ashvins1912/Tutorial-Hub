@@ -3,11 +3,11 @@ import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
 
 const STAGES: { id: 1 | 2 | 3 | 4 | 5; label: string; detail: string }[] = [
-  { id: 1, label: '1. Problem X-Ray', detail: 'Signals & Big-O' },
-  { id: 2, label: '2. Visual Sandbox', detail: 'Manual Dry-Run' },
-  { id: 3, label: '3. Logic Builder', detail: 'Blocks & Code' },
-  { id: 4, label: '4. Brute vs Optimal', detail: 'Race & Bottleneck' },
-  { id: 5, label: '5. Mastery Map', detail: '18-Pattern Tree' },
+  { id: 1, label: '1. Read & Signals', detail: 'Big-O & Clues' },
+  { id: 2, label: '2. Dry-Run & Pair', detail: 'Visual Sandbox' },
+  { id: 3, label: '3. Build Code', detail: 'Logic Blocks' },
+  { id: 4, label: '4. Compare Big-O', detail: 'Brute vs Optimal' },
+  { id: 5, label: '5. DP Learning Lab', detail: 'Guided Path' },
 ];
 
 export function MasteryStepper() {

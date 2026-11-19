@@ -242,6 +242,8 @@ export interface BigTechTopicSummary {
   keywordTriggers: string[];
 }
 
+export type StudySheetTag = 'NeetCode 150' | 'Blind 75' | 'Grind 75' | 'LeetCode Top 150';
+
 export interface BigTechProblem {
   slug: string;
   number: number;
@@ -252,6 +254,14 @@ export interface BigTechProblem {
   secondaryStructure: string;
   labProblemId?: string;
   promptSummary: string;
+  fullDescription?: string;
+  examples?: {
+    input: string;
+    output: string;
+    explanation?: string;
+  }[];
+  constraintsList?: string[];
+  studySheets?: StudySheetTag[];
   constraintsText: string;
   bigTechFrequency: {
     company: BigTechCompany;

@@ -1,0 +1,922 @@
+import { BigTechProblem, StudySheetTag } from '../../src/types/dsa';
+
+export const EXTRA_12_BIG_TECH_PROBLEMS: BigTechProblem[] = [
+  {
+    slug: 'product-of-array-except-self',
+    number: 238,
+    title: 'Product of Array Except Self',
+    difficulty: 'Medium',
+    topicCategory: 'Arrays & Prefix Sum',
+    primaryPattern: 'Prefix & Suffix Running Products',
+    secondaryStructure: 'O(1) Output Reuse',
+    promptSummary: 'Compute an output array where index i holds the product of all other elements without using division.',
+    fullDescription:
+      'For each position i in an integer array nums of length n, compute the product of every element except nums[i]. You must achieve O(n) runtime and avoid division operations (which fail when zeros appear).',
+    examples: [
+      { input: 'nums = [2, 3, 4, 5]', output: '[60, 40, 30, 24]', explanation: 'Index 0 skips 2 -> 3*4*5 = 60; index 1 skips 3 -> 2*4*5 = 40.' },
+      { input: 'nums = [-2, 0, 5, 3]', output: '[0, -30, 0, 0]', explanation: 'Only index 1 excludes the zero, leaving (-2)*5*3 = -30.' },
+    ],
+    constraintsList: ['2 <= nums.length <= 10^5', '-30 <= nums[i] <= 30', 'O(n) time without division', 'O(1) extra space excluding result'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: '2 <= nums.length <= 10^5 · O(N) time · no division · O(1) extra space',
+    bigTechFrequency: [
+      { company: 'Meta', frequencyScore: 95, lastAskedTag: 'Top 10 Meta' },
+      { company: 'Amazon', frequencyScore: 94, lastAskedTag: 'Division-free sweep' },
+      { company: 'Google', frequencyScore: 87, lastAskedTag: 'O(1) space check' },
+      { company: 'Microsoft', frequencyScore: 89, lastAskedTag: 'Prefix-suffix classic' },
+      { company: 'Apple', frequencyScore: 90, lastAskedTag: 'Zero handling' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['except self', 'without division', 'O(1) extra space'],
+      eliminatorRule: 'Total-product division breaks on zeros; multiplying left prefix product by right suffix product handles any number of zeros naturally.',
+      mentalModelQuestion: 'Can I pass left-to-right storing left products in the output array, then multiply right-to-left using a single suffix scalar?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Does the output array count toward the O(1) space limit?', interviewerAnswer: 'No, output array space is excluded from auxiliary space.', isCritical: true },
+        { question: 'Can the array contain one or multiple zeros?', interviewerAnswer: 'Yes, prefix/suffix products handle 0, 1, or multiple zeros automatically.', isCritical: true },
+      ],
+      bruteForcePitch: {
+        explanation: 'For each index i, loop over all j != i to multiply remaining elements.',
+        bottleneck: 'Repeatedly multiplies the same prefix/suffix segments.',
+        time: 'O(N^2)',
+        space: 'O(1)',
+      },
+      optimalPitch: {
+        explanation: 'First pass writes running prefix product into out[i]; second backward pass multiplies out[i] by running suffix scalar.',
+        invariant: 'After pass 1, out[i] holds product(0..i-1); pass 2 multiplies in product(i+1..n-1).',
+        time: 'O(N)',
+        space: 'O(1) aux',
+      },
+      interviewerFollowUp: {
+        twist: 'What if values are large and products overflow 32-bit integers?',
+        adaptation: 'Clarify modulo arithmetic or use 64-bit longs / BigInt.',
+      },
+    },
+    solutions: {
+      java: `public int[] productExceptSelf(int[] nums) {\n  int n = nums.length; int[] out = new int[n];\n  int left = 1;\n  for (int i = 0; i < n; i++) { out[i] = left; left *= nums[i]; }\n  int right = 1;\n  for (int i = n - 1; i >= 0; i--) { out[i] *= right; right *= nums[i]; }\n  return out;\n}`,
+      js: `function productExceptSelf(nums) {\n  const n = nums.length, out = new Array(n).fill(1);\n  let left = 1;\n  for (let i = 0; i < n; i++) { out[i] = left; left *= nums[i]; }\n  let right = 1;\n  for (let i = n - 1; i >= 0; i--) { out[i] *= right; right *= nums[i]; }\n  return out;\n}`,
+      python: `def product_except_self(nums):\n    n = len(nums); out = [1] * n\n    left = 1\n    for i in range(n):\n        out[i] = left; left *= nums[i]\n    right = 1\n    for i in range(n - 1, -1, -1):\n        out[i] *= right; right *= nums[i]\n    return out`,
+    },
+  },
+  {
+    slug: 'container-with-most-water',
+    number: 11,
+    title: 'Container With Most Water',
+    difficulty: 'Medium',
+    topicCategory: 'Two Pointers',
+    primaryPattern: 'Greedy Shorter-Wall Shrink',
+    secondaryStructure: 'Two Pointers',
+    promptSummary: 'Pick two vertical boundary lines that maximize enclosed rectangular water area (width * minHeight).',
+    fullDescription:
+      'Given an array of non-negative bar heights at unit x-intervals, choose two indices i < j such that the rectangle bounded by height[i], height[j], and the x-axis holds the maximum possible area: (j - i) * min(height[i], height[j]).',
+    examples: [
+      { input: 'height = [3, 8, 2, 5, 7, 4]', output: '21', explanation: 'Indices 1 (height 8) and 4 (height 7) yield width 3 * min(8, 7) = 21.' },
+      { input: 'height = [4, 4]', output: '4', explanation: 'Width 1 * height 4 = 4.' },
+    ],
+    constraintsList: ['2 <= height.length <= 10^5', '0 <= height[i] <= 10^4', 'Slanting container is not allowed'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: '2 <= n <= 10^5 · O(N) time · O(1) space',
+    bigTechFrequency: [
+      { company: 'Amazon', frequencyScore: 93, lastAskedTag: 'Greedy proof check' },
+      { company: 'Google', frequencyScore: 90, lastAskedTag: 'Pointer invariant' },
+      { company: 'Meta', frequencyScore: 88, lastAskedTag: 'Classic medium' },
+      { company: 'Microsoft', frequencyScore: 87, lastAskedTag: 'Two-pointer proof' },
+      { company: 'Apple', frequencyScore: 85, lastAskedTag: 'Screen favorite' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['maximize area between two lines', 'width times min height', 'N <= 10^5'],
+      eliminatorRule: 'Moving the taller wall inward strictly shrinks width while height stays capped by the shorter wall, so area can NEVER improve.',
+      mentalModelQuestion: 'Starting from maximum width [0, n-1], which pointer MUST move inward to have any chance of beating the current area?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Can bars inside the two chosen walls block water?', interviewerAnswer: 'No, interior bars are ignored here (unlike Trapping Rain Water).', isCritical: true },
+        { question: 'What is the maximum N?', interviewerAnswer: 'Up to 10^5, requiring O(N) time.', isCritical: false },
+      ],
+      bruteForcePitch: {
+        explanation: 'Evaluate (j - i) * min(h[i], h[j]) for all pairs i < j.',
+        bottleneck: 'Quadratic pairs at N = 10^5.',
+        time: 'O(N^2)',
+        space: 'O(1)',
+      },
+      optimalPitch: {
+        explanation: 'Start l = 0, r = n - 1; record area and advance whichever wall is shorter.',
+        invariant: 'Any pair skipped by advancing the shorter wall had strictly smaller width and ceiling <= shorter wall.',
+        time: 'O(N)',
+        space: 'O(1)',
+      },
+      interviewerFollowUp: {
+        twist: 'How does this differ from Trapping Rain Water (LC 42)?',
+        adaptation: 'LC 11 picks ONE best pair ignoring middle bars; LC 42 sums water trapped over EVERY middle bar.',
+      },
+    },
+    solutions: {
+      java: `public int maxArea(int[] h) {\n  int l = 0, r = h.length - 1, best = 0;\n  while (l < r) {\n    best = Math.max(best, (r - l) * Math.min(h[l], h[r]));\n    if (h[l] < h[r]) l++; else r--;\n  }\n  return best;\n}`,
+      js: `function maxArea(h) {\n  let l = 0, r = h.length - 1, best = 0;\n  while (l < r) {\n    best = Math.max(best, (r - l) * Math.min(h[l], h[r]));\n    if (h[l] < h[r]) l++; else r--;\n  }\n  return best;\n}`,
+      python: `def max_area(h):\n    l, r, best = 0, len(h) - 1, 0\n    while l < r:\n        best = max(best, (r - l) * min(h[l], h[r]))\n        if h[l] < h[r]: l += 1\n        else: r -= 1\n    return best`,
+    },
+  },
+  {
+    slug: 'sliding-window-maximum',
+    number: 239,
+    title: 'Sliding Window Maximum',
+    difficulty: 'Hard',
+    topicCategory: 'Sliding Window',
+    primaryPattern: 'Monotonic Decreasing Deque',
+    secondaryStructure: 'Deque (Front/Back O(1))',
+    promptSummary: 'Return the maximum element inside every contiguous fixed-size window of length k.',
+    fullDescription:
+      'Given an integer array nums and window size k, slide a window of width k one index at a time from index 0 to n - k and emit the largest value present inside each window in O(N) total time.',
+    examples: [
+      { input: 'nums = [4, 2, 12, 3, 8, 6], k = 3', output: '[12, 12, 12, 8]', explanation: 'Max across [4,2,12]=12, [2,12,3]=12, [12,3,8]=12, [3,8,6]=8.' },
+      { input: 'nums = [5, 1], k = 1', output: '[5, 1]', explanation: 'Each single-element window returns itself.' },
+    ],
+    constraintsList: ['1 <= nums.length <= 10^5', '1 <= k <= nums.length', 'O(N) optimal via Deque'],
+    studySheets: ['NeetCode 150', 'Grind 75'],
+    constraintsText: '1 <= N <= 10^5 · 1 <= k <= N · O(N) time',
+    bigTechFrequency: [
+      { company: 'Google', frequencyScore: 93, lastAskedTag: 'Deque invariant' },
+      { company: 'Amazon', frequencyScore: 91, lastAskedTag: 'Top hard window' },
+      { company: 'Meta', frequencyScore: 86, lastAskedTag: 'Stream max' },
+      { company: 'Microsoft', frequencyScore: 84, lastAskedTag: 'O(N) upgrade' },
+      { company: 'Apple', frequencyScore: 82, lastAskedTag: 'Telemetry peak' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['fixed window size k', 'maximum in every window', 'O(N) time'],
+      eliminatorRule: 'A Max-Heap gives O(N log N) because stale indices pile up; a Monotonic Deque evicts both out-of-window fronts and dominated backs in O(1) amortized.',
+      mentalModelQuestion: 'If a newer element nums[i] is >= an older element still in the window, can that older element EVER be the maximum again?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Is k guaranteed to be <= nums.length?', interviewerAnswer: 'Yes, 1 <= k <= nums.length.', isCritical: true },
+        { question: 'Should we optimize below O(N log k) heap time?', interviewerAnswer: 'Yes, aim for strict O(N) using a monotonic deque.', isCritical: true },
+      ],
+      bruteForcePitch: {
+        explanation: 'Scan all k elements inside each window or query a lazy Max-Heap.',
+        bottleneck: 'O(N·k) linear rescan or O(N log N) heap updates.',
+        time: 'O(N·k)',
+        space: 'O(1)',
+      },
+      optimalPitch: {
+        explanation: 'Store indices in a decreasing Deque: pop front if out of window (<= i - k), pop back while nums[back] <= nums[i], push i, record nums[front].',
+        invariant: 'Deque front always holds the index of the maximum value in the current window.',
+        time: 'O(N)',
+        space: 'O(k)',
+      },
+      interviewerFollowUp: {
+        twist: 'What if you need both min and max difference <= limit (LC 1438)?',
+        adaptation: 'Maintain two monotonic deques (one decreasing for max, one increasing for min) and shrink left when max - min > limit.',
+      },
+    },
+    solutions: {
+      java: `public int[] maxSlidingWindow(int[] nums, int k) {\n  int n = nums.length; int[] res = new int[n - k + 1];\n  Deque<Integer> dq = new ArrayDeque<>();\n  for (int i = 0; i < n; i++) {\n    if (!dq.isEmpty() && dq.peekFirst() <= i - k) dq.pollFirst();\n    while (!dq.isEmpty() && nums[dq.peekLast()] <= nums[i]) dq.pollLast();\n    dq.offerLast(i);\n    if (i >= k - 1) res[i - k + 1] = nums[dq.peekFirst()];\n  }\n  return res;\n}`,
+      js: `function maxSlidingWindow(nums, k) {\n  const dq = [], res = [];\n  let head = 0;\n  for (let i = 0; i < nums.length; i++) {\n    if (head < dq.length && dq[head] <= i - k) head++;\n    while (dq.length > head && nums[dq[dq.length - 1]] <= nums[i]) dq.pop();\n    dq.push(i);\n    if (i >= k - 1) res.push(nums[dq[head]]);\n  }\n  return res;\n}`,
+      python: `from collections import deque\ndef max_sliding_window(nums, k):\n    dq, res = deque(), []\n    for i, x in enumerate(nums):\n        if dq and dq[0] <= i - k: dq.popleft()\n        while dq and nums[dq[-1]] <= x: dq.pop()\n        dq.append(i)\n        if i >= k - 1: res.append(nums[dq[0]])\n    return res`,
+    },
+  },
+  {
+    slug: 'search-in-rotated-sorted-array',
+    number: 33,
+    title: 'Search in Rotated Sorted Array',
+    difficulty: 'Medium',
+    topicCategory: 'Modified Binary Search',
+    primaryPattern: 'Sorted-Half Identification BS',
+    secondaryStructure: 'Binary Search',
+    promptSummary: 'Find the index of target in a distinct sorted array rotated at an unknown pivot in O(log N) time.',
+    fullDescription:
+      'An ascending array of distinct integers was circularly shifted at an unknown pivot index. Given the rotated array and a target integer, return its 0-based index in O(log N) time, or -1 if absent.',
+    examples: [
+      { input: 'nums = [6, 7, 1, 2, 3, 4, 5], target = 2', output: '3', explanation: 'Right half [2..5] is sorted and target 2 lies inside it.' },
+      { input: 'nums = [6, 7, 1, 2, 3, 4, 5], target = 9', output: '-1', explanation: 'Target does not exist in nums.' },
+    ],
+    constraintsList: ['1 <= nums.length <= 5000', 'All elements are distinct', 'O(log N) runtime required'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: '1 <= N <= 5000 · distinct values · O(log N)',
+    bigTechFrequency: [
+      { company: 'Meta', frequencyScore: 94, lastAskedTag: 'Top BS medium' },
+      { company: 'Amazon', frequencyScore: 92, lastAskedTag: 'Pivot check' },
+      { company: 'Google', frequencyScore: 89, lastAskedTag: 'Duplicates follow-up' },
+      { company: 'Microsoft', frequencyScore: 91, lastAskedTag: 'Onsite staple' },
+      { company: 'Apple', frequencyScore: 86, lastAskedTag: 'Boundary precision' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['rotated sorted array', 'unknown pivot', 'O(log N)'],
+      eliminatorRule: 'Scanning linearly takes O(N); splitting at mid guarantees at least ONE side [l..mid] or [mid..r] is strictly sorted.',
+      mentalModelQuestion: 'Once I identify which half is strictly sorted, how do I test in O(1) whether target falls inside that sorted range?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Are all values guaranteed unique?', interviewerAnswer: 'Yes in LC 33 (duplicates in LC 81 add the l++, r-- ambiguity step).', isCritical: true },
+        { question: 'Can the array have zero rotation (fully sorted)?', interviewerAnswer: 'Yes, handle standard ascending order cleanly.', isCritical: false },
+      ],
+      bruteForcePitch: {
+        explanation: 'Linear scan from 0..n-1.',
+        bottleneck: 'Fails O(log N) requirement.',
+        time: 'O(N)',
+        space: 'O(1)',
+      },
+      optimalPitch: {
+        explanation: 'At mid: if nums[l] <= nums[mid], left is sorted—check if nums[l] <= target < nums[mid]; else right is sorted—check nums[mid] < target <= nums[r].',
+        invariant: 'Checking membership inside the guaranteed-sorted half safely discards half the search space.',
+        time: 'O(log N)',
+        space: 'O(1)',
+      },
+      interviewerFollowUp: {
+        twist: 'What if the array CAN contain duplicate values (LC 81)?',
+        adaptation: 'When nums[l] == nums[mid] == nums[r], shrink l++ and r-- (worst-case degrades to O(N)).',
+      },
+    },
+    solutions: {
+      java: `public int search(int[] nums, int target) {\n  int l = 0, r = nums.length - 1;\n  while (l <= r) {\n    int m = l + (r - l) / 2;\n    if (nums[m] == target) return m;\n    if (nums[l] <= nums[m]) {\n      if (nums[l] <= target && target < nums[m]) r = m - 1; else l = m + 1;\n    } else {\n      if (nums[m] < target && target <= nums[r]) l = m + 1; else r = m - 1;\n    }\n  }\n  return -1;\n}`,
+      js: `function search(nums, target) {\n  let l = 0, r = nums.length - 1;\n  while (l <= r) {\n    const m = l + ((r - l) >> 1);\n    if (nums[m] === target) return m;\n    if (nums[l] <= nums[m]) {\n      if (nums[l] <= target && target < nums[m]) r = m - 1; else l = m + 1;\n    } else {\n      if (nums[m] < target && target <= nums[r]) l = m + 1; else r = m - 1;\n    }\n  }\n  return -1;\n}`,
+      python: `def search(nums, target):\n    l, r = 0, len(nums) - 1\n    while l <= r:\n        m = (l + r) // 2\n        if nums[m] == target: return m\n        if nums[l] <= nums[m]:\n            if nums[l] <= target < nums[m]: r = m - 1\n            else: l = m + 1\n        else:\n            if nums[m] < target <= nums[r]: l = m + 1\n            else: r = m - 1\n    return -1`,
+    },
+  },
+  {
+    slug: 'linked-list-cycle',
+    number: 141,
+    title: 'Linked List Cycle',
+    difficulty: 'Easy',
+    topicCategory: 'Linked Lists',
+    primaryPattern: 'Floyd Slow & Fast Pointers',
+    secondaryStructure: 'O(1) Space Tortoise-Hare',
+    promptSummary: 'Detect whether a singly linked list contains a cycle using O(1) extra memory.',
+    fullDescription:
+      'Given the head of a singly linked list, determine whether any node’s next pointer links back to an earlier node forming a cycle. Solve it in O(N) time and O(1) memory.',
+    examples: [
+      { input: 'head = [10 -> 20 -> 30 -> 40 -> (points back to 20)]', output: 'true', explanation: 'Fast pointer catches up to slow pointer inside the 3-node loop.' },
+      { input: 'head = [5 -> 9 -> null]', output: 'false', explanation: 'Fast pointer reaches null cleanly.' },
+    ],
+    constraintsList: ['0 <= nodes <= 10^4', 'O(1) extra space required'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: '0 <= N <= 10^4 · O(1) space',
+    bigTechFrequency: [
+      { company: 'Amazon', frequencyScore: 89, lastAskedTag: 'Pointer check' },
+      { company: 'Microsoft', frequencyScore: 90, lastAskedTag: 'Classic easy' },
+      { company: 'Apple', frequencyScore: 85, lastAskedTag: 'Memory bound' },
+      { company: 'Google', frequencyScore: 82, lastAskedTag: 'Cycle entry proof' },
+      { company: 'Meta', frequencyScore: 84, lastAskedTag: 'Fast/slow' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['cycle in linked list', 'O(1) memory', 'tortoise and hare'],
+      eliminatorRule: 'A HashSet of visited node references uses O(N) memory; advancing fast by 2 and slow by 1 closes the gap by 1 per step inside any cycle.',
+      mentalModelQuestion: 'Why must fast and slow eventually collide instead of jumping past each other?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Can the linked list be empty or have 1 node?', interviewerAnswer: 'Yes, check fast != null && fast.next != null.', isCritical: true },
+        { question: 'Are node values unique?', interviewerAnswer: 'Not necessarily—compare node object references, never .val.', isCritical: true },
+      ],
+      bruteForcePitch: {
+        explanation: 'Store visited ListNode references in a HashSet.',
+        bottleneck: 'Uses O(N) auxiliary memory.',
+        time: 'O(N)',
+        space: 'O(N)',
+      },
+      optimalPitch: {
+        explanation: 'Advance slow by 1 and fast by 2; return true if slow == fast, false if fast hits null.',
+        invariant: 'Inside a cycle of length C, fast reduces distance to slow by 1 every step, guaranteeing collision in <= C steps.',
+        time: 'O(N)',
+        space: 'O(1)',
+      },
+      interviewerFollowUp: {
+        twist: 'How do you return the exact NODE where the cycle begins (LC 142)?',
+        adaptation: 'Upon collision, reset one pointer to head and advance both by 1 step until they meet at the cycle entry.',
+      },
+    },
+    solutions: {
+      java: `public boolean hasCycle(ListNode head) {\n  ListNode s = head, f = head;\n  while (f != null && f.next != null) {\n    s = s.next; f = f.next.next;\n    if (s == f) return true;\n  }\n  return false;\n}`,
+      js: `function hasCycle(head) {\n  let s = head, f = head;\n  while (f && f.next) {\n    s = s.next; f = f.next.next;\n    if (s === f) return true;\n  }\n  return false;\n}`,
+      python: `def has_cycle(head):\n    s = f = head\n    while f and f.next:\n        s, f = s.next, f.next.next\n        if s is f: return True\n    return False`,
+    },
+  },
+  {
+    slug: 'min-stack',
+    number: 155,
+    title: 'Min Stack',
+    difficulty: 'Medium',
+    topicCategory: 'Monotonic Stack',
+    primaryPattern: 'Paired Prefix-Minimum Stack',
+    secondaryStructure: 'Auxiliary Stack',
+    promptSummary: 'Design a stack supporting push, pop, top, and getMin all in strict O(1) time.',
+    fullDescription:
+      'Implement a stack data structure that supports push(val), pop(), top(), and getMin()—retrieving the smallest element currently in the stack—each in O(1) worst-case time.',
+    examples: [
+      { input: 'push(5), push(2), push(4), getMin(), pop(), pop(), getMin()', output: '2, then 5', explanation: 'Each stack frame caches the running minimum up to that depth.' },
+    ],
+    constraintsList: ['-2^31 <= val <= 2^31 - 1', 'Every operation must execute in O(1) time', 'pop/top/getMin called on non-empty stack'],
+    studySheets: ['NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: 'Up to 3 * 10^4 calls · O(1) per operation',
+    bigTechFrequency: [
+      { company: 'Amazon', frequencyScore: 91, lastAskedTag: 'Design stack' },
+      { company: 'Microsoft', frequencyScore: 88, lastAskedTag: 'O(1) getMin' },
+      { company: 'Meta', frequencyScore: 85, lastAskedTag: 'Clean invariant' },
+      { company: 'Google', frequencyScore: 84, lastAskedTag: 'MaxStack twist' },
+      { company: 'Apple', frequencyScore: 87, lastAskedTag: 'API design' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['O(1) getMin', 'push pop top', 'stack history'],
+      eliminatorRule: 'A single min variable breaks on pop() because you lose the second-smallest value underneath.',
+      mentalModelQuestion: 'Since stacks only add/remove at the top, doesn’t the minimum below any element stay frozen while that element sits on top?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Can duplicate minimum values be pushed?', interviewerAnswer: 'Yes—either store (val, curMin) pairs or push <= onto an auxiliary minStack.', isCritical: true },
+        { question: 'Should O(1) hold in worst-case (rules out heap O(log N))?', interviewerAnswer: 'Yes, strict O(1) per operation.', isCritical: true },
+      ],
+      bruteForcePitch: {
+        explanation: 'Scan stack elements on getMin() or maintain a parallel sorted heap.',
+        bottleneck: 'O(N) scan or O(log N) heap operations violate O(1) contract.',
+        time: 'O(N)',
+        space: 'O(N)',
+      },
+      optimalPitch: {
+        explanation: 'Store pairs [val, min(val, top.min)] on the stack so popping automatically restores the prior minimum in O(1).',
+        invariant: 'Top frame always stores the exact minimum across the entire current stack.',
+        time: 'O(1) all ops',
+        space: 'O(N)',
+      },
+      interviewerFollowUp: {
+        twist: 'What if you also need popMax() in O(log N) or O(1) (MaxStack LC 716)?',
+        adaptation: 'Combine a Doubly Linked List with a TreeMap<val, List<Node>> for O(log N) arbitrary-node removal.',
+      },
+    },
+    solutions: {
+      java: `class MinStack {\n  private final Deque<int[]> st = new ArrayDeque<>();\n  public void push(int val) {\n    int min = st.isEmpty() ? val : Math.min(val, st.peek()[1]);\n    st.push(new int[]{val, min});\n  }\n  public void pop() { st.pop(); }\n  public int top() { return st.peek()[0]; }\n  public int getMin() { return st.peek()[1]; }\n}`,
+      js: `class MinStack {\n  constructor() { this.st = []; }\n  push(val) {\n    const min = this.st.length ? Math.min(val, this.st[this.st.length - 1][1]) : val;\n    this.st.push([val, min]);\n  }\n  pop() { this.st.pop(); }\n  top() { return this.st[this.st.length - 1][0]; }\n  getMin() { return this.st[this.st.length - 1][1]; }\n}`,
+      python: `class MinStack:\n    def __init__(self): self.st = []\n    def push(self, val: int) -> None:\n        m = val if not self.st else min(val, self.st[-1][1])\n        self.st.append((val, m))\n    def pop(self) -> None: self.st.pop()\n    def top(self) -> int: return self.st[-1][0]\n    def getMin(self) -> int: return self.st[-1][1]`,
+    },
+  },
+  {
+    slug: 'binary-tree-level-order',
+    number: 102,
+    title: 'Binary Tree Level Order Traversal',
+    difficulty: 'Medium',
+    topicCategory: 'Trees DFS/BFS',
+    primaryPattern: 'Wave-Sized BFS Queue',
+    secondaryStructure: 'FIFO Queue',
+    promptSummary: 'Return node values grouped depth-by-depth from left to right across a binary tree.',
+    fullDescription:
+      'Given the root of a binary tree, traverse nodes level by level from top to bottom and left to right, returning a nested list where index d contains all values at depth d.',
+    examples: [
+      { input: 'root = [8, 4, 12, null, null, 10, 15]', output: '[[8], [4, 12], [10, 15]]', explanation: 'Depth 0 has [8], depth 1 has [4, 12], depth 2 has [10, 15].' },
+    ],
+    constraintsList: ['0 <= nodes <= 2000', '-1000 <= val <= 1000', 'O(N) time and space'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: '0 <= N <= 2000 · O(N) time & space',
+    bigTechFrequency: [
+      { company: 'Amazon', frequencyScore: 91, lastAskedTag: 'BFS template' },
+      { company: 'Meta', frequencyScore: 90, lastAskedTag: 'Right-side view link' },
+      { company: 'Microsoft', frequencyScore: 88, lastAskedTag: 'Tree queue' },
+      { company: 'Google', frequencyScore: 83, lastAskedTag: 'Zigzag variant' },
+      { company: 'Apple', frequencyScore: 84, lastAskedTag: 'Clean wave loop' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['level by level', 'depth grouping', 'breadth-first'],
+      eliminatorRule: 'Freezing levelSize = queue.size() at the start of each while iteration cleanly separates depths without sentinel nulls.',
+      mentalModelQuestion: 'How do I know exactly when one tree depth ends and the next depth begins inside a single queue?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'What should I return for an empty tree (root == null)?', interviewerAnswer: 'Return an empty list [].', isCritical: true },
+        { question: 'Do you prefer iterative BFS or DFS with depth index?', interviewerAnswer: 'Iterative wave BFS is canonical; DFS with depth parameter works too.', isCritical: false },
+      ],
+      bruteForcePitch: {
+        explanation: 'Compute tree height H and run H separate depth-limited DFS passes.',
+        bottleneck: 'Repeatedly revisits upper levels O(N·H) times.',
+        time: 'O(N^2)',
+        space: 'O(H)',
+      },
+      optimalPitch: {
+        explanation: 'Enqueue root; each iteration snapshot sz = q.size(), pop sz nodes into level[], enqueue non-null children.',
+        invariant: 'At the start of every outer loop iteration, the queue contains ALL nodes of exactly one depth.',
+        time: 'O(N)',
+        space: 'O(N)',
+      },
+      interviewerFollowUp: {
+        twist: 'How do you return Binary Tree Right Side View (LC 199) or Zigzag Level Order (LC 103)?',
+        adaptation: 'Take the last node of each wave for Right Side View; alternate append direction on odd depths for Zigzag.',
+      },
+    },
+    solutions: {
+      java: `public List<List<Integer>> levelOrder(TreeNode root) {\n  List<List<Integer>> res = new ArrayList<>();\n  if (root == null) return res;\n  Deque<TreeNode> q = new ArrayDeque<>(); q.offer(root);\n  while (!q.isEmpty()) {\n    int sz = q.size(); List<Integer> lvl = new ArrayList<>();\n    for (int i = 0; i < sz; i++) {\n      TreeNode cur = q.poll(); lvl.add(cur.val);\n      if (cur.left != null) q.offer(cur.left);\n      if (cur.right != null) q.offer(cur.right);\n    }\n    res.add(lvl);\n  }\n  return res;\n}`,
+      js: `function levelOrder(root) {\n  if (!root) return [];\n  const res = []; let q = [root];\n  while (q.length) {\n    const lvl = [], next = [];\n    for (const n of q) { lvl.push(n.val); if (n.left) next.push(n.left); if (n.right) next.push(n.right); }\n    res.push(lvl); q = next;\n  }\n  return res;\n}`,
+      python: `from collections import deque\ndef level_order(root):\n    if not root: return []\n    q, res = deque([root]), []\n    while q:\n        lvl = []\n        for _ in range(len(q)):\n            cur = q.popleft(); lvl.append(cur.val)\n            if cur.left: q.append(cur.left)\n            if cur.right: q.append(cur.right)\n        res.append(lvl)\n    return res`,
+    },
+  },
+  {
+    slug: 'meeting-rooms-ii',
+    number: 253,
+    title: 'Meeting Rooms II',
+    difficulty: 'Medium',
+    topicCategory: 'Heaps & Intervals',
+    primaryPattern: 'Sort by Start + End-Time Min-Heap',
+    secondaryStructure: 'Min-Heap / Sweep Line',
+    promptSummary: 'Find the minimum number of conference rooms required to host all scheduled [start, end] meetings.',
+    fullDescription:
+      'Given an array of meeting time windows [start_i, end_i], compute the minimum number of concurrent conference rooms needed so no two overlapping meetings share a room.',
+    examples: [
+      { input: 'intervals = [[2, 10], [5, 8], [9, 15]]', output: '2', explanation: '[2,10] and [5,8] overlap (2 rooms); [9,15] reuses the room freed at 8.' },
+      { input: 'intervals = [[1, 4], [4, 7]]', output: '1', explanation: 'Back-to-back endpoints do not overlap.' },
+    ],
+    constraintsList: ['1 <= intervals.length <= 10^4', '0 <= start < end <= 10^6'],
+    studySheets: ['Blind 75', 'NeetCode 150'],
+    constraintsText: '1 <= N <= 10^4 · O(N log N) time',
+    bigTechFrequency: [
+      { company: 'Meta', frequencyScore: 96, lastAskedTag: 'Top 10 Meta' },
+      { company: 'Amazon', frequencyScore: 94, lastAskedTag: 'Scheduler staple' },
+      { company: 'Google', frequencyScore: 91, lastAskedTag: 'Sweep-line twin' },
+      { company: 'Microsoft', frequencyScore: 92, lastAskedTag: 'Min-heap rooms' },
+      { company: 'Apple', frequencyScore: 86, lastAskedTag: 'Calendar design' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['minimum conference rooms', 'maximum concurrent overlaps', 'intervals'],
+      eliminatorRule: 'Checking only adjacent intervals fails when an early long meeting outlasts 3 short ones; track the EARLIEST ending room in a Min-Heap.',
+      mentalModelQuestion: 'When a new meeting starts at S, which single occupied room should I check first to see if it is free?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Can a meeting starting at time T reuse a room that ended at exact time T?', interviewerAnswer: 'Yes, start >= earliestEnd frees that room.', isCritical: true },
+        { question: 'Should we sort intervals first?', interviewerAnswer: 'Yes, sort by start time ascending (or use sorted separate start[] / end[] arrays).', isCritical: false },
+      ],
+      bruteForcePitch: {
+        explanation: 'Track a list of room end times and scan all existing rooms linearly per meeting.',
+        bottleneck: 'Linear room scan per meeting causes O(N^2).',
+        time: 'O(N^2)',
+        space: 'O(N)',
+      },
+      optimalPitch: {
+        explanation: 'Sort by start; maintain a Min-Heap of active room end times; if heap.peek() <= cur.start pop it, then push cur.end.',
+        invariant: 'Heap size at termination (or max during sweep) equals the exact peak concurrent rooms.',
+        time: 'O(N log N)',
+        space: 'O(N)',
+      },
+      interviewerFollowUp: {
+        twist: 'What if you must assign actual Room IDs (0..k-1) to each meeting using lowest available room number (LC 2402)?',
+        adaptation: 'Maintain two heaps: availableRoomIds Min-Heap + busyRooms Min-Heap keyed by [endTime, roomId].',
+      },
+    },
+    solutions: {
+      java: `public int minMeetingRooms(int[][] ivs) {\n  Arrays.sort(ivs, (a, b) -> a[0] - b[0]);\n  PriorityQueue<Integer> ends = new PriorityQueue<>();\n  for (int[] m : ivs) {\n    if (!ends.isEmpty() && ends.peek() <= m[0]) ends.poll();\n    ends.offer(m[1]);\n  }\n  return ends.size();\n}`,
+      js: `function minMeetingRooms(ivs) {\n  const starts = ivs.map(x => x[0]).sort((a, b) => a - b);\n  const ends = ivs.map(x => x[1]).sort((a, b) => a - b);\n  let rooms = 0, e = 0;\n  for (let s = 0; s < starts.length; s++) {\n    if (starts[s] < ends[e]) rooms++; else e++;\n  }\n  return rooms;\n}`,
+      python: `import heapq\ndef min_meeting_rooms(ivs):\n    ivs.sort(key=lambda x: x[0])\n    ends = []\n    for s, e in ivs:\n        if ends and ends[0] <= s: heapq.heappop(ends)\n        heapq.heappush(ends, e)\n    return len(ends)`,
+    },
+  },
+  {
+    slug: 'number-of-islands',
+    number: 200,
+    title: 'Number of Islands',
+    difficulty: 'Medium',
+    topicCategory: 'Graphs & Topo Sort',
+    primaryPattern: 'Grid Connected Components DFS/BFS',
+    secondaryStructure: 'In-Place Visited Sink',
+    promptSummary: 'Count distinct 4-directionally connected land components ("1") in a 2D binary grid.',
+    fullDescription:
+      'Given an m x n grid of "1" (land) and "0" (water) characters, count how many separate islands exist where land cells connect horizontally or vertically.',
+    examples: [
+      { input: 'grid = [["1","1","0"],["1","0","0"],["0","0","1"]]', output: '2', explanation: 'Top-left 3-cell cluster forms island 1; bottom-right isolated "1" forms island 2.' },
+    ],
+    constraintsList: ['1 <= m, n <= 300', '4-directional connectivity only'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+    constraintsText: '1 <= m, n <= 300 · O(M·N) time',
+    bigTechFrequency: [
+      { company: 'Amazon', frequencyScore: 99, lastAskedTag: '#1 Amazon graph' },
+      { company: 'Meta', frequencyScore: 93, lastAskedTag: 'Grid traversal' },
+      { company: 'Google', frequencyScore: 89, lastAskedTag: 'Memory & BFS' },
+      { company: 'Microsoft', frequencyScore: 94, lastAskedTag: 'Top 5 Microsoft' },
+      { company: 'Apple', frequencyScore: 87, lastAskedTag: 'Connected regions' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['2D grid', 'connected islands', 'count components'],
+      eliminatorRule: 'Counting adjacent pairs overcounts merged shapes; flood-fill each discovered "1" completely once.',
+      mentalModelQuestion: 'Once I discover an unvisited "1", how do I ensure its entire island is marked visited before resuming the matrix scan?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'May I mutate the input grid (sink "1" to "0") to save O(M·N) visited memory?', interviewerAnswer: 'Yes, unless grid is read-only—mention both options clearly.', isCritical: true },
+        { question: 'Do diagonal cells connect?', interviewerAnswer: 'No, strictly 4-directional.', isCritical: false },
+      ],
+      bruteForcePitch: {
+        explanation: 'Run BFS from every cell with an external visited set without sinking.',
+        bottleneck: 'Redundant checks if not marked on enqueue.',
+        time: 'O(M·N)',
+        space: 'O(M·N)',
+      },
+      optimalPitch: {
+        explanation: 'Scan grid; whenever grid[r][c] == "1", increment count and sink entire connected component via BFS/DFS.',
+        invariant: 'Each cell is flipped from "1" to "0" at most once across the entire run.',
+        time: 'O(M·N)',
+        space: 'O(min(M,N)) BFS / O(M·N) DFS',
+      },
+      interviewerFollowUp: {
+        twist: 'What if land tiles arrive dynamically in a stream (Number of Islands II LC 305)?',
+        adaptation: 'Maintain a Union-Find Disjoint Set over cell IDs, decrementing component count on each successful union.',
+      },
+    },
+    solutions: {
+      java: `public int numIslands(char[][] g) {\n  int cnt = 0;\n  for (int r = 0; r < g.length; r++)\n    for (int c = 0; c < g[0].length; c++)\n      if (g[r][c] == '1') { cnt++; sink(g, r, c); }\n  return cnt;\n}\nprivate void sink(char[][] g, int r, int c) {\n  if (r < 0 || c < 0 || r >= g.length || c >= g[0].length || g[r][c] != '1') return;\n  g[r][c] = '0'; sink(g,r+1,c); sink(g,r-1,c); sink(g,r,c+1); sink(g,r,c-1);\n}`,
+      js: `function numIslands(g) {\n  let cnt = 0;\n  const sink = (r, c) => {\n    if (r < 0 || c < 0 || r >= g.length || c >= g[0].length || g[r][c] !== '1') return;\n    g[r][c] = '0'; sink(r+1,c); sink(r-1,c); sink(r,c+1); sink(r,c-1);\n  };\n  for (let r = 0; r < g.length; r++) for (let c = 0; c < g[0].length; c++) if (g[r][c] === '1') { cnt++; sink(r, c); }\n  return cnt;\n}`,
+      python: `def num_islands(g):\n    R, C, cnt = len(g), len(g[0]), 0\n    def sink(r, c):\n        if 0 <= r < R and 0 <= c < C and g[r][c] == '1':\n            g[r][c] = '0'\n            sink(r+1,c); sink(r-1,c); sink(r,c+1); sink(r,c-1)\n    for r in range(R):\n        for c in range(C):\n            if g[r][c] == '1': cnt += 1; sink(r, c)\n    return cnt`,
+    },
+  },
+  {
+    slug: 'accounts-merge',
+    number: 721,
+    title: 'Accounts Merge',
+    difficulty: 'Medium',
+    topicCategory: 'Union-Find & Shortest Path',
+    primaryPattern: 'Email-Keyed Disjoint Set Union',
+    secondaryStructure: 'Union-Find + Group Sort',
+    promptSummary: 'Merge user account lists sharing at least one common email and sort each merged email list.',
+    fullDescription:
+      'Each account holds [userName, email_1, email_2, ...]. If two accounts share any common email address, they belong to the same person (transitively). Merge connected accounts, deduplicate emails, and return [name, sorted_emails...].',
+    examples: [
+      { input: '[["Ava","a@x.com","b@x.com"],["Ava","b@x.com","c@x.com"],["Bob","d@x.com"]]', output: '[["Ava","a@x.com","b@x.com","c@x.com"],["Bob","d@x.com"]]', explanation: 'Shared email b@x.com transitively merges both Ava accounts.' },
+    ],
+    constraintsList: ['1 <= accounts.length <= 1000', 'Emails sorted lexicographically per merged account'],
+    studySheets: ['Grind 75', 'NeetCode 150'],
+    constraintsText: '1 <= accounts <= 1000 · O(NK log(NK))',
+    bigTechFrequency: [
+      { company: 'Meta', frequencyScore: 97, lastAskedTag: 'Top 5 Meta DSU' },
+      { company: 'Google', frequencyScore: 88, lastAskedTag: 'Transitive merge' },
+      { company: 'Amazon', frequencyScore: 85, lastAskedTag: 'Identity resolution' },
+      { company: 'Microsoft', frequencyScore: 82, lastAskedTag: 'DSU / Graph' },
+      { company: 'Apple', frequencyScore: 79, lastAskedTag: 'Contact sync' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['merge accounts sharing common email', 'transitive equivalence', 'same name different people'],
+      eliminatorRule: 'Different people can share the same display name! Key Union-Find by EMAIL (or account index bridged by emailToAccountId), never by name.',
+      mentalModelQuestion: 'If I map every email to the first account index that owns it, what happens when a later account shares that email?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Can two distinct people have the same account name?', interviewerAnswer: 'Yes! Merge strictly by shared email, never by name.', isCritical: true },
+        { question: 'How should the emails inside each output account be ordered?', interviewerAnswer: 'Sorted in lexicographical ASCII order.', isCritical: false },
+      ],
+      bruteForcePitch: {
+        explanation: 'Compare every pair of accounts for email set intersection repeatedly.',
+        bottleneck: 'Quadratic intersection passes miss transitive chains unless looped.',
+        time: 'O(N^2 · K)',
+        space: 'O(N · K)',
+      },
+      optimalPitch: {
+        explanation: 'Union account indices whenever an email was already mapped in emailToId; then group all emails by find(ownerId), sort, and prepend name.',
+        invariant: 'Unioning account indices merges arbitrarily deep transitive email chains in O(α(N)).',
+        time: 'O(NK log(NK))',
+        space: 'O(NK)',
+      },
+      interviewerFollowUp: {
+        twist: 'How would you solve this if accounts come in a continuous stream of merges?',
+        adaptation: 'Maintain email-level DSU parents + email-to-name map in memory or Redis/DB.',
+      },
+    },
+    solutions: {
+      java: `public List<List<String>> accountsMerge(List<List<String>> accs) {\n  int n = accs.size(); int[] p = new int[n];\n  for (int i = 0; i < n; i++) p[i] = i;\n  Map<String, Integer> owner = new HashMap<>();\n  for (int i = 0; i < n; i++) {\n    for (int j = 1; j < accs.get(i).size(); j++) {\n      String em = accs.get(i).get(j);\n      if (owner.containsKey(em)) p[find(p, i)] = find(p, owner.get(em));\n      else owner.put(em, i);\n    }\n  }\n  Map<Integer, TreeSet<String>> groups = new HashMap<>();\n  for (var e : owner.entrySet()) groups.computeIfAbsent(find(p, e.getValue()), k -> new TreeSet<>()).add(e.getKey());\n  List<List<String>> res = new ArrayList<>();\n  for (var g : groups.entrySet()) {\n    List<String> row = new ArrayList<>(); row.add(accs.get(g.getKey()).get(0)); row.addAll(g.getValue()); res.add(row);\n  }\n  return res;\n}\nprivate int find(int[] p, int x) { return p[x] == x ? x : (p[x] = find(p, p[x])); }`,
+      js: `function accountsMerge(accs) {\n  const p = accs.map((_, i) => i);\n  const find = (x) => (p[x] === x ? x : (p[x] = find(p[x])));\n  const owner = new Map();\n  accs.forEach((a, i) => {\n    for (let j = 1; j < a.length; j++) {\n      if (owner.has(a[j])) p[find(i)] = find(owner.get(a[j]));\n      else owner.set(a[j], i);\n    }\n  });\n  const groups = new Map();\n  for (const [em, idx] of owner) {\n    const r = find(idx);\n    if (!groups.has(r)) groups.set(r, []);\n    groups.get(r).push(em);\n  }\n  return [...groups.entries()].map(([r, ems]) => [accs[r][0], ...ems.sort()]);\n}`,
+      python: `from collections import defaultdict\ndef accounts_merge(accs):\n    p = list(range(len(accs)))\n    def find(x):\n        while p[x] != x: p[x] = p[p[x]]; x = p[x]\n        return x\n    owner = {}\n    for i, a in enumerate(accs):\n        for em in a[1:]:\n            if em in owner: p[find(i)] = find(owner[em])\n            else: owner[em] = i\n    groups = defaultdict(list)\n    for em, idx in owner.items(): groups[find(idx)].append(em)\n    return [[accs[r][0]] + sorted(ems) for r, ems in groups.items()]`,
+    },
+  },
+  {
+    slug: 'combination-sum',
+    number: 39,
+    title: 'Combination Sum',
+    difficulty: 'Medium',
+    topicCategory: 'Backtracking & Tries',
+    primaryPattern: 'Sorted Pruned Backtracking (Unlimited Reuse)',
+    secondaryStructure: 'DFS Decision Tree',
+    promptSummary: 'Return all unique combinations of distinct positive candidates summing to target (elements reusable).',
+    fullDescription:
+      'Given distinct positive integers candidates and an integer target, enumerate all unique multiset combinations where chosen elements sum to target. Each candidate may be selected unlimited times.',
+    examples: [
+      { input: 'candidates = [2, 3, 6], target = 7', output: '[[2, 2, 3]]', explanation: '2 + 2 + 3 = 7 is the only valid combination.' },
+    ],
+    constraintsList: ['1 <= candidates.length <= 30', '2 <= candidates[i] <= 40', 'Fewer than 150 unique combinations'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75'],
+    constraintsText: '1 <= N <= 30 · distinct positive candidates',
+    bigTechFrequency: [
+      { company: 'Meta', frequencyScore: 89, lastAskedTag: 'Pruning check' },
+      { company: 'Amazon', frequencyScore: 90, lastAskedTag: 'Backtracking core' },
+      { company: 'Google', frequencyScore: 86, lastAskedTag: 'Recursion tree' },
+      { company: 'Microsoft', frequencyScore: 84, lastAskedTag: 'Combo vs Perm' },
+      { company: 'Apple', frequencyScore: 81, lastAskedTag: 'Clean DFS' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['unique combinations', 'unlimited reuse', 'return all valid lists'],
+      eliminatorRule: 'DP counts combinations; when asked to RETURN ALL combinations, Backtracking with start index avoids duplicate permutations like [2,3] and [3,2].',
+      mentalModelQuestion: 'Why do I pass i (not i + 1) when reusing a candidate, yet never loop backward before start?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Are all candidate values positive and distinct?', interviewerAnswer: 'Yes, strictly >= 2 and distinct, guaranteeing termination.', isCritical: true },
+        { question: 'Do [2, 3] and [3, 2] count as the same combination?', interviewerAnswer: 'Yes, enforce non-decreasing candidate indices.', isCritical: true },
+      ],
+      bruteForcePitch: {
+        explanation: 'Explore all candidate orderings and deduplicate via Set of sorted tuples.',
+        bottleneck: 'Generates redundant permutations.',
+        time: 'O(N^(T/M))',
+        space: 'O(T/M)',
+      },
+      optimalPitch: {
+        explanation: 'Sort candidates; DFS(start, remain) loops i from start..n-1, breaks early when cand[i] > remain, recurses with (i, remain - cand[i]).',
+        invariant: 'Non-decreasing index i guarantees each multiset combination is generated once.',
+        time: 'O(N^(T/M))',
+        space: 'O(T/M)',
+      },
+      interviewerFollowUp: {
+        twist: 'What if each candidate can be used at most ONCE and input has duplicates (Combination Sum II LC 40)?',
+        adaptation: 'Skip i > start && cand[i] == cand[i - 1], and recurse with i + 1.',
+      },
+    },
+    solutions: {
+      java: `public List<List<Integer>> combinationSum(int[] c, int t) {\n  Arrays.sort(c); List<List<Integer>> res = new ArrayList<>();\n  dfs(0, t, c, new ArrayList<>(), res); return res;\n}\nprivate void dfs(int s, int rem, int[] c, List<Integer> cur, List<List<Integer>> res) {\n  if (rem == 0) { res.add(new ArrayList<>(cur)); return; }\n  for (int i = s; i < c.length && c[i] <= rem; i++) {\n    cur.add(c[i]); dfs(i, rem - c[i], c, cur, res); cur.remove(cur.size() - 1);\n  }\n}`,
+      js: `function combinationSum(c, target) {\n  c.sort((a, b) => a - b);\n  const res = [], cur = [];\n  const dfs = (s, rem) => {\n    if (rem === 0) { res.push([...cur]); return; }\n    for (let i = s; i < c.length && c[i] <= rem; i++) {\n      cur.push(c[i]); dfs(i, rem - c[i]); cur.pop();\n    }\n  };\n  dfs(0, target);\n  return res;\n}`,
+      python: `def combination_sum(c, target):\n    c.sort(); res, cur = [], []\n    def dfs(s, rem):\n        if rem == 0: res.append(cur[:]); return\n        for i in range(s, len(c)):\n            if c[i] > rem: break\n            cur.append(c[i]); dfs(i, rem - c[i]); cur.pop()\n    dfs(0, target)\n    return res`,
+    },
+  },
+  {
+    slug: 'longest-increasing-subsequence',
+    number: 300,
+    title: 'Longest Increasing Subsequence',
+    difficulty: 'Medium',
+    topicCategory: 'Dynamic Programming',
+    primaryPattern: 'Patience Sorting Binary Search / 1D DP',
+    secondaryStructure: 'Tails Array + lower_bound',
+    promptSummary: 'Find the length of the longest strictly increasing (not necessarily contiguous) subsequence.',
+    fullDescription:
+      'Given an integer array nums, compute the length of the longest strictly increasing subsequence obtained by deleting zero or more elements without reordering remaining elements.',
+    examples: [
+      { input: 'nums = [10, 9, 2, 5, 3, 7, 101, 18]', output: '4', explanation: 'One optimal strictly increasing subsequence is [2, 3, 7, 101].' },
+    ],
+    constraintsList: ['1 <= nums.length <= 2500', '-10^4 <= nums[i] <= 10^4', 'Follow-up: O(N log N) time'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'LeetCode Top 150'],
+    constraintsText: '1 <= N <= 2500 · O(N^2) DP or O(N log N) Patience BS',
+    bigTechFrequency: [
+      { company: 'Google', frequencyScore: 93, lastAskedTag: 'O(N log N) follow-up' },
+      { company: 'Amazon', frequencyScore: 90, lastAskedTag: 'Top DP medium' },
+      { company: 'Microsoft', frequencyScore: 88, lastAskedTag: 'Subsequence classic' },
+      { company: 'Meta', frequencyScore: 84, lastAskedTag: 'Binary search tails' },
+      { company: 'Apple', frequencyScore: 82, lastAskedTag: 'Russian Doll link' },
+    ],
+    howToIdentify: {
+      keywordTriggers: ['longest strictly increasing subsequence', 'non-contiguous', 'O(N log N) upgrade'],
+      eliminatorRule: 'Sliding Window fails because elements are non-contiguous; O(N^2) DP transitions into O(N log N) by tracking smallest tail per subsequence length.',
+      mentalModelQuestion: 'If tails[k] stores the minimum possible ending value of any increasing subsequence of length k+1, why is tails[] strictly sorted?',
+    },
+    interviewSolutionLadder: {
+      clarifyingQuestions: [
+        { question: 'Must the subsequence be strictly increasing or non-decreasing?', interviewerAnswer: 'Strictly increasing (use lower_bound >= x; non-decreasing would use upper_bound > x).', isCritical: true },
+        { question: 'Do we need the length only or to reconstruct the sequence?', interviewerAnswer: 'Length only—remember tails[] gives exact length, not the sequence itself!', isCritical: true },
+      ],
+      bruteForcePitch: {
+        explanation: '1D DP: dp[i] = 1 + max(dp[j]) for all j < i where nums[j] < nums[i].',
+        bottleneck: 'Scans all previous indices per step.',
+        time: 'O(N^2)',
+        space: 'O(N)',
+      },
+      optimalPitch: {
+        explanation: 'Maintain sorted tails[]; for each x, binary search first index >= x and overwrite tails[idx] = x (or append).',
+        invariant: 'tails.length equals the LIS length seen so far, and overwriting keeps smaller tails for future extensions.',
+        time: 'O(N log N)',
+        space: 'O(N)',
+      },
+      interviewerFollowUp: {
+        twist: 'How does this generalize to 2D Russian Doll Envelopes (LC 354)?',
+        adaptation: 'Sort by width ascending and height DESCENDING (so same-width boxes cannot nest), then run 1D LIS on heights.',
+      },
+    },
+    solutions: {
+      java: `public int lengthOfLIS(int[] nums) {\n  int[] tails = new int[nums.length]; int len = 0;\n  for (int x : nums) {\n    int l = 0, r = len;\n    while (l < r) { int m = (l + r) / 2; if (tails[m] < x) l = m + 1; else r = m; }\n    tails[l] = x; if (l == len) len++;\n  }\n  return len;\n}`,
+      js: `function lengthOfLIS(nums) {\n  const tails = [];\n  for (const x of nums) {\n    let l = 0, r = tails.length;\n    while (l < r) { const m = (l + r) >> 1; if (tails[m] < x) l = m + 1; else r = m; }\n    tails[l] = x;\n  }\n  return tails.length;\n}`,
+      python: `import bisect\ndef length_of_lis(nums):\n    tails = []\n    for x in nums:\n        i = bisect.bisect_left(tails, x)\n        if i == len(tails): tails.append(x)\n        else: tails[i] = x\n    return len(tails)`,
+    },
+  },
+];
+
+// Clean original specs + LeetCode/NeetCode sheet tags for the core 36 problems
+export const CORE_36_ENRICHMENTS: Record<
+  string,
+  {
+    fullDescription: string;
+    examples: { input: string; output: string; explanation?: string }[];
+    constraintsList: string[];
+    studySheets: StudySheetTag[];
+  }
+> = {
+  'two-sum': {
+    fullDescription: 'Given an unsorted integer array nums and an integer target, locate two distinct indices i and j such that nums[i] + nums[j] == target.',
+    examples: [{ input: 'nums = [2, 11, 7, 15], target = 9', output: '[0, 2]', explanation: 'nums[0] + nums[2] = 2 + 7 = 9.' }],
+    constraintsList: ['2 <= nums.length <= 10^4', 'Exactly one valid pair exists', 'Same index cannot be used twice'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'subarray-sum-equals-k': {
+    fullDescription: 'Given an integer array nums (which may contain negative integers and zeros) and integer k, count the total number of non-empty contiguous slices whose sum equals k.',
+    examples: [{ input: 'nums = [1, 2, 1, -1, 2], k = 3', output: '3', explanation: 'Contiguous slices summing to 3 are [1, 2] (0..1), [2, 1] (1..2), and [1, 2, 1, -1] (0..3).' }],
+    constraintsList: ['1 <= nums.length <= 2 * 10^4', '-1000 <= nums[i] <= 1000', '-10^7 <= k <= 10^7'],
+    studySheets: ['NeetCode 150', 'LeetCode Top 150'],
+  },
+  'first-missing-positive': {
+    fullDescription: 'Given an unsorted integer array nums, determine the smallest positive integer (>= 1) missing from the array in O(N) time and O(1) extra space.',
+    examples: [{ input: 'nums = [3, 4, -1, 1]', output: '2', explanation: '1 is present, 2 is missing.' }],
+    constraintsList: ['1 <= nums.length <= 10^5', 'O(N) time and O(1) extra space required'],
+    studySheets: ['NeetCode 150'],
+  },
+  'valid-palindrome-ii': {
+    fullDescription: 'Given a lowercase string s, determine whether s can read identically forward and backward after removing at most one character.',
+    examples: [{ input: 's = "abca"', output: 'true', explanation: 'Removing "c" gives "aba" (or removing "b" gives "aca").' }],
+    constraintsList: ['1 <= s.length <= 10^5', 'Lowercase English letters only'],
+    studySheets: ['NeetCode 150'],
+  },
+  '3sum': {
+    fullDescription: 'Given an integer array nums, return all distinct value triplets [a, b, c] from distinct indices whose sum equals 0, with no duplicate triplets in the output.',
+    examples: [{ input: 'nums = [-1, 0, 1, 2, -1, -4]', output: '[[-1, -1, 2], [-1, 0, 1]]' }],
+    constraintsList: ['3 <= nums.length <= 3000', '-10^5 <= nums[i] <= 10^5'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'trapping-rain-water': {
+    fullDescription: 'Given non-negative bar heights of unit width 1, compute the total volume of water held in depressions bounded by taller bars on both left and right sides.',
+    examples: [{ input: 'height = [0,1,0,2,1,0,1,3,2,1,2,1]', output: '6', explanation: 'Total trapped units across all valleys = 6.' }],
+    constraintsList: ['1 <= height.length <= 2 * 10^4', '0 <= height[i] <= 10^5'],
+    studySheets: ['NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'best-time-to-buy-and-sell-stock': {
+    fullDescription: 'Given daily asset prices, choose at most one earlier buy day and one later sell day to maximize net profit (return 0 if no profitable pair exists).',
+    examples: [{ input: 'prices = [7, 1, 5, 3, 6, 4]', output: '5', explanation: 'Buy at 1 (day 1), sell at 6 (day 4) for profit 5.' }],
+    constraintsList: ['1 <= prices.length <= 10^5', '0 <= prices[i] <= 10^4'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'longest-substring-without-repeating': {
+    fullDescription: 'Given a string s, compute the maximum length among all contiguous substrings containing zero duplicate characters.',
+    examples: [{ input: 's = "abcabcbb"', output: '3', explanation: 'Longest valid slice is "abc" of length 3.' }],
+    constraintsList: ['0 <= s.length <= 5 * 10^4', 'ASCII letters, digits, symbols, and spaces'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'minimum-window-substring': {
+    fullDescription: 'Given source string s and target string t, find the shortest contiguous slice of s that covers every character frequency present in t (or "" if impossible).',
+    examples: [{ input: 's = "ADOBECODEBANC", t = "ABC"', output: '"BANC"', explanation: 'Shortest window containing A, B, and C.' }],
+    constraintsList: ['1 <= s.length, t.length <= 10^5', 'O(|s| + |t|) target complexity'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'binary-search-classic': {
+    fullDescription: 'Given a strictly ascending integer array nums and a target integer, locate target index in O(log N) operations or return -1.',
+    examples: [{ input: 'nums = [-1, 0, 3, 5, 9, 12], target = 9', output: '4' }],
+    constraintsList: ['1 <= nums.length <= 10^4', 'All elements unique and sorted ascending'],
+    studySheets: ['NeetCode 150', 'Grind 75'],
+  },
+  'koko-eating-bananas': {
+    fullDescription: 'Given pile sizes and total hours h, choose the smallest hourly integer eating rate k such that consuming ceil(pile / k) hours per pile totals <= h.',
+    examples: [{ input: 'piles = [3, 6, 7, 11], h = 8', output: '4', explanation: 'At rate 4: 1 + 2 + 2 + 3 = 8 hours.' }],
+    constraintsList: ['1 <= piles.length <= 10^4', 'piles.length <= h <= 10^9'],
+    studySheets: ['NeetCode 150'],
+  },
+  'median-of-two-sorted-arrays': {
+    fullDescription: 'Given two sorted arrays of sizes m and n, compute the combined median in O(log(min(m, n))) time without merging both arrays linearly.',
+    examples: [{ input: 'A = [1, 3], B = [2]', output: '2.0' }],
+    constraintsList: ['0 <= m, n <= 1000', 'm + n >= 1', 'O(log(m + n)) time required'],
+    studySheets: ['NeetCode 150', 'LeetCode Top 150'],
+  },
+  'reverse-linked-list': {
+    fullDescription: 'Reverse the next pointers of a singly linked list in-place so the tail becomes the new head.',
+    examples: [{ input: 'head = [1, 2, 3, 4]', output: '[4, 3, 2, 1]' }],
+    constraintsList: ['0 <= nodes <= 5000', 'Iterative O(1) space preferred'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75'],
+  },
+  'lru-cache': {
+    fullDescription: 'Implement a bounded key-value cache supporting O(1) average get(key) and put(key, value), evicting the least recently accessed entry when full.',
+    examples: [{ input: 'cap=2: put(1,1), put(2,2), get(1), put(3,3), get(2)', output: '1, -1', explanation: 'Accessing key 1 refreshes it, so key 2 is evicted.' }],
+    constraintsList: ['1 <= capacity <= 3000', 'Up to 2 * 10^5 calls', 'Strict O(1) get and put'],
+    studySheets: ['NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'merge-k-sorted-lists': {
+    fullDescription: 'Combine k sorted singly linked lists into a single ascending linked list in O(N log k) time.',
+    examples: [{ input: 'lists = [[1,4,5],[1,3,4],[2,6]]', output: '[1,1,2,3,4,4,5,6]' }],
+    constraintsList: ['0 <= k <= 10^4', 'Total nodes N <= 10^4'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'valid-parentheses': {
+    fullDescription: 'Verify that a string of (), [], {} brackets closes every opener in exact LIFO nesting order.',
+    examples: [{ input: 's = "({[]})"', output: 'true' }],
+    constraintsList: ['1 <= s.length <= 10^4'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'daily-temperatures': {
+    fullDescription: 'For each day in a temperature array, compute how many days you must wait until a strictly warmer day arrives (or 0 if none).',
+    examples: [{ input: 'T = [73, 74, 75, 71, 69, 72, 76, 73]', output: '[1, 1, 4, 2, 1, 1, 0, 0]' }],
+    constraintsList: ['1 <= T.length <= 10^5', '30 <= T[i] <= 100'],
+    studySheets: ['NeetCode 150'],
+  },
+  'largest-rectangle-in-histogram': {
+    fullDescription: 'Given non-negative bar heights of width 1, compute the maximum rectangular area bounded inside the histogram.',
+    examples: [{ input: 'heights = [2, 1, 5, 6, 2, 3]', output: '10', explanation: 'Bars 5 and 6 form a 5 x 2 = 10 rectangle.' }],
+    constraintsList: ['1 <= heights.length <= 10^5', 'O(N) monotonic stack optimal'],
+    studySheets: ['NeetCode 150', 'Grind 75'],
+  },
+  'diameter-of-binary-tree': {
+    fullDescription: 'Compute the longest path length (counted in edges) between any two nodes in a binary tree, whether or not the path passes through the root.',
+    examples: [{ input: 'root = [1, 2, 3, 4, 5]', output: '3', explanation: 'Path [4 -> 2 -> 1 -> 3] spans 3 edges.' }],
+    constraintsList: ['1 <= nodes <= 10^4'],
+    studySheets: ['NeetCode 150', 'Grind 75'],
+  },
+  'lowest-common-ancestor': {
+    fullDescription: 'Given a binary tree and two nodes p and q present in it, return the deepest node that is an ancestor of both p and q.',
+    examples: [{ input: 'root = [3,5,1,6,2,0,8], p=5, q=1', output: '3' }],
+    constraintsList: ['2 <= nodes <= 10^5', 'All Node.val unique', 'p != q and both exist'],
+    studySheets: ['NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'binary-tree-maximum-path-sum': {
+    fullDescription: 'Compute the highest node-value sum along any simple non-empty path connecting two nodes in a binary tree (values may be negative).',
+    examples: [{ input: 'root = [-10, 9, 20, null, null, 15, 7]', output: '42', explanation: 'Path 15 -> 20 -> 7 = 42.' }],
+    constraintsList: ['1 <= nodes <= 3 * 10^4', '-1000 <= val <= 1000'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'LeetCode Top 150'],
+  },
+  'kth-largest-in-stream': {
+    fullDescription: 'Return the kth largest integer (counting duplicates in sorted order) from an unsorted array without sorting the whole array.',
+    examples: [{ input: 'nums = [3, 2, 1, 5, 6, 4], k = 2', output: '5' }],
+    constraintsList: ['1 <= k <= nums.length <= 10^5'],
+    studySheets: ['NeetCode 150', 'LeetCode Top 150'],
+  },
+  'merge-intervals': {
+    fullDescription: 'Consolidate all overlapping or endpoint-touching [start, end] intervals into a minimal sorted list of disjoint intervals.',
+    examples: [{ input: 'intervals = [[1,3],[2,6],[8,10],[15,18]]', output: '[[1,6],[8,10],[15,18]]' }],
+    constraintsList: ['1 <= intervals.length <= 10^4', 'Intervals may arrive unsorted'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'find-median-from-data-stream': {
+    fullDescription: 'Design a streaming container supporting addNum(x) in O(log N) and findMedian() in O(1) across dynamically arriving integers.',
+    examples: [{ input: 'add(1), add(2), median(), add(3), median()', output: '1.5, then 2.0' }],
+    constraintsList: ['Up to 5 * 10^4 operations', 'O(log N) insert, O(1) query'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'flood-fill': {
+    fullDescription: 'Recolor a 4-directionally connected pixel region starting at (sr, sc) from its original color to a target color.',
+    examples: [{ input: 'image=[[1,1,1],[1,1,0],[1,0,1]], sr=1, sc=1, color=2', output: '[[2,2,2],[2,2,0],[2,0,1]]' }],
+    constraintsList: ['1 <= m, n <= 50', 'Guard against origColor == newColor'],
+    studySheets: ['Grind 75'],
+  },
+  'course-schedule-ii': {
+    fullDescription: 'Given numCourses and prerequisite pairs [course, prereq], return a valid completion sequence (or [] if a dependency cycle exists).',
+    examples: [{ input: 'n = 4, prereqs = [[1,0],[2,0],[3,1],[3,2]]', output: '[0, 1, 2, 3]' }],
+    constraintsList: ['1 <= numCourses <= 2000', 'O(V + E) topological order'],
+    studySheets: ['NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'word-ladder': {
+    fullDescription: 'Find the shortest transformation sequence length from beginWord to endWord where each step changes one letter and every intermediate word exists in wordList.',
+    examples: [{ input: 'begin="hit", end="cog", list=["hot","dot","dog","lot","log","cog"]', output: '5' }],
+    constraintsList: ['1 <= wordList.length <= 5000', '1 <= word.length <= 10'],
+    studySheets: ['NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'find-if-path-exists': {
+    fullDescription: 'Determine whether source and destination vertices belong to the same connected component in an undirected graph.',
+    examples: [{ input: 'n = 3, edges = [[0,1],[1,2],[2,0]], src = 0, dst = 2', output: 'true' }],
+    constraintsList: ['1 <= n <= 2 * 10^5', 'O(E * alpha(V)) DSU optimal'],
+    studySheets: ['NeetCode 150'],
+  },
+  'network-delay-time': {
+    fullDescription: 'Compute the minimum time required for a signal sent from node k to reach every node in a directed non-negative weighted graph (or -1 if unreachable).',
+    examples: [{ input: 'times = [[2,1,1],[2,3,1],[3,4,1]], n = 4, k = 2', output: '2' }],
+    constraintsList: ['1 <= n <= 100', '0 <= weight <= 100'],
+    studySheets: ['NeetCode 150'],
+  },
+  'swim-in-rising-water': {
+    fullDescription: 'Find the minimum threshold water height t needed so a continuous 4-directional path from (0,0) to (n-1,n-1) has all cell elevations <= t.',
+    examples: [{ input: 'grid = [[0,2],[1,3]]', output: '3' }],
+    constraintsList: ['1 <= n <= 50', 'Values form permutation of 0..n^2-1'],
+    studySheets: ['NeetCode 150'],
+  },
+  'subsets': {
+    fullDescription: 'Generate all 2^N distinct subsets (the power set) of an array of unique integers.',
+    examples: [{ input: 'nums = [1, 2, 3]', output: '[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]' }],
+    constraintsList: ['1 <= nums.length <= 10', 'All numbers unique'],
+    studySheets: ['NeetCode 150', 'Grind 75'],
+  },
+  'implement-trie': {
+    fullDescription: 'Implement a prefix tree supporting insert(word), exact search(word), and startsWith(prefix) in O(word.length) time.',
+    examples: [{ input: 'insert("apple"), search("app"), startsWith("app")', output: 'false, true' }],
+    constraintsList: ['1 <= word.length <= 2000', 'Lowercase a–z'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'word-search-ii': {
+    fullDescription: 'Return every word from a dictionary that can be traced along adjacent non-reused cells of a 2D character board.',
+    examples: [{ input: 'board=[["o","a","a","n"],["e","t","a","e"]], words=["oath","eat"]', output: '["eat"]' }],
+    constraintsList: ['1 <= m, n <= 12', '1 <= words.length <= 3 * 10^4'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'LeetCode Top 150'],
+  },
+  'climbing-stairs': {
+    fullDescription: 'Count how many distinct 1-step and 2-step sequences reach the top of an n-step staircase.',
+    examples: [{ input: 'n = 4', output: '5', explanation: '1+1+1+1, 2+1+1, 1+2+1, 1+1+2, 2+2.' }],
+    constraintsList: ['1 <= n <= 45', 'O(N) time, O(1) space'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'coin-change': {
+    fullDescription: 'Given coin denominations with unlimited supply and a target amount, compute the fewest coins summing to amount (or -1 if impossible).',
+    examples: [{ input: 'coins = [1, 3, 4], amount = 6', output: '2', explanation: '3 + 3 = 6 uses 2 coins (beating greedy 4+1+1=3).' }],
+    constraintsList: ['1 <= coins.length <= 12', '0 <= amount <= 10^4'],
+    studySheets: ['Blind 75', 'NeetCode 150', 'Grind 75', 'LeetCode Top 150'],
+  },
+  'edit-distance': {
+    fullDescription: 'Compute the minimum number of single-character insertions, deletions, or replacements needed to transform string A into string B.',
+    examples: [{ input: 'word1 = "horse", word2 = "ros"', output: '3', explanation: 'h->r, delete r, delete e.' }],
+    constraintsList: ['0 <= len <= 500', 'Lowercase English letters'],
+    studySheets: ['NeetCode 150', 'LeetCode Top 150'],
+  },
+};

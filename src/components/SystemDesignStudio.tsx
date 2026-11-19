@@ -13,16 +13,29 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
   CheckCircle2,
+  Copy,
   Cpu,
+  Database,
+  Filter,
+  Globe,
   GripVertical,
   Layers,
+  LayoutGrid,
   Pause,
   Play,
   Plus,
+  Radio,
   RotateCcw,
+  Scale,
+  Server,
+  ShieldCheck,
   Sparkles,
   Trash2,
+  Workflow,
+  Zap,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   evaluateSystemArchitecture,
@@ -32,6 +45,126 @@ import {
   SystemComponentBlock,
   SystemLayerId,
 } from '../data/systemDesignData';
+
+interface ComponentVisualMeta {
+  icon: LucideIcon;
+  categoryLabel: string;
+  tileClass: string;
+  labelClass: string;
+}
+
+const LAYER_VISUALS: Record<
+  SystemLayerId,
+  { icon: LucideIcon; tileClass: string; labelClass: string; shortTag: string }
+> = {
+  edge: {
+    icon: Scale,
+    tileClass: 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    labelClass: 'text-sky-700 dark:text-sky-400',
+    shortTag: 'Edge & Load Balancing',
+  },
+  compute: {
+    icon: Server,
+    tileClass:
+      'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+    labelClass: 'text-indigo-700 dark:text-indigo-400',
+    shortTag: 'Compute & API Tier',
+  },
+  cache_async: {
+    icon: Zap,
+    tileClass:
+      'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    labelClass: 'text-amber-700 dark:text-amber-400',
+    shortTag: 'Caching & Async Layer',
+  },
+  storage: {
+    icon: Database,
+    tileClass:
+      'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    labelClass: 'text-emerald-700 dark:text-emerald-400',
+    shortTag: 'Database & Sharding',
+  },
+};
+
+const COMPONENT_VISUALS: Record<string, ComponentVisualMeta> = {
+  cdn: {
+    icon: Globe,
+    categoryLabel: 'Edge CDN',
+    tileClass: LAYER_VISUALS.edge.tileClass,
+    labelClass: LAYER_VISUALS.edge.labelClass,
+  },
+  'load-balancer': {
+    icon: Scale,
+    categoryLabel: 'Load Balancer',
+    tileClass: LAYER_VISUALS.edge.tileClass,
+    labelClass: LAYER_VISUALS.edge.labelClass,
+  },
+  'rate-limiter': {
+    icon: ShieldCheck,
+    categoryLabel: 'Rate Limiter',
+    tileClass: LAYER_VISUALS.edge.tileClass,
+    labelClass: LAYER_VISUALS.edge.labelClass,
+  },
+  'api-gateway': {
+    icon: Server,
+    categoryLabel: 'API Compute',
+    tileClass: LAYER_VISUALS.compute.tileClass,
+    labelClass: LAYER_VISUALS.compute.labelClass,
+  },
+  'websocket-gw': {
+    icon: Radio,
+    categoryLabel: 'Realtime Gateway',
+    tileClass: LAYER_VISUALS.compute.tileClass,
+    labelClass: LAYER_VISUALS.compute.labelClass,
+  },
+  'redis-cache': {
+    icon: Zap,
+    categoryLabel: 'Caching Layer',
+    tileClass: LAYER_VISUALS.cache_async.tileClass,
+    labelClass: LAYER_VISUALS.cache_async.labelClass,
+  },
+  'bloom-filter': {
+    icon: Filter,
+    categoryLabel: 'Probabilistic Filter',
+    tileClass: LAYER_VISUALS.cache_async.tileClass,
+    labelClass: LAYER_VISUALS.cache_async.labelClass,
+  },
+  'kafka-queue': {
+    icon: Workflow,
+    categoryLabel: 'Message Queue',
+    tileClass: LAYER_VISUALS.cache_async.tileClass,
+    labelClass: LAYER_VISUALS.cache_async.labelClass,
+  },
+  'primary-db': {
+    icon: Database,
+    categoryLabel: 'Primary Database',
+    tileClass: LAYER_VISUALS.storage.tileClass,
+    labelClass: LAYER_VISUALS.storage.labelClass,
+  },
+  'read-replicas': {
+    icon: Copy,
+    categoryLabel: 'Read Replicas',
+    tileClass: LAYER_VISUALS.storage.tileClass,
+    labelClass: LAYER_VISUALS.storage.labelClass,
+  },
+  'consistent-sharding': {
+    icon: LayoutGrid,
+    categoryLabel: 'Database Sharding',
+    tileClass: LAYER_VISUALS.storage.tileClass,
+    labelClass: LAYER_VISUALS.storage.labelClass,
+  },
+};
+
+function getComponentVisual(comp: SystemComponentBlock): ComponentVisualMeta {
+  return (
+    COMPONENT_VISUALS[comp.id] ?? {
+      icon: LAYER_VISUALS[comp.layer].icon,
+      categoryLabel: LAYER_VISUALS[comp.layer].shortTag,
+      tileClass: LAYER_VISUALS[comp.layer].tileClass,
+      labelClass: LAYER_VISUALS[comp.layer].labelClass,
+    }
+  );
+}
 
 function DraggableSysComponent({
   comp,
@@ -53,6 +186,9 @@ function DraggableSysComponent({
       }
     : undefined;
 
+  const visual = getComponentVisual(comp);
+  const Icon = visual.icon;
+
   return (
     <div
       ref={setNodeRef}
@@ -71,9 +207,17 @@ function DraggableSysComponent({
           {...attributes}
           className="flex items-start gap-2 cursor-grab active:cursor-grabbing flex-1 min-w-0"
         >
-          <GripVertical className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" aria-hidden="true" />
+          <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-1" aria-hidden="true" />
+          <div
+            className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${visual.tileClass}`}
+          >
+            <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+          </div>
           <div className="min-w-0">
-            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+            <div className={`text-[10px] font-mono font-semibold ${visual.labelClass}`}>
+              {visual.categoryLabel}
+            </div>
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-tight">
               {comp.name}
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
@@ -109,6 +253,9 @@ function LayerDropZone({
     data: { layerId: layer.id },
   });
 
+  const layerVisual = LAYER_VISUALS[layer.id];
+  const LayerIcon = layerVisual.icon;
+
   return (
     <div
       ref={setNodeRef}
@@ -119,11 +266,18 @@ function LayerDropZone({
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-        <div>
-          <h4 className="text-xs font-mono font-semibold text-slate-900 dark:text-slate-100">
-            {layer.title}
-          </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">{layer.subtitle}</p>
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${layerVisual.tileClass}`}
+          >
+            <LayerIcon className="w-3.5 h-3.5" aria-hidden="true" />
+          </div>
+          <div>
+            <h4 className="text-xs font-mono font-semibold text-slate-900 dark:text-slate-100">
+              {layer.title}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">{layer.subtitle}</p>
+          </div>
         </div>
         <span className="text-[11px] font-mono text-slate-400 tabular-nums">
           {components.length} active
@@ -136,24 +290,40 @@ function LayerDropZone({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {components.map((comp) => (
-            <div
-              key={comp.id}
-              className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-xs"
-            >
-              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                {comp.name}
-              </span>
-              <button
-                type="button"
-                onClick={() => onRemove(comp.id)}
-                aria-label={`Remove ${comp.name}`}
-                className="text-slate-400 hover:text-rose-600 shrink-0"
+          {components.map((comp) => {
+            const compVis = getComponentVisual(comp);
+            const CompIcon = compVis.icon;
+            return (
+              <div
+                key={comp.id}
+                className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-xs"
               >
-                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className={`w-6 h-6 rounded-md border flex items-center justify-center shrink-0 ${compVis.tileClass}`}
+                  >
+                    <CompIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className={`text-[10px] font-mono font-semibold leading-none ${compVis.labelClass}`}>
+                      {compVis.categoryLabel}
+                    </div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 truncate mt-0.5">
+                      {comp.name}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRemove(comp.id)}
+                  aria-label={`Remove ${comp.name}`}
+                  className="text-slate-400 hover:text-rose-600 shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -624,29 +794,72 @@ export function SystemDesignStudio() {
 
               {/* Architecture Layers Canvas */}
               <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Your Architecture Canvas
                   </h4>
-                  <button
-                    type="button"
-                    onClick={() => setPlacedIds([])}
-                    className="text-xs font-mono text-slate-500 hover:text-rose-600"
-                  >
-                    Clear Canvas
-                  </button>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLayerWarning(null);
+                        setPlacedIds(
+                          Array.from(
+                            new Set([
+                              ...scenario.requiredComponents.map((r) => r.id),
+                              ...scenario.recommendedComponents.map((r) => r.id),
+                            ])
+                          )
+                        );
+                      }}
+                      className="text-xs font-mono font-semibold text-sky-700 dark:text-sky-400 hover:underline whitespace-nowrap"
+                    >
+                      Load Reference Architecture
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPlacedIds([])}
+                      className="text-xs font-mono text-slate-500 hover:text-rose-600 whitespace-nowrap"
+                    >
+                      Clear Canvas
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  {SYSTEM_LAYERS.map((layer) => (
-                    <LayerDropZone
-                      key={layer.id}
-                      layer={layer}
-                      components={SYSTEM_COMPONENTS.filter(
-                        (c) => c.layer === layer.id && placedIds.includes(c.id)
+                {/* Visual Component Category Legend */}
+                <div className="flex flex-wrap items-center gap-3 pb-2 border-b border-slate-100 dark:border-slate-800 text-[11px] font-mono">
+                  {[
+                    { icon: Scale, label: 'Load Balancer', cls: LAYER_VISUALS.edge.labelClass },
+                    { icon: Server, label: 'API Compute', cls: LAYER_VISUALS.compute.labelClass },
+                    { icon: Zap, label: 'Caching Layer', cls: LAYER_VISUALS.cache_async.labelClass },
+                    { icon: LayoutGrid, label: 'Database Sharding', cls: LAYER_VISUALS.storage.labelClass },
+                  ].map((item) => {
+                    const LegendIcon = item.icon;
+                    return (
+                      <span key={item.label} className={`inline-flex items-center gap-1 ${item.cls}`}>
+                        <LegendIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                        {item.label}
+                      </span>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-1.5">
+                  {SYSTEM_LAYERS.map((layer, idx) => (
+                    <div key={layer.id} className="space-y-1.5">
+                      <LayerDropZone
+                        layer={layer}
+                        components={SYSTEM_COMPONENTS.filter(
+                          (c) => c.layer === layer.id && placedIds.includes(c.id)
+                        )}
+                        onRemove={(id) => setPlacedIds((prev) => prev.filter((x) => x !== id))}
+                      />
+                      {idx < SYSTEM_LAYERS.length - 1 && (
+                        <div className="flex justify-center py-0.5 text-slate-300 dark:text-slate-700">
+                          <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
+                        </div>
                       )}
-                      onRemove={(id) => setPlacedIds((prev) => prev.filter((x) => x !== id))}
-                    />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -756,25 +969,38 @@ export function SystemDesignStudio() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {SYSTEM_COMPONENTS.filter((c) =>
               scenario.requiredComponents.some((r) => r.id === c.id) ||
               scenario.recommendedComponents.some((r) => r.id === c.id) ||
               scenario.animationSteps.some((st) => st.activeNodes.includes(c.id))
             ).map((node) => {
               const active = currentAnimFrame.activeNodes.includes(node.id);
+              const nodeVisual = getComponentVisual(node);
+              const NodeIcon = nodeVisual.icon;
               return (
                 <div
                   key={node.id}
                   className={`p-4 rounded-xl border transition-all ${
                     active
                       ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 ring-2 ring-sky-500/30'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 opacity-75'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 opacity-80'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[11px] font-mono mb-1">
-                    <span className="text-slate-500">{node.layer}</span>
-                    {active && <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${nodeVisual.tileClass}`}
+                      >
+                        <NodeIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                      </div>
+                      <span className={`text-[11px] font-mono font-semibold truncate ${nodeVisual.labelClass}`}>
+                        {nodeVisual.categoryLabel}
+                      </span>
+                    </div>
+                    {active && (
+                      <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+                    )}
                   </div>
                   <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {node.name}

@@ -10,8 +10,17 @@ import {
 import { PROBLEMS } from '../data/problems';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../../server/seed/cognitiveSeed';
 
-export type TopView = 'workspace' | 'skill-tree' | 'system-design' | 'roadmap' | 'revision' | 'schemas' | 'complete-roadmap' | 'leetcode-75' | 'top-interview-100' | 'topic-academy' | 'topic-explorer' | 'sprint';
- 
+export type TopView =
+  | 'workspace'
+  | 'algorithms'
+  | 'fuzzy-search'
+  | 'sprint'
+  | 'roadmap'
+  | 'system-design'
+  | 'revision'
+  | 'skill-tree'
+  | 'schemas';
+
 interface ProblemLocalProgress {
   selectedSignalId: string | null;
   exploredSignals: string[];
@@ -58,8 +67,17 @@ function createInitialProblemProgress(problemId: string): ProblemLocalProgress {
   };
 }
 
-interface PatternForgeState {
+export type AlgorithmDetailTab = 'mental' | 'triggers' | 'code' | 'practice';
+export type NGramStudioMode = 'curriculum' | 'taxonomy' | 'pruning-sim' | 'case-study';
+
+export interface PatternForgeState {
   activeView: TopView;
+  activeAlgorithmId: string;
+  activeAlgorithmTab: AlgorithmDetailTab;
+  algorithmsStudioMode: 'studio' | 'sorting-lab' | 'recursion-lab' | 'architecture';
+  activeArchitectureId: string;
+  activeNGramAlgoId: string;
+  activeNGramMode: NGramStudioMode;
   theme: 'light' | 'dark';
   activeProblemId: string;
   currentStage: 1 | 2 | 3 | 4 | 5;
@@ -83,6 +101,13 @@ interface PatternForgeState {
 
   // Actions
   setActiveView: (view: TopView) => void;
+  setActiveAlgorithmId: (algoId: string) => void;
+  setAlgorithmsStudioMode: (mode: 'studio' | 'sorting-lab' | 'recursion-lab' | 'architecture') => void;
+  setActiveArchitectureId: (archId: string) => void;
+  setActiveNGramMode: (mode: NGramStudioMode) => void;
+  openAlgorithm: (algoId: string, tab?: AlgorithmDetailTab) => void;
+  openArchitecture: (archId: string) => void;
+  openNGramAlgorithm: (algoId: string, mode?: NGramStudioMode) => void;
   toggleTheme: () => void;
   selectProblem: (problemId: string, options?: { recallMode?: boolean }) => void;
   setCurrentStage: (stage: 1 | 2 | 3 | 4 | 5) => void;
@@ -139,6 +164,12 @@ for (const p of PROBLEMS) {
 
 export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
   activeView: 'workspace',
+  activeAlgorithmId: 'prefix-sum-hash',
+  activeAlgorithmTab: 'mental',
+  algorithmsStudioMode: 'studio',
+  activeArchitectureId: 'segment-tree',
+  activeNGramAlgoId: 'char-ngrams',
+  activeNGramMode: 'curriculum',
   theme: 'light',
   activeProblemId: PROBLEMS[0].id,
   currentStage: 1,
@@ -159,6 +190,29 @@ export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
   problemProgress: initialProgressMap,
 
   setActiveView: (view) => set({ activeView: view }),
+  setActiveAlgorithmId: (algoId) => set({ activeAlgorithmId: algoId }),
+  setAlgorithmsStudioMode: (mode) => set({ algorithmsStudioMode: mode }),
+  setActiveArchitectureId: (archId) => set({ activeArchitectureId: archId }),
+  setActiveNGramMode: (mode) => set({ activeNGramMode: mode }),
+  openAlgorithm: (algoId, tab = 'mental') =>
+    set({
+      activeAlgorithmId: algoId,
+      activeAlgorithmTab: tab,
+      algorithmsStudioMode: 'studio',
+      activeView: 'algorithms',
+    }),
+  openArchitecture: (archId) =>
+    set({
+      activeArchitectureId: archId,
+      algorithmsStudioMode: 'architecture',
+      activeView: 'algorithms',
+    }),
+  openNGramAlgorithm: (algoId, mode = 'taxonomy') =>
+    set({
+      activeNGramAlgoId: algoId,
+      activeNGramMode: mode,
+      activeView: 'fuzzy-search',
+    }),
 
   toggleTheme: () =>
     set((state) => {

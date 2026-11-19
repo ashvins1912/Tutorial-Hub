@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { ArrowUpRight, CheckCircle2, Filter, Search, Sparkles } from 'lucide-react';
 import { BIG_TECH_36_PROBLEMS, BIG_TECH_TOPICS } from '../../../server/seed/bigTechTopicSeed';
-import { BigTechCompany, BigTechTopicCategory } from '../../types/dsa';
+import { ALGORITHMS_CATALOG } from '../../data/algorithmsCatalog';
+import { BigTechCompany, BigTechTopicCategory, StudySheetTag } from '../../types/dsa';
 import { useSprintStore } from '../../store/useSprintStore';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
+import { TopicArchitectureDiagram } from './TopicArchitectureDiagram';
 
 const COMPANIES: (BigTechCompany | 'All')[] = ['All', 'Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'];
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard'] as const;
+const SHEETS: ('All' | StudySheetTag)[] = ['All', 'NeetCode 150', 'Blind 75', 'Grind 75', 'LeetCode Top 150'];
 
 export function TopicPatternExplorer() {
   const selectedTopic = useSprintStore((s) => s.selectedTopic);
@@ -18,8 +21,10 @@ export function TopicPatternExplorer() {
   const masteredSlugs = useSprintStore((s) => s.masteredSlugs);
   const openTrainerForProblem = useSprintStore((s) => s.openTrainerForProblem);
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
+  const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
 
   const [query, setQuery] = useState('');
+  const [selectedSheetFilter, setSelectedSheetFilter] = useState<'All' | StudySheetTag>('All');
 
   const activeTopicSummary = useMemo(
     () =>
@@ -35,6 +40,12 @@ export function TopicPatternExplorer() {
       if (selectedTopic !== 'All' && p.topicCategory !== selectedTopic) return false;
       if (selectedDifficultyFilter !== 'All' && p.difficulty !== selectedDifficultyFilter) return false;
       if (
+        selectedSheetFilter !== 'All' &&
+        !p.studySheets?.includes(selectedSheetFilter)
+      ) {
+        return false;
+      }
+      if (
         selectedCompanyFilter !== 'All' &&
         !p.bigTechFrequency.some((f) => f.company === selectedCompanyFilter)
       ) {
@@ -44,6 +55,7 @@ export function TopicPatternExplorer() {
         q &&
         !p.title.toLowerCase().includes(q) &&
         !p.primaryPattern.toLowerCase().includes(q) &&
+        !(p.fullDescription && p.fullDescription.toLowerCase().includes(q)) &&
         !p.howToIdentify.keywordTriggers.some((k) => k.toLowerCase().includes(q))
       ) {
         return false;
@@ -55,7 +67,7 @@ export function TopicPatternExplorer() {
       const fb = b.bigTechFrequency.find((f) => f.company === selectedCompanyFilter)?.frequencyScore ?? 0;
       return fb - fa;
     });
-  }, [query, selectedCompanyFilter, selectedDifficultyFilter, selectedTopic]);
+  }, [query, selectedCompanyFilter, selectedDifficultyFilter, selectedSheetFilter, selectedTopic]);
 
   const totalMastered = masteredSlugs.length;
 
@@ -66,16 +78,16 @@ export function TopicPatternExplorer() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <p className="text-xs font-mono text-sky-600 dark:text-sky-400">
-              BIG TECH TOPIC-WISE PATTERN BANK · 12 CORE TOPICS · 36 HIGH-FREQUENCY BENCHMARKS
+              LEETCODE & NEETCODE TOPIC BANK · {BIG_TECH_TOPICS.length} CORE TOPICS · {BIG_TECH_36_PROBLEMS.length} HIGH-FREQUENCY PROBLEMS
             </p>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
-              Topic Explorer, Identification Trainer & Company Rubric
+              Topic Explorer, Full Specs & Company Pattern Trainer
             </h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-mono tabular-nums">
-              Mastered: <strong className="text-emerald-600 dark:text-emerald-400">{totalMastered}</strong> / 36
+              Mastered: <strong className="text-emerald-600 dark:text-emerald-400">{totalMastered}</strong> / {BIG_TECH_36_PROBLEMS.length}
             </div>
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -134,54 +146,82 @@ export function TopicPatternExplorer() {
           })}
         </div>
 
-        {/* Company & Difficulty Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
-              <Filter className="w-3.5 h-3.5" aria-hidden="true" />
-              Company:
-            </span>
-            {COMPANIES.map((comp) => (
-              <button
-                key={comp}
-                type="button"
-                onClick={() => setSelectedCompanyFilter(comp)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
-                  selectedCompanyFilter === comp
-                    ? 'border-sky-600 bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                }`}
-              >
-                {comp}
-              </button>
-            ))}
+        {/* Sheet, Company & Difficulty Filters */}
+        <div className="space-y-2.5 pt-1">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
+                <Filter className="w-3.5 h-3.5" aria-hidden="true" />
+                Sheet:
+              </span>
+              {SHEETS.map((sheet) => (
+                <button
+                  key={sheet}
+                  type="button"
+                  onClick={() => setSelectedSheetFilter(sheet)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                    selectedSheetFilter === sheet
+                      ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                  }`}
+                >
+                  {sheet}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Difficulty:</span>
+              {DIFFICULTIES.map((diff) => (
+                <button
+                  key={diff}
+                  type="button"
+                  onClick={() => setSelectedDifficultyFilter(diff)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                    selectedDifficultyFilter === diff
+                      ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  {diff}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Difficulty:</span>
-            {DIFFICULTIES.map((diff) => (
-              <button
-                key={diff}
-                type="button"
-                onClick={() => setSelectedDifficultyFilter(diff)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
-                  selectedDifficultyFilter === diff
-                    ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
-                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                {diff}
-              </button>
-            ))}
-            {selectedTopic !== 'All' && (
-              <button
-                type="button"
-                onClick={() => setSelectedTopic('All')}
-                className="ml-2 text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap"
-              >
-                Show all 12 topics
-              </button>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
+                Company:
+              </span>
+              {COMPANIES.map((comp) => (
+                <button
+                  key={comp}
+                  type="button"
+                  onClick={() => setSelectedCompanyFilter(comp)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                    selectedCompanyFilter === comp
+                      ? 'border-sky-600 bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  {comp}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+              <span>Showing {filteredProblems.length} problems</span>
+              {selectedTopic !== 'All' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTopic('All')}
+                  className="font-sans font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap"
+                >
+                  Show all 12 topics
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -203,14 +243,37 @@ export function TopicPatternExplorer() {
             </p>
             <p className="text-slate-600 dark:text-slate-400">{activeTopicSummary.coreInvariant}</p>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="font-semibold text-slate-900 dark:text-slate-100">Prompt Trigger Clues</div>
             <p className="text-slate-700 dark:text-slate-300 font-mono text-[11px] leading-relaxed">
               {activeTopicSummary.keywordTriggers.join(' · ')}
             </p>
+            {(() => {
+              const matchedAlgo = ALGORITHMS_CATALOG.find((a) =>
+                a.linkedTopics.includes(activeTopicSummary.topicCategory)
+              );
+              if (!matchedAlgo) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => openAlgorithm(matchedAlgo.id)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline pt-1"
+                >
+                  Watch {matchedAlgo.shortName} Animation
+                  <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
+
+      {/* Bespoke Technically Accurate Animated Topic Architecture Diagram */}
+      <TopicArchitectureDiagram
+        topic={
+          (activeTopicSummary?.topicCategory as BigTechTopicCategory) ?? 'Sliding Window'
+        }
+      />
 
       {/* Problem Cards List */}
       <div className="space-y-3">
@@ -255,8 +318,8 @@ export function TopicPatternExplorer() {
                   )}
                 </div>
 
-                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-1">
-                  {prob.promptSummary}
+                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                  {prob.fullDescription || prob.promptSummary}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
@@ -269,8 +332,14 @@ export function TopicPatternExplorer() {
                       </span>
                     </>
                   )}
-                  <span aria-hidden="true">·</span>
-                  <span>Triggers: {prob.howToIdentify.keywordTriggers.slice(0, 2).join(', ')}</span>
+                  {prob.studySheets && prob.studySheets.length > 0 && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {prob.studySheets.join(' · ')}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 

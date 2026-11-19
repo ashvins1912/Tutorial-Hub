@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import http from 'http';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,6 +9,7 @@ import cognitiveRoutes from './server/routes/cognitiveRoutes';
 import problemRoutes from './server/routes/problemRoutes';
 import leetcodeProblemRoutes from './server/routes/leetcodeProblemRoutes';
 import sprintRoutes from './server/routes/sprintRoutes';
+import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
@@ -16,6 +18,9 @@ async function startServer() {
   await connectMongo();
 
   const app = express();
+  const httpServer = http.createServer(app);
+  attachPairWebSocketServer(httpServer);
+
   app.use(express.json());
 
   // Cognitive Brain-Training & Spaced Repetition API
@@ -34,6 +39,7 @@ async function startServer() {
       ok: true,
       service: 'patternforge-dsa',
       storageMode: isMongoConnected() ? 'mongodb' : 'in-memory',
+      pairWs: '/ws/pair',
     });
   });
 
@@ -51,8 +57,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`PatternForge DSA server running on http://0.0.0.0:${PORT}`);
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`PatternForge DSA server + WebSocket running on http://0.0.0.0:${PORT}`);
   });
 }
 

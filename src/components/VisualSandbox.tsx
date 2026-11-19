@@ -1,7 +1,65 @@
-import { useState } from 'react';
-import { ArrowRight, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Copy,
+  RotateCcw,
+  Sparkles,
+  Users,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { PROBLEMS } from '../data/problems';
+import { PairProgrammingCanvas } from './PairProgrammingCanvas';
+
+interface PairUser {
+  userId: string;
+  name: string;
+  color: string;
+  initials: string;
+  cursor: { x: number; y: number } | null;
+}
+
+interface CanvasStroke {
+  id: string;
+  userId: string;
+  color: string;
+  width: number;
+  points: { x: number; y: number }[];
+}
+
+const MOCK_IDENTITIES = [
+  { name: 'Alex Chen', initials: 'AC', color: '#0284c7' },
+  { name: 'Priya Nair', initials: 'PN', color: '#059669' },
+  { name: 'Jordan Lee', initials: 'JL', color: '#d97706' },
+  { name: 'Samira Khan', initials: 'SK', color: '#e11d48' },
+];
+
+function getOrCreateLocalIdentity(): PairUser {
+  const storageKey = 'patternforge_pair_mock_user';
+  try {
+    const existing = sessionStorage.getItem(storageKey);
+    if (existing) return JSON.parse(existing) as PairUser;
+  } catch {
+    // ignore sessionStorage error
+  }
+  const pick = MOCK_IDENTITIES[Math.floor(Math.random() * MOCK_IDENTITIES.length)];
+  const created: PairUser = {
+    userId: `usr-${Math.random().toString(36).slice(2, 7)}`,
+    name: pick.name,
+    initials: pick.initials,
+    color: pick.color,
+    cursor: null,
+  };
+  try {
+    sessionStorage.setItem(storageKey, JSON.stringify(created));
+  } catch {
+    // ignore
+  }
+  return created;
+}
 
 export function VisualSandbox() {
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
@@ -12,10 +70,29 @@ export function VisualSandbox() {
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
   const cfg = problem.sandboxConfig;
 
+  // Pair Programming WebSocket & Mock Identity state
+  const [pairMode, setPairMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).has('room');
+  });
+  const [roomId, setRoomId] = useState<string>(() => {
+    if (typeof window === 'undefined') return `${problem.id}-pair`;
+    return new URLSearchParams(window.location.search).get('room') || `${problem.id}-pair`;
+  });
+  const [localUser, setLocalUser] = useState<PairUser>(() => getOrCreateLocalIdentity());
+  const [roomUsers, setRoomUsers] = useState<PairUser[]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [drawMode, setDrawMode] = useState(false);
+  const [strokes, setStrokes] = useState<CanvasStroke[]>([]);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+
   // Two Sum local state
   const [tsMap, setTsMap] = useState<Record<number, number>>({});
   const [tsSelected, setTsSelected] = useState<number[]>([]);
-  const [tsStatus, setTsStatus] = useState('Click array cells from left to right to inspect complements.');
+  const [tsStatus, setTsStatus] = useState(
+    'Click array cells from left to right to inspect complements.'
+  );
 
   // Sliding Window local state
   const [swL, setSwL] = useState(0);
@@ -25,7 +102,9 @@ export function VisualSandbox() {
   // Monotonic Stack local state
   const [msIdx, setMsIdx] = useState(0);
   const [msStack, setMsStack] = useState<number[]>([]);
-  const [msAns, setMsAns] = useState<number[]>(() => new Array(cfg.sampleArray?.length ?? 7).fill(0));
+  const [msAns, setMsAns] = useState<number[]>(() =>
+    new Array(cfg.sampleArray?.length ?? 7).fill(0)
+  );
 
   // Rain Water local state
   const [rwL, setRwL] = useState(0);
@@ -39,7 +118,151 @@ export function VisualSandbox() {
   const [ccDp, setCcDp] = useState<(number | null)[]>([0, null, null, null, null, null, null]);
   const [ccActiveAmount, setCcActiveAmount] = useState(1);
 
+  const applySharedSandboxState = useCallback(
+    (s: any) => {
+      if (!s || s.problemId !== problem.id) return;
+      if (s.tsMap !== undefined) setTsMap(s.tsMap);
+      if (s.tsSelected !== undefined) setTsSelected(s.tsSelected);
+      if (s.tsStatus !== undefined) setTsStatus(s.tsStatus);
+      if (s.swL !== undefined) setSwL(s.swL);
+      if (s.swR !== undefined) setSwR(s.swR);
+      if (s.swBest !== undefined) setSwBest(s.swBest);
+      if (s.msIdx !== undefined) setMsIdx(s.msIdx);
+      if (s.msStack !== undefined) setMsStack(s.msStack);
+      if (s.msAns !== undefined) setMsAns(s.msAns);
+      if (s.rwL !== undefined) setRwL(s.rwL);
+      if (s.rwR !== undefined) setRwR(s.rwR);
+      if (s.rwLMax !== undefined) setRwLMax(s.rwLMax);
+      if (s.rwRMax !== undefined) setRwRMax(s.rwRMax);
+      if (s.rwWaterByBar !== undefined) setRwWaterByBar(s.rwWaterByBar);
+      if (s.rwWarning !== undefined) setRwWarning(s.rwWarning);
+      if (s.ccDp !== undefined) setCcDp(s.ccDp);
+      if (s.ccActiveAmount !== undefined) setCcActiveAmount(s.ccActiveAmount);
+    },
+    [problem.id]
+  );
+
+  // Manage WebSocket connection when Pair Mode is enabled
+  useEffect(() => {
+    if (!pairMode) {
+      wsRef.current?.close();
+      wsRef.current = null;
+      setWsConnected(false);
+      setRoomUsers([]);
+      return;
+    }
+
+    let cancelled = false;
+    let reconnectTimer: number | null = null;
+
+    const connect = () => {
+      if (cancelled) return;
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(
+        `${proto}//${window.location.host}/ws/pair?room=${encodeURIComponent(roomId)}`
+      );
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setWsConnected(true);
+        ws.send(JSON.stringify({ type: 'user:join', user: localUser }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'room:init') {
+            setRoomUsers(msg.users || []);
+            setStrokes(msg.strokes || []);
+            if (msg.sandboxState) applySharedSandboxState(msg.sandboxState);
+          } else if (msg.type === 'user:joined' || msg.type === 'user:left') {
+            setRoomUsers(msg.users || []);
+          } else if (msg.type === 'cursor:moved') {
+            setRoomUsers((prev) =>
+              prev.map((u) => (u.userId === msg.userId ? { ...u, cursor: msg.cursor } : u))
+            );
+          } else if (msg.type === 'stroke:added' && msg.stroke) {
+            setStrokes((prev) =>
+              prev.some((s) => s.id === msg.stroke.id) ? prev : [...prev, msg.stroke]
+            );
+          } else if (msg.type === 'canvas:cleared') {
+            setStrokes([]);
+          } else if (msg.type === 'sandbox:synced') {
+            applySharedSandboxState(msg.sandboxState);
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      };
+
+      ws.onclose = () => {
+        setWsConnected(false);
+        if (!cancelled) {
+          reconnectTimer = window.setTimeout(connect, 2000);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      wsRef.current?.close();
+      wsRef.current = null;
+    };
+  }, [pairMode, roomId, localUser, applySharedSandboxState]);
+
+  const emitSandboxSync = (patch: Record<string, unknown>) => {
+    if (!pairMode || wsRef.current?.readyState !== WebSocket.OPEN) return;
+    wsRef.current.send(
+      JSON.stringify({
+        type: 'sandbox:sync',
+        sandboxState: {
+          problemId: problem.id,
+          updatedBy: localUser.userId,
+          ...patch,
+        },
+      })
+    );
+  };
+
+  const remoteUsers = useMemo(
+    () => roomUsers.filter((u) => u.userId !== localUser.userId),
+    [roomUsers, localUser.userId]
+  );
+
+  const cycleMockIdentity = () => {
+    const idx = MOCK_IDENTITIES.findIndex((m) => m.name === localUser.name);
+    const nextMock = MOCK_IDENTITIES[(idx + 1) % MOCK_IDENTITIES.length];
+    const nextUser: PairUser = {
+      ...localUser,
+      name: nextMock.name,
+      initials: nextMock.initials,
+      color: nextMock.color,
+    };
+    setLocalUser(nextUser);
+    try {
+      sessionStorage.setItem('patternforge_pair_mock_user', JSON.stringify(nextUser));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyRoomLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      window.setTimeout(() => setCopiedLink(false), 1800);
+    } catch {
+      // ignore clipboard errors
+    }
+  };
+
   const resetAll = () => {
+    const emptyAns = new Array(cfg.sampleArray?.length ?? 7).fill(0);
+    const defaultRwR = (cfg.sampleArray?.length ?? 12) - 1;
     setTsMap({});
     setTsSelected([]);
     setTsStatus('Click array cells from left to right to inspect complements.');
@@ -48,15 +271,35 @@ export function VisualSandbox() {
     setSwBest(1);
     setMsIdx(0);
     setMsStack([]);
-    setMsAns(new Array(cfg.sampleArray?.length ?? 7).fill(0));
+    setMsAns(emptyAns);
     setRwL(0);
-    setRwR((cfg.sampleArray?.length ?? 12) - 1);
+    setRwR(defaultRwR);
     setRwLMax(0);
     setRwRMax(0);
     setRwWaterByBar({});
     setRwWarning(null);
     setCcDp([0, null, null, null, null, null, null]);
     setCcActiveAmount(1);
+
+    emitSandboxSync({
+      tsMap: {},
+      tsSelected: [],
+      tsStatus: 'Click array cells from left to right to inspect complements.',
+      swL: 0,
+      swR: 0,
+      swBest: 1,
+      msIdx: 0,
+      msStack: [],
+      msAns: emptyAns,
+      rwL: 0,
+      rwR: defaultRwR,
+      rwLMax: 0,
+      rwRMax: 0,
+      rwWaterByBar: {},
+      rwWarning: null,
+      ccDp: [0, null, null, null, null, null, null],
+      ccActiveAmount: 1,
+    });
   };
 
   // Two Sum Handler
@@ -66,13 +309,20 @@ export function VisualSandbox() {
     const val = arr[idx];
     const comp = target - val;
     if (tsMap[comp] !== undefined && tsMap[comp] !== idx) {
-      setTsSelected([tsMap[comp], idx]);
-      setTsStatus(`HashMap hit! Needed ${comp} for ${val}; found at index ${tsMap[comp]}. Pair [${tsMap[comp]}, ${idx}] = ${target}.`);
+      const nextSelected = [tsMap[comp], idx];
+      const nextStatus = `HashMap hit! Needed ${comp} for ${val}; found at index ${tsMap[comp]}. Pair [${tsMap[comp]}, ${idx}] = ${target}.`;
+      setTsSelected(nextSelected);
+      setTsStatus(nextStatus);
       markSandboxSolved();
+      emitSandboxSync({ tsMap, tsSelected: nextSelected, tsStatus: nextStatus });
     } else {
-      setTsMap((prev) => ({ ...prev, [val]: idx }));
-      setTsSelected([idx]);
-      setTsStatus(`Checked map[${comp}] -> miss. Stored map[${val}] = ${idx}.`);
+      const nextMap = { ...tsMap, [val]: idx };
+      const nextSelected = [idx];
+      const nextStatus = `Checked map[${comp}] -> miss. Stored map[${val}] = ${idx}.`;
+      setTsMap(nextMap);
+      setTsSelected(nextSelected);
+      setTsStatus(nextStatus);
+      emitSandboxSync({ tsMap: nextMap, tsSelected: nextSelected, tsStatus: nextStatus });
     }
   };
 
@@ -86,11 +336,13 @@ export function VisualSandbox() {
     const nextR = swR + 1;
     setSwR(nextR);
     const nextSlice = swStr.slice(swL, nextR + 1).split('');
+    let nextBest = swBest;
     if (new Set(nextSlice).size === nextSlice.length) {
-      const nextBest = Math.max(swBest, nextR - swL + 1);
+      nextBest = Math.max(swBest, nextR - swL + 1);
       setSwBest(nextBest);
       if (nextBest >= 3 && nextR >= 3) markSandboxSolved();
     }
+    emitSandboxSync({ swL, swR: nextR, swBest: nextBest });
   };
 
   const handleSwShrink = () => {
@@ -98,11 +350,13 @@ export function VisualSandbox() {
     const nextL = swL + 1;
     setSwL(nextL);
     const nextSlice = swStr.slice(nextL, swR + 1).split('');
+    let nextBest = swBest;
     if (new Set(nextSlice).size === nextSlice.length) {
-      const nextBest = Math.max(swBest, swR - nextL + 1);
+      nextBest = Math.max(swBest, swR - nextL + 1);
       setSwBest(nextBest);
       if (nextL >= 1) markSandboxSolved();
     }
+    emitSandboxSync({ swL: nextL, swR, swBest: nextBest });
   };
 
   // Monotonic Stack Handler
@@ -116,11 +370,12 @@ export function VisualSandbox() {
       nextAns[popped] = msIdx - popped;
     }
     nextStack.push(msIdx);
+    const nextIdx = msIdx + 1;
     setMsStack(nextStack);
     setMsAns(nextAns);
-    const nextIdx = msIdx + 1;
     setMsIdx(nextIdx);
     if (nextIdx >= temps.length - 1) markSandboxSolved();
+    emitSandboxSync({ msIdx: nextIdx, msStack: nextStack, msAns: nextAns });
   };
 
   // Rain Water Handlers
@@ -128,30 +383,38 @@ export function VisualSandbox() {
     const h = cfg.sampleArray ?? [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1];
     if (rwL >= rwR) return;
     if (side === 'L' && h[rwL] > h[rwR]) {
-      setRwWarning(`Pause: height[L]=${h[rwL]} is taller than height[R]=${h[rwR]}. Step the SHORTER wall (R) so water cannot leak!`);
+      const warn = `Pause: height[L]=${h[rwL]} is taller than height[R]=${h[rwR]}. Step the SHORTER wall (R) so water cannot leak!`;
+      setRwWarning(warn);
+      emitSandboxSync({ rwWarning: warn });
       return;
     }
     if (side === 'R' && h[rwR] > h[rwL]) {
-      setRwWarning(`Pause: height[R]=${h[rwR]} is taller than height[L]=${h[rwL]}. Step the SHORTER wall (L) so water cannot leak!`);
+      const warn = `Pause: height[R]=${h[rwR]} is taller than height[L]=${h[rwL]}. Step the SHORTER wall (L) so water cannot leak!`;
+      setRwWarning(warn);
+      emitSandboxSync({ rwWarning: warn });
       return;
     }
     setRwWarning(null);
     if (side === 'L') {
       const newLMax = Math.max(rwLMax, h[rwL]);
       const trapped = Math.max(0, newLMax - h[rwL]);
-      setRwLMax(newLMax);
-      setRwWaterByBar((prev) => ({ ...prev, [rwL]: trapped }));
+      const nextWater = { ...rwWaterByBar, [rwL]: trapped };
       const nextL = rwL + 1;
+      setRwLMax(newLMax);
+      setRwWaterByBar(nextWater);
       setRwL(nextL);
       if (nextL >= rwR) markSandboxSolved();
+      emitSandboxSync({ rwL: nextL, rwLMax: newLMax, rwWaterByBar: nextWater, rwWarning: null });
     } else {
       const newRMax = Math.max(rwRMax, h[rwR]);
       const trapped = Math.max(0, newRMax - h[rwR]);
-      setRwRMax(newRMax);
-      setRwWaterByBar((prev) => ({ ...prev, [rwR]: trapped }));
+      const nextWater = { ...rwWaterByBar, [rwR]: trapped };
       const nextR = rwR - 1;
+      setRwRMax(newRMax);
+      setRwWaterByBar(nextWater);
       setRwR(nextR);
       if (rwL >= nextR) markSandboxSolved();
+      emitSandboxSync({ rwR: nextR, rwRMax: newRMax, rwWaterByBar: nextWater, rwWarning: null });
     }
   };
 
@@ -168,19 +431,20 @@ export function VisualSandbox() {
     }
     const next = [...ccDp];
     next[ccActiveAmount] = best;
+    const nextAmount = ccActiveAmount + 1;
     setCcDp(next);
-    if (ccActiveAmount === 6) {
-      markSandboxSolved();
-    }
-    setCcActiveAmount(ccActiveAmount + 1);
+    if (ccActiveAmount === 6) markSandboxSolved();
+    setCcActiveAmount(nextAmount);
+    emitSandboxSync({ ccDp: next, ccActiveAmount: nextAmount });
   };
 
   return (
-    <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-5">
+      {/* Toolbar Header + Pair Programming Presence Strip */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <p className="text-xs font-mono text-sky-600 dark:text-sky-400 mb-1">
-            STAGE 2 · HANDS-ON DRY-RUN SANDBOX
+            HANDS-ON DRY-RUN SANDBOX
           </p>
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
             Solve the Small Sample by Hand
@@ -188,30 +452,159 @@ export function VisualSandbox() {
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{cfg.instruction}</p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setPairMode((v) => !v)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              pairMode
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" aria-hidden="true" />
+            {pairMode ? 'Pair Mode Active' : 'Pair Programming'}
+          </button>
+
           <button
             type="button"
             onClick={resetAll}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-            Reset Sample
+            Reset
           </button>
+
           <button
             type="button"
             onClick={() => setPolyaStep('plan')}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
           >
-            Lock Loop Invariant (Plan)
+            Lock Loop Invariant
             <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* Sandbox Interactive Canvas */}
-      <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+      {/* Pair Programming Presence Toolbar (Shown when Pair Mode is enabled) */}
+      {pairMode && (
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-3">
+            <span
+              className={`inline-flex items-center gap-1.5 font-mono font-semibold ${
+                wsConnected
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-amber-600 dark:text-amber-400'
+              }`}
+            >
+              {wsConnected ? (
+                <Wifi className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <WifiOff className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              {wsConnected ? 'WS CONNECTED' : 'CONNECTING...'}
+            </span>
+
+            {/* Local User Avatar */}
+            <button
+              type="button"
+              onClick={cycleMockIdentity}
+              title="Click to switch mock user profile"
+              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border border-sky-300 dark:border-sky-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            >
+              <span
+                className="w-5 h-5 rounded-md text-[10px] font-mono font-bold text-white flex items-center justify-center"
+                style={{ backgroundColor: localUser.color }}
+              >
+                {localUser.initials}
+              </span>
+              <span className="font-semibold">{localUser.name}</span>
+              <span className="font-mono text-[10px] text-sky-600 dark:text-sky-400">[LOCAL]</span>
+            </button>
+
+            {/* Remote Connected Users */}
+            {remoteUsers.length > 0 ? (
+              remoteUsers.map((peer) => (
+                <div
+                  key={peer.userId}
+                  className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/30 text-slate-900 dark:text-slate-100"
+                >
+                  <span
+                    className="w-5 h-5 rounded-md text-[10px] font-mono font-bold text-white flex items-center justify-center"
+                    style={{ backgroundColor: peer.color }}
+                  >
+                    {peer.initials}
+                  </span>
+                  <span className="font-semibold">{peer.name}</span>
+                  <span className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400">
+                    [REMOTE]
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                Waiting for remote peer — open Room link in a 2nd tab to dry-run together.
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="pair-room-id" className="text-[11px] font-mono text-slate-500">
+              Room:
+            </label>
+            <input
+              id="pair-room-id"
+              type="text"
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="w-32 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-[11px]"
+            />
+            <button
+              type="button"
+              onClick={handleCopyRoomLink}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              {copiedLink ? (
+                <Check className="w-3 h-3 text-emerald-500" aria-hidden="true" />
+              ) : (
+                <Copy className="w-3 h-3" aria-hidden="true" />
+              )}
+              {copiedLink ? 'Copied URL' : 'Copy Invite'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sandbox Interactive Canvas + WebSocket PairProgrammingCanvas Overlay */}
+      <div className="relative p-6 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <PairProgrammingCanvas
+          active={pairMode}
+          drawMode={drawMode}
+          onToggleDrawMode={setDrawMode}
+          localUser={localUser}
+          remoteUsers={remoteUsers}
+          strokes={strokes}
+          onAddStroke={(stroke: CanvasStroke) => {
+            setStrokes((prev) => (prev.some((s) => s.id === stroke.id) ? prev : [...prev, stroke]));
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({ type: 'stroke:add', stroke }));
+            }
+          }}
+          onClearStrokes={() => {
+            setStrokes([]);
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({ type: 'canvas:clear' }));
+            }
+          }}
+          onMoveCursor={(cursor: { x: number; y: number } | null) => {
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({ type: 'cursor:move', cursor }));
+            }
+          }}
+        />
+
         {cfg.type === 'two-sum' && (
-          <div className="space-y-5">
+          <div className="space-y-5 relative z-10">
             <div className="flex flex-wrap items-center justify-center gap-4">
               {(cfg.sampleArray ?? [2, 11, 7, 15]).map((val, idx) => {
                 const isSelected = tsSelected.includes(idx);
@@ -250,7 +643,7 @@ export function VisualSandbox() {
         )}
 
         {cfg.type === 'sliding-window' && (
-          <div className="space-y-5">
+          <div className="space-y-5 relative z-10">
             <div className="flex flex-wrap items-center justify-center gap-2">
               {swStr.split('').map((ch, idx) => {
                 const inWin = idx >= swL && idx <= swR;
@@ -280,10 +673,16 @@ export function VisualSandbox() {
             <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <div className="text-sm">
                 <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
-                  Window [{swL}..{swR}] = "{swStr.slice(swL, swR + 1)}"
+                  Window [{swL}..{swR}] = &ldquo;{swStr.slice(swL, swR + 1)}&rdquo;
                 </span>
                 <span className="mx-2 text-slate-400">·</span>
-                <span className={swHasDup ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold'}>
+                <span
+                  className={
+                    swHasDup
+                      ? 'text-rose-600 dark:text-rose-400 font-semibold'
+                      : 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                  }
+                >
                   {swHasDup ? 'DUPLICATE DETECTED (Shrink Left)' : `VALID · Best Length = ${swBest}`}
                 </span>
               </div>
@@ -310,7 +709,7 @@ export function VisualSandbox() {
         )}
 
         {cfg.type === 'monotonic-stack' && (
-          <div className="space-y-5">
+          <div className="space-y-5 relative z-10">
             <div className="grid grid-cols-7 gap-2 max-w-2xl mx-auto">
               {(cfg.sampleArray ?? [73, 74, 75, 71, 69, 72, 76]).map((temp, i) => {
                 const processed = i < msIdx;
@@ -340,7 +739,8 @@ export function VisualSandbox() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <div className="text-xs font-mono text-slate-700 dark:text-slate-300">
-                Monotonic Decreasing Stack (indices): [{msStack.map((i) => `${i}(${(cfg.sampleArray ?? [])[i]}°)`).join(' , ')}]
+                Monotonic Decreasing Stack (indices): [
+                {msStack.map((i) => `${i}(${(cfg.sampleArray ?? [])[i]}°)`).join(' , ')}]
               </div>
               <button
                 type="button"
@@ -348,14 +748,16 @@ export function VisualSandbox() {
                 disabled={msIdx >= (cfg.sampleArray?.length ?? 7)}
                 className="px-4 py-2 rounded-lg bg-sky-600 text-white text-xs font-semibold disabled:opacity-40 hover:bg-sky-700 transition-colors"
               >
-                {msIdx >= (cfg.sampleArray?.length ?? 7) ? 'All Days Processed' : `Process Day ${msIdx}`}
+                {msIdx >= (cfg.sampleArray?.length ?? 7)
+                  ? 'All Days Processed'
+                  : `Process Day ${msIdx}`}
               </button>
             </div>
           </div>
         )}
 
         {cfg.type === 'rain-water' && (
-          <div className="space-y-5">
+          <div className="space-y-5 relative z-10">
             <div className="flex items-end justify-center gap-2 h-44 pt-4">
               {(cfg.sampleArray ?? []).map((barH, idx) => {
                 const water = rwWaterByBar[idx] ?? 0;
@@ -421,7 +823,7 @@ export function VisualSandbox() {
         )}
 
         {cfg.type === 'coin-change' && (
-          <div className="space-y-5">
+          <div className="space-y-5 relative z-10">
             <div className="grid grid-cols-7 gap-2 max-w-2xl mx-auto">
               {ccDp.map((val, amt) => {
                 const isNext = amt === ccActiveAmount;
@@ -446,7 +848,7 @@ export function VisualSandbox() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <div className="text-xs text-slate-600 dark:text-slate-400">
-                Coins: [1, 3, 4] · Notice greedy on 6 gives 4+1+1 (3 coins), whereas dp[6] = 1 + dp[3] = 2 coins!
+                Coins: [1, 3, 4] · Greedy on 6 gives 4+1+1 (3 coins), whereas dp[6] = 1 + dp[3] = 2 coins!
               </div>
               <button
                 type="button"

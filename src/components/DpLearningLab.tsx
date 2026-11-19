@@ -49,11 +49,16 @@ export function DpLearningLab() {
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
   const visibleProblems = problems.filter((p) => filter === 'All' || p[0] === filter);
-  const toggle = (item: string) => setCompleted((old) => {
-    const next = old.includes(item) ? old.filter((x) => x !== item) : [...old, item];
-    try { window.localStorage.setItem('patternforge-dp-practice-v1', JSON.stringify(next)); } catch { /* keep session progress */ }
-    return next;
-  });
+  const toggle = (item: string) =>
+    setCompleted((old) => {
+      const next = old.includes(item) ? old.filter((x) => x !== item) : [...old, item];
+      try {
+        window.localStorage.setItem('patternforge-dp-practice-v1', JSON.stringify(next));
+      } catch {
+        /* keep session progress */
+      }
+      return next;
+    });
   return <section className="space-y-5">
     <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 text-white sm:p-8">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-300"><Lightbulb className="h-4 w-4" /> Interactive DP learning path</div>
@@ -89,8 +94,46 @@ export function DpLearningLab() {
 
     <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <div className="flex items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Practice roadmap</div><h3 className="mt-1 text-xl font-bold">20 problems in learning order</h3><p className="mt-1 text-xs text-slate-500">Solve in order. Mark complete only after you can derive the state and recurrence without hints.</p></div><span className="text-sm font-bold tabular-nums">{completed.length}/20</span></div>
-      <div className="mt-4 flex flex-wrap gap-2">{groups.map((g) => <button key={g} onClick={() => setFilter(g)} className={filter === g ? 'rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white' : 'rounded-full border px-3 py-1.5 text-xs'}>{g}</button>)}</div>
-      <div className="mt-4 space-y-2">{visibleProblems.map(([level, name, goal]) => <div key={name} className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700"><button onClick={() => toggle(name)} aria-label={'Mark ' + name + ' complete'} className={completed.includes(name) ? 'mt-0.5 text-emerald-500' : 'mt-0.5 text-slate-300'}><CheckCircle2 className="h-5 w-5" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold">{name}</span><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{level}</span></div><p className="mt-1 text-xs leading-relaxed text-slate-500">{goal}</p></div></div>)}</div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {groups.map((g) => (
+          <button
+            key={g}
+            type="button"
+            onClick={() => setFilter(g)}
+            className={
+              filter === g
+                ? 'rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white'
+                : 'rounded-md border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs text-slate-600 dark:text-slate-300'
+            }
+          >
+            {g}
+          </button>
+        ))}
+      </div>
+      <div className="mt-4 space-y-2">
+        {visibleProblems.map(([level, name, goal]) => (
+          <div
+            key={name}
+            className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700"
+          >
+            <button
+              type="button"
+              onClick={() => toggle(name)}
+              aria-label={'Mark ' + name + ' complete'}
+              className={completed.includes(name) ? 'mt-0.5 text-emerald-500' : 'mt-0.5 text-slate-300'}
+            >
+              <CheckCircle2 className="h-5 w-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold">{name}</span>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">· {level}</span>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">{goal}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </article>
   </section>;
 }
