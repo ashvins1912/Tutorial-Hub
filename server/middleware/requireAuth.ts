@@ -4,12 +4,12 @@ import type { Request, Response, NextFunction } from 'express';
 // Resolve configuration lazily so runtime environment setup has completed
 // before the first authenticated request is handled.
 let verifier: SupabaseClient | null | undefined;
+let verifierProjectUrl: string | null = null;
 
 function getVerifier(): { client: SupabaseClient | null; projectUrl: string | null } {
   const configuredUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
-
   if (verifier !== undefined) {
-    return { client: verifier, projectUrl: configuredUrl || null };
+    return { client: verifier, projectUrl: verifierProjectUrl };
   }
 
   const apiKey = (
@@ -19,13 +19,14 @@ function getVerifier(): { client: SupabaseClient | null; projectUrl: string | nu
     ''
   ).trim();
 
+  verifierProjectUrl = configuredUrl || null;
   verifier = configuredUrl && apiKey
     ? createClient(configuredUrl, apiKey, {
         auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
       })
     : null;
 
-  return { client: verifier, projectUrl: configuredUrl || null };
+  return { client: verifier, projectUrl: verifierProjectUrl };
 }
 
 declare global {
@@ -58,12 +59,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   const authorization = req.headers.authorization;
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
-  if (!token) {
-    return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'Sign in to continue.' });
-  }
+  if (!token) return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'Sign in to continue.' });
 
-  // Detect the common production misconfiguration where the browser and API
-  // are configured against different Supabase projects.
   const issuer = readTokenIssuer(token);
   const expectedIssuer = `${projectUrl}/auth/v1`;
   if (issuer && issuer !== expectedIssuer) {
@@ -77,7 +74,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   try {
     const { data, error } = await client.auth.getUser(token);
     if (error || !data.user) {
-      // Log only the provider error code; never log access tokens or user secrets.
       console.error('[auth] Supabase token verification failed:', error?.code || error?.name || 'USER_NOT_FOUND');
       return res.status(401).json({
         code: 'INVALID_SESSION',
