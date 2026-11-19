@@ -79,7 +79,7 @@ export class GeminiProvider implements ContentGenerationProvider {
     const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     const content = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('');
     if (!content) throw new Error('MODEL_OUTPUT_EMPTY');
-    return { lesson: parseJsonObject(content), provider: this.name, model: this.model };
+    return { lesson: parseJsonObject(content) as GeneratedLesson, provider: this.name, model: this.model };
   }
 }
 
