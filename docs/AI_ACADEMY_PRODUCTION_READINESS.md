@@ -4,7 +4,7 @@ This document describes the current Academy release boundary. It deliberately us
 
 ## Curriculum delivered in this branch
 
-The Academy now contains seven sequential phases and 68 structured lessons:
+The Academy now contains seven sequential phases and 77 structured lessons:
 
 1. **Foundations** — Python, numerical computing, linear algebra, probability, statistics, data contracts and reproducible pipelines.
 2. **Classical Machine Learning** — supervised and unsupervised learning, model selection, regularization, imbalance, thresholding and calibration.
@@ -12,7 +12,7 @@ The Academy now contains seven sequential phases and 68 structured lessons:
 4. **Generative AI** — tokenization, prompting, LLM decoding, embeddings, RAG fundamentals and fine-tuning trade-offs.
 5. **MLOps & Production** — model serving, container/resource planning, observability, security, CI/CD, canary releases, SLOs and inference budgets.
 6. **Advanced RAG & Knowledge Systems** — document parsing/OCR, provenance, structural chunking, embedding/vector indexes, BM25, hybrid retrieval, reranking, GraphRAG, Visual RAG, evaluation and tenant isolation.
-7. **AI Agents & Agentic Systems** — agent architecture and loops, tool contracts, planning, durable workflows, memory, multi-agent coordination, human approvals, prompt-injection defense, evaluation, production architecture, protocol concepts and capstone.
+7. **AI Agents & Agentic Systems** — agent architecture and loops, tool contracts, planning, durable workflows, memory, multi-agent coordination, human approvals, prompt-injection defense, evaluation, production architecture, protocol concepts and capstone, plus a nine-lesson MCP engineering track covering architecture, JSON-RPC lifecycle, transports, tools/resources/prompts, server implementation, security, reliability, testing and a multi-server capstone.
 
 Every new lesson uses the existing lesson runtime contract: motivation, analogy, detailed explanation, key points, worked example, runnable-style code sample, staged visual flow with input/output/failure states, server-graded quiz, applied project, pitfalls and next topic. The curriculum is authored content; it does not execute lesson code.
 

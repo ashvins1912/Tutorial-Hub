@@ -1,6 +1,7 @@
 import { AI_ENGINEERING_EXTRA_MODULES } from './aiEngineeringExtraLessons';
 import { AI_AGENTIC_SYSTEMS_PHASE, AI_ENGINEERING_DEEP_DIVE_MODULES } from './aiEngineeringDeepDiveLessons';
 import { AI_RAG_SYSTEMS_PHASE } from './aiEngineeringRagSystems';
+import { AI_MCP_SYSTEMS_MODULE } from './aiEngineeringMcpSystems';
 export type AcademyStep = { title: string; detail: string; input: string; output: string; failure: string };
 export type AcademyQuestion = { prompt: string; options: string[]; explanation: string };
 export type AcademyLesson = {
@@ -140,6 +141,7 @@ for (const [phaseId, modules] of Object.entries(AI_ENGINEERING_DEEP_DIVE_MODULES
 }
 
 AI_ENGINEERING_CURRICULUM.push(AI_RAG_SYSTEMS_PHASE, AI_AGENTIC_SYSTEMS_PHASE);
+AI_AGENTIC_SYSTEMS_PHASE.modules.push(AI_MCP_SYSTEMS_MODULE);
 
 export const getAcademyCounts = () => {
   const modules = AI_ENGINEERING_CURRICULUM.flatMap((phase) => phase.modules);

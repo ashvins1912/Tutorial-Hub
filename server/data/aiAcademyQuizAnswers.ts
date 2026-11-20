@@ -68,4 +68,13 @@ export const AI_ACADEMY_QUIZ_ANSWERS: Record<string, number> = {
   'agent-production-architecture': 1,
   'agent-protocols-interoperability': 1,
   'agentic-capstone': 1,
+  'mcp-fundamentals-architecture': 1,
+  'mcp-jsonrpc-lifecycle': 1,
+  'mcp-transports-stdio-http': 1,
+  'mcp-tools-resources-prompts': 1,
+  'mcp-server-implementation': 1,
+  'mcp-security-trust-boundaries': 1,
+  'mcp-errors-cancellation-reliability': 2,
+  'mcp-testing-production': 1,
+  'mcp-capstone': 1,
 };
