@@ -1,4 +1,5 @@
 import type { AlgorithmDefinition } from './algorithmsCatalog';
+import { MASTER_BESPOKE_UPGRADE_SPECS } from './algorithmMasterMetadata';
 
 export interface UpgradeStage {
   label: string;
@@ -19,6 +20,7 @@ export interface AlgorithmUpgradeAndArchitectSpec {
 }
 
 const BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArchitectSpec> = {
+  ...MASTER_BESPOKE_UPGRADE_SPECS,
   'prefix-sum-hash': {
     algorithmId: 'prefix-sum-hash',
     brute: { label: 'Brute Force', approach: 'Sum every contiguous slice [L..R] via nested loops.', time: 'O(N²)', space: 'O(1)', bottleneckOrWin: 'Re-adds overlapping slices millions of times; TLEs at N = 10^5.' },
@@ -209,6 +211,21 @@ export function getAlgorithmUpgradeSpec(algo: AlgorithmDefinition): AlgorithmUpg
     useCases = [
       `Public-key cryptography (RSA/ECC modular math), graphics collision hulls, and streaming telemetry sampling.`,
       `Distributed observability sampling and probabilistic load balancing at petabyte scale.`,
+    ];
+  } else if (cat === 'Probabilistic & Memory Systems') {
+    useCases = [
+      `High-throughput storage guards, sublinear streaming sketches (Redis/BigQuery), and low-latency cache/kernel allocators (${algo.shortName}).`,
+      `Wait-free multi-core runtime structures and copy-on-write versioned state engines.`,
+    ];
+  } else if (cat === 'Database Storage & Query Engines') {
+    useCases = [
+      `Production relational & NoSQL storage engines (PostgreSQL, InnoDB, RocksDB, DuckDB) powering ${algo.shortName}.`,
+      `Out-of-core disk sorting, crash-safe ACID write-ahead recovery, and vectorized SQL join execution.`,
+    ];
+  } else if (cat === 'Distributed Systems & Consensus') {
+    useCases = [
+      `Geo-replicated coordination, consistent shard routing, and partition-tolerant replication (etcd, Cassandra, DynamoDB).`,
+      `Anti-entropy Merkle repair, causal conflict detection, and offline-first collaborative CRDT state sync.`,
     ];
   }
 

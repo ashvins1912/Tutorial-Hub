@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ArrowRight,
   ArrowUpRight,
   Check,
   CheckCircle2,
   ChevronDown,
   Code2,
   Copy,
+  GitBranch,
   Lightbulb,
   MessageSquareQuote,
   Pause,
   Play,
   RotateCcw,
+  Search,
   ShieldAlert,
   SkipBack,
   SkipForward,
@@ -24,6 +27,7 @@ import {
   AlgorithmCategory,
   AlgorithmDefinition,
   CORE_ALGORITHM_CATEGORIES,
+  SYSTEMS_ALGORITHM_CATEGORIES,
 } from '../../data/algorithmsCatalog';
 import { BIG_TECH_36_PROBLEMS } from '../../../server/seed/bigTechTopicSeed';
 import { BigTechTopicCategory, CodeLanguage } from '../../types/dsa';
@@ -41,11 +45,16 @@ import { useAccountState } from '../../hooks/useAccountState';
 import { getAlgorithmComplexityProfile } from '../../features/visualizer/data/complexityComparisonData';
 import { getAlgorithmTutorGuide } from '../../data/algorithmTutorGuides';
 import { getAlgorithmUpgradeSpec } from '../../data/algorithmUpgradeLadders';
+import {
+  getAlgorithmCombinations,
+  getAlgorithmFlowStages,
+} from '../../data/algorithmCombinationsAndRoadmap';
 import { CURATED_INTERVIEW_BANK } from '../../features/topics/data/curatedInterviewBank';
 import { PatternRecognitionDrill } from './PatternRecognitionDrill';
+import { Master73RoadmapView } from './Master73RoadmapView';
 import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
 
-type TierFilter = 'all' | 'core' | 'advanced';
+type TierFilter = 'all' | 'core' | 'advanced' | 'systems';
 type DetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
 
 interface TestCaseRunResult {
@@ -99,6 +108,7 @@ export function AlgorithmsStudio({
 
   const [tier, setTier] = useState<TierFilter>('all');
   const [category, setCategory] = useState<'All' | AlgorithmCategory>('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [frameIndex, setFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedMs, setSpeedMs] = useState<number>(1400);
@@ -123,22 +133,46 @@ export function AlgorithmsStudio({
     () => ALGORITHMS_CATALOG.filter((a) => CORE_ALGORITHM_CATEGORIES.includes(a.category)).length,
     []
   );
-  const advancedCount = ALGORITHMS_CATALOG.length - coreCount;
+  const advancedCount = useMemo(
+    () => ALGORITHMS_CATALOG.filter((a) => ADVANCED_ALGORITHM_CATEGORIES.includes(a.category)).length,
+    []
+  );
+  const systemsCount = useMemo(
+    () => ALGORITHMS_CATALOG.filter((a) => SYSTEMS_ALGORITHM_CATEGORIES.includes(a.category)).length,
+    []
+  );
 
   const availableCategories: ('All' | AlgorithmCategory)[] = useMemo(() => {
     if (tier === 'core') return ['All', ...CORE_ALGORITHM_CATEGORIES];
     if (tier === 'advanced') return ['All', ...ADVANCED_ALGORITHM_CATEGORIES];
-    return ['All', ...CORE_ALGORITHM_CATEGORIES, ...ADVANCED_ALGORITHM_CATEGORIES];
+    if (tier === 'systems') return ['All', ...SYSTEMS_ALGORITHM_CATEGORIES];
+    return [
+      'All',
+      ...CORE_ALGORITHM_CATEGORIES,
+      ...ADVANCED_ALGORITHM_CATEGORIES,
+      ...SYSTEMS_ALGORITHM_CATEGORIES,
+    ];
   }, [tier]);
 
   const visibleAlgorithms = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return ALGORITHMS_CATALOG.filter((algo) => {
       if (tier === 'core' && !CORE_ALGORITHM_CATEGORIES.includes(algo.category)) return false;
       if (tier === 'advanced' && !ADVANCED_ALGORITHM_CATEGORIES.includes(algo.category)) return false;
+      if (tier === 'systems' && !SYSTEMS_ALGORITHM_CATEGORIES.includes(algo.category)) return false;
       if (category !== 'All' && algo.category !== category) return false;
+      if (
+        q &&
+        !algo.name.toLowerCase().includes(q) &&
+        !algo.shortName.toLowerCase().includes(q) &&
+        !algo.category.toLowerCase().includes(q) &&
+        !algo.tagline.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
       return true;
     });
-  }, [tier, category]);
+  }, [tier, category, searchQuery]);
 
   const algorithm: AlgorithmDefinition = useMemo(
     () =>
@@ -159,6 +193,12 @@ export function AlgorithmsStudio({
 
   const tutorGuide = useMemo(() => getAlgorithmTutorGuide(algorithm.id), [algorithm.id]);
   const upgradeSpec = useMemo(() => getAlgorithmUpgradeSpec(algorithm), [algorithm]);
+  const flowStages = useMemo(() => getAlgorithmFlowStages(algorithm), [algorithm]);
+  const powerCombos = useMemo(() => getAlgorithmCombinations(algorithm), [algorithm]);
+  const algoLookup = useMemo(
+    () => new Map(ALGORITHMS_CATALOG.map((a) => [a.id, a])),
+    []
+  );
   const matchedCuratedQuestions = useMemo(() => {
     const slugSet = new Set(algorithm.linkedProblemSlugs);
     const exact = CURATED_INTERVIEW_BANK.filter(
@@ -206,6 +246,7 @@ export function AlgorithmsStudio({
     const nextList = ALGORITHMS_CATALOG.filter((a) => {
       if (nextTier === 'core') return CORE_ALGORITHM_CATEGORIES.includes(a.category);
       if (nextTier === 'advanced') return ADVANCED_ALGORITHM_CATEGORIES.includes(a.category);
+      if (nextTier === 'systems') return SYSTEMS_ALGORITHM_CATEGORIES.includes(a.category);
       return true;
     });
     if (nextList.length > 0 && !nextList.some((a) => a.id === selectedAlgoId)) {
@@ -220,6 +261,7 @@ export function AlgorithmsStudio({
     const list = ALGORITHMS_CATALOG.filter((a) => {
       if (tier === 'core' && !CORE_ALGORITHM_CATEGORIES.includes(a.category)) return false;
       if (tier === 'advanced' && !ADVANCED_ALGORITHM_CATEGORIES.includes(a.category)) return false;
+      if (tier === 'systems' && !SYSTEMS_ALGORITHM_CATEGORIES.includes(a.category)) return false;
       if (cat !== 'All' && a.category !== cat) return false;
       return true;
     });
@@ -380,15 +422,22 @@ export function AlgorithmsStudio({
     setCurrentStage(5);
   };
 
+  const isSystemsAlgo = SYSTEMS_ALGORITHM_CATEGORIES.includes(algorithm.category);
   const isAdvancedAlgo = ADVANCED_ALGORITHM_CATEGORIES.includes(algorithm.category);
+  const activeTierLabel = isSystemsAlgo
+    ? 'Systems & Storage Tier'
+    : isAdvancedAlgo
+      ? 'Advanced Tier'
+      : 'Core Pattern';
 
   return (
     <div className="space-y-6">
-      {/* Mode Switcher: 45-Algorithm Studio, Sorting Algorithm Lab, Recursion & Backtracking, Architecture Visualizer */}
+      {/* Mode Switcher: 94-Algorithm Studio, 73-Algorithm Master Blueprint, Pattern Drill, Sorting Lab, Recursion Lab, Architecture */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
           {[
             { id: 'studio' as const, label: `${ALGORITHMS_CATALOG.length}-Algorithm Animated & Practice Studio` },
+            { id: 'master-73' as const, label: '73-Algorithm Master Blueprint (#01–#73)' },
             { id: 'pattern-drill' as const, label: 'Pattern Recognition Drill (20 Traps)' },
             { id: 'sorting-lab' as const, label: 'Sorting Algorithm Lab (Race Mode)' },
             { id: 'recursion-lab' as const, label: 'Recursion & Backtracking Visualizer' },
@@ -410,7 +459,18 @@ export function AlgorithmsStudio({
         </div>
       </div>
 
-      {studioMode === 'pattern-drill' ? (
+      {studioMode === 'master-73' ? (
+        <Master73RoadmapView
+          implementedIds={implementedIds}
+          onSelectAlgorithm={(algoId, tab = 'mental') => {
+            setSelectedAlgoId(algoId);
+            setDetailTab(tab);
+            setFrameIndex(0);
+            setIsPlaying(false);
+            setStudioMode('studio');
+          }}
+        />
+      ) : studioMode === 'pattern-drill' ? (
         <PatternRecognitionDrill
           onInspectAlgorithm={(algoId, tab = 'mental') => {
             setSelectedAlgoId(algoId);
@@ -443,40 +503,59 @@ export function AlgorithmsStudio({
         <>
       {/* Header & Algorithm Tabs Selector */}
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
           <div className="space-y-1">
             <p className="text-xs font-mono text-sky-600 dark:text-sky-400 tabular-nums">
-              Visual Algorithm Studio · {ALGORITHMS_CATALOG.length} Algorithms ({coreCount} Core + {advancedCount} Advanced) · Implemented: {implementedIds.length} / {ALGORITHMS_CATALOG.length}
+              Visual Algorithm Studio · {ALGORITHMS_CATALOG.length} Algorithms ({coreCount} Core · {advancedCount} Advanced · {systemsCount} Systems &amp; DB) · Implemented: {implementedIds.length} / {ALGORITHMS_CATALOG.length}
             </p>
             <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Step-by-Step Animated Algorithm & Implementation Studio
+              Step-by-Step Animated Algorithm &amp; Implementation Studio
             </h1>
           </div>
 
-          {/* Tier Segmented Toggle */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 w-fit">
-            {[
-              { id: 'all' as const, label: `All (${ALGORITHMS_CATALOG.length})` },
-              { id: 'core' as const, label: `Core Patterns (${coreCount})` },
-              { id: 'advanced' as const, label: `Advanced (${advancedCount})` },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => handleTierChange(t.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-                  tier === t.id
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Instant Search */}
+            <div className="relative w-full sm:w-56">
+              <Search
+                className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search 94 algorithms..."
+                aria-label="Filter algorithms by name or category"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-sky-500"
+              />
+            </div>
+
+            {/* Tier Segmented Toggle */}
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 w-fit">
+              {[
+                { id: 'all' as const, label: `All (${ALGORITHMS_CATALOG.length})` },
+                { id: 'core' as const, label: `Core (${coreCount})` },
+                { id: 'advanced' as const, label: `Advanced (${advancedCount})` },
+                { id: 'systems' as const, label: `Systems & DB (${systemsCount})` },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => handleTierChange(t.id)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+                    tier === t.id
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* 11-Category Filter Strip */}
+        {/* 14-Category Filter Strip */}
         <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 dark:border-slate-800/80 pt-3">
           {availableCategories.map((cat) => {
             const count =
@@ -485,7 +564,9 @@ export function AlgorithmsStudio({
                   ? coreCount
                   : tier === 'advanced'
                     ? advancedCount
-                    : ALGORITHMS_CATALOG.length
+                    : tier === 'systems'
+                      ? systemsCount
+                      : ALGORITHMS_CATALOG.length
                 : ALGORITHMS_CATALOG.filter((a) => a.category === cat).length;
             return (
               <button
@@ -552,7 +633,7 @@ export function AlgorithmsStudio({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-0.5">
                 <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                  {isAdvancedAlgo ? 'Advanced Tier' : 'Core Pattern'} · {algorithm.category}
+                  {activeTierLabel} · {algorithm.category}
                   {isCurrentImplemented && (
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold"> · Implemented</span>
                   )}
@@ -793,7 +874,7 @@ export function AlgorithmsStudio({
           <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
             {[
               { id: 'mental' as const, label: 'Deep Mental Model' },
-              { id: 'upgrade-trace' as const, label: 'Upgrade Ladder & Dry-Run' },
+              { id: 'upgrade-trace' as const, label: 'DFD, Combos & Ladder' },
               { id: 'triggers' as const, label: 'When to Use & Pitfalls' },
               { id: 'code' as const, label: 'Reusable Code Template' },
               { id: 'practice' as const, label: 'Practice Implementation' },
@@ -972,8 +1053,132 @@ export function AlgorithmsStudio({
 
         {detailTab === 'upgrade-trace' && (
           <div className="space-y-6">
-            {/* Brute -> Better -> Optimal Upgrade Ladder */}
+            {/* Interactive 4-Stage Visual Data Flow Diagram (DFD) */}
             <div className="space-y-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Interactive Visual Data Flow Diagram (DFD)
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Click any stage below to sync the animated visualizer above to that phase of execution.
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                  4-Stage Execution Pipeline
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                {flowStages.map((stage, sIdx) => {
+                  const mappedFrameIdx =
+                    sIdx === 3
+                      ? Math.max(0, totalFrames - 1)
+                      : Math.min(sIdx, Math.max(0, totalFrames - 1));
+                  const isStageActive = safeFrameIndex === mappedFrameIdx;
+                  return (
+                    <button
+                      key={stage.step}
+                      type="button"
+                      onClick={() => {
+                        setIsPlaying(false);
+                        setFrameIndex(mappedFrameIdx);
+                      }}
+                      className={`text-left rounded-lg border p-3.5 space-y-2 transition-colors relative ${
+                        isStageActive
+                          ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/35'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 text-[11px] font-mono tabular-nums">
+                        <span className="font-bold text-sky-700 dark:text-sky-400">
+                          {stage.step} · {stage.role}
+                        </span>
+                        <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                          {stage.cost}
+                          {sIdx < flowStages.length - 1 && (
+                            <ArrowRight className="w-3 h-3 text-slate-400 hidden xl:inline" aria-hidden="true" />
+                          )}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                        {stage.title}
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {stage.summary}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-200/70 dark:border-slate-800 leading-relaxed">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">Guardrail: </span>
+                        {stage.guardrail}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Algorithm Power Combinations ("Combine for Superior Output") */}
+            {powerCombos.length > 0 && (
+              <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <GitBranch className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                      <span>Algorithm Power Combinations (Combine for Superior Output)</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      How {algorithm.shortName} composes with complementary algorithms in production engines and senior system/DSA interviews.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                  {powerCombos.map((combo) => (
+                    <div
+                      key={combo.id}
+                      className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-4 space-y-2.5"
+                    >
+                      <div className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {combo.title}
+                      </div>
+                      <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+                        {combo.synergyOutput}
+                      </p>
+                      <div className="rounded-md border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-[11px] font-mono text-sky-800 dark:text-sky-300 leading-relaxed">
+                        {combo.architectureFlow}
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Use case: {combo.interviewUseCase}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {combo.partnerIds
+                            .filter((pid) => pid !== algorithm.id)
+                            .map((pid) => {
+                              const partner = algoLookup.get(pid);
+                              if (!partner) return null;
+                              return (
+                                <button
+                                  key={pid}
+                                  type="button"
+                                  onClick={() => handleSelectAlgorithm(pid)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] font-mono font-semibold text-sky-700 dark:text-sky-400 hover:border-sky-500 transition-colors"
+                                >
+                                  Inspect {partner.shortName}
+                                  <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Brute -> Better -> Optimal Upgrade Ladder */}
+            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">

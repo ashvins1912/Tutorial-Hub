@@ -1,8 +1,9 @@
 import type { ComplexityComparisonProfile } from './complexityComparisonData';
+import { MASTER_40_COMPLEXITY_PROFILES } from '../../../data/algorithmMasterMetadata';
 
 /**
  * Calibrated algorithm-specific recurrence & recursive-vs-iterative profiles.
- * Eliminates generic string-heuristic fallbacks across all 54 algorithms.
+ * Eliminates generic string-heuristic fallbacks across all 94 algorithms.
  */
 export const CALIBRATED_ALGORITHM_PROFILES: Record<string, ComplexityComparisonProfile> = {
   'prefix-sum-hash': {
@@ -304,4 +305,5 @@ export const CALIBRATED_ALGORITHM_PROFILES: Record<string, ComplexityComparisonP
     iterativeStackOverhead: 'O(1) OS call stack',
     tradeoffVerdict: 'Turns intractable O(2^40) search into two ~10^6 lists matched via binary search or two pointers.',
   },
+  ...MASTER_40_COMPLEXITY_PROFILES,
 };

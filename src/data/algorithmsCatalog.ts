@@ -6,6 +6,9 @@ import { ADV_STRING_ALGORITHMS, ADV_STRING_PRACTICE } from './algorithmsAdvStrin
 import { ADV_DP_ALGORITHMS, ADV_DP_PRACTICE } from './algorithmsAdvDp';
 import { ADV_MATH_RAND_ALGORITHMS, ADV_MATH_RAND_PRACTICE } from './algorithmsAdvMathRand';
 import { SPECIALIST_9_ALGORITHMS, SPECIALIST_9_PRACTICE } from './algorithmsSpecialistPack';
+import { MASTER_CORE_11_ALGORITHMS, MASTER_CORE_11_PRACTICE } from './algorithmsMasterCorePack';
+import { MASTER_ADV_18_ALGORITHMS, MASTER_ADV_18_PRACTICE } from './algorithmsMasterAdvancedPack';
+import { MASTER_SYSTEMS_11_ALGORITHMS, MASTER_SYSTEMS_11_PRACTICE } from './algorithmsMasterSystemsPack';
 
 export type AlgorithmCategory =
   | 'Array & String Patterns'
@@ -18,7 +21,10 @@ export type AlgorithmCategory =
   | 'Advanced String Algorithms'
   | 'Advanced Dynamic Programming'
   | 'Number Theory & Geometry'
-  | 'Randomized & Heuristic Algorithms';
+  | 'Randomized & Heuristic Algorithms'
+  | 'Probabilistic & Memory Systems'
+  | 'Database Storage & Query Engines'
+  | 'Distributed Systems & Consensus';
 
 export const CORE_ALGORITHM_CATEGORIES: AlgorithmCategory[] = [
   'Array & String Patterns',
@@ -35,6 +41,12 @@ export const ADVANCED_ALGORITHM_CATEGORIES: AlgorithmCategory[] = [
   'Advanced Dynamic Programming',
   'Number Theory & Geometry',
   'Randomized & Heuristic Algorithms',
+];
+
+export const SYSTEMS_ALGORITHM_CATEGORIES: AlgorithmCategory[] = [
+  'Probabilistic & Memory Systems',
+  'Database Storage & Query Engines',
+  'Distributed Systems & Consensus',
 ];
 
 export type AlgorithmVisualType =
@@ -2259,17 +2271,21 @@ def dijkstra(graph, src):
 const ORDERED_CATEGORY_SEQUENCE: AlgorithmCategory[] = [
   ...CORE_ALGORITHM_CATEGORIES,
   ...ADVANCED_ALGORITHM_CATEGORIES,
+  ...SYSTEMS_ALGORITHM_CATEGORIES,
 ];
 
 const ALL_RAW_ALGORITHMS: AlgorithmDefinition[] = [
   ...BASE_14_ALGORITHMS,
   ...EXTRA_6_ALGORITHMS,
   ...SPECIALIST_9_ALGORITHMS,
+  ...MASTER_CORE_11_ALGORITHMS,
   ...ADV_GRAPH_ALGORITHMS,
   ...ADV_TREE_ALGORITHMS,
   ...ADV_STRING_ALGORITHMS,
   ...ADV_DP_ALGORITHMS,
   ...ADV_MATH_RAND_ALGORITHMS,
+  ...MASTER_ADV_18_ALGORITHMS,
+  ...MASTER_SYSTEMS_11_ALGORITHMS,
 ];
 
 export const ALGORITHMS_CATALOG: AlgorithmDefinition[] = ORDERED_CATEGORY_SEQUENCE.flatMap((cat) =>
@@ -2279,10 +2295,13 @@ export const ALGORITHMS_CATALOG: AlgorithmDefinition[] = ORDERED_CATEGORY_SEQUEN
 export const ALL_PRACTICE_CHALLENGES: Record<string, AlgorithmPracticeSpec> = {
   ...PRACTICE_CHALLENGES,
   ...SPECIALIST_9_PRACTICE,
+  ...MASTER_CORE_11_PRACTICE,
   ...ADV_GRAPH_PRACTICE,
   ...ADV_TREE_PRACTICE,
   ...ADV_STRING_PRACTICE,
   ...ADV_DP_PRACTICE,
   ...ADV_MATH_RAND_PRACTICE,
+  ...MASTER_ADV_18_PRACTICE,
+  ...MASTER_SYSTEMS_11_PRACTICE,
 };
 

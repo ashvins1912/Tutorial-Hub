@@ -1,3 +1,5 @@
+import { MASTER_40_TUTOR_GUIDES } from './algorithmMasterMetadata';
+
 export interface AlgorithmFollowUpTwist {
   question: string;
   invariantShift: string;
@@ -1148,6 +1150,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
     ],
   },
+  ...MASTER_40_TUTOR_GUIDES,
 };
 
 export function getAlgorithmTutorGuide(algorithmId: string): AlgorithmTutorGuide | null {

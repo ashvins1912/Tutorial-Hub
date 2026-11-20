@@ -82,7 +82,7 @@ export interface PatternForgeState {
   activeView: TopView;
   activeAlgorithmId: string;
   activeAlgorithmTab: AlgorithmDetailTab;
-  algorithmsStudioMode: 'studio' | 'pattern-drill' | 'sorting-lab' | 'recursion-lab' | 'architecture';
+  algorithmsStudioMode: 'studio' | 'master-73' | 'pattern-drill' | 'sorting-lab' | 'recursion-lab' | 'architecture';
   activeArchitectureId: string;
   activeNGramAlgoId: string;
   activeNGramMode: NGramStudioMode;
@@ -111,7 +111,7 @@ export interface PatternForgeState {
   setActiveView: (view: TopView) => void;
   setActiveAlgorithmId: (algoId: string) => void;
   setAlgorithmsStudioMode: (
-    mode: 'studio' | 'pattern-drill' | 'sorting-lab' | 'recursion-lab' | 'architecture'
+    mode: 'studio' | 'master-73' | 'pattern-drill' | 'sorting-lab' | 'recursion-lab' | 'architecture'
   ) => void;
   setActiveArchitectureId: (archId: string) => void;
   setActiveNGramMode: (mode: NGramStudioMode) => void;
