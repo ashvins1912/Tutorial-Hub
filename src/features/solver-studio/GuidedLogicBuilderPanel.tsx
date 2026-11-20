@@ -5,6 +5,7 @@ import {
   BookOpen,
   CheckCircle2,
   Code2,
+  Gauge,
   GitBranch,
   HelpCircle,
   Lightbulb,
@@ -23,6 +24,7 @@ import { getAlgorithmTutorGuide } from '../../data/algorithmTutorGuides';
 import { getAlgorithmUpgradeSpec } from '../../data/algorithmUpgradeLadders';
 import type { AlgorithmDetailTab } from '../../store/usePatternForgeStore';
 import { apiFetch } from '../../lib/apiFetch';
+import { OptimizationCheckerPanel } from './OptimizationCheckerPanel';
 
 interface GuidedStep {
   index: number;
@@ -86,6 +88,7 @@ export const GuidedLogicBuilderPanel: React.FC<GuidedLogicBuilderPanelProps> = (
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [showSimplerAnalogy, setShowSimplerAnalogy] = useState(false);
   const [showOptimalCode, setShowOptimalCode] = useState(false);
+  const [showOptimizationChecker, setShowOptimizationChecker] = useState(true);
   const [studentInput, setStudentInput] = useState('');
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -445,6 +448,18 @@ export const GuidedLogicBuilderPanel: React.FC<GuidedLogicBuilderPanelProps> = (
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setShowOptimizationChecker((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                showOptimizationChecker
+                  ? 'border-indigo-400 dark:border-indigo-700 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-indigo-400'
+              }`}
+            >
+              <Gauge className="w-3.5 h-3.5" />
+              <span>{showOptimizationChecker ? 'Hide Checker' : 'Optimization Checker'}</span>
+            </button>
+            <button
+              type="button"
               onClick={handleJumpToOptimal}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:border-emerald-500 transition-colors"
             >
@@ -608,6 +623,18 @@ export const GuidedLogicBuilderPanel: React.FC<GuidedLogicBuilderPanelProps> = (
           </div>
         )}
       </div>
+
+      {/* Inline Algorithmic Optimization Checker */}
+      {showOptimizationChecker && (
+        <OptimizationCheckerPanel
+          compact
+          problemTitle={problemTitle}
+          analysis={analysis}
+          catalogMatches={catalogMatches}
+          onOpenAlgorithm={onOpenAlgorithm}
+          onJumpToOptimalCode={handleJumpToOptimal}
+        />
+      )}
 
       {/* Matched Algorithms (from all 94) + Curriculum Topics (from all 22) + Power Combos */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">

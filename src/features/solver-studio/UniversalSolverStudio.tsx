@@ -69,6 +69,7 @@ import { LogicPieceBuilder } from '../workspaces/LogicPieceBuilder';
 import { TruthEliminationGrid } from '../workspaces/TruthEliminationGrid';
 import { AdaptiveCoachPanel } from './AdaptiveCoachPanel';
 import { GuidedLogicBuilderPanel } from './GuidedLogicBuilderPanel';
+import { OptimizationCheckerPanel } from './OptimizationCheckerPanel';
 
 interface UniversalSolverStudioProps {
   onOpenCurriculumTopic?: (topicId: string) => void;
@@ -137,7 +138,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
     null,
   );
   const [rightTab, setRightTab] = useState<
-    'guided' | 'workspace' | 'code' | 'coach' | 'logic-modules'
+    'guided' | 'optimizer' | 'workspace' | 'code' | 'coach' | 'logic-modules'
   >('guided');
   const [mobilePane, setMobilePane] = useState<MobilePane>('problem');
   const [codeLang, setCodeLang] = useState<SupportedCodeLanguage>('python');
@@ -1258,6 +1259,18 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => setRightTab('optimizer')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  rightTab === 'optimizer'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Gauge className="w-3.5 h-3.5" />
+                <span>Optimization Checker</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setRightTab('workspace')}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   rightTab === 'workspace'
@@ -1349,6 +1362,20 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               onChangeCodeLang={setCodeLang}
               onOpenAlgorithm={onOpenAlgorithm}
               onOpenCurriculumTopic={onOpenCurriculumTopic}
+            />
+          )}
+
+          {/* Dedicated Optimization Checker View */}
+          {rightTab === 'optimizer' && (
+            <OptimizationCheckerPanel
+              problemTitle={problemTitle}
+              analysis={analysis}
+              catalogMatches={catalogMatches}
+              onOpenAlgorithm={onOpenAlgorithm}
+              onJumpToOptimalCode={() => {
+                setSelectedTierIdx(2);
+                setRightTab('code');
+              }}
             />
           )}
 
