@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SystemDesignLearningAcademy } from './SystemDesignLearningAcademy';
 import { SystemDesignMasterRoadmap } from './SystemDesignMasterRoadmap';
+import { SystemPlayground } from './system-playground/SystemPlayground';
 import {
   DndContext,
   DragEndEvent,
@@ -530,7 +531,9 @@ function ProbabilisticLab() {
 }
 
 export function SystemDesignStudio() {
-  const [subTab, setSubTab] = useState<'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'>('roadmap');
+  const [subTab, setSubTab] = useState<
+    'playground' | 'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'
+  >('playground');
   const [scenarioId, setScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
 
   const scenario = SYSTEM_SCENARIOS.find((s) => s.id === scenarioId) ?? SYSTEM_SCENARIOS[0];
@@ -618,11 +621,12 @@ export function SystemDesignStudio() {
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg max-w-full overflow-x-auto no-scrollbar">
           {(
             [
+              { id: 'playground', label: 'Live Traffic Playground' },
               { id: 'roadmap', label: 'Master Roadmap & Algos' },
-              { id: 'builder', label: 'Drag & Drop Builder' },
+              { id: 'builder', label: 'Tier Estimator' },
               { id: 'animations', label: 'System Animations' },
               { id: 'probabilistic', label: 'Probabilistic Lab' },
               { id: 'academy', label: 'Deep Academy' },
@@ -644,7 +648,13 @@ export function SystemDesignStudio() {
         </div>
       </div>
 
-      {subTab !== 'probabilistic' && subTab !== 'academy' && subTab !== 'roadmap' && (
+      {/* Mode 0: Full Interactive React Flow System Design Playground & Live Traffic Simulator */}
+      {subTab === 'playground' && <SystemPlayground />}
+
+      {subTab !== 'playground' &&
+        subTab !== 'probabilistic' &&
+        subTab !== 'academy' &&
+        subTab !== 'roadmap' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SYSTEM_SCENARIOS.map((sc) => (
             <button
