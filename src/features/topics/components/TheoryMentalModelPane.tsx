@@ -32,6 +32,7 @@ import { ProblemMutationGraph } from './ProblemMutationGraph';
 import { MutationLadderVisualizer } from './MutationLadderVisualizer';
 import { TopicExpertisePlaybook } from './TopicExpertisePlaybook';
 import { CurriculumDfdVisualizer } from './CurriculumDfdVisualizer';
+import { MasteryReviewPanel } from '../../../components/shared/MasteryReviewPanel';
 
 type ProgressiveTabId = 'intuition' | 'dryrun' | 'recall' | 'solutions';
 
@@ -882,6 +883,31 @@ export function TheoryMentalModelPane({
             topic={topic}
             isMastered={isMastered}
             onToggleMastered={onToggleMastered}
+          />
+
+          {/* Senior Architect Production Review & Student Zero-to-Expertise Self-Rating */}
+          <MasteryReviewPanel
+            entityKey={`topic:${topic.id}`}
+            entityTitle={topic.title}
+            entityKind="curriculum-topic"
+            codeLevelDfd={
+              topic.mentalModelSteps.length > 0
+                ? `${topic.mentalModelSteps.join(' → ')} (${topic.solutions.optimal.timeComplexity} time · ${topic.solutions.optimal.spaceComplexity} space)`
+                : `Input Constraints → Invariant Setup → Optimal Transform (${topic.solutions.optimal.timeComplexity}) → Verified Output (${topic.solutions.optimal.spaceComplexity}).`
+            }
+            realWorldUseCases={[
+              topic.tagline,
+              topic.solutions.optimal.intuition,
+            ]}
+            challengesFaced={deepTopic.bugPreventionLab.map(
+              (bug) => `${bug.trapTitle}: ${bug.explanation}`
+            )}
+            verifiedChecklist={[
+              { label: 'Simple Language', detail: 'Plain Analogy + Blueprint' },
+              { label: 'DFD & Visual Flow', detail: 'Interactive Canvas + DFD' },
+              { label: 'Code Progression', detail: 'Brute → Better → Optimal' },
+              { label: 'Bug Traps', detail: `${deepTopic.bugPreventionLab.length} Clinic Cases` },
+            ]}
           />
         </div>
       )}

@@ -5,6 +5,7 @@ import { ADV_TREE_ALGORITHMS, ADV_TREE_PRACTICE } from './algorithmsAdvTrees';
 import { ADV_STRING_ALGORITHMS, ADV_STRING_PRACTICE } from './algorithmsAdvStrings';
 import { ADV_DP_ALGORITHMS, ADV_DP_PRACTICE } from './algorithmsAdvDp';
 import { ADV_MATH_RAND_ALGORITHMS, ADV_MATH_RAND_PRACTICE } from './algorithmsAdvMathRand';
+import { SPECIALIST_9_ALGORITHMS, SPECIALIST_9_PRACTICE } from './algorithmsSpecialistPack';
 
 export type AlgorithmCategory =
   | 'Array & String Patterns'
@@ -2263,6 +2264,7 @@ const ORDERED_CATEGORY_SEQUENCE: AlgorithmCategory[] = [
 const ALL_RAW_ALGORITHMS: AlgorithmDefinition[] = [
   ...BASE_14_ALGORITHMS,
   ...EXTRA_6_ALGORITHMS,
+  ...SPECIALIST_9_ALGORITHMS,
   ...ADV_GRAPH_ALGORITHMS,
   ...ADV_TREE_ALGORITHMS,
   ...ADV_STRING_ALGORITHMS,
@@ -2276,6 +2278,7 @@ export const ALGORITHMS_CATALOG: AlgorithmDefinition[] = ORDERED_CATEGORY_SEQUEN
 
 export const ALL_PRACTICE_CHALLENGES: Record<string, AlgorithmPracticeSpec> = {
   ...PRACTICE_CHALLENGES,
+  ...SPECIALIST_9_PRACTICE,
   ...ADV_GRAPH_PRACTICE,
   ...ADV_TREE_PRACTICE,
   ...ADV_STRING_PRACTICE,

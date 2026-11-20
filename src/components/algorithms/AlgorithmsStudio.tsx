@@ -40,9 +40,13 @@ import { ComplexityDepthToggle } from '../../features/visualizer/components/Comp
 import { useAccountState } from '../../hooks/useAccountState';
 import { getAlgorithmComplexityProfile } from '../../features/visualizer/data/complexityComparisonData';
 import { getAlgorithmTutorGuide } from '../../data/algorithmTutorGuides';
+import { getAlgorithmUpgradeSpec } from '../../data/algorithmUpgradeLadders';
+import { CURATED_INTERVIEW_BANK } from '../../features/topics/data/curatedInterviewBank';
+import { PatternRecognitionDrill } from './PatternRecognitionDrill';
+import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
 
 type TierFilter = 'all' | 'core' | 'advanced';
-type DetailTab = 'mental' | 'triggers' | 'code' | 'practice';
+type DetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
 
 interface TestCaseRunResult {
   label: string;
@@ -154,6 +158,19 @@ export function AlgorithmsStudio({
   const currentFrame = algorithm.frames[safeFrameIndex] ?? algorithm.frames[0];
 
   const tutorGuide = useMemo(() => getAlgorithmTutorGuide(algorithm.id), [algorithm.id]);
+  const upgradeSpec = useMemo(() => getAlgorithmUpgradeSpec(algorithm), [algorithm]);
+  const matchedCuratedQuestions = useMemo(() => {
+    const slugSet = new Set(algorithm.linkedProblemSlugs);
+    const exact = CURATED_INTERVIEW_BANK.filter(
+      (q) => slugSet.has(q.slug) || (q.trainerSlug && slugSet.has(q.trainerSlug))
+    );
+    if (exact.length > 0) return exact.slice(0, 4);
+    return CURATED_INTERVIEW_BANK.filter((q) =>
+      algorithm.linkedTopics.some((t) =>
+        q.topicLabel.toLowerCase().includes(t.split(' ')[0].toLowerCase())
+      )
+    ).slice(0, 4);
+  }, [algorithm]);
 
   useEffect(() => {
     setFrameIndex(0);
@@ -371,7 +388,8 @@ export function AlgorithmsStudio({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
           {[
-            { id: 'studio' as const, label: '45-Algorithm Animated & Practice Studio' },
+            { id: 'studio' as const, label: `${ALGORITHMS_CATALOG.length}-Algorithm Animated & Practice Studio` },
+            { id: 'pattern-drill' as const, label: 'Pattern Recognition Drill (20 Traps)' },
             { id: 'sorting-lab' as const, label: 'Sorting Algorithm Lab (Race Mode)' },
             { id: 'recursion-lab' as const, label: 'Recursion & Backtracking Visualizer' },
             { id: 'architecture' as const, label: 'Interactive Architecture Visualizer (SVG)' },
@@ -392,7 +410,15 @@ export function AlgorithmsStudio({
         </div>
       </div>
 
-      {studioMode === 'sorting-lab' ? (
+      {studioMode === 'pattern-drill' ? (
+        <PatternRecognitionDrill
+          onInspectAlgorithm={(algoId, tab = 'mental') => {
+            setSelectedAlgoId(algoId);
+            setDetailTab(tab);
+            setStudioMode('studio');
+          }}
+        />
+      ) : studioMode === 'sorting-lab' ? (
         <SortingAlgorithmLab />
       ) : studioMode === 'recursion-lab' ? (
         <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
@@ -767,6 +793,7 @@ export function AlgorithmsStudio({
           <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
             {[
               { id: 'mental' as const, label: 'Deep Mental Model' },
+              { id: 'upgrade-trace' as const, label: 'Upgrade Ladder & Dry-Run' },
               { id: 'triggers' as const, label: 'When to Use & Pitfalls' },
               { id: 'code' as const, label: 'Reusable Code Template' },
               { id: 'practice' as const, label: 'Practice Implementation' },
@@ -943,29 +970,201 @@ export function AlgorithmsStudio({
           </div>
         )}
 
-        {detailTab === 'triggers' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-2.5">
-              <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                Problem Signals That Trigger {algorithm.shortName}
-              </h3>
-              <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300 list-disc list-inside">
-                {algorithm.whenToUse.map((item) => (
-                  <li key={item} className="leading-relaxed">
-                    {item}
-                  </li>
+        {detailTab === 'upgrade-trace' && (
+          <div className="space-y-6">
+            {/* Brute -> Better -> Optimal Upgrade Ladder */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Brute Force → Better → Optimal Upgrade Ladder
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    See the exact computational bottleneck eliminated at every optimization step.
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-sky-700 dark:text-sky-400 tabular-nums">
+                  {algorithm.complexityLeap}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {[
+                  { tier: upgradeSpec.brute, tone: 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50', titleTone: 'text-slate-600 dark:text-slate-400' },
+                  { tier: upgradeSpec.better, tone: 'border-amber-200/80 dark:border-amber-900/60 bg-amber-50/30 dark:bg-amber-950/15', titleTone: 'text-amber-800 dark:text-amber-300' },
+                  { tier: upgradeSpec.optimal, tone: 'border-emerald-300/80 dark:border-emerald-900/70 bg-emerald-50/35 dark:bg-emerald-950/20', titleTone: 'text-emerald-800 dark:text-emerald-300' },
+                ].map(({ tier: stage, tone, titleTone }) => (
+                  <div key={stage.label} className={`rounded-lg border p-4 space-y-2 ${tone}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-xs font-semibold ${titleTone}`}>{stage.label}</span>
+                      <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 tabular-nums">
+                        {stage.time} · {stage.space}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+                      {stage.approach}
+                    </p>
+                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 pt-1.5 border-t border-slate-200/60 dark:border-slate-800/70">
+                      {stage.bottleneckOrWin}
+                    </p>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
-            <div className="space-y-2.5 rounded-lg border border-rose-200 dark:border-rose-900/70 bg-rose-50/40 dark:bg-rose-950/20 p-4">
-              <h3 className="text-sm font-semibold text-rose-700 dark:text-rose-400">
-                Eliminator Rule — When This Algorithm Fails
-              </h3>
-              <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                {algorithm.whenItFails}
-              </p>
+            {/* Frame-Synchronized Dry-Run Variable Trace Table */}
+            <div className="space-y-2.5 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Synchronized Dry-Run Variable Trace Table
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Click any trace row to jump the interactive visual stage above to that exact execution step.
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                  Active Step {safeFrameIndex + 1} / {algorithm.frames.length}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-mono">
+                      <th className="py-2.5 px-3 font-semibold whitespace-nowrap">Step</th>
+                      <th className="py-2.5 px-3 font-semibold">State &amp; Variables</th>
+                      <th className="py-2.5 px-3 font-semibold">Invariant Verification</th>
+                      <th className="py-2.5 px-3 font-semibold">Action Taken</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {algorithm.frames.map((fr, idx) => {
+                      const active = idx === safeFrameIndex;
+                      return (
+                        <tr
+                          key={fr.step}
+                          onClick={() => {
+                            setIsPlaying(false);
+                            setFrameIndex(idx);
+                          }}
+                          className={`cursor-pointer transition-colors ${
+                            active
+                              ? 'bg-sky-50/90 dark:bg-sky-950/40 text-slate-900 dark:text-slate-100'
+                              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 font-mono font-bold tabular-nums whitespace-nowrap text-sky-700 dark:text-sky-400">
+                            {String(idx + 1).padStart(2, '0')}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-[11px] tabular-nums">
+                            {fr.variables.map((v) => `${v.name}=${v.value}`).join(' · ')}
+                          </td>
+                          <td className="py-2.5 px-3 leading-relaxed text-emerald-800 dark:text-emerald-300">
+                            {fr.invariantCheck}
+                          </td>
+                          <td className="py-2.5 px-3 leading-relaxed">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">
+                              {fr.title}:{' '}
+                            </span>
+                            {fr.explanation}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </div>
+        )}
+
+        {detailTab === 'triggers' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-2.5">
+                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  Problem Signals That Trigger {algorithm.shortName}
+                </h3>
+                <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300 list-disc list-inside">
+                  {algorithm.whenToUse.map((item) => (
+                    <li key={item} className="leading-relaxed">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-2.5 rounded-lg border border-rose-200 dark:border-rose-900/70 bg-rose-50/40 dark:bg-rose-950/20 p-4">
+                <h3 className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                  Eliminator Rule — When This Algorithm Fails
+                </h3>
+                <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  {algorithm.whenItFails}
+                </p>
+              </div>
+            </div>
+
+            {matchedCuratedQuestions.length > 0 && (
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Matched Blind 75 &amp; NeetCode 150 Interview Questions
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      High-frequency interview problems directly testing {algorithm.shortName} and its follow-up twists.
+                    </p>
+                  </div>
+                </div>
+                <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                  {matchedCuratedQuestions.map((q) => (
+                    <div
+                      key={q.slug}
+                      className="p-3.5 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                          {q.leetcodeNumber && <span>LC #{q.leetcodeNumber}</span>}
+                          {q.leetcodeNumber && <span aria-hidden="true">·</span>}
+                          <span className="font-sans font-semibold text-sm text-slate-900 dark:text-slate-100">
+                            {q.title}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span>{q.difficulty}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>{q.timeComplexity}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {q.patternTrigger}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {onOpenCurriculumTopic && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenCurriculumTopic(q.topicId)}
+                            className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors whitespace-nowrap"
+                          >
+                            Topic Guide
+                          </button>
+                        )}
+                        {q.trainerSlug && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenProblemTrainer(q.trainerSlug!)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap"
+                          >
+                            Trainer
+                            <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1328,6 +1527,22 @@ export function AlgorithmsStudio({
           })}
         </div>
       </section>
+
+      {/* Senior Architect DFD & Use-Case Review + Student Zero-to-Expertise Self-Rating */}
+      <MasteryReviewPanel
+        entityKey={`algo:${algorithm.id}`}
+        entityTitle={algorithm.name}
+        entityKind="algorithm"
+        codeLevelDfd={upgradeSpec.codeLevelDfd}
+        realWorldUseCases={upgradeSpec.realWorldUseCases}
+        challengesFaced={upgradeSpec.challengesFaced}
+        verifiedChecklist={[
+          { label: 'Simple Analogy', detail: tutorGuide ? 'Verified · 30s Script' : 'Core Model' },
+          { label: 'Visual & Trace', detail: `${algorithm.frames.length} Interactive Frames` },
+          { label: 'Unit-Tested Lab', detail: `${practiceSpec?.testCases.length ?? 0} Live JS Cases` },
+          { label: 'Follow-Up Twists', detail: `${tutorGuide?.followUpTwists.length ?? 0} Recall Traps` },
+        ]}
+      />
         </>
       )}
     </div>

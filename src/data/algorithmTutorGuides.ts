@@ -959,6 +959,195 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
     ],
   },
+  'monotonic-deque': {
+    algorithmId: 'monotonic-deque',
+    simpleAnalogy:
+      'Think of a VIP lounge line with a clock: anyone who gets too old leaves out the front door, and whenever a taller VIP walks in the back door, everyone shorter in front of them can never be the tallest again—so they leave immediately.',
+    interviewScript30s:
+      '"I store indices in a decreasing deque so the front is always the window maximum in O(1). Expiring front indices takes O(1) and evicting smaller back indices means every element enters and leaves at most once—giving true O(N) time and O(K) space."',
+    chooseWhen: 'Sliding Window Maximum/Minimum, bounded max-min subarrays, or sliding-window DP optimization.',
+    avoidWhen: 'Arbitrary random range [L, R] queries (use Segment Tree / Sparse Table) or streaming median (use Dual Heaps).',
+    followUpTwists: [
+      {
+        question: 'What if you need the longest subarray where max - min <= limit (LC 1438)?',
+        invariantShift: 'Run TWO monotonic deques in lockstep (one decreasing for max, one increasing for min) and advance left whenever maxDeque[0] - minDeque[0] > limit.',
+        complexityImpact: 'Still O(N) time, O(N) space.',
+      },
+      {
+        question: 'Why must you store INDICES instead of values in the deque?',
+        invariantShift: 'Duplicate values cannot tell you whether the front element has fallen out of window [i - k + 1, i]; indices make expiration exact (`dq[0] <= i - k`).',
+        complexityImpact: 'Same O(N) time, eliminates duplicate-value bugs.',
+      },
+    ],
+  },
+  'zero-one-bfs': {
+    algorithmId: 'zero-one-bfs',
+    simpleAnalogy:
+      'Like taking a highway with free express lanes (cost 0) and $1 toll booths (cost 1): anyone who uses a free lane jumps to the front of the line, while toll payers wait at the back—no fancy priority queue needed!',
+    interviewScript30s:
+      '"Because every edge weight is strictly 0 or 1, the frontier only ever holds distances d and d+1. Pushing w=0 relaxations to the deque front and w=1 to the back keeps exact shortest-first ordering in O(V + E), dropping Dijkstra’s log V factor."',
+    chooseWhen: 'Binary-cost grids (follow arrow = 0, flip = 1; empty cell = 0, remove wall = 1) or free-vs-paid state transitions.',
+    avoidWhen: 'Edges have general weights like 2, 5, 10 (use Dijkstra) or negative weights (use Bellman-Ford).',
+    followUpTwists: [
+      {
+        question: 'Can a node be pushed into the deque more than once in 0-1 BFS?',
+        invariantShift: 'Yes—if first reached via a w=1 edge and later improved via a w=0 edge, it re-enters at the front; guard with `if (d > dist[u]) continue` just like Dijkstra.',
+        complexityImpact: 'Each edge relaxes at most once → still strictly O(V + E).',
+      },
+      {
+        question: 'What if edge weights are small integers 0..K (e.g., K <= 10)?',
+        invariantShift: 'Generalize 0-1 BFS to Dial’s Algorithm using an array of K + 1 circular buckets.',
+        complexityImpact: 'O(V · K + E) time.',
+      },
+    ],
+  },
+  'bidirectional-bfs': {
+    algorithmId: 'bidirectional-bfs',
+    simpleAnalogy:
+      'Instead of digging one giant tunnel from New York to Boston, two crews dig from both ends and meet in the middle—cutting the total dirt excavated from a giant circle into two tiny half-radius circles.',
+    interviewScript30s:
+      '"Since both start and end states are known upfront in an unweighted graph, I expand two hash-set frontiers and always step the smaller one—slashing O(b^d) states down to O(b^(d/2)) until the sets intersect."',
+    chooseWhen: 'Word Ladder, Open the Lock, or social-network shortest paths where branching factor b is huge and target is known.',
+    avoidWhen: 'Target is unknown (e.g., nearest exit), graph is weighted (requires modified bidirectional Dijkstra stopping criteria), or edges are irreversible.',
+    followUpTwists: [
+      {
+        question: 'Why do we always expand the SMALLER frontier instead of alternating strictly?',
+        invariantShift: 'If one end sits inside a dense hub of 1,000 neighbors and the other has 3 neighbors, expanding the smaller set avoids blowing up the branching factor.',
+        complexityImpact: 'Massive practical speedup on skewed-degree graphs.',
+      },
+      {
+        question: 'How do you return ALL shortest transformation paths (Word Ladder II, LC 126)?',
+        invariantShift: 'Delay removing words from the dictionary until an ENTIRE level finishes, record parent adjacency links, then DFS-reconstruct shortest paths.',
+        complexityImpact: 'O(b^(d/2) + outputPaths) time.',
+      },
+    ],
+  },
+  'kruskals-mst': {
+    algorithmId: 'kruskals-mst',
+    simpleAnalogy:
+      'Connecting towns with fiber-optic cables on a tight budget: sort every possible cable from cheapest to priciest and lay each cable only if the two towns cannot already reach each other.',
+    interviewScript30s:
+      '"I sort all undirected edges ascending by cost in O(E log E) and sweep them with Path-Compressed Union-Find—accepting every edge whose endpoints lie in different components until V - 1 edges connect the graph."',
+    chooseWhen: 'Sparse edge-list graphs, minimum spanning forest with K clusters, or Critical & Pseudo-Critical MST edges.',
+    avoidWhen: 'Dense complete graphs (E ≈ V² like N=1000 coordinate points) where Prim’s MST runs in O(V²) without storing O(V²) edges.',
+    followUpTwists: [
+      {
+        question: 'How do you find the minimum cost to leave exactly K connected clusters instead of 1?',
+        invariantShift: 'Run Kruskal identically and stop early as soon as `components === K` (after V - K edges instead of V - 1).',
+        complexityImpact: 'Still O(E log E) time.',
+      },
+      {
+        question: 'How do you test whether a specific edge is CRITICAL (must appear in every MST)?',
+        invariantShift: 'Run Kruskal skipping that edge; if MST fails to connect or total cost strictly increases, the edge is critical.',
+        complexityImpact: 'O(E² · α(V)) across all edges (LC 1489).',
+      },
+    ],
+  },
+  'bipartite-graph-coloring': {
+    algorithmId: 'bipartite-graph-coloring',
+    simpleAnalogy:
+      'Seating wedding guests at two tables where rivals cannot sit together: seat the first guest at Table A, every rival at Table B, their rivals back at Table A—if anyone ends up sitting with a rival, a 3-way (odd) rivalry loop makes it impossible.',
+    interviewScript30s:
+      '"A graph is bipartite iff it contains no odd-length cycle. I iterate across every uncolored component, run BFS assigning alternating 0/1 colors, and return false the instant an edge connects two same-colored nodes—O(V + E) time and O(V) space."',
+    chooseWhen: 'Is Graph Bipartite (LC 785), Possible Bipartition (LC 886), odd-cycle detection, or 2-shift conflict scheduling.',
+    avoidWhen: 'More than 2 colors/groups are allowed (3-coloring is NP-Complete) or graph edges are directed dependencies (use Topological Sort).',
+    followUpTwists: [
+      {
+        question: 'What bug catches 40% of candidates on Is Graph Bipartite?',
+        invariantShift: 'Starting BFS only from node 0 misses disconnected components that contain an odd cycle; always wrap BFS in `for (i = 0..n-1) if (color[i] == -1)`.',
+        complexityImpact: 'Still O(V + E), guarantees 100% component coverage.',
+      },
+      {
+        question: 'Can you also test bipartiteness dynamically using Union-Find (DSU)?',
+        invariantShift: 'Yes—either use an enemy-node offset `u + N` (union `u` with `v + N` and `v` with `u + N`) or Parity DSU; conflict occurs when `find(u) === find(v)`.',
+        complexityImpact: 'O((V + E) · α(V)) online edge checks.',
+      },
+    ],
+  },
+  'sweep-line-events': {
+    algorithmId: 'sweep-line-events',
+    simpleAnalogy:
+      'Standing at a conference hall door with a clicker: +1 every time a meeting starts, -1 every time a meeting ends (letting people exit before new ones enter at the same minute), and remembering the highest number ever shown on the clicker.',
+    interviewScript30s:
+      '"I flatten every [start, end) interval into (+1) and (-1) timeline events, sort by timestamp with -1 before +1 on ties, and sweep a single active counter in O(N log N) time—scaling effortlessly to timestamps up to 10^9."',
+    chooseWhen: 'Meeting Rooms II, Car Pooling with large coordinates, My Calendar overlaps, and The Skyline Problem.',
+    avoidWhen: 'Intervals arrive online one-by-one requiring instant peak queries after each insert (use TreeMap or Lazy Segment Tree).',
+    followUpTwists: [
+      {
+        question: 'How does the tie-breaker flip if intervals are CLOSED `[start, end]` instead of half-open `[start, end)`?',
+        invariantShift: 'If touching endpoints `[1, 5]` and `[5, 8]` count as overlapping at t=5, sort `+1` BEFORE `-1` on ties!',
+        complexityImpact: 'Still O(N log N) time, O(N) space.',
+      },
+      {
+        question: 'How do you extend Sweep Line to The Skyline Problem (LC 218)?',
+        invariantShift: 'Replace the scalar `active` counter with a Max-Heap / multiset of active building heights, emitting a key point whenever the max height changes.',
+        complexityImpact: 'O(N log N) time, O(N) space.',
+      },
+    ],
+  },
+  'dual-heaps-median': {
+    algorithmId: 'dual-heaps-median',
+    simpleAnalogy:
+      'Lining students up in two halves facing each other: the tallest person in the short half (Max-Heap) shakes hands with the shortest person in the tall half (Min-Heap)—so the exact middle of the class is always right at their handshake.',
+    interviewScript30s:
+      '"I balance a lower Max-Heap and upper Min-Heap using a 3-step invariant: push to lo, move lo.top to hi, rebalance hi.top back to lo if hi grows larger. Every add takes O(log N) and findMedian reads the tops in O(1)."',
+    chooseWhen: 'Find Median from Data Stream (LC 295), Sliding Window Median (LC 480), or two-phase capital/profit scheduling (IPO).',
+    avoidWhen: 'All values are integers inside a tiny fixed range like [0..100] (a 101-slot frequency bucket beats heaps in O(1)).',
+    followUpTwists: [
+      {
+        question: 'How do you remove outgoing elements in Sliding Window Median (LC 480)?',
+        invariantShift: 'Heaps lack O(log N) arbitrary delete; store expired numbers in a `delayed` frequency HashMap and prune them lazily only when they surface at a heap top.',
+        complexityImpact: 'O(N log K) time, O(N) space.',
+      },
+      {
+        question: 'How do you track the 90th percentile (P90) instead of the 50th percentile?',
+        invariantShift: 'Keep the exact same two heaps, but rebalance to maintain `lo.size ≈ 9 * hi.size` instead of `lo.size ≈ hi.size`!',
+        complexityImpact: 'Still O(log N) add and O(1) P90 read.',
+      },
+    ],
+  },
+  'lis-patience-sorting': {
+    algorithmId: 'lis-patience-sorting',
+    simpleAnalogy:
+      'Like dealing playing cards into piles left-to-right where you always place each new card onto the leftmost pile whose top card is >= yours: keeping each pile’s top card as small as possible leaves maximum space for future cards to build a longer sequence.',
+    interviewScript30s:
+      '"Instead of O(N²) DP scanning all predecessors, I maintain `tails[k]` as the smallest possible ending value of an increasing subsequence of length k+1. Since `tails` stays sorted, `lower_bound` binary search updates each element in O(log N) for O(N log N) total."',
+    chooseWhen: 'Longest Increasing Subsequence with N <= 10^5, Russian Doll Envelopes (2D sort + LIS), or patience pile games.',
+    avoidWhen: 'You need the COUNT of all distinct LIS sequences (requires O(N²) DP or Fenwick/Segment Tree storing (maxLen, count) pairs).',
+    followUpTwists: [
+      {
+        question: 'What changes if EQUAL elements are allowed (Longest NON-DECREASING Subsequence)?',
+        invariantShift: 'Switch `lower_bound` (`tails[mid] < x`) to `upper_bound` (`tails[mid] <= x`) so equal values append after existing equals instead of overwriting them.',
+        complexityImpact: 'Still O(N log N) time, O(N) space.',
+      },
+      {
+        question: 'How do you reconstruct the ACTUAL subsequence elements (not just the length)?',
+        invariantShift: 'Store element indices in `tailsIdx` alongside a `parent[i]` array recording `tailsIdx[pos - 1]` when placing index `i`, then walk backward from `tailsIdx.at(-1)`.',
+        complexityImpact: 'O(N log N) time, O(N) space.',
+      },
+    ],
+  },
+  'meet-in-the-middle': {
+    algorithmId: 'meet-in-the-middle',
+    simpleAnalogy:
+      'Trying to open a 40-switch combination lock by brute force takes a trillion tries (2^40). Split the switches into Left 20 and Right 20 (1 million each), list all outcomes of each half, and match pairs in seconds!',
+    interviewScript30s:
+      '"At N = 40 with 10^9 values, 2^N backtracking TLEs and subset-sum DP OOMs. Splitting into two halves of N/2 creates two 2^(N/2) lists (~10^6), sorts the right half, and binary searches complements in O(N · 2^(N/2))—a square-root speedup over 2^N."',
+    chooseWhen: 'N is roughly 30–44 AND values are too large (10^7–10^9) or negative for pseudo-polynomial DP (LC 1755, LC 2035, 4Sum II).',
+    avoidWhen: 'N <= 20 (plain backtracking/bitmask DP is simpler) or total sum S is small (O(N·S) Knapsack DP is faster and smaller).',
+    followUpTwists: [
+      {
+        question: 'How do you adapt Meet in the Middle when BOTH halves must contribute an EXACT total count of K elements (LC 2035)?',
+        invariantShift: 'Group generated sums by popcount (`leftByCount[c]` and `rightByCount[K - c]`) and binary search only across matching complementary sizes!',
+        complexityImpact: 'O(N · 2^(N/2)) time, O(2^(N/2)) space.',
+      },
+      {
+        question: 'Can you eliminate the O(log 2^(N/2)) binary search factor during the merge?',
+        invariantShift: 'Sort BOTH `leftSums` and `rightSums` (or merge-sort incrementally as each element is added) and sweep with O(2^(N/2)) converging Two Pointers!',
+        complexityImpact: 'Cuts runtime ~5× in practice for N = 40.',
+      },
+    ],
+  },
 };
 
 export function getAlgorithmTutorGuide(algorithmId: string): AlgorithmTutorGuide | null {

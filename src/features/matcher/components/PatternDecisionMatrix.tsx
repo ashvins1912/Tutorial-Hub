@@ -56,7 +56,7 @@ const PATTERN_DECISION_RULES: PatternDecisionRule[] = [
     whyItWins: 'Expires old indices at front and evicts dominated values at back in true O(N).',
     trapAlternative: 'Max-Heap takes O(N log K) with stale entries; plain scan takes O(N·K).',
     topicId: 'queues-monotonic-deque',
-    algorithmId: 'monotonic-stack',
+    algorithmId: 'monotonic-deque',
   },
   {
     id: 'p-min-max-answer',

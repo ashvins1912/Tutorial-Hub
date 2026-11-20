@@ -75,14 +75,14 @@ function createInitialProblemProgress(problemId: string): ProblemLocalProgress {
   };
 }
 
-export type AlgorithmDetailTab = 'mental' | 'triggers' | 'code' | 'practice';
+export type AlgorithmDetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
 export type NGramStudioMode = 'curriculum' | 'taxonomy' | 'pruning-sim' | 'case-study';
 
 export interface PatternForgeState {
   activeView: TopView;
   activeAlgorithmId: string;
   activeAlgorithmTab: AlgorithmDetailTab;
-  algorithmsStudioMode: 'studio' | 'sorting-lab' | 'recursion-lab' | 'architecture';
+  algorithmsStudioMode: 'studio' | 'pattern-drill' | 'sorting-lab' | 'recursion-lab' | 'architecture';
   activeArchitectureId: string;
   activeNGramAlgoId: string;
   activeNGramMode: NGramStudioMode;
@@ -110,7 +110,9 @@ export interface PatternForgeState {
   // Actions
   setActiveView: (view: TopView) => void;
   setActiveAlgorithmId: (algoId: string) => void;
-  setAlgorithmsStudioMode: (mode: 'studio' | 'sorting-lab' | 'recursion-lab' | 'architecture') => void;
+  setAlgorithmsStudioMode: (
+    mode: 'studio' | 'pattern-drill' | 'sorting-lab' | 'recursion-lab' | 'architecture'
+  ) => void;
   setActiveArchitectureId: (archId: string) => void;
   setActiveNGramMode: (mode: NGramStudioMode) => void;
   openAlgorithm: (algoId: string, tab?: AlgorithmDetailTab) => void;

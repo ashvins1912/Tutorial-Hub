@@ -1,5 +1,6 @@
 import type { AlgorithmDefinition } from '../../../data/algorithmsCatalog';
 import type { RecursionProblemId } from '../../recursion-lab/data/recursionLabData';
+import { CALIBRATED_ALGORITHM_PROFILES } from './algorithmComplexityProfiles';
 
 export interface ComplexityComparisonProfile {
   /** Label describing the recursive formulation */
@@ -407,6 +408,9 @@ export function getTopicComplexityProfile(topicId: string): ComplexityComparison
 export function getAlgorithmComplexityProfile(
   algo: AlgorithmDefinition
 ): ComplexityComparisonProfile {
+  if (CALIBRATED_ALGORITHM_PROFILES[algo.id]) {
+    return CALIBRATED_ALGORITHM_PROFILES[algo.id];
+  }
   const cat = algo.category;
   const isLog =
     algo.timeComplexity.includes('log') && !algo.timeComplexity.includes('N log');
