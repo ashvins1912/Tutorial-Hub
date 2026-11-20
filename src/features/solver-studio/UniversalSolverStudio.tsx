@@ -16,17 +16,26 @@ import {
   Grid3X3,
   HelpCircle,
   Layers,
+  Link2,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
   Search,
   Shuffle,
   Sparkles,
   Target,
+  UploadCloud,
 } from 'lucide-react';
 import { apiFetch } from '../../lib/apiFetch';
 import { analyzeProblemStatement } from '../../core/engine/UniversalLogicEngine';
 import {
+  ALL_UNIVERSAL_STRATEGIES,
+  STRATEGY_META_MAP,
+  matchAlgorithmsAndTopics,
+} from '../../core/engine/catalogStrategyBridge';
+import {
   PURE_LOGIC_MODULES,
   SAMPLE_PROBLEMS,
-  STRATEGIES_CATALOG,
 } from '../../core/knowledge-base/strategiesCatalog';
 import {
   buildStaticSystemProblemCatalog,
@@ -52,15 +61,19 @@ import {
   trackProblemDropFromState,
 } from '../../core/telemetry/adaptiveTelemetry';
 import { useAccountState } from '../../hooks/useAccountState';
+import { useContentBootstrapStore } from '../../store/useContentBootstrapStore';
+import type { AlgorithmDetailTab } from '../../store/usePatternForgeStore';
 import { ArrayPointerVisualizer } from '../workspaces/ArrayPointerVisualizer';
 import { InvariantTrackerTable } from '../workspaces/InvariantTrackerTable';
 import { LogicPieceBuilder } from '../workspaces/LogicPieceBuilder';
 import { TruthEliminationGrid } from '../workspaces/TruthEliminationGrid';
 import { AdaptiveCoachPanel } from './AdaptiveCoachPanel';
+import { GuidedLogicBuilderPanel } from './GuidedLogicBuilderPanel';
 
 interface UniversalSolverStudioProps {
   onOpenCurriculumTopic?: (topicId: string) => void;
   onOpenLabProblem?: (problemId: string) => void;
+  onOpenAlgorithm?: (algoId: string, tab?: AlgorithmDetailTab) => void;
   externalProblem?: { id: string; title: string; statement: string } | null;
   onConsumeExternalProblem?: () => void;
 }
@@ -78,6 +91,7 @@ type MobilePane = 'problem' | 'builder' | 'visualizer' | 'code';
 export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   onOpenCurriculumTopic,
   onOpenLabProblem,
+  onOpenAlgorithm,
   externalProblem,
   onConsumeExternalProblem,
 }) => {
@@ -92,17 +106,41 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
     staticCatalog[0] ?? null,
   );
 
+  // LeetCode / GeeksforGeeks URL Importer state
+  const [urlInput, setUrlInput] = useState<string>('');
+  const [urlLoading, setUrlLoading] = useState<boolean>(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [importedUrlMeta, setImportedUrlMeta] = useState<{
+    sourcePlatform: 'LeetCode' | 'GeeksforGeeks';
+    sourceUrl: string;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
+    examples: string[];
+    constraints: string[];
+    topics: string[];
+  } | null>(null);
+
+  // Flag-controlled DB Content Sync state
+  const pullFlagEnabled = useContentBootstrapStore((s) => s.pullFlagEnabled);
+  const bootstrapStatus = useContentBootstrapStore((s) => s.status);
+  const bootstrapStorageMode = useContentBootstrapStore((s) => s.storageMode);
+  const bootstrapTotalItems = useContentBootstrapStore((s) => s.totalItems);
+  const bootstrapCollections = useContentBootstrapStore((s) => s.collections);
+  const isPushingContent = useContentBootstrapStore((s) => s.isPushing);
+  const setPullFlagEnabled = useContentBootstrapStore((s) => s.setPullFlagEnabled);
+  const pullFromDb = useContentBootstrapStore((s) => s.pullFromDb);
+  const pushToDb = useContentBootstrapStore((s) => s.pushToDb);
+
   const [selectedSampleId, setSelectedSampleId] = useState<string>(SAMPLE_PROBLEMS[0].id);
   const [problemInput, setProblemInput] = useState<string>(SAMPLE_PROBLEMS[0].statement);
   const [problemTitle, setProblemTitle] = useState<string>(SAMPLE_PROBLEMS[0].title);
   const [activeWorkspaceOverride, setActiveWorkspaceOverride] = useState<WorkspaceKind | null>(
     null,
   );
-  const [rightTab, setRightTab] = useState<'workspace' | 'code' | 'coach' | 'logic-modules'>(
-    'workspace',
-  );
+  const [rightTab, setRightTab] = useState<
+    'guided' | 'workspace' | 'code' | 'coach' | 'logic-modules'
+  >('guided');
   const [mobilePane, setMobilePane] = useState<MobilePane>('problem');
-  const [codeLang, setCodeLang] = useState<SupportedCodeLanguage>('typescript');
+  const [codeLang, setCodeLang] = useState<SupportedCodeLanguage>('python');
   const [selectedTierIdx, setSelectedTierIdx] = useState<number>(2); // Optimal by default
   const [completedPhases, setCompletedPhases] = useState<SocraticPhase[]>([]);
   const [hintsUsed, setHintsUsed] = useState<number>(0);
@@ -149,7 +187,88 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
     }
   }, [externalProblem, onConsumeExternalProblem]);
 
-  const analysis = useMemo(() => analyzeProblemStatement(problemInput), [problemInput]);
+  const analysis = useMemo(
+    () => analyzeProblemStatement(`${problemTitle}\n${problemInput}`),
+    [problemTitle, problemInput]
+  );
+
+  const catalogMatches = useMemo(
+    () =>
+      matchAlgorithmsAndTopics(
+        `${problemTitle} ${problemInput}`,
+        importedUrlMeta?.topics ?? []
+      ),
+    [problemTitle, problemInput, importedUrlMeta]
+  );
+
+  const handleImportProblemUrl = async (overrideUrl?: string) => {
+    const targetUrl = (overrideUrl ?? urlInput).trim();
+    if (!targetUrl) {
+      setUrlError('Paste a LeetCode or GeeksforGeeks problem URL first.');
+      return;
+    }
+    setUrlLoading(true);
+    setUrlError(null);
+    try {
+      const res = await apiFetch('/api/solver/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        cached?: boolean;
+        problem?: {
+          sourcePlatform: 'LeetCode' | 'GeeksforGeeks';
+          sourceUrl: string;
+          slug: string;
+          title: string;
+          difficulty: 'Easy' | 'Medium' | 'Hard';
+          statement: string;
+          examples: string[];
+          constraints: string[];
+          topics: string[];
+        };
+      };
+      if (!res.ok || !data.problem) {
+        throw new Error(data.error || `Could not fetch URL (HTTP ${res.status})`);
+      }
+
+      const fetched = data.problem;
+      const constraintsText =
+        fetched.constraints.length > 0
+          ? `\n\nConstraints:\n${fetched.constraints.join('\n')}`
+          : '';
+      const topicsText =
+        fetched.topics.length > 0 ? `\n\nTopics: ${fetched.topics.join(', ')}` : '';
+
+      setSelectedSampleId(`url-${fetched.slug}`);
+      setActiveSystemProblem(null);
+      setProblemTitle(fetched.title);
+      setProblemInput(`${fetched.statement}${constraintsText}${topicsText}`);
+      setImportedUrlMeta({
+        sourcePlatform: fetched.sourcePlatform,
+        sourceUrl: fetched.sourceUrl,
+        difficulty: fetched.difficulty,
+        examples: fetched.examples,
+        constraints: fetched.constraints,
+        topics: fetched.topics,
+      });
+      setActiveWorkspaceOverride(null);
+      setCompletedPhases([]);
+      setRevealedPhases(['DECONSTRUCT']);
+      setHintsUsed(0);
+      setRightTab('guided');
+      setToast({
+        kind: 'success',
+        text: `Imported "${fetched.title}" from ${fetched.sourcePlatform} (${fetched.difficulty}). Step-by-step Guided Logic Coach is ready!`,
+      });
+    } catch (err) {
+      setUrlError(err instanceof Error ? err.message : 'Failed to fetch problem URL.');
+    } finally {
+      setUrlLoading(false);
+    }
+  };
 
   const activeWorkspace: WorkspaceKind =
     activeWorkspaceOverride ?? analysis.recommendedWorkspace;
@@ -205,6 +324,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   const handleLoadSystemProblem = (item: SystemSolverProblem) => {
     setSelectedSampleId(item.id);
     setActiveSystemProblem(item);
+    setImportedUrlMeta(null);
     setProblemTitle(item.title);
     setProblemInput(item.statement);
     setActiveWorkspaceOverride(null);
@@ -312,18 +432,18 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
             <span>Universal Logic & DSA Mastery Engine</span>
             <span className="text-slate-400">·</span>
             <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
-              {STRATEGIES_CATALOG.length} Indexed Mental Models
+              {ALL_UNIVERSAL_STRATEGIES.length} Indexed Strategies (All 94 Algos · 22 Topics · Logic)
             </span>
             <span className="text-slate-400">·</span>
             <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
-              Stage 1+2 Retrieval {analysis.totalElapsedMs}ms
+              Retrieval {analysis.totalElapsedMs}ms
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Universal Problem Solver Studio
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">
-            Paste any DSA, N-Gram Fuzzy Search, Mathematical Invariant, Deductive Grid, or Game Theory problem. The two-stage engine deconstructs constraints, retrieves strategies via padded trigrams, and mounts the right interactive lab.
+            Paste any LeetCode or GeeksforGeeks URL or problem prompt. The engine indexes all 94 algorithms, 22 curriculum topics, and 16 power combinations to guide you step by step with OK/Understand checkpoints toward an optimized solution.
           </p>
         </div>
 
@@ -442,6 +562,32 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               <span>{activeSystemProblem.difficulty}</span>
               <span aria-hidden="true">·</span>
               <span>{activeSystemProblem.topic}</span>
+              {activeSystemProblem.algorithmId && onOpenAlgorithm && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenAlgorithm(activeSystemProblem.algorithmId!, 'mental')}
+                    className="inline-flex items-center gap-1 font-sans font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+                  >
+                    Open in 94-Algo Studio
+                    <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                  </button>
+                </>
+              )}
+              {activeSystemProblem.curriculumTopicId && onOpenCurriculumTopic && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCurriculumTopic(activeSystemProblem.curriculumTopicId!)}
+                    className="inline-flex items-center gap-1 font-sans font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Open Topic Guide
+                    <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                  </button>
+                </>
+              )}
               {activeSystemProblem.labProblemId && onOpenLabProblem && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -457,6 +603,59 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               )}
             </div>
           )}
+        </div>
+
+        {/* Flag-Controlled DB Content Push & Startup Pull Strip */}
+        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-slate-600 dark:text-slate-400 tabular-nums">
+            <Database className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+            <span className="font-sans font-semibold text-slate-800 dark:text-slate-200">
+              Startup DB Content Pull Flag:
+            </span>
+            <button
+              type="button"
+              onClick={() => void setPullFlagEnabled(!pullFlagEnabled)}
+              className={`px-2 py-0.5 rounded font-semibold border transition-colors ${
+                pullFlagEnabled
+                  ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                  : 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              {pullFlagEnabled ? 'ENABLED' : 'DISABLED'}
+            </button>
+            <span>·</span>
+            <span>
+              Source: {bootstrapStorageMode} ({bootstrapStatus})
+            </span>
+            {bootstrapTotalItems > 0 && (
+              <>
+                <span>·</span>
+                <span>
+                  {bootstrapCollections.length} collections ({bootstrapTotalItems} synced docs)
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void pushToDb(true)}
+              disabled={isPushingContent}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 disabled:opacity-50"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              <span>{isPushingContent ? 'Pushing...' : 'Push All Content to DB'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void pullFromDb(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-indigo-500"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Pull Now</span>
+            </button>
+          </div>
         </div>
 
         {/* Expandable Full System Problem Catalog Browser */}
@@ -486,6 +685,9 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
                 <option value="All">All Banks ({systemCatalog.length})</option>
                 {(
                   [
+                    '94-Algo Studio',
+                    '22 Topic Tracks',
+                    'Curated Bank',
                     '5-Stage Labs',
                     'Big Tech Vault',
                     'Product Co. Bank',
@@ -617,6 +819,83 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
             mobilePane === 'problem' ? 'block' : 'hidden lg:block'
           }`}
         >
+          {/* LeetCode & GeeksforGeeks URL Importer */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                <Link2 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                <span>Pull Problem from LeetCode or GeeksforGeeks URL</span>
+              </div>
+              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                Live Parser + Guided Coach
+              </span>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleImportProblemUrl();
+              }}
+              className="flex flex-col sm:flex-row gap-2"
+            >
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://leetcode.com/problems/two-sum/ or https://www.geeksforgeeks.org/problems/kadanes-algorithm-1587115620/1"
+                aria-label="LeetCode or GeeksforGeeks problem URL"
+                className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-950 px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+              <button
+                type="submit"
+                disabled={urlLoading}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              >
+                {urlLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Pulling...</span>
+                  </>
+                ) : (
+                  <span>Pull &amp; Coach</span>
+                )}
+              </button>
+            </form>
+
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+              <span>Quick try:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const sample = 'https://leetcode.com/problems/lru-cache/';
+                  setUrlInput(sample);
+                  void handleImportProblemUrl(sample);
+                }}
+                className="text-sky-700 dark:text-sky-400 hover:underline font-medium"
+              >
+                LeetCode LRU Cache
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const sample = 'https://www.geeksforgeeks.org/problems/kadanes-algorithm-1587115620/1';
+                  setUrlInput(sample);
+                  void handleImportProblemUrl(sample);
+                }}
+                className="text-emerald-700 dark:text-emerald-400 hover:underline font-medium"
+              >
+                GFG Kadane&apos;s Algorithm
+              </button>
+            </div>
+
+            {urlError && (
+              <div className="rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/30 px-3 py-2 text-xs text-rose-800 dark:text-rose-200">
+                {urlError}
+              </div>
+            )}
+          </div>
+
           {/* Problem Statement Input */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -649,7 +928,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
                 setSelectedSampleId('custom');
                 setActiveWorkspaceOverride(null);
               }}
-              placeholder="Paste any LeetCode prompt, math puzzle, zebra riddle, game theory problem, or fuzzy search architecture brief..."
+              placeholder="Paste any LeetCode/GFG prompt, math puzzle, zebra riddle, game theory problem, or systems brief..."
               className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-950 px-3 py-2.5 text-xs text-slate-800 dark:text-slate-200 leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
@@ -799,6 +1078,38 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
                           ))}
                         </ul>
 
+                        {/* Quick Jump into 94-Algo Studio or Curriculum Topic */}
+                        {(() => {
+                          const meta = STRATEGY_META_MAP[rec.strategy.id];
+                          const linkedAlgoId = meta?.algorithmId;
+                          const linkedTopicId = rec.strategy.curriculumTopicId ?? meta?.curriculumTopicId;
+                          if (!linkedAlgoId && !linkedTopicId) return null;
+                          return (
+                            <div className="flex flex-wrap items-center gap-2 pt-1.5">
+                              {linkedAlgoId && onOpenAlgorithm && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenAlgorithm(linkedAlgoId, 'mental')}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 dark:text-sky-400 hover:underline"
+                                >
+                                  <span>Open Algorithm Visualizer</span>
+                                  <ArrowUpRight className="w-3 h-3" />
+                                </button>
+                              )}
+                              {linkedTopicId && onOpenCurriculumTopic && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenCurriculumTopic(linkedTopicId)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-400 hover:underline"
+                                >
+                                  <span>Open Curriculum Track</span>
+                                  <ArrowUpRight className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {/* Pitfall Warnings */}
                         {rec.pitfallWarnings.length > 0 && (
                           <div className="rounded-md border border-amber-200 dark:border-amber-900/80 bg-amber-50/70 dark:bg-amber-950/30 p-2 text-[11px] text-amber-900 dark:text-amber-200 space-y-0.5">
@@ -932,7 +1243,19 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
         >
           {/* Right Pane View Tabs (Desktop) */}
           <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-3 py-2">
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setRightTab('guided')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  rightTab === 'guided'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Step-by-Step Coach</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setRightTab('workspace')}
@@ -1010,6 +1333,24 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               </div>
             )}
           </div>
+
+          {/* Step-by-Step Guided Logic Coach */}
+          {rightTab === 'guided' && (
+            <GuidedLogicBuilderPanel
+              problemTitle={problemTitle}
+              problemStatement={problemInput}
+              sourceBadge={importedUrlMeta?.sourcePlatform ?? activeSystemProblem?.source}
+              sourceUrl={importedUrlMeta?.sourceUrl}
+              examples={importedUrlMeta?.examples}
+              constraints={importedUrlMeta?.constraints}
+              analysis={analysis}
+              catalogMatches={catalogMatches}
+              codeLang={codeLang}
+              onChangeCodeLang={setCodeLang}
+              onOpenAlgorithm={onOpenAlgorithm}
+              onOpenCurriculumTopic={onOpenCurriculumTopic}
+            />
+          )}
 
           {/* Interactive Workspace Content */}
           {(rightTab === 'workspace' || mobilePane === 'visualizer' || mobilePane === 'builder') && (

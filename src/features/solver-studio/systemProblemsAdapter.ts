@@ -7,9 +7,20 @@ import {
 } from '../../data/productCompanyMasterBank';
 import { HIGH_ROI_45_PROBLEMS } from '../../data/highRoi45';
 import { MATRIX_PROBLEMS } from '../../data/matrixProblems';
+import {
+  ADVANCED_ALGORITHM_CATEGORIES,
+  ALGORITHMS_CATALOG,
+  ALL_PRACTICE_CHALLENGES,
+  SYSTEMS_ALGORITHM_CATEGORIES,
+} from '../../data/algorithmsCatalog';
+import { CURRICULUM_TOPICS } from '../topics/data/curriculumIndex';
+import { CURATED_INTERVIEW_BANK } from '../topics/data/curatedInterviewBank';
 
 export type SystemProblemSource =
   | 'Logic Presets'
+  | '94-Algo Studio'
+  | '22 Topic Tracks'
+  | 'Curated Bank'
   | '5-Stage Labs'
   | 'Big Tech Vault'
   | 'Product Co. Bank'
@@ -29,6 +40,7 @@ export interface SystemSolverProblem {
   optimalComplexity: string;
   labProblemId?: string;
   curriculumTopicId?: string;
+  algorithmId?: string;
 }
 
 function normalizeTitleKey(title: string): string {
@@ -193,6 +205,81 @@ export function buildStaticSystemProblemCatalog(): SystemSolverProblem[] {
       companies: ['Google', 'Amazon', 'Microsoft'],
       hintSummary: mp.approach,
       optimalComplexity: mp.complexity,
+    });
+  }
+
+  // 7. All 94 Algorithms Studio Challenges & Patterns
+  for (const algo of ALGORITHMS_CATALOG) {
+    const challenge = ALL_PRACTICE_CHALLENGES[algo.id];
+    const promptText = challenge
+      ? `${challenge.prompt} (${algo.name} · ${algo.category}). Key signals: ${algo.whenToUse.slice(0, 2).join('; ')}. Target complexity: ${algo.timeComplexity} time, ${algo.spaceComplexity} space.`
+      : `Apply ${algo.name} (${algo.category}) to solve a real engineering scenario: ${algo.tagline}. Trigger signals: ${algo.whenToUse.slice(0, 2).join('; ')}. Target complexity: ${algo.timeComplexity} time, ${algo.spaceComplexity} space.`;
+
+    const inferredDifficulty: 'Easy' | 'Medium' | 'Hard' =
+      SYSTEMS_ALGORITHM_CATEGORIES.includes(algo.category) ||
+      ADVANCED_ALGORITHM_CATEGORIES.includes(algo.category)
+        ? 'Hard'
+        : algo.category === 'Array & String Patterns' || algo.category === 'Searching & Sorting'
+          ? 'Easy'
+          : 'Medium';
+
+    pushUnique(
+      {
+        id: `algo-studio-${algo.id}`,
+        title: algo.name,
+        statement: promptText,
+        source: '94-Algo Studio',
+        topic: algo.category,
+        difficulty: inferredDifficulty,
+        companies: ['Google', 'Meta', 'Amazon'],
+        hintSummary: algo.coreIdea,
+        optimalComplexity: `${algo.timeComplexity} · ${algo.spaceComplexity}`,
+        algorithmId: algo.id,
+      },
+      false
+    );
+  }
+
+  // 8. All 22 Curriculum Topic Tracks
+  for (const topic of CURRICULUM_TOPICS) {
+    const optimal = topic.solutions.optimal;
+    const clueSummary = topic.patternClues.slice(0, 2).map((c) => c.signal).join('; ');
+    pushUnique(
+      {
+        id: `curriculum-topic-${topic.id}`,
+        title: `Topic #${String(topic.order).padStart(2, '0')}: ${topic.title}`,
+        statement: `${topic.tagline}. ${topic.mentalModelSteps[0] ?? optimal.intuition} Pattern clues: ${clueSummary || topic.keywords.slice(0, 4).join(', ')}. Target complexity: ${optimal.timeComplexity} time, ${optimal.spaceComplexity} space.`,
+        source: '22 Topic Tracks',
+        topic: topic.tier,
+        difficulty:
+          topic.tier === 'Foundations'
+            ? 'Easy'
+            : topic.tier === 'Advanced' || topic.tier === 'Applied System Algorithms'
+              ? 'Hard'
+              : 'Medium',
+        companies: ['FAANG', 'Systems'],
+        hintSummary: optimal.intuition,
+        optimalComplexity: `${optimal.timeComplexity} · ${optimal.spaceComplexity}`,
+        curriculumTopicId: topic.id,
+      },
+      false
+    );
+  }
+
+  // 9. Curated Blind 75 / NeetCode 150 Interview Bank
+  for (const cq of CURATED_INTERVIEW_BANK) {
+    const twistPrompt = cq.followUpTwists[0]?.prompt ? ` Follow-up twist: ${cq.followUpTwists[0].prompt}` : '';
+    pushUnique({
+      id: `curated-${cq.slug}`,
+      title: cq.title,
+      statement: `${cq.plainEnglishGoal} Pattern trigger: ${cq.patternTrigger}. Topic: ${cq.topicLabel}. Target complexity: ${cq.timeComplexity} time, ${cq.spaceComplexity} space.${twistPrompt}`,
+      source: 'Curated Bank',
+      topic: cq.topicLabel,
+      difficulty: cq.difficulty,
+      companies: cq.tracks,
+      hintSummary: cq.optimalApproach,
+      optimalComplexity: `${cq.timeComplexity} · ${cq.spaceComplexity}`,
+      curriculumTopicId: cq.topicId,
     });
   }
 

@@ -23,6 +23,9 @@ import aiAcademyProgressRoutes from './server/routes/aiAcademyProgressRoutes';
 import { AIAcademyProgress } from './server/models/AIAcademyProgress';
 import { AIAcademyRateLimit } from './server/models/AIAcademyRateLimit';
 import codeExecutionRoutes from './server/routes/codeExecutionRoutes';
+import contentBootstrapRoutes from './server/routes/contentBootstrapRoutes';
+import universalSolverRoutes from './server/routes/universalSolverRoutes';
+import { seedPlatformContentOnStartup } from './server/db/seedPlatformContent';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +37,7 @@ async function startServer() {
   await seedCatalogToDb();
   await seedMasterInterviewProblems();
   await seedVerifiedProblemBatches();
+  await seedPlatformContentOnStartup();
 
   const app = express();
   const httpServer = http.createServer(app);
@@ -60,6 +64,12 @@ async function startServer() {
   app.use('/api/authoring', contentAuthoringRoutes);
   // Cached, read-only LeetCode statement/examples/constraints source
   app.use('/api/leetcode/problem', leetcodeProblemRoutes);
+
+  // Flag-controlled DB Content Push & Startup Pull Bootstrap API
+  app.use('/api/content-bootstrap', contentBootstrapRoutes);
+
+  // Universal Problem Solver URL Fetcher (LeetCode & GFG) + Optional AI Logic Coach
+  app.use('/api/solver', universalSolverRoutes);
 
   // 14-Day Company-Specific Sprint Generator & War-Room API
   app.use('/api/sprints', sprintRoutes);

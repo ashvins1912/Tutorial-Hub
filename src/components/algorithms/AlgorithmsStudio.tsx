@@ -8,6 +8,7 @@ import {
   Code2,
   Copy,
   GitBranch,
+  Grid2X2,
   Lightbulb,
   MessageSquareQuote,
   Pause,
@@ -53,6 +54,7 @@ import { CURATED_INTERVIEW_BANK } from '../../features/topics/data/curatedInterv
 import { PatternRecognitionDrill } from './PatternRecognitionDrill';
 import { Master73RoadmapView } from './Master73RoadmapView';
 import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
+import { CategoryMasteryHeatmap } from './CategoryMasteryHeatmap';
 
 type TierFilter = 'all' | 'core' | 'advanced' | 'systems';
 type DetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
@@ -116,6 +118,7 @@ export function AlgorithmsStudio({
   const [codeLang, setCodeLang] = useState<CodeLanguage>('python');
   const [copied, setCopied] = useState(false);
   const [revealedTwistIndices, setRevealedTwistIndices] = useState<number[]>([]);
+  const [showMasteryHeatmap, setShowMasteryHeatmap] = useState(true);
 
   // Practice Implementation Lab state (DB-persisted)
   const [implementedIds, setImplementedIds] = useAccountState<string[]>(
@@ -457,6 +460,21 @@ export function AlgorithmsStudio({
             </button>
           ))}
         </div>
+
+        {studioMode === 'studio' && (
+          <button
+            type="button"
+            onClick={() => setShowMasteryHeatmap((v) => !v)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+              showMasteryHeatmap
+                ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+            }`}
+          >
+            <Grid2X2 className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{showMasteryHeatmap ? 'Hide Mastery Heatmap' : 'Show Mastery Heatmap'}</span>
+          </button>
+        )}
       </div>
 
       {studioMode === 'master-73' ? (
@@ -501,6 +519,21 @@ export function AlgorithmsStudio({
         />
       ) : (
         <>
+      {showMasteryHeatmap && (
+        <CategoryMasteryHeatmap
+          implementedIds={implementedIds}
+          masteredSlugs={masteredSlugs}
+          activeCategory={category}
+          onSelectCategory={(cat) => {
+            setTier('all');
+            handleCategoryChange(cat);
+          }}
+          onSelectAlgorithm={(algoId) => {
+            handleSelectAlgorithm(algoId);
+          }}
+        />
+      )}
+
       {/* Header & Algorithm Tabs Selector */}
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4">

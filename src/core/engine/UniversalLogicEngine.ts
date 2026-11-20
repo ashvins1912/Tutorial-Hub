@@ -1,4 +1,4 @@
-import { STRATEGIES_CATALOG } from '../knowledge-base/strategiesCatalog';
+import { ALL_UNIVERSAL_STRATEGIES } from './catalogStrategyBridge';
 import type { EngineAnalysisResult, StrategySignature, WorkspaceKind } from '../knowledge-base/types';
 import { CandidateRetriever } from './CandidateRetriever';
 import { rerankCandidates } from './ConfidentReranker';
@@ -18,7 +18,7 @@ function nowMs(): number {
 export class UniversalLogicEngine {
   private readonly retriever: CandidateRetriever;
 
-  constructor(strategies: StrategySignature[] = STRATEGIES_CATALOG) {
+  constructor(strategies: StrategySignature[] = ALL_UNIVERSAL_STRATEGIES) {
     this.retriever = new CandidateRetriever(strategies);
   }
 
@@ -62,7 +62,7 @@ export class UniversalLogicEngine {
   }
 }
 
-export const defaultUniversalEngine = new UniversalLogicEngine(STRATEGIES_CATALOG);
+export const defaultUniversalEngine = new UniversalLogicEngine(ALL_UNIVERSAL_STRATEGIES);
 
 export function analyzeProblemStatement(problemStatement: string): EngineAnalysisResult {
   return defaultUniversalEngine.analyze(problemStatement);

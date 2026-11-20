@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { usePatternForgeStore, TopView } from './store/usePatternForgeStore';
 import { useSprintStore } from './store/useSprintStore';
+import { useContentBootstrapStore } from './store/useContentBootstrapStore';
 import { useAuth } from './auth/AuthContext';
 import { apiFetch } from './lib/apiFetch';
 import { PROBLEMS } from './data/problems';
@@ -74,6 +75,8 @@ export default function App() {
   const setInterviewDrawerOpen = usePatternForgeStore((s) => s.setInterviewDrawerOpen);
   const promotionToast = usePatternForgeStore((s) => s.promotionToast);
   const clearPromotionToast = usePatternForgeStore((s) => s.clearPromotionToast);
+  const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
+  const bootstrapOnStartup = useContentBootstrapStore((s) => s.bootstrapOnStartup);
 
   const fetchActiveSprint = useSprintStore((s) => s.fetchActiveSprint);
   const fetchMasteredSlugs = useSprintStore((s) => s.fetchMasteredSlugs);
@@ -111,7 +114,8 @@ export default function App() {
     fetchBrainProfile();
     fetchActiveSprint();
     fetchMasteredSlugs();
-  }, [fetchBrainProfile, fetchActiveSprint, fetchMasteredSlugs]);
+    void bootstrapOnStartup();
+  }, [fetchBrainProfile, fetchActiveSprint, fetchMasteredSlugs, bootstrapOnStartup]);
 
   useEffect(() => {
     let hydrated = false;
@@ -415,6 +419,9 @@ export default function App() {
           <UniversalSolverStudio
             externalProblem={solverExternalProblem}
             onConsumeExternalProblem={() => setSolverExternalProblem(null)}
+            onOpenAlgorithm={(algoId, tab = 'mental') => {
+              openAlgorithm(algoId, tab);
+            }}
             onOpenCurriculumTopic={(topicId) => {
               setJumpTopicId(topicId);
               setWorkspaceMode('curriculum');
