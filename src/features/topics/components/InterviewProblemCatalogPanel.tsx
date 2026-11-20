@@ -14,6 +14,16 @@ import {
 import { apiFetch } from '../../../lib/apiFetch';
 import { useAccountState } from '../../../hooks/useAccountState';
 import {
+  useProblemStatusTracker,
+  type ProblemDifficulty,
+  type ProblemStatus,
+} from '../../../hooks/useProblemStatusTracker';
+import {
+  ProblemFilterBar,
+  StatusCycleButton,
+  toggleFilterValue,
+} from '../../../components/shared/ProblemFilterBar';
+import {
   CURATED_INTERVIEW_BANK,
   CURATED_TOPIC_OPTIONS,
   type CuratedInterviewQuestion,
@@ -22,7 +32,6 @@ import {
 } from '../data/curatedInterviewBank';
 
 type TrackFilter = 'all' | InterviewTrack;
-type DifficultyFilter = 'all' | InterviewDifficulty;
 
 interface OfficialReference {
   title: string;
@@ -47,13 +56,6 @@ const TRACK_TABS: { id: TrackFilter; label: string }[] = [
   { id: 'specialist-twist', label: 'Specialist Twists' },
 ];
 
-const DIFFICULTY_TABS: { id: DifficultyFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'Easy', label: 'Easy' },
-  { id: 'Medium', label: 'Medium' },
-  { id: 'Hard', label: 'Hard' },
-];
-
 function formatTrackLabel(track: InterviewTrack): string {
   if (track === 'blind-75') return 'Blind 75';
   if (track === 'neetcode-150') return 'NeetCode 150';
@@ -74,7 +76,8 @@ export function InterviewProblemCatalogPanel({
   const [syncWithActiveTopic, setSyncWithActiveTopic] = useState(false);
   const [manualTopicId, setManualTopicId] = useState<string>('all');
   const [trackFilter, setTrackFilter] = useState<TrackFilter>('all');
-  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all');
+  const [selectedDifficulties, setSelectedDifficulties] = useState<ProblemDifficulty[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<ProblemStatus[]>([]);
   const [query, setQuery] = useState('');
   const [selectedSlug, setSelectedSlug] = useState<string>(CURATED_INTERVIEW_BANK[0]?.slug ?? '');
   const [revealedTwistIndices, setRevealedTwistIndices] = useState<number[]>([]);
@@ -85,6 +88,19 @@ export function InterviewProblemCatalogPanel({
     'patternforge_curated_solved_v1'
   );
 
+  const { getStatus, setStatus, cycleStatus, markInProgressIfUnattempted } =
+    useProblemStatusTracker({
+      legacySolvedIds: solvedSlugs,
+      onSyncLegacySolved: (id, isSolved) => {
+        setSolvedSlugs((prev) => {
+          const has = prev.includes(id);
+          if (isSolved && !has) return [...prev, id];
+          if (!isSolved && has) return prev.filter((s) => s !== id);
+          return prev;
+        });
+      },
+    });
+
   // Optional official LeetCode lookup (on-demand only, never blocks UI)
   const [reference, setReference] = useState<OfficialReference | null>(null);
   const [referenceLoading, setReferenceLoading] = useState(false);
@@ -92,12 +108,11 @@ export function InterviewProblemCatalogPanel({
 
   const effectiveTopicId = syncWithActiveTopic && activeTopicId ? activeTopicId : manualTopicId;
 
-  const filteredQuestions = useMemo(() => {
+  const baseScopeQuestions = useMemo(() => {
     const q = query.trim().toLowerCase();
     return CURATED_INTERVIEW_BANK.filter((item) => {
       if (effectiveTopicId !== 'all' && item.topicId !== effectiveTopicId) return false;
       if (trackFilter !== 'all' && !item.tracks.includes(trackFilter)) return false;
-      if (difficultyFilter !== 'all' && item.difficulty !== difficultyFilter) return false;
       if (!q) return true;
       return (
         item.title.toLowerCase().includes(q) ||
@@ -107,7 +122,35 @@ export function InterviewProblemCatalogPanel({
         (item.leetcodeNumber ? String(item.leetcodeNumber).includes(q) : false)
       );
     });
-  }, [effectiveTopicId, trackFilter, difficultyFilter, query]);
+  }, [effectiveTopicId, trackFilter, query]);
+
+  const filterCounts = useMemo(() => {
+    const difficulty = { Easy: 0, Medium: 0, Hard: 0 };
+    const status = { solved: 0, 'in-progress': 0, unattempted: 0 };
+    for (const item of baseScopeQuestions) {
+      difficulty[item.difficulty] += 1;
+      status[getStatus(item.slug)] += 1;
+    }
+    return { difficulty, status };
+  }, [baseScopeQuestions, getStatus]);
+
+  const filteredQuestions = useMemo(() => {
+    return baseScopeQuestions.filter((item) => {
+      if (
+        selectedDifficulties.length > 0 &&
+        !selectedDifficulties.includes(item.difficulty)
+      ) {
+        return false;
+      }
+      if (
+        selectedStatuses.length > 0 &&
+        !selectedStatuses.includes(getStatus(item.slug))
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [baseScopeQuestions, selectedDifficulties, selectedStatuses, getStatus]);
 
   const selected: CuratedInterviewQuestion | undefined = useMemo(() => {
     return (
@@ -127,13 +170,6 @@ export function InterviewProblemCatalogPanel({
     setReferenceError('');
   }, [selected?.slug]);
 
-  const toggleSolved = (slug: string) => {
-    const next = solvedSlugs.includes(slug)
-      ? solvedSlugs.filter((s) => s !== slug)
-      : [...solvedSlugs, slug];
-    setSolvedSlugs(next);
-  };
-
   const blind75Count = useMemo(
     () => CURATED_INTERVIEW_BANK.filter((q) => q.tracks.includes('blind-75')).length,
     []
@@ -143,8 +179,12 @@ export function InterviewProblemCatalogPanel({
     []
   );
   const solvedInBank = useMemo(
-    () => CURATED_INTERVIEW_BANK.filter((q) => solvedSlugs.includes(q.slug)).length,
-    [solvedSlugs]
+    () => CURATED_INTERVIEW_BANK.filter((q) => getStatus(q.slug) === 'solved').length,
+    [getStatus]
+  );
+  const inProgressInBank = useMemo(
+    () => CURATED_INTERVIEW_BANK.filter((q) => getStatus(q.slug) === 'in-progress').length,
+    [getStatus]
   );
 
   const loadOfficialReference = async () => {
@@ -195,7 +235,7 @@ export function InterviewProblemCatalogPanel({
 
         <div className="flex flex-col sm:items-end gap-1 text-xs font-mono text-slate-600 dark:text-slate-400 tabular-nums">
           <span className="font-semibold text-slate-900 dark:text-slate-100">
-            {solvedInBank} / {CURATED_INTERVIEW_BANK.length} mastered
+            {solvedInBank} solved · {inProgressInBank} in-progress · {CURATED_INTERVIEW_BANK.length} total
           </span>
           <span>
             22 topics · {blind75Count} Blind 75 · {neetcodeCount} NeetCode 150
@@ -210,7 +250,7 @@ export function InterviewProblemCatalogPanel({
           <div
             role="tablist"
             aria-label="Filter by interview track"
-            className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950"
+            className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 max-w-full overflow-x-auto"
           >
             {TRACK_TABS.map((tab) => (
               <button
@@ -219,7 +259,7 @@ export function InterviewProblemCatalogPanel({
                 role="tab"
                 aria-selected={trackFilter === tab.id}
                 onClick={() => setTrackFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   trackFilter === tab.id
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -229,24 +269,21 @@ export function InterviewProblemCatalogPanel({
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Difficulty Filter */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
-            {DIFFICULTY_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setDifficultyFilter(tab.id)}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-                  difficultyFilter === tab.id
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* Multi-Toggle Difficulty & Status Filter Bar */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-2.5">
+          <ProblemFilterBar
+            selectedDifficulties={selectedDifficulties}
+            onToggleDifficulty={(d) => setSelectedDifficulties((prev) => toggleFilterValue(prev, d))}
+            onClearDifficulties={() => setSelectedDifficulties([])}
+            selectedStatuses={selectedStatuses}
+            onToggleStatus={(s) => setSelectedStatuses((prev) => toggleFilterValue(prev, s))}
+            onClearStatuses={() => setSelectedStatuses([])}
+            counts={filterCounts}
+            totalMatching={filteredQuestions.length}
+            totalCount={baseScopeQuestions.length}
+          />
         </div>
 
         {/* Topic Selector + Sync Toggle + Search */}
@@ -308,29 +345,31 @@ export function InterviewProblemCatalogPanel({
 
           {filteredQuestions.map((item) => {
             const isSelected = selected?.slug === item.slug;
-            const isSolved = solvedSlugs.includes(item.slug);
+            const status = getStatus(item.slug);
             return (
-              <button
+              <div
                 key={item.slug}
-                type="button"
-                onClick={() => setSelectedSlug(item.slug)}
-                className={`w-full text-left px-3.5 py-3 transition-colors flex items-start gap-2.5 ${
+                className={`w-full px-3.5 py-3 transition-colors flex items-start gap-2.5 ${
                   isSelected
                     ? 'bg-sky-50/90 dark:bg-sky-950/40'
                     : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
-                <span className="mt-0.5 shrink-0">
-                  {isSolved ? (
-                    <CheckCircle2
-                      className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <Circle className="w-4 h-4 text-slate-300 dark:text-slate-700" aria-hidden="true" />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 space-y-0.5">
+                <div className="mt-0.5 shrink-0">
+                  <StatusCycleButton
+                    status={status}
+                    title={item.title}
+                    onClick={() => cycleStatus(item.slug)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSlug(item.slug);
+                    markInProgressIfUnattempted(item.slug);
+                  }}
+                  className="min-w-0 flex-1 text-left space-y-0.5"
+                >
                   <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
                     {item.leetcodeNumber ? `#${item.leetcodeNumber} ` : ''}
                     {item.title}
@@ -342,8 +381,8 @@ export function InterviewProblemCatalogPanel({
                     <span aria-hidden="true">·</span>
                     <span>{item.tracks.map(formatTrackLabel).join(' / ')}</span>
                   </span>
-                </span>
-              </button>
+                </button>
+              </div>
             );
           })}
 
@@ -358,7 +397,8 @@ export function InterviewProblemCatalogPanel({
                   setSyncWithActiveTopic(false);
                   setManualTopicId('all');
                   setTrackFilter('all');
-                  setDifficultyFilter('all');
+                  setSelectedDifficulties([]);
+                  setSelectedStatuses([]);
                   setQuery('');
                 }}
                 className="text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline"
@@ -392,18 +432,39 @@ export function InterviewProblemCatalogPanel({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleSolved(selected.slug)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
-                    solvedSlugs.includes(selected.slug)
-                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-emerald-400'
-                  }`}
+                <div
+                  role="group"
+                  aria-label="Set problem status"
+                  className="inline-flex items-center gap-1 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                  {solvedSlugs.includes(selected.slug) ? 'Mastered' : 'Mark Solved'}
-                </button>
+                  {(
+                    [
+                      { id: 'unattempted', label: 'Unattempted' },
+                      { id: 'in-progress', label: 'In-Progress' },
+                      { id: 'solved', label: 'Solved' },
+                    ] as const
+                  ).map((st) => {
+                    const active = getStatus(selected.slug) === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setStatus(selected.slug, st.id)}
+                        className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                          active
+                            ? st.id === 'solved'
+                              ? 'bg-emerald-600 text-white'
+                              : st.id === 'in-progress'
+                                ? 'bg-amber-500 text-slate-950'
+                                : 'bg-slate-800 dark:bg-slate-700 text-white'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
                 {onSelectCurriculumTopic && (
                   <button

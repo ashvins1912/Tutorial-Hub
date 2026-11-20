@@ -1,5 +1,11 @@
-import { Router } from 'express';
+import crypto from 'crypto';
+import { Router, type Request } from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
+import { isMongoConnected } from '../db/connectMongo';
+import {
+  SolverSharedProblem,
+  type SolverSourcePlatform,
+} from '../models/SolverSharedProblem';
 
 const router = Router();
 
@@ -543,6 +549,398 @@ router.post('/ai-coach', async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Gemini coaching request failed.';
     res.status(502).json({ error: message });
+  }
+});
+
+// =============================================================================
+// SAVE FOR FUTURE & SHARE ON PLATFORM (PULLED PROBLEMS LIBRARY)
+// =============================================================================
+
+export interface SolverLibraryRecord {
+  id: string;
+  publicId: string;
+  ownerUserId: string;
+  authorName: string;
+  visibility: 'saved' | 'shared';
+  sourcePlatform: SolverSourcePlatform;
+  sourceUrl: string;
+  slug: string;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  statement: string;
+  examples: string[];
+  constraints: string[];
+  topics: string[];
+  recommendedPattern: string;
+  complexitySummary: string;
+  userNotes: string;
+  upvotes: number;
+  createdAt: string;
+}
+
+const memSavedProblems = new Map<string, SolverLibraryRecord>();
+const memSharedProblems = new Map<string, SolverLibraryRecord>([
+  [
+    'sh-lru-cache-core',
+    {
+      id: 'sh-lru-cache-core',
+      publicId: 'sh-lru-cache-core',
+      ownerUserId: 'platform-curator',
+      authorName: 'PatternForge Staff',
+      visibility: 'shared',
+      sourcePlatform: 'LeetCode',
+      sourceUrl: 'https://leetcode.com/problems/lru-cache/',
+      slug: 'lru-cache',
+      title: 'LRU Cache',
+      difficulty: 'Medium',
+      statement:
+        'Design a data structure that follows the constraints of a Least Recently Used (LRU) cache. Implement get(key) and put(key, value) so both run in O(1) average time complexity.',
+      examples: ['put(1,1), put(2,2), get(1)->1, put(3,3) evicts key 2'],
+      constraints: ['1 <= capacity <= 3000', 'At most 2 * 10^5 calls to get and put'],
+      topics: ['Hash Table', 'Linked List', 'Design', 'Doubly-Linked List'],
+      recommendedPattern: 'Hash Map + Doubly Linked List',
+      complexitySummary: 'Time O(1) · Space O(capacity)',
+      userNotes: 'Pair sentinel head/tail nodes with a key->node map to avoid null pointer edge cases.',
+      upvotes: 14,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+    },
+  ],
+  [
+    'sh-kadane-max-subarray',
+    {
+      id: 'sh-kadane-max-subarray',
+      publicId: 'sh-kadane-max-subarray',
+      ownerUserId: 'platform-curator',
+      authorName: 'PatternForge Staff',
+      visibility: 'shared',
+      sourcePlatform: 'GeeksforGeeks',
+      sourceUrl: 'https://www.geeksforgeeks.org/problems/kadanes-algorithm-1587115620/1',
+      slug: 'kadanes-algorithm',
+      title: "Kadane's Algorithm (Maximum Subarray Sum)",
+      difficulty: 'Medium',
+      statement:
+        'Given an integer array arr[], find the contiguous subarray (containing at least one number) that has the maximum sum and return its sum.',
+      examples: ['Input: [2, 3, -8, 7, -1, 2, 3] -> Output: 11 (subarray [7, -1, 2, 3])'],
+      constraints: ['1 <= arr.length <= 10^5', '-10^7 <= arr[i] <= 10^7'],
+      topics: ['Arrays', 'Dynamic Programming', 'Greedy'],
+      recommendedPattern: "Kadane's Running Subarray Invariant",
+      complexitySummary: 'Time O(N) · Space O(1)',
+      userNotes: 'Reset running sum whenever currentSum + x < x; handles all-negative arrays safely.',
+      upvotes: 11,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+    },
+  ],
+]);
+
+function extractOptionalActor(req: Request): { userId: string; email: string; authorName: string } {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    const token = auth.slice(7).trim();
+    const parts = token.split('.');
+    if (parts.length >= 2) {
+      try {
+        const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as {
+          sub?: string;
+          email?: string;
+          user_metadata?: { full_name?: string };
+        };
+        if (claims.sub) {
+          const fallbackName = claims.email ? claims.email.split('@')[0] : 'Learner';
+          return {
+            userId: claims.sub,
+            email: claims.email ?? '',
+            authorName: claims.user_metadata?.full_name || fallbackName,
+          };
+        }
+      } catch {
+        // ignore invalid JWT payload and fall back
+      }
+    }
+  }
+  const clientHint = typeof req.headers['x-learner-id'] === 'string' ? req.headers['x-learner-id'].trim() : '';
+  return {
+    userId: clientHint || 'guest-learner',
+    email: '',
+    authorName: 'Community Learner',
+  };
+}
+
+function sanitizeLibraryPayload(
+  body: Record<string, unknown>,
+  actor: { userId: string; email: string; authorName: string },
+  visibility: 'saved' | 'shared'
+): SolverLibraryRecord {
+  const title = String(body.title ?? '').trim().slice(0, 160);
+  const statement = String(body.statement ?? '').trim().slice(0, 8000);
+  const rawPlatform = String(body.sourcePlatform ?? 'Custom');
+  const sourcePlatform: SolverSourcePlatform =
+    rawPlatform === 'LeetCode' || rawPlatform === 'GeeksforGeeks' ? rawPlatform : 'Custom';
+  const rawDiff = String(body.difficulty ?? 'Medium');
+  const difficulty: 'Easy' | 'Medium' | 'Hard' =
+    rawDiff === 'Easy' || rawDiff === 'Hard' ? rawDiff : 'Medium';
+  const slug =
+    String(body.slug ?? '')
+      .trim()
+      .slice(0, 120) ||
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') ||
+    'custom-problem';
+  const prefix = visibility === 'shared' ? 'sh' : 'sv';
+  const publicId = `${prefix}-${slug.slice(0, 28)}-${crypto.randomBytes(3).toString('hex')}`;
+  const authorName =
+    typeof body.authorName === 'string' && body.authorName.trim()
+      ? body.authorName.trim().slice(0, 60)
+      : actor.authorName;
+
+  return {
+    id: publicId,
+    publicId,
+    ownerUserId: actor.userId,
+    authorName,
+    visibility,
+    sourcePlatform,
+    sourceUrl: String(body.sourceUrl ?? '').trim().slice(0, 400),
+    slug,
+    title,
+    difficulty,
+    statement,
+    examples: Array.isArray(body.examples)
+      ? body.examples.map((x) => String(x).slice(0, 400)).slice(0, 6)
+      : [],
+    constraints: Array.isArray(body.constraints)
+      ? body.constraints.map((x) => String(x).slice(0, 250)).slice(0, 10)
+      : [],
+    topics: Array.isArray(body.topics)
+      ? body.topics.map((x) => String(x).slice(0, 60)).slice(0, 10)
+      : [],
+    recommendedPattern: String(body.recommendedPattern ?? '').trim().slice(0, 140),
+    complexitySummary: String(body.complexitySummary ?? '').trim().slice(0, 120),
+    userNotes: String(body.userNotes ?? '').trim().slice(0, 800),
+    upvotes: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function serializeDoc(doc: Record<string, unknown>): SolverLibraryRecord {
+  const publicId = String(doc.publicId ?? doc._id ?? '');
+  return {
+    id: publicId,
+    publicId,
+    ownerUserId: String(doc.ownerUserId ?? ''),
+    authorName: String(doc.authorName ?? 'Learner'),
+    visibility: doc.visibility === 'shared' ? 'shared' : 'saved',
+    sourcePlatform:
+      doc.sourcePlatform === 'LeetCode' || doc.sourcePlatform === 'GeeksforGeeks'
+        ? doc.sourcePlatform
+        : 'Custom',
+    sourceUrl: String(doc.sourceUrl ?? ''),
+    slug: String(doc.slug ?? ''),
+    title: String(doc.title ?? ''),
+    difficulty:
+      doc.difficulty === 'Easy' || doc.difficulty === 'Hard' ? doc.difficulty : 'Medium',
+    statement: String(doc.statement ?? ''),
+    examples: Array.isArray(doc.examples) ? doc.examples.map(String) : [],
+    constraints: Array.isArray(doc.constraints) ? doc.constraints.map(String) : [],
+    topics: Array.isArray(doc.topics) ? doc.topics.map(String) : [],
+    recommendedPattern: String(doc.recommendedPattern ?? ''),
+    complexitySummary: String(doc.complexitySummary ?? ''),
+    userNotes: String(doc.userNotes ?? ''),
+    upvotes: Number(doc.upvotes ?? 0),
+    createdAt: doc.createdAt ? new Date(String(doc.createdAt)).toISOString() : new Date().toISOString(),
+  };
+}
+
+router.get('/saved-problems', async (req, res) => {
+  const actor = extractOptionalActor(req);
+  try {
+    if (isMongoConnected()) {
+      const docs = await SolverSharedProblem.find({
+        ownerUserId: actor.userId,
+        visibility: 'saved',
+      })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean();
+      res.json({
+        problems: docs.map((d) => serializeDoc(d as unknown as Record<string, unknown>)),
+      });
+      return;
+    }
+    const items = Array.from(memSavedProblems.values())
+      .filter((p) => p.ownerUserId === actor.userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    res.json({ problems: items });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to load saved problems.',
+    });
+  }
+});
+
+router.post('/saved-problems', async (req, res) => {
+  const actor = extractOptionalActor(req);
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const title = String(body.title ?? '').trim();
+  const statement = String(body.statement ?? '').trim();
+  if (!title || !statement) {
+    res.status(400).json({ error: 'title and statement are required to save a problem.' });
+    return;
+  }
+
+  const record = sanitizeLibraryPayload(body, actor, 'saved');
+  try {
+    if (isMongoConnected()) {
+      const created = await SolverSharedProblem.create({
+        ...record,
+        ownerEmail: actor.email,
+      });
+      res.status(201).json({
+        problem: serializeDoc(created.toObject() as unknown as Record<string, unknown>),
+      });
+      return;
+    }
+    memSavedProblems.set(record.publicId, record);
+    res.status(201).json({ problem: record });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to save problem.',
+    });
+  }
+});
+
+router.delete('/saved-problems/:id', async (req, res) => {
+  const actor = extractOptionalActor(req);
+  const { id } = req.params;
+  try {
+    if (isMongoConnected()) {
+      await SolverSharedProblem.deleteOne({
+        publicId: id,
+        ownerUserId: actor.userId,
+        visibility: 'saved',
+      });
+      res.json({ ok: true, id });
+      return;
+    }
+    const existing = memSavedProblems.get(id);
+    if (existing && existing.ownerUserId === actor.userId) {
+      memSavedProblems.delete(id);
+    }
+    res.json({ ok: true, id });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to delete saved problem.',
+    });
+  }
+});
+
+router.get('/shared-problems', async (_req, res) => {
+  try {
+    if (isMongoConnected()) {
+      const docs = await SolverSharedProblem.find({ visibility: 'shared' })
+        .sort({ upvotes: -1, createdAt: -1 })
+        .limit(100)
+        .lean();
+      const dbList = docs.map((d) => serializeDoc(d as unknown as Record<string, unknown>));
+      res.json({ problems: dbList });
+      return;
+    }
+    const list = Array.from(memSharedProblems.values()).sort(
+      (a, b) => b.upvotes - a.upvotes || b.createdAt.localeCompare(a.createdAt)
+    );
+    res.json({ problems: list });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to load shared problems.',
+    });
+  }
+});
+
+router.get('/shared-problems/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (isMongoConnected()) {
+      const doc = await SolverSharedProblem.findOne({ publicId: id }).lean();
+      if (!doc) {
+        res.status(404).json({ error: 'Shared problem not found.' });
+        return;
+      }
+      res.json({ problem: serializeDoc(doc as unknown as Record<string, unknown>) });
+      return;
+    }
+    const found = memSharedProblems.get(id) ?? memSavedProblems.get(id);
+    if (!found) {
+      res.status(404).json({ error: 'Shared problem not found.' });
+      return;
+    }
+    res.json({ problem: found });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to load shared problem.',
+    });
+  }
+});
+
+router.post('/shared-problems', async (req, res) => {
+  const actor = extractOptionalActor(req);
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const title = String(body.title ?? '').trim();
+  const statement = String(body.statement ?? '').trim();
+  if (!title || !statement) {
+    res.status(400).json({ error: 'title and statement are required to share a problem.' });
+    return;
+  }
+
+  const record = sanitizeLibraryPayload(body, actor, 'shared');
+  try {
+    if (isMongoConnected()) {
+      const created = await SolverSharedProblem.create({
+        ...record,
+        ownerEmail: actor.email,
+      });
+      res.status(201).json({
+        problem: serializeDoc(created.toObject() as unknown as Record<string, unknown>),
+      });
+      return;
+    }
+    memSharedProblems.set(record.publicId, record);
+    res.status(201).json({ problem: record });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to publish shared problem.',
+    });
+  }
+});
+
+router.post('/shared-problems/:id/upvote', async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (isMongoConnected()) {
+      const updated = await SolverSharedProblem.findOneAndUpdate(
+        { publicId: id, visibility: 'shared' },
+        { $inc: { upvotes: 1 } },
+        { new: true }
+      ).lean();
+      if (!updated) {
+        res.status(404).json({ error: 'Shared problem not found.' });
+        return;
+      }
+      res.json({ problem: serializeDoc(updated as unknown as Record<string, unknown>) });
+      return;
+    }
+    const existing = memSharedProblems.get(id);
+    if (!existing) {
+      res.status(404).json({ error: 'Shared problem not found.' });
+      return;
+    }
+    const next = { ...existing, upvotes: existing.upvotes + 1 };
+    memSharedProblems.set(id, next);
+    res.json({ problem: next });
+  } catch (err) {
+    res.status(500).json({
+      error: err instanceof Error ? err.message : 'Failed to upvote shared problem.',
+    });
   }
 });
 

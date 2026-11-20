@@ -55,6 +55,8 @@ import { PatternRecognitionDrill } from './PatternRecognitionDrill';
 import { Master73RoadmapView } from './Master73RoadmapView';
 import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
 import { CategoryMasteryHeatmap } from './CategoryMasteryHeatmap';
+import { getAlgorithmLogicBoard } from '../../data/algorithmLogicBoards';
+import { LogicBoardMathCard } from '../shared/LogicBoardMathCard';
 
 type TierFilter = 'all' | 'core' | 'advanced' | 'systems';
 type DetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
@@ -198,6 +200,7 @@ export function AlgorithmsStudio({
   const upgradeSpec = useMemo(() => getAlgorithmUpgradeSpec(algorithm), [algorithm]);
   const flowStages = useMemo(() => getAlgorithmFlowStages(algorithm), [algorithm]);
   const powerCombos = useMemo(() => getAlgorithmCombinations(algorithm), [algorithm]);
+  const logicBoardEnrichment = useMemo(() => getAlgorithmLogicBoard(algorithm), [algorithm]);
   const algoLookup = useMemo(
     () => new Map(ALGORITHMS_CATALOG.map((a) => [a.id, a])),
     []
@@ -968,6 +971,15 @@ export function AlgorithmsStudio({
                 </ol>
               </div>
             </div>
+
+            <LogicBoardMathCard
+              title={algorithm.name}
+              entityKind="algorithm"
+              currentEntityId={algorithm.id}
+              enrichment={logicBoardEnrichment}
+              onSelectAlgorithm={handleSelectAlgorithm}
+              onSelectTopic={onOpenCurriculumTopic}
+            />
 
             {tutorGuide && (
               <div className="pt-5 border-t border-slate-200 dark:border-slate-800 space-y-4">

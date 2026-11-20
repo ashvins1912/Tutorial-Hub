@@ -12,6 +12,7 @@ import {
 import { apiFetch } from '../lib/apiFetch';
 import { usePatternForgeStore, TopView } from '../store/usePatternForgeStore';
 import type { CodeLanguage, RankTier } from '../types/dsa';
+import { MonthlyLearningResetCard } from './profile/MonthlyLearningResetCard';
 
 interface UserPreferences {
   targetRole: string;
@@ -383,7 +384,7 @@ export function ProfileStatsView() {
   return (
     <div className="space-y-6">
       {/* Top Profile Summary & Rank Progress */}
-      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-5">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 space-y-5">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
           <div className="flex items-start gap-4 min-w-0">
             {stats.account.avatarUrl && !avatarFailed ? (
@@ -734,7 +735,7 @@ export function ProfileStatsView() {
         <div
           role="tablist"
           aria-label="Profile analytics sections"
-          className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+          className="inline-flex max-w-full overflow-x-auto no-scrollbar items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
         >
           {(
             [
@@ -1531,6 +1532,9 @@ export function ProfileStatsView() {
           </section>
         </div>
       )}
+
+      {/* Account-Level Learning Reset (Strictly Once Per 30 Days) */}
+      <MonthlyLearningResetCard onResetComplete={() => loadStats(true)} />
     </div>
   );
 }

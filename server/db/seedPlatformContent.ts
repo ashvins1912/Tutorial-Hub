@@ -9,8 +9,12 @@ import {
 import { CURRICULUM_TOPICS } from '../../src/features/topics/data/curriculumIndex';
 import { CURATED_INTERVIEW_BANK } from '../../src/features/topics/data/curatedInterviewBank';
 import { STRATEGIES_CATALOG } from '../../src/core/knowledge-base/strategiesCatalog';
+import {
+  getAlgorithmLogicBoard,
+  getTopicLogicBoard,
+} from '../../src/data/algorithmLogicBoards';
 
-const SCHEMA_VERSION = '2026.2';
+const SCHEMA_VERSION = '2026.3';
 
 export interface StoredContentBundleSummary {
   collectionKey: ContentBundleKey;
@@ -62,39 +66,55 @@ function hashPayload(payload: unknown): string {
 }
 
 function buildCanonicalContentBundles(): Array<{ key: ContentBundleKey; payload: unknown[] }> {
-  const compactAlgorithms = ALGORITHMS_CATALOG.map((algo) => ({
-    id: algo.id,
-    name: algo.name,
-    shortName: algo.shortName,
-    category: algo.category,
-    timeComplexity: algo.timeComplexity,
-    spaceComplexity: algo.spaceComplexity,
-    complexityLeap: algo.complexityLeap,
-    tagline: algo.tagline,
-    coreIdea: algo.coreIdea,
-    loopInvariant: algo.loopInvariant,
-    whenToUse: algo.whenToUse,
-    whenItFails: algo.whenItFails,
-    linkedTopics: algo.linkedTopics,
-    linkedProblemSlugs: algo.linkedProblemSlugs,
-    frameCount: algo.frames.length,
-  }));
+  const compactAlgorithms = ALGORITHMS_CATALOG.map((algo) => {
+    const enrichment = getAlgorithmLogicBoard(algo);
+    return {
+      id: algo.id,
+      name: algo.name,
+      shortName: algo.shortName,
+      category: algo.category,
+      timeComplexity: algo.timeComplexity,
+      spaceComplexity: algo.spaceComplexity,
+      complexityLeap: algo.complexityLeap,
+      tagline: algo.tagline,
+      coreIdea: algo.coreIdea,
+      loopInvariant: algo.loopInvariant,
+      formalDefinition: enrichment.formalDefinition,
+      problemStatementForm: enrichment.problemStatementForm,
+      logicBoard: enrichment.logicBoard,
+      mathematics: enrichment.mathematics,
+      patternRecommendations: enrichment.patternRecommendations,
+      whenToUse: algo.whenToUse,
+      whenItFails: algo.whenItFails,
+      linkedTopics: algo.linkedTopics,
+      linkedProblemSlugs: algo.linkedProblemSlugs,
+      frameCount: algo.frames.length,
+    };
+  });
 
-  const compactTopics = CURRICULUM_TOPICS.map((topic) => ({
-    id: topic.id,
-    order: topic.order,
-    title: topic.title,
-    shortTitle: topic.shortTitle,
-    tier: topic.tier,
-    category: topic.category,
-    tagline: topic.tagline,
-    keywords: topic.keywords,
-    mentalModelSteps: topic.mentalModelSteps,
-    optimalTime: topic.solutions.optimal.timeComplexity,
-    optimalSpace: topic.solutions.optimal.spaceComplexity,
-    patternClues: topic.patternClues,
-    problemCount: topic.problemLadder.length,
-  }));
+  const compactTopics = CURRICULUM_TOPICS.map((topic) => {
+    const enrichment = getTopicLogicBoard(topic);
+    return {
+      id: topic.id,
+      order: topic.order,
+      title: topic.title,
+      shortTitle: topic.shortTitle,
+      tier: topic.tier,
+      category: topic.category,
+      tagline: topic.tagline,
+      keywords: topic.keywords,
+      mentalModelSteps: topic.mentalModelSteps,
+      formalDefinition: enrichment.formalDefinition,
+      problemStatementForm: enrichment.problemStatementForm,
+      logicBoard: enrichment.logicBoard,
+      mathematics: enrichment.mathematics,
+      patternRecommendations: enrichment.patternRecommendations,
+      optimalTime: topic.solutions.optimal.timeComplexity,
+      optimalSpace: topic.solutions.optimal.spaceComplexity,
+      patternClues: topic.patternClues,
+      problemCount: topic.problemLadder.length,
+    };
+  });
 
   const compactStrategies = STRATEGIES_CATALOG.map((strategy) => ({
     id: strategy.id,

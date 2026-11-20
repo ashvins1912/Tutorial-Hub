@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Blocks,
+  Bookmark,
   BookOpen,
   Brain,
   CheckCircle2,
@@ -70,12 +71,27 @@ import { TruthEliminationGrid } from '../workspaces/TruthEliminationGrid';
 import { AdaptiveCoachPanel } from './AdaptiveCoachPanel';
 import { GuidedLogicBuilderPanel } from './GuidedLogicBuilderPanel';
 import { OptimizationCheckerPanel } from './OptimizationCheckerPanel';
+import {
+  PulledProblemActionStrip,
+  SavedAndSharedLibraryPanel,
+  type SolverLibraryItem,
+} from './PulledProblemLibraryPanel';
 
 interface UniversalSolverStudioProps {
   onOpenCurriculumTopic?: (topicId: string) => void;
   onOpenLabProblem?: (problemId: string) => void;
   onOpenAlgorithm?: (algoId: string, tab?: AlgorithmDetailTab) => void;
-  externalProblem?: { id: string; title: string; statement: string } | null;
+  externalProblem?: {
+    id: string;
+    title: string;
+    statement: string;
+    sourcePlatform?: 'LeetCode' | 'GeeksforGeeks' | 'Custom';
+    sourceUrl?: string;
+    difficulty?: 'Easy' | 'Medium' | 'Hard';
+    examples?: string[];
+    constraints?: string[];
+    topics?: string[];
+  } | null;
   onConsumeExternalProblem?: () => void;
 }
 
@@ -87,7 +103,7 @@ const DOMAIN_LABELS: Record<CognitiveDomain, string> = {
   SYSTEM_STATE_LOGIC: 'System & State Logic',
 };
 
-type MobilePane = 'problem' | 'builder' | 'visualizer' | 'code';
+type MobilePane = 'problem' | 'guided' | 'optimizer' | 'visualizer' | 'saved';
 
 export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   onOpenCurriculumTopic,
@@ -138,8 +154,9 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
     null,
   );
   const [rightTab, setRightTab] = useState<
-    'guided' | 'optimizer' | 'workspace' | 'code' | 'coach' | 'logic-modules'
+    'guided' | 'optimizer' | 'workspace' | 'code' | 'coach' | 'logic-modules' | 'saved-shared'
   >('guided');
+  const [libraryRefreshSignal, setLibraryRefreshSignal] = useState<number>(0);
   const [mobilePane, setMobilePane] = useState<MobilePane>('problem');
   const [codeLang, setCodeLang] = useState<SupportedCodeLanguage>('python');
   const [selectedTierIdx, setSelectedTierIdx] = useState<number>(2); // Optimal by default
@@ -176,10 +193,23 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
       setProblemTitle(externalProblem.title);
       setProblemInput(externalProblem.statement);
       setActiveSystemProblem(null);
+      if (externalProblem.sourcePlatform === 'LeetCode' || externalProblem.sourcePlatform === 'GeeksforGeeks') {
+        setImportedUrlMeta({
+          sourcePlatform: externalProblem.sourcePlatform,
+          sourceUrl: externalProblem.sourceUrl ?? '',
+          difficulty: externalProblem.difficulty ?? 'Medium',
+          examples: externalProblem.examples ?? [],
+          constraints: externalProblem.constraints ?? [],
+          topics: externalProblem.topics ?? [],
+        });
+      } else {
+        setImportedUrlMeta(null);
+      }
       setActiveWorkspaceOverride(null);
       setCompletedPhases([]);
       setRevealedPhases(['DECONSTRUCT']);
       setHintsUsed(0);
+      setRightTab('guided');
       setToast({
         kind: 'success',
         text: `Loaded "${externalProblem.title}" into Universal Logic Solver.`,
@@ -269,6 +299,35 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
     } finally {
       setUrlLoading(false);
     }
+  };
+
+  const handleLoadLibraryItem = (item: SolverLibraryItem) => {
+    setSelectedSampleId(`lib-${item.publicId}`);
+    setActiveSystemProblem(null);
+    setProblemTitle(item.title);
+    setProblemInput(item.statement);
+    if (item.sourcePlatform === 'LeetCode' || item.sourcePlatform === 'GeeksforGeeks') {
+      setImportedUrlMeta({
+        sourcePlatform: item.sourcePlatform,
+        sourceUrl: item.sourceUrl,
+        difficulty: item.difficulty,
+        examples: item.examples,
+        constraints: item.constraints,
+        topics: item.topics,
+      });
+    } else {
+      setImportedUrlMeta(null);
+    }
+    setActiveWorkspaceOverride(null);
+    setCompletedPhases([]);
+    setRevealedPhases(['DECONSTRUCT']);
+    setHintsUsed(0);
+    setRightTab('guided');
+    setMobilePane('problem');
+    setToast({
+      kind: 'success',
+      text: `Loaded "${item.title}" (${item.visibility === 'shared' ? 'Shared on Platform' : 'Saved for Future'}) into Solver Studio.`,
+    });
   };
 
   const activeWorkspace: WorkspaceKind =
@@ -530,6 +589,22 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
             >
               <Shuffle className="w-3.5 h-3.5" aria-hidden="true" />
               Random Unsolved
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRightTab('saved-shared');
+                setMobilePane('saved');
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                rightTab === 'saved-shared'
+                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-200'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-indigo-500'
+              }`}
+            >
+              <Bookmark className="w-3.5 h-3.5" aria-hidden="true" />
+              Saved &amp; Shared
             </button>
 
             <span className="hidden sm:inline text-xs text-slate-400" aria-hidden="true">
@@ -967,6 +1042,32 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Save Pulled Problem for Future or Share on Platform */}
+            <PulledProblemActionStrip
+              title={problemTitle}
+              statement={problemInput}
+              sourcePlatform={importedUrlMeta?.sourcePlatform ?? 'Custom'}
+              sourceUrl={importedUrlMeta?.sourceUrl ?? urlInput.trim()}
+              difficulty={importedUrlMeta?.difficulty ?? activeSystemProblem?.difficulty ?? 'Medium'}
+              examples={importedUrlMeta?.examples ?? []}
+              constraints={importedUrlMeta?.constraints ?? []}
+              topics={
+                importedUrlMeta?.topics?.length
+                  ? importedUrlMeta.topics
+                  : activeSystemProblem?.topic
+                    ? [activeSystemProblem.topic]
+                    : []
+              }
+              recommendedPattern={topStrategy?.strategy.name ?? ''}
+              complexitySummary={
+                topStrategy
+                  ? `${topStrategy.strategy.optimalTime} · ${topStrategy.strategy.optimalSpace}`
+                  : analysis.deconstruction.hardestCeiling
+              }
+              onNotify={(kind, text) => setToast({ kind, text })}
+              onLibraryChanged={() => setLibraryRefreshSignal((v) => v + 1)}
+            />
           </div>
 
           {/* Stage 2 + 3 Ranked Recommendations & Confidence Meters */}
@@ -1242,13 +1343,13 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
             mobilePane !== 'problem' ? 'block' : 'hidden lg:block'
           }`}
         >
-          {/* Right Pane View Tabs (Desktop) */}
-          <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-3 py-2">
-            <div className="flex flex-wrap items-center gap-1">
+          {/* Right Pane View Tabs (Responsive Desktop + Tablet/Mobile) */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 px-2.5 sm:px-3 py-2">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full pb-0.5 sm:pb-0">
               <button
                 type="button"
                 onClick={() => setRightTab('guided')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   rightTab === 'guided'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -1260,7 +1361,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               <button
                 type="button"
                 onClick={() => setRightTab('optimizer')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   rightTab === 'optimizer'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -1272,7 +1373,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               <button
                 type="button"
                 onClick={() => setRightTab('workspace')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   rightTab === 'workspace'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -1284,7 +1385,7 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               <button
                 type="button"
                 onClick={() => setRightTab('code')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   rightTab === 'code'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -1295,20 +1396,32 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => setRightTab('saved-shared')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  rightTab === 'saved-shared'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>Saved &amp; Shared</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setRightTab('logic-modules')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   rightTab === 'logic-modules'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>Pure Logic & Math Modules</span>
+                <span>Pure Logic &amp; Math</span>
               </button>
               <button
                 type="button"
                 onClick={() => setRightTab('coach')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   rightTab === 'coach'
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -1380,45 +1493,39 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
           )}
 
           {/* Interactive Workspace Content */}
-          {(rightTab === 'workspace' || mobilePane === 'visualizer' || mobilePane === 'builder') && (
+          {rightTab === 'workspace' && (
             <div className="space-y-4">
-              {mobilePane === 'builder' ? (
-                <LogicPieceBuilder />
-              ) : (
-                <>
-                  {activeWorkspace === 'array-pointer' && (
-                    <ArrayPointerVisualizer
-                      initialPreset={arrayPreset}
-                      strategyName={topStrategy?.strategy.name}
-                    />
-                  )}
-                  {activeWorkspace === 'truth-grid' && <TruthEliminationGrid />}
-                  {activeWorkspace === 'invariant-tracker' && (
-                    <InvariantTrackerTable initialPreset={invariantPreset} />
-                  )}
-                  {activeWorkspace === 'logic-builder' && <LogicPieceBuilder />}
+              {activeWorkspace === 'array-pointer' && (
+                <ArrayPointerVisualizer
+                  initialPreset={arrayPreset}
+                  strategyName={topStrategy?.strategy.name}
+                />
+              )}
+              {activeWorkspace === 'truth-grid' && <TruthEliminationGrid />}
+              {activeWorkspace === 'invariant-tracker' && (
+                <InvariantTrackerTable initialPreset={invariantPreset} />
+              )}
+              {activeWorkspace === 'logic-builder' && <LogicPieceBuilder />}
 
-                  {/* Always offer Complete-in-Pieces Builder below primary visualizer on desktop */}
-                  {activeWorkspace !== 'logic-builder' && (
-                    <div className="hidden lg:block">
-                      <LogicPieceBuilder
-                        initialChallengeId={
-                          arrayPreset === 'ngram-fuzzy'
-                            ? 'piece-ngram-pipeline'
-                            : activeWorkspace === 'invariant-tracker'
-                              ? 'piece-invariant-proof'
-                              : 'piece-sliding-window'
-                        }
-                      />
-                    </div>
-                  )}
-                </>
+              {/* Always offer Complete-in-Pieces Builder below primary visualizer */}
+              {activeWorkspace !== 'logic-builder' && (
+                <div>
+                  <LogicPieceBuilder
+                    initialChallengeId={
+                      arrayPreset === 'ngram-fuzzy'
+                        ? 'piece-ngram-pipeline'
+                        : activeWorkspace === 'invariant-tracker'
+                          ? 'piece-invariant-proof'
+                          : 'piece-sliding-window'
+                    }
+                  />
+                </div>
               )}
             </div>
           )}
 
           {/* 3-Tier Multi-Language Code Progression */}
-          {(rightTab === 'code' || mobilePane === 'code') && topStrategy && (
+          {rightTab === 'code' && topStrategy && (
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -1526,6 +1633,15 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
             </div>
           )}
 
+          {/* Saved for Future & Shared on Platform Pulled Problems */}
+          {rightTab === 'saved-shared' && (
+            <SavedAndSharedLibraryPanel
+              refreshSignal={libraryRefreshSignal}
+              onLoadProblem={handleLoadLibraryItem}
+              onNotify={(kind, text) => setToast({ kind, text })}
+            />
+          )}
+
           {/* Adaptive Telemetry & Micro-Drills */}
           {rightTab === 'coach' && (
             <AdaptiveCoachPanel
@@ -1539,14 +1655,15 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
       {/* Mobile / Tablet Bottom Tab Bar (< lg) */}
       <nav
         aria-label="Mobile studio panes"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur px-2 py-2 grid grid-cols-4 gap-1"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur px-2 py-2 grid grid-cols-5 gap-1"
       >
         {(
           [
             { id: 'problem', label: 'Problem', Icon: Compass },
-            { id: 'builder', label: 'Logic', Icon: Blocks },
+            { id: 'guided', label: 'Coach', Icon: MessageSquare },
+            { id: 'optimizer', label: 'Optimize', Icon: Gauge },
             { id: 'visualizer', label: 'Visual', Icon: Sparkles },
-            { id: 'code', label: 'Code', Icon: Code2 },
+            { id: 'saved', label: 'Saved', Icon: Bookmark },
           ] as const
         ).map(({ id, label, Icon }) => (
           <button
@@ -1554,8 +1671,10 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
             type="button"
             onClick={() => {
               setMobilePane(id);
-              if (id === 'code') setRightTab('code');
-              else if (id === 'visualizer' || id === 'builder') setRightTab('workspace');
+              if (id === 'guided') setRightTab('guided');
+              else if (id === 'optimizer') setRightTab('optimizer');
+              else if (id === 'visualizer') setRightTab('workspace');
+              else if (id === 'saved') setRightTab('saved-shared');
             }}
             className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
               mobilePane === id

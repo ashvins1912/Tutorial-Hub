@@ -37,6 +37,47 @@ export async function getAllUserLearningStates(
   return { states, updatedAtByKey };
 }
 
+export async function setUserLearningStateInternal(
+  userId: string,
+  stateKey: string,
+  value: unknown
+): Promise<void> {
+  if (isMongoConnected()) {
+    await UserLearningState.findOneAndUpdate(
+      { userId, stateKey },
+      { $set: { payload: value } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    return;
+  }
+  let bucket = devStateStore.get(userId);
+  if (!bucket) {
+    bucket = new Map();
+    devStateStore.set(userId, bucket);
+  }
+  bucket.set(stateKey, { payload: value, updatedAt: new Date().toISOString() });
+}
+
+export async function clearAllUserLearningStates(
+  userId: string,
+  preserveKeys: string[] = ['ui-preferences', 'monthly-reset-metadata']
+): Promise<void> {
+  if (isMongoConnected()) {
+    await UserLearningState.deleteMany({
+      userId,
+      stateKey: { $nin: preserveKeys },
+    });
+    return;
+  }
+  const bucket = devStateStore.get(userId);
+  if (!bucket) return;
+  for (const key of Array.from(bucket.keys())) {
+    if (!preserveKeys.includes(key)) {
+      bucket.delete(key);
+    }
+  }
+}
+
 router.use(requireAuth);
 router.use((_req: Request, res: Response, next: import('express').NextFunction) => {
   if (process.env.NODE_ENV === 'production' && !isMongoConnected()) {

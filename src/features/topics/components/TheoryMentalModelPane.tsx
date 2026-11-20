@@ -33,6 +33,9 @@ import { MutationLadderVisualizer } from './MutationLadderVisualizer';
 import { TopicExpertisePlaybook } from './TopicExpertisePlaybook';
 import { CurriculumDfdVisualizer } from './CurriculumDfdVisualizer';
 import { MasteryReviewPanel } from '../../../components/shared/MasteryReviewPanel';
+import { getTopicLogicBoard } from '../../../data/topicLogicBoards';
+import { LogicBoardMathCard } from '../../../components/shared/LogicBoardMathCard';
+import { usePatternForgeStore } from '../../../store/usePatternForgeStore';
 
 type ProgressiveTabId = 'intuition' | 'dryrun' | 'recall' | 'solutions';
 
@@ -84,9 +87,11 @@ export function TheoryMentalModelPane({
   const [solutionProblemIdx, setSolutionProblemIdx] = useState(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
   const blueprint = useMemo(() => getDeepTopicBlueprint(topic), [topic]);
   const deepTopic = useMemo(() => algorithmGraphService.getDeepTopic(topic.id), [topic.id]);
   const linkage = useMemo(() => algorithmGraphService.getTopicLinkage(topic.id), [topic.id]);
+  const topicLogicBoard = useMemo(() => getTopicLogicBoard(topic), [topic]);
 
   // Reset stage state whenever user switches curriculum topic
   useEffect(() => {
@@ -283,6 +288,15 @@ export function TheoryMentalModelPane({
               </div>
             </div>
           </section>
+
+          <LogicBoardMathCard
+            title={topic.title}
+            entityKind="topic"
+            currentEntityId={topic.id}
+            enrichment={topicLogicBoard}
+            onSelectTopic={onSelectTopic}
+            onSelectAlgorithm={(algoId) => openAlgorithm(algoId, 'mental')}
+          />
 
           {/* Compact Visual Flow & Data Flow Blueprint */}
           <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">

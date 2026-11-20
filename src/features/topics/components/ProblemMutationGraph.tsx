@@ -19,6 +19,17 @@ import type {
   TopicGraphLinkage,
 } from '../../../core/schema/deepTopic.types';
 import { useAccountState } from '../../../hooks/useAccountState';
+import {
+  useProblemStatusTracker,
+  type ProblemDifficulty,
+  type ProblemStatus,
+} from '../../../hooks/useProblemStatusTracker';
+import {
+  normalizeDifficulty,
+  ProblemFilterBar,
+  StatusCycleButton,
+  toggleFilterValue,
+} from '../../../components/shared/ProblemFilterBar';
 
 const STORAGE_KEY = 'patternforge_solved_mutations_v1';
 
@@ -107,6 +118,21 @@ export function ProblemMutationGraph({
     [],
     STORAGE_KEY
   );
+  const [ladderDifficulties, setLadderDifficulties] = useState<ProblemDifficulty[]>([]);
+  const [ladderStatuses, setLadderStatuses] = useState<ProblemStatus[]>([]);
+
+  const { getStatus, setStatus, cycleStatus, markInProgressIfUnattempted } =
+    useProblemStatusTracker({
+      legacySolvedIds: solvedIds,
+      onSyncLegacySolved: (id, isSolved) => {
+        setSolvedIds((prev) => {
+          const has = prev.includes(id);
+          if (isSolved && !has) return [...prev, id];
+          if (!isSolved && has) return prev.filter((x) => x !== id);
+          return prev;
+        });
+      },
+    });
   const [blankInputs, setBlankInputs] = useState<string[]>([]);
   const [focusedBlankIdx, setFocusedBlankIdx] = useState(0);
   const [revealedHints, setRevealedHints] = useState<Record<number, boolean>>({});
@@ -176,10 +202,10 @@ export function ProblemMutationGraph({
     const allCorrect = perBlank.every(Boolean);
     setCheckResult({ checked: true, perBlank, allCorrect });
     if (allCorrect) {
-      setSolvedIds((prev) =>
-        prev.includes(activeProblem.problemId) ? prev : [...prev, activeProblem.problemId]
-      );
+      setStatus(activeProblem.problemId, 'solved');
       onSolvedMutation?.();
+    } else {
+      markInProgressIfUnattempted(activeProblem.problemId);
     }
   };
 
@@ -614,84 +640,143 @@ export function ProblemMutationGraph({
         </p>
       </div>
 
+      {/* Layer 2.5: Difficulty & Status Filter Bar for Topic Mutation Ladder */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-2.5">
+        <ProblemFilterBar
+          compact
+          selectedDifficulties={ladderDifficulties}
+          onToggleDifficulty={(d) => setLadderDifficulties((prev) => toggleFilterValue(prev, d))}
+          onClearDifficulties={() => setLadderDifficulties([])}
+          selectedStatuses={ladderStatuses}
+          onToggleStatus={(s) => setLadderStatuses((prev) => toggleFilterValue(prev, s))}
+          onClearStatuses={() => setLadderStatuses([])}
+          counts={{
+            difficulty: {
+              Easy: problems.filter((p) => normalizeDifficulty(p.difficulty) === 'Easy').length,
+              Medium: problems.filter((p) => normalizeDifficulty(p.difficulty) === 'Medium').length,
+              Hard: problems.filter((p) => normalizeDifficulty(p.difficulty) === 'Hard').length,
+            },
+            status: {
+              solved: problems.filter((p) => getStatus(p.problemId) === 'solved').length,
+              'in-progress': problems.filter((p) => getStatus(p.problemId) === 'in-progress').length,
+              unattempted: problems.filter((p) => getStatus(p.problemId) === 'unattempted').length,
+            },
+          }}
+        />
+      </div>
+
       {/* Layer 3: Connected Problem Mutation Tree */}
       <div className="space-y-2">
-        {problems.map((prob, idx) => {
-          const solved = solvedIds.includes(prob.problemId);
-          return (
-            <Fragment key={prob.problemId}>
-              {idx > 0 && (
-                <div className="flex items-center gap-2 pl-4 py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                  <ArrowDown className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-                  <span className="font-semibold text-sky-800 dark:text-sky-300">
-                    Mutation Twist:
-                  </span>
-                  <span className="font-sans text-slate-600 dark:text-slate-300">
-                    {prob.mutationFromPrevious}
-                  </span>
-                </div>
-              )}
+        {(() => {
+          const visibleProblems = problems
+            .map((prob, origIdx) => ({ prob, origIdx }))
+            .filter(({ prob }) => {
+              if (
+                ladderDifficulties.length > 0 &&
+                !ladderDifficulties.includes(normalizeDifficulty(prob.difficulty))
+              ) {
+                return false;
+              }
+              if (
+                ladderStatuses.length > 0 &&
+                !ladderStatuses.includes(getStatus(prob.problemId))
+              ) {
+                return false;
+              }
+              return true;
+            });
 
-              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 p-3.5 space-y-2">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400 tabular-nums">
-                        {idx === 0 ? 'BASE' : `LVL ${idx + 1}`}
-                      </span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">
-                        {prob.title}
-                      </span>
-                      {solved && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
-                          <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                          Verified
+          if (visibleProblems.length === 0) {
+            return (
+              <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                No mutation problems match the active difficulty/status filter.
+              </div>
+            );
+          }
+
+          return visibleProblems.map(({ prob, origIdx }, visibleIdx) => {
+            const status = getStatus(prob.problemId);
+            return (
+              <Fragment key={prob.problemId}>
+                {visibleIdx > 0 && (
+                  <div className="flex items-center gap-2 pl-4 py-0.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    <ArrowDown className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+                    <span className="font-semibold text-sky-800 dark:text-sky-300">
+                      Mutation Twist:
+                    </span>
+                    <span className="font-sans text-slate-600 dark:text-slate-300">
+                      {prob.mutationFromPrevious}
+                    </span>
+                  </div>
+                )}
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 p-3.5 space-y-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <StatusCycleButton
+                          status={status}
+                          title={prob.title}
+                          onClick={() => cycleStatus(prob.problemId)}
+                          showLabel
+                        />
+                        <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400 tabular-nums">
+                          {origIdx === 0 ? 'BASE' : `LVL ${origIdx + 1}`}
                         </span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
+                          {prob.title}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                        <span className={`font-semibold ${DIFF_TEXT[prob.difficulty]}`}>
+                          {prob.difficulty}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span className="tabular-nums">{prob.solutions.optimal.complexity}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-sans">{prob.companyTags.join(', ')}</span>
+                      </div>
+                      {origIdx === 0 && (
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                          {prob.mutationFromPrevious}
+                        </p>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                      <span className={`font-semibold ${DIFF_TEXT[prob.difficulty]}`}>
-                        {prob.difficulty}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="tabular-nums">{prob.solutions.optimal.complexity}</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-sans">{prob.companyTags.join(', ')}</span>
-                    </div>
-                    {idx === 0 && (
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                        {prob.mutationFromPrevious}
-                      </p>
-                    )}
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-                    {onPracticeProblem && (
-                      <button
-                        type="button"
-                        onClick={() => onPracticeProblem(prob.problemId)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors"
-                      >
-                        <Code2 className="w-3 h-3" aria-hidden="true" />
-                        Recall Drill
-                      </button>
-                    )}
-                    {prob.trainerSlug && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenProblemTrainer(prob.trainerSlug!)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-[11px] font-semibold text-sky-800 dark:text-sky-300 hover:border-sky-500 transition-colors"
-                      >
-                        Open Trainer
-                        <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
-                      </button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      {onPracticeProblem && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            markInProgressIfUnattempted(prob.problemId);
+                            onPracticeProblem(prob.problemId);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors"
+                        >
+                          <Code2 className="w-3 h-3" aria-hidden="true" />
+                          Recall Drill
+                        </button>
+                      )}
+                      {prob.trainerSlug && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            markInProgressIfUnattempted(prob.problemId);
+                            onOpenProblemTrainer(prob.trainerSlug!);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-[11px] font-semibold text-sky-800 dark:text-sky-300 hover:border-sky-500 transition-colors"
+                        >
+                          Open Trainer
+                          <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Fragment>
-          );
-        })}
+              </Fragment>
+            );
+          });
+        })()}
       </div>
     </section>
   );

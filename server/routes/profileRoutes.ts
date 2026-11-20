@@ -5,8 +5,14 @@ import { UserAccount } from '../models/UserAccount';
 import { IUserPreferences, UserBrainProfile } from '../models/UserBrainProfile';
 import { CompanySprint } from '../models/CompanySprint';
 import { CommunityPost } from '../models/CommunityPost';
-import { getAllUserLearningStates } from './userStateRoutes';
-import { getDevCognitiveExtras } from './cognitiveRoutes';
+import {
+  clearAllUserLearningStates,
+  getAllUserLearningStates,
+  setUserLearningStateInternal,
+} from './userStateRoutes';
+import { getDevCognitiveExtras, resetDevCognitiveForUser } from './cognitiveRoutes';
+import { LearningProgress } from '../models/LearningProgress';
+import { AIAcademyProgress } from '../models/AIAcademyProgress';
 import { BIG_TECH_PROBLEMS } from '../seed/bigTechTopicSeed';
 import { SEED_TOPIC_QUIZZES } from '../seed/cognitiveSeed';
 import { computeSprintMetrics } from '../services/sprintGeneratorService';
@@ -741,6 +747,131 @@ router.patch('/preferences', async (req: Request, res: Response) => {
 
   devPrefsStore.set(userId, { fullName: cleanFullName, preferences: cleanPrefs });
   return res.json({ ok: true, fullName: cleanFullName, preferences: cleanPrefs });
+});
+
+// =============================================================================
+// ONCE-PER-MONTH USER LEVEL LEARNING RESET (30-DAY COOLDOWN)
+// =============================================================================
+
+const MONTHLY_RESET_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+const RESET_METADATA_KEY = 'monthly-reset-metadata';
+
+interface MonthlyResetMetadata {
+  lastResetAt: string | null;
+  resetCount: number;
+}
+
+function computeResetEligibility(meta: MonthlyResetMetadata | null | undefined) {
+  const lastResetAt = meta?.lastResetAt ?? null;
+  const resetCount = Number(meta?.resetCount ?? 0);
+  if (!lastResetAt) {
+    return {
+      canReset: true,
+      lastResetAt: null,
+      nextEligibleAt: null,
+      daysRemaining: 0,
+      resetCount,
+    };
+  }
+  const lastMs = new Date(lastResetAt).getTime();
+  if (Number.isNaN(lastMs)) {
+    return {
+      canReset: true,
+      lastResetAt: null,
+      nextEligibleAt: null,
+      daysRemaining: 0,
+      resetCount,
+    };
+  }
+  const nextEligibleMs = lastMs + MONTHLY_RESET_COOLDOWN_MS;
+  const remainingMs = nextEligibleMs - Date.now();
+  const canReset = remainingMs <= 0;
+  return {
+    canReset,
+    lastResetAt,
+    nextEligibleAt: new Date(nextEligibleMs).toISOString(),
+    daysRemaining: canReset ? 0 : Math.ceil(remainingMs / (24 * 60 * 60 * 1000)),
+    resetCount,
+  };
+}
+
+// GET /api/profile/reset-eligibility — Check whether user can perform their once-per-month reset
+router.get('/reset-eligibility', async (req: Request, res: Response) => {
+  const userId = req.authUser!.id;
+  const { states } = await getAllUserLearningStates(userId);
+  const meta = (states[RESET_METADATA_KEY] as MonthlyResetMetadata | undefined) ?? null;
+  return res.json(computeResetEligibility(meta));
+});
+
+// POST /api/profile/reset-progress — Wipe user learning progress back to zero (enforces 30-day cooldown)
+router.post('/reset-progress', async (req: Request, res: Response) => {
+  const userId = req.authUser!.id;
+  if (req.body?.confirm !== true) {
+    return res.status(400).json({
+      error: 'Explicit confirmation is required before resetting your learning progress.',
+    });
+  }
+
+  const { states } = await getAllUserLearningStates(userId);
+  const currentMeta = (states[RESET_METADATA_KEY] as MonthlyResetMetadata | undefined) ?? null;
+  const eligibility = computeResetEligibility(currentMeta);
+
+  if (!eligibility.canReset) {
+    return res.status(429).json({
+      code: 'MONTHLY_RESET_COOLDOWN',
+      error: `Learning reset is allowed only once per month (30 days). You can reset again in ${eligibility.daysRemaining} day(s).`,
+      ...eligibility,
+    });
+  }
+
+  const nowIso = new Date().toISOString();
+  const nextMeta: MonthlyResetMetadata = {
+    lastResetAt: nowIso,
+    resetCount: eligibility.resetCount + 1,
+  };
+
+  // 1. Clear all user learning states except UI preferences and monthly reset cooldown metadata
+  await clearAllUserLearningStates(userId, ['ui-preferences', RESET_METADATA_KEY]);
+  await setUserLearningStateInternal(userId, RESET_METADATA_KEY, nextMeta);
+
+  // 2. Reset cognitive brain profile, sprints, and academy progress
+  if (isMongoConnected()) {
+    await Promise.all([
+      UserBrainProfile.updateOne(
+        { userId },
+        {
+          $set: {
+            currentTier: 'Noob',
+            cognitiveMetrics: {
+              signalRecognitionScore: 0,
+              bottleneckDiagnosisScore: 0,
+              logicAssemblyAccuracy: 0,
+              paperDryRunStreak: 0,
+            },
+            passedTopicQuizzes: [],
+            completedProblemIds: [],
+            completedWarmupDrills: [],
+            masteredProblemSlugs: [],
+            spacedRepetitionQueue: [],
+            notes: {},
+            activityLog: [],
+          },
+        },
+        { upsert: true }
+      ),
+      CompanySprint.deleteMany({ userId }),
+      LearningProgress.deleteMany({ userId }),
+      AIAcademyProgress.deleteMany({ userId }),
+    ]);
+  } else {
+    resetDevCognitiveForUser(userId);
+  }
+
+  return res.json({
+    ok: true,
+    message: 'Your learning level and progress have been reset to Noob (0 XP).',
+    ...computeResetEligibility(nextMeta),
+  });
 });
 
 export default router;

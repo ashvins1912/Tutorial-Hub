@@ -47,6 +47,14 @@ export function getDevCognitiveExtras(userId: string) {
   };
 }
 
+export function resetDevCognitiveForUser(userId: string) {
+  profileStore.delete(userId);
+  notesStore.delete(userId);
+  warmupStore.delete(userId);
+  masteredStore.delete(userId);
+  activityStore.delete(userId);
+}
+
 export function getAllDevCognitiveUserIds(): string[] {
   const ids = new Set<string>();
   for (const k of profileStore.keys()) ids.add(k);

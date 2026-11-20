@@ -18,6 +18,16 @@ import {
   PRODUCT_COMPANY_HIGH_YIELD,
 } from '../../data/productCompanyMasterBank';
 import { useAccountState } from '../../hooks/useAccountState';
+import {
+  useProblemStatusTracker,
+  type ProblemDifficulty,
+  type ProblemStatus,
+} from '../../hooks/useProblemStatusTracker';
+import {
+  ProblemFilterBar,
+  StatusCycleButton,
+  toggleFilterValue,
+} from '../shared/ProblemFilterBar';
 
 const SOLVED_STORAGE_KEY = 'patternforge_product_master95_solved_v1';
 
@@ -46,7 +56,8 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
 }) => {
   const [mode, setMode] = useState<'product-companies' | 'master-13'>('product-companies');
   const [companyFilter, setCompanyFilter] = useState<string>('All');
-  const [difficultyFilter, setDifficultyFilter] = useState<'All' | BankDifficulty>('All');
+  const [selectedDifficulties, setSelectedDifficulties] = useState<ProblemDifficulty[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<ProblemStatus[]>([]);
   const [query, setQuery] = useState('');
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [collapsedTopics, setCollapsedTopics] = useState<Record<string, boolean>>({});
@@ -57,9 +68,17 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
     SOLVED_STORAGE_KEY
   );
 
-  const toggleSolved = (id: string) => {
-    setSolvedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  };
+  const { getStatus, cycleStatus, markInProgressIfUnattempted } = useProblemStatusTracker({
+    legacySolvedIds: solvedIds,
+    onSyncLegacySolved: (id, isSolved) => {
+      setSolvedIds((prev) => {
+        const has = prev.includes(id);
+        if (isSolved && !has) return [...prev, id];
+        if (!isSolved && has) return prev.filter((x) => x !== id);
+        return prev;
+      });
+    },
+  });
 
   const totalMasterCount = useMemo(
     () => MASTER_13_TOPIC_BANK.reduce((acc, sec) => acc + sec.problems.length, 0),
@@ -67,18 +86,58 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
   );
 
   const solvedProductCount = useMemo(
-    () => PRODUCT_COMPANY_HIGH_YIELD.filter((q) => solvedIds.includes(q.id)).length,
-    [solvedIds],
+    () => PRODUCT_COMPANY_HIGH_YIELD.filter((q) => getStatus(q.id) === 'solved').length,
+    [getStatus],
   );
 
   const solvedMasterCount = useMemo(
     () =>
       MASTER_13_TOPIC_BANK.reduce(
-        (acc, sec) => acc + sec.problems.filter((pr) => solvedIds.includes(pr.id)).length,
+        (acc, sec) => acc + sec.problems.filter((pr) => getStatus(pr.id) === 'solved').length,
         0,
       ),
-    [solvedIds],
+    [getStatus],
   );
+
+  const activeModeScope = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (mode === 'product-companies') {
+      return PRODUCT_COMPANY_HIGH_YIELD.filter((item) => {
+        const matchCompany =
+          companyFilter === 'All' || item.companies.includes(companyFilter);
+        const matchSearch =
+          !q ||
+          `${item.title} ${item.primaryPattern} ${item.whyAsked} ${item.section} ${item.companies.join(' ')}`
+            .toLowerCase()
+            .includes(q);
+        return matchCompany && matchSearch;
+      }).map((item) => ({ id: item.id, difficulty: item.difficulty }));
+    }
+    return MASTER_13_TOPIC_BANK.flatMap((section) =>
+      section.problems
+        .filter((pr) => {
+          const matchCompany =
+            companyFilter === 'All' || pr.companies.includes(companyFilter);
+          const matchSearch =
+            !q ||
+            `${pr.title} ${pr.patternClue} ${section.title} ${pr.companies.join(' ')}`
+              .toLowerCase()
+              .includes(q);
+          return matchCompany && matchSearch;
+        })
+        .map((pr) => ({ id: pr.id, difficulty: pr.difficulty })),
+    );
+  }, [mode, companyFilter, query]);
+
+  const filterCounts = useMemo(() => {
+    const difficulty = { Easy: 0, Medium: 0, Hard: 0 };
+    const status = { solved: 0, 'in-progress': 0, unattempted: 0 };
+    for (const item of activeModeScope) {
+      difficulty[item.difficulty] += 1;
+      status[getStatus(item.id)] += 1;
+    }
+    return { difficulty, status };
+  }, [activeModeScope, getStatus]);
 
   const filteredProductQuestions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -86,15 +145,17 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
       const matchCompany =
         companyFilter === 'All' || item.companies.includes(companyFilter);
       const matchDiff =
-        difficultyFilter === 'All' || item.difficulty === difficultyFilter;
+        selectedDifficulties.length === 0 || selectedDifficulties.includes(item.difficulty);
+      const matchStatus =
+        selectedStatuses.length === 0 || selectedStatuses.includes(getStatus(item.id));
       const matchSearch =
         !q ||
         `${item.title} ${item.primaryPattern} ${item.whyAsked} ${item.section} ${item.companies.join(' ')}`
           .toLowerCase()
           .includes(q);
-      return matchCompany && matchDiff && matchSearch;
+      return matchCompany && matchDiff && matchStatus && matchSearch;
     });
-  }, [companyFilter, difficultyFilter, query]);
+  }, [companyFilter, selectedDifficulties, selectedStatuses, query, getStatus]);
 
   const productSections = useMemo(() => {
     const map = new Map<string, typeof filteredProductQuestions>();
@@ -113,17 +174,24 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
         const matchCompany =
           companyFilter === 'All' || pr.companies.includes(companyFilter);
         const matchDiff =
-          difficultyFilter === 'All' || pr.difficulty === difficultyFilter;
+          selectedDifficulties.length === 0 || selectedDifficulties.includes(pr.difficulty);
+        const matchStatus =
+          selectedStatuses.length === 0 || selectedStatuses.includes(getStatus(pr.id));
         const matchSearch =
           !q ||
           `${pr.title} ${pr.patternClue} ${section.title} ${pr.companies.join(' ')}`
             .toLowerCase()
             .includes(q);
-        return matchCompany && matchDiff && matchSearch;
+        return matchCompany && matchDiff && matchStatus && matchSearch;
       });
       return { ...section, problems };
     }).filter((sec) => sec.problems.length > 0);
-  }, [companyFilter, difficultyFilter, query]);
+  }, [companyFilter, selectedDifficulties, selectedStatuses, query, getStatus]);
+
+  const visibleCount =
+    mode === 'product-companies'
+      ? filteredProductQuestions.length
+      : filteredMasterTopics.reduce((acc, s) => acc + s.problems.length, 0);
 
   const diffTone = (d: BankDifficulty) =>
     d === 'Easy'
@@ -183,50 +251,47 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-slate-200 dark:border-slate-800">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search
-              className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
-              aria-hidden="true"
-            />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search problem, pattern, or company..."
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+        <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search
+                className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search problem, pattern, or company..."
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <select
+              aria-label="Filter by company"
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200"
+            >
+              {ALL_COMPANIES.map((c) => (
+                <option key={c} value={c}>
+                  {c === 'All' ? 'All Companies' : c}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <select
-            aria-label="Filter by company"
-            value={companyFilter}
-            onChange={(e) => setCompanyFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200"
-          >
-            {ALL_COMPANIES.map((c) => (
-              <option key={c} value={c}>
-                {c === 'All' ? 'All Companies' : c}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-950 p-1">
-            {(['All', 'Easy', 'Medium', 'Hard'] as const).map((diff) => (
-              <button
-                key={diff}
-                type="button"
-                onClick={() => setDifficultyFilter(diff)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  difficultyFilter === diff
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                {diff}
-              </button>
-            ))}
-          </div>
+          <ProblemFilterBar
+            selectedDifficulties={selectedDifficulties}
+            onToggleDifficulty={(d) => setSelectedDifficulties((prev) => toggleFilterValue(prev, d))}
+            onClearDifficulties={() => setSelectedDifficulties([])}
+            selectedStatuses={selectedStatuses}
+            onToggleStatus={(s) => setSelectedStatuses((prev) => toggleFilterValue(prev, s))}
+            onClearStatuses={() => setSelectedStatuses([])}
+            counts={filterCounts}
+            totalMatching={visibleCount}
+            totalCount={activeModeScope.length}
+          />
         </div>
       </div>
 
@@ -302,30 +367,28 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
 
               <div className="divide-y divide-slate-200 dark:divide-slate-800">
                 {items.map((item) => {
-                  const isSolved = solvedIds.includes(item.id);
+                  const status = getStatus(item.id);
                   const isOpen = expandedCardId === item.id;
                   return (
                     <div key={item.id} className="p-4 space-y-2.5">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div className="flex items-start gap-2.5 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => toggleSolved(item.id)}
-                            aria-label={`Mark ${item.title} ${isSolved ? 'unsolved' : 'solved'}`}
-                            className="mt-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 shrink-0"
-                          >
-                            {isSolved ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                              <Circle className="w-4 h-4" />
-                            )}
-                          </button>
+                          <div className="mt-0.5 shrink-0">
+                            <StatusCycleButton
+                              status={status}
+                              title={item.title}
+                              onClick={() => cycleStatus(item.id)}
+                            />
+                          </div>
 
                           <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               <button
                                 type="button"
-                                onClick={() => setExpandedCardId(isOpen ? null : item.id)}
+                                onClick={() => {
+                                  setExpandedCardId(isOpen ? null : item.id);
+                                  markInProgressIfUnattempted(item.id);
+                                }}
                                 className="text-sm font-semibold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 text-left"
                               >
                                 {item.title}
@@ -353,20 +416,24 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
                         <div className="flex flex-wrap items-center gap-1.5 shrink-0 pl-6 md:pl-0">
                           <button
                             type="button"
-                            onClick={() => setExpandedCardId(isOpen ? null : item.id)}
+                            onClick={() => {
+                              setExpandedCardId(isOpen ? null : item.id);
+                              markInProgressIfUnattempted(item.id);
+                            }}
                             className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap"
                           >
                             {isOpen ? 'Hide Brute → Optimal' : 'Brute → Optimal'}
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
+                              markInProgressIfUnattempted(item.id);
                               onAnalyzeInSolver({
                                 id: item.id,
                                 title: item.title,
                                 statement: item.solverPrompt,
-                              })
-                            }
+                              });
+                            }}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors whitespace-nowrap"
                           >
                             <Brain className="w-3.5 h-3.5" aria-hidden="true" />
@@ -465,25 +532,20 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
                 {!isCollapsed && (
                   <div className="divide-y divide-slate-200 dark:divide-slate-800">
                     {section.problems.map((pr) => {
-                      const isSolved = solvedIds.includes(pr.id);
+                      const status = getStatus(pr.id);
                       return (
                         <div
                           key={pr.id}
                           className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
                         >
                           <div className="flex items-start gap-2.5 min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => toggleSolved(pr.id)}
-                              aria-label={`Mark ${pr.title} ${isSolved ? 'unsolved' : 'solved'}`}
-                              className="mt-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 shrink-0"
-                            >
-                              {isSolved ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                              ) : (
-                                <Circle className="w-4 h-4" />
-                              )}
-                            </button>
+                            <div className="mt-0.5 shrink-0">
+                              <StatusCycleButton
+                                status={status}
+                                title={pr.title}
+                                onClick={() => cycleStatus(pr.id)}
+                              />
+                            </div>
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                 <span className="font-mono tabular-nums text-xs text-slate-400">
@@ -509,13 +571,14 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
                           <div className="flex items-center gap-1.5 shrink-0 pl-6 sm:pl-0">
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                markInProgressIfUnattempted(pr.id);
                                 onAnalyzeInSolver({
                                   id: pr.id,
                                   title: pr.title,
                                   statement: pr.solverPrompt,
-                                })
-                              }
+                                });
+                              }}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors whitespace-nowrap"
                             >
                               <Brain className="w-3.5 h-3.5" aria-hidden="true" />

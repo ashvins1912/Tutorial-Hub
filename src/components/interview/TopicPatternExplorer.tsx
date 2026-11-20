@@ -6,9 +6,18 @@ import { BigTechCompany, BigTechTopicCategory, StudySheetTag } from '../../types
 import { useSprintStore } from '../../store/useSprintStore';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
 import { TopicArchitectureDiagram } from './TopicArchitectureDiagram';
+import {
+  useProblemStatusTracker,
+  type ProblemDifficulty,
+  type ProblemStatus,
+} from '../../hooks/useProblemStatusTracker';
+import {
+  ProblemFilterBar,
+  StatusCycleButton,
+  toggleFilterValue,
+} from '../shared/ProblemFilterBar';
 
 const COMPANIES: (BigTechCompany | 'All')[] = ['All', 'Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'];
-const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard'] as const;
 const SHEETS: ('All' | StudySheetTag)[] = ['All', 'NeetCode 150', 'Blind 75', 'Grind 75', 'LeetCode Top 150'];
 
 export function TopicPatternExplorer() {
@@ -16,8 +25,6 @@ export function TopicPatternExplorer() {
   const setSelectedTopic = useSprintStore((s) => s.setSelectedTopic);
   const selectedCompanyFilter = useSprintStore((s) => s.selectedCompanyFilter);
   const setSelectedCompanyFilter = useSprintStore((s) => s.setSelectedCompanyFilter);
-  const selectedDifficultyFilter = useSprintStore((s) => s.selectedDifficultyFilter);
-  const setSelectedDifficultyFilter = useSprintStore((s) => s.setSelectedDifficultyFilter);
   const masteredSlugs = useSprintStore((s) => s.masteredSlugs);
   const openTrainerForProblem = useSprintStore((s) => s.openTrainerForProblem);
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
@@ -25,6 +32,12 @@ export function TopicPatternExplorer() {
 
   const [query, setQuery] = useState('');
   const [selectedSheetFilter, setSelectedSheetFilter] = useState<'All' | StudySheetTag>('All');
+  const [selectedDifficulties, setSelectedDifficulties] = useState<ProblemDifficulty[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<ProblemStatus[]>([]);
+
+  const { getStatus, cycleStatus, markInProgressIfUnattempted } = useProblemStatusTracker({
+    legacySolvedIds: masteredSlugs,
+  });
 
   const activeTopicSummary = useMemo(
     () =>
@@ -34,11 +47,10 @@ export function TopicPatternExplorer() {
     [selectedTopic]
   );
 
-  const filteredProblems = useMemo(() => {
+  const baseScopeProblems = useMemo(() => {
     const q = query.trim().toLowerCase();
     return BIG_TECH_36_PROBLEMS.filter((p) => {
       if (selectedTopic !== 'All' && p.topicCategory !== selectedTopic) return false;
-      if (selectedDifficultyFilter !== 'All' && p.difficulty !== selectedDifficultyFilter) return false;
       if (
         selectedSheetFilter !== 'All' &&
         !p.studySheets?.includes(selectedSheetFilter)
@@ -61,15 +73,48 @@ export function TopicPatternExplorer() {
         return false;
       }
       return true;
-    }).sort((a, b) => {
-      if (selectedCompanyFilter === 'All') return 0;
-      const fa = a.bigTechFrequency.find((f) => f.company === selectedCompanyFilter)?.frequencyScore ?? 0;
-      const fb = b.bigTechFrequency.find((f) => f.company === selectedCompanyFilter)?.frequencyScore ?? 0;
-      return fb - fa;
     });
-  }, [query, selectedCompanyFilter, selectedDifficultyFilter, selectedSheetFilter, selectedTopic]);
+  }, [query, selectedCompanyFilter, selectedSheetFilter, selectedTopic]);
 
-  const totalMastered = masteredSlugs.length;
+  const filterCounts = useMemo(() => {
+    const difficulty = { Easy: 0, Medium: 0, Hard: 0 };
+    const status = { solved: 0, 'in-progress': 0, unattempted: 0 };
+    for (const p of baseScopeProblems) {
+      difficulty[p.difficulty] += 1;
+      status[getStatus(p.slug)] += 1;
+    }
+    return { difficulty, status };
+  }, [baseScopeProblems, getStatus]);
+
+  const filteredProblems = useMemo(() => {
+    return baseScopeProblems
+      .filter((p) => {
+        if (
+          selectedDifficulties.length > 0 &&
+          !selectedDifficulties.includes(p.difficulty)
+        ) {
+          return false;
+        }
+        if (
+          selectedStatuses.length > 0 &&
+          !selectedStatuses.includes(getStatus(p.slug))
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (selectedCompanyFilter === 'All') return 0;
+        const fa = a.bigTechFrequency.find((f) => f.company === selectedCompanyFilter)?.frequencyScore ?? 0;
+        const fb = b.bigTechFrequency.find((f) => f.company === selectedCompanyFilter)?.frequencyScore ?? 0;
+        return fb - fa;
+      });
+  }, [baseScopeProblems, selectedCompanyFilter, selectedDifficulties, selectedStatuses, getStatus]);
+
+  const totalMastered = useMemo(
+    () => BIG_TECH_36_PROBLEMS.filter((p) => getStatus(p.slug) === 'solved').length,
+    [getStatus]
+  );
 
   return (
     <div className="space-y-6">
@@ -146,8 +191,8 @@ export function TopicPatternExplorer() {
           })}
         </div>
 
-        {/* Sheet, Company & Difficulty Filters */}
-        <div className="space-y-2.5 pt-1">
+        {/* Sheet, Company, Difficulty & Status Filters */}
+        <div className="space-y-3 pt-1">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
@@ -170,58 +215,49 @@ export function TopicPatternExplorer() {
               ))}
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Difficulty:</span>
-              {DIFFICULTIES.map((diff) => (
-                <button
-                  key={diff}
-                  type="button"
-                  onClick={() => setSelectedDifficultyFilter(diff)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
-                    selectedDifficultyFilter === diff
-                      ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  {diff}
-                </button>
-              ))}
-            </div>
+            {selectedTopic !== 'All' && (
+              <button
+                type="button"
+                onClick={() => setSelectedTopic('All')}
+                className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap"
+              >
+                Show all 12 topics
+              </button>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
-                Company:
-              </span>
-              {COMPANIES.map((comp) => (
-                <button
-                  key={comp}
-                  type="button"
-                  onClick={() => setSelectedCompanyFilter(comp)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
-                    selectedCompanyFilter === comp
-                      ? 'border-sky-600 bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                  }`}
-                >
-                  {comp}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">
+              Company:
+            </span>
+            {COMPANIES.map((comp) => (
+              <button
+                key={comp}
+                type="button"
+                onClick={() => setSelectedCompanyFilter(comp)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                  selectedCompanyFilter === comp
+                    ? 'border-sky-600 bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                }`}
+              >
+                {comp}
+              </button>
+            ))}
+          </div>
 
-            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
-              <span>Showing {filteredProblems.length} problems</span>
-              {selectedTopic !== 'All' && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedTopic('All')}
-                  className="font-sans font-medium text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap"
-                >
-                  Show all 12 topics
-                </button>
-              )}
-            </div>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-2.5">
+            <ProblemFilterBar
+              selectedDifficulties={selectedDifficulties}
+              onToggleDifficulty={(d) => setSelectedDifficulties((prev) => toggleFilterValue(prev, d))}
+              onClearDifficulties={() => setSelectedDifficulties([])}
+              selectedStatuses={selectedStatuses}
+              onToggleStatus={(s) => setSelectedStatuses((prev) => toggleFilterValue(prev, s))}
+              onClearStatuses={() => setSelectedStatuses([])}
+              counts={filterCounts}
+              totalMatching={filteredProblems.length}
+              totalCount={baseScopeProblems.length}
+            />
           </div>
         </div>
       </div>
@@ -278,7 +314,7 @@ export function TopicPatternExplorer() {
       {/* Problem Cards List */}
       <div className="space-y-3">
         {filteredProblems.map((prob) => {
-          const isMastered = masteredSlugs.includes(prob.slug);
+          const status = getStatus(prob.slug);
           const companyEntry =
             selectedCompanyFilter !== 'All'
               ? prob.bigTechFrequency.find((f) => f.company === selectedCompanyFilter)
@@ -291,6 +327,12 @@ export function TopicPatternExplorer() {
             >
               <div className="space-y-1.5 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <StatusCycleButton
+                    status={status}
+                    title={prob.title}
+                    onClick={() => cycleStatus(prob.slug)}
+                    showLabel
+                  />
                   <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
                     #{prob.number}
                   </span>
@@ -311,11 +353,6 @@ export function TopicPatternExplorer() {
                   </span>
                   <span aria-hidden="true">·</span>
                   <span>{prob.topicCategory}</span>
-                  {isMastered && (
-                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
-                      · <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> MASTERED
-                    </span>
-                  )}
                 </div>
 
                 <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
@@ -347,7 +384,10 @@ export function TopicPatternExplorer() {
                 {prob.labProblemId && (
                   <button
                     type="button"
-                    onClick={() => selectProblem(prob.labProblemId!)}
+                    onClick={() => {
+                      markInProgressIfUnattempted(prob.slug);
+                      selectProblem(prob.labProblemId!);
+                    }}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap"
                   >
                     5-Stage Lab
@@ -356,7 +396,10 @@ export function TopicPatternExplorer() {
                 )}
                 <button
                   type="button"
-                  onClick={() => openTrainerForProblem(prob.slug)}
+                  onClick={() => {
+                    markInProgressIfUnattempted(prob.slug);
+                    openTrainerForProblem(prob.slug);
+                  }}
                   className="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap"
                 >
                   Open Solution Trainer
@@ -365,6 +408,11 @@ export function TopicPatternExplorer() {
             </div>
           );
         })}
+        {filteredProblems.length === 0 && (
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            No problems match the selected difficulty, status, and topic filters.
+          </div>
+        )}
       </div>
     </div>
   );

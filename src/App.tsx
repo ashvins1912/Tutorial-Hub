@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   Compass,
   FileCode2,
+  LogOut,
   Moon,
   NotebookPen,
   Sun,
@@ -99,6 +100,12 @@ export default function App() {
     id: string;
     title: string;
     statement: string;
+    sourcePlatform?: 'LeetCode' | 'GeeksforGeeks' | 'Custom';
+    sourceUrl?: string;
+    difficulty?: 'Easy' | 'Medium' | 'Hard';
+    examples?: string[];
+    constraints?: string[];
+    topics?: string[];
   } | null>(null);
   const [bankSubTab, setBankSubTab] = useState<
     'product-master' | 'bigtech48' | 'highroi45' | 'skilltree'
@@ -116,6 +123,36 @@ export default function App() {
     fetchMasteredSlugs();
     void bootstrapOnStartup();
   }, [fetchBrainProfile, fetchActiveSprint, fetchMasteredSlugs, bootstrapOnStartup]);
+
+  // Deep-link hydration for shared pulled problems (?sharedProblem=<publicId>)
+  useEffect(() => {
+    const sharedId = new URLSearchParams(window.location.search).get('sharedProblem');
+    if (!sharedId) return;
+    let active = true;
+    void apiFetch(`/api/solver/shared-problems/${encodeURIComponent(sharedId)}`)
+      .then(async (res) => {
+        if (!res.ok || !active) return;
+        const data = await res.json();
+        const item = data?.problem ?? data?.item;
+        if (!item || !active) return;
+        setSolverExternalProblem({
+          id: `shared-${item.publicId || sharedId}`,
+          title: item.title,
+          statement: item.statement,
+          sourcePlatform: item.sourcePlatform,
+          sourceUrl: item.sourceUrl,
+          difficulty: item.difficulty,
+          examples: Array.isArray(item.examples) ? item.examples : [],
+          constraints: Array.isArray(item.constraints) ? item.constraints : [],
+          topics: Array.isArray(item.topics) ? item.topics : [],
+        });
+        setActiveView('solver');
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [setActiveView]);
 
   useEffect(() => {
     let hydrated = false;
@@ -295,22 +332,25 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col transition-colors">
       {/* Clean 3-Zone Top Bar Contract */}
       <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xs">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+        <div className="max-w-[1920px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3 lg:gap-5">
           <button
             type="button"
             onClick={() => handleSelectNav('workspace')}
-            className="text-lg font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 text-left"
+            className="text-base sm:text-lg font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 text-left"
           >
             PatternForge DSA
           </button>
 
-          <nav aria-label="Primary Navigation" className="hidden md:flex items-center gap-5 lg:gap-6">
+          <nav
+            aria-label="Primary Navigation"
+            className="hidden md:flex min-w-0 flex-1 items-center gap-3 lg:gap-4 xl:gap-5 overflow-x-auto no-scrollbar px-1"
+          >
             {navItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => handleSelectNav(item.id)}
-                className={`text-sm font-medium transition-colors whitespace-nowrap shrink-0 py-1.5 border-b-2 ${
+                className={`text-xs lg:text-sm font-medium transition-colors whitespace-nowrap shrink-0 py-1.5 border-b-2 ${
                   item.isActive
                     ? 'text-slate-900 dark:text-slate-100 border-sky-600 dark:border-sky-400'
                     : 'text-slate-600 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-slate-200'
@@ -321,19 +361,19 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setActiveView('profile')}
               aria-label="Open profile and statistics"
-              className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              className={`inline-flex items-center gap-1.5 sm:gap-2 rounded-lg border px-2 sm:px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                 activeView === 'profile'
                   ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-200'
                   : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
               }`}
             >
               <User className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span className="hidden xl:inline max-w-32 truncate">
+              <span className="hidden xl:inline max-w-28 truncate">
                 {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Profile'}
               </span>
               <span className="hidden 2xl:inline text-slate-400" aria-hidden="true">
@@ -343,12 +383,20 @@ export default function App() {
                 {brainProfile.currentTier}
               </span>
             </button>
-            <button type="button" onClick={() => void signOut()} className="rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-rose-400 whitespace-nowrap shrink-0">Sign out</button>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              aria-label="Sign out"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:border-rose-400 whitespace-nowrap shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5 sm:hidden" aria-hidden="true" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
             <button
               type="button"
               onClick={toggleTheme}
               aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
+              className="p-1.5 sm:p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700"
             >
               {theme === 'light' ? (
                 <Moon className="w-4 h-4" aria-hidden="true" />
@@ -359,16 +407,17 @@ export default function App() {
             <button
               type="button"
               onClick={() => setDrillModalOpen(true)}
-              className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
+              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
             >
-              60s Pattern Drill
+              <span className="sm:hidden">60s Drill</span>
+              <span className="hidden sm:inline">60s Pattern Drill</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Mobile Primary Nav Strip */}
-      <div className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 flex items-center gap-1.5 overflow-x-auto">
+      <div className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -628,7 +677,7 @@ export default function App() {
                 )
               ) : (
                 <>
-                  <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
+                  <div className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full w-fit overflow-x-auto no-scrollbar">
                     {[
                       { id: 'product-master' as const, label: 'Product Co. 75 & Master 95' },
                       { id: 'bigtech48' as const, label: 'Topic & Company Bank (48)' },
@@ -673,7 +722,7 @@ export default function App() {
 
           {isHubView && (
             <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
+              <div className="flex items-center gap-1.5 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full w-fit overflow-x-auto no-scrollbar">
                 {(
                   [
                     { id: 'system-design', label: 'System Design Studio', view: 'system-design' },
