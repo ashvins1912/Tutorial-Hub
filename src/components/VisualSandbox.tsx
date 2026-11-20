@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { useAuth } from '../auth/AuthContext';
-import { PROBLEMS } from '../data/problems';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { PairProgrammingCanvas } from './PairProgrammingCanvas';
 import { CallStackVisualizer } from '../features/recursion-lab/components/CallStackVisualizer';
 import {
@@ -74,6 +74,7 @@ function buildIdentityFromAccount(
 }
 
 export function VisualSandbox({ curriculumModuleId }: VisualSandboxProps = {}) {
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const { user } = useAuth();
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);

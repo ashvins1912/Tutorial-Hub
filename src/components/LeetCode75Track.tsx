@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { ExternalLink, Search, Target, Trophy, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
-import { LEETCODE_75_CATEGORIES, LEETCODE_75_PROBLEMS, leetCode75Url, type LeetCode75Difficulty } from '../data/leetcode75';
+import { leetCode75Url, type LeetCode75Difficulty } from '../data/leetcode75';
 
 type Status = 'Not started' | 'In progress' | 'Solved';
 type Progress = Record<number, { status: Status; notes: string }>;
 export function LeetCode75Track() {
+  const {
+    data: { problems: LEETCODE_75_PROBLEMS, categories: LEETCODE_75_CATEGORIES },
+  } = useAsyncCatalog('leetcode-75');
   const [progress, setProgress] = useAccountState<Progress>('leetcode75-progress', {});
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All categories');
@@ -21,7 +25,7 @@ export function LeetCode75Track() {
       && (category === 'All categories' || problem.category === category)
       && (difficulty === 'All' || problem.difficulty === difficulty)
       && (status === 'All' || (progress[problem.number]?.status ?? 'Not started') === status);
-  }), [query, category, difficulty, status, progress]);
+  }), [LEETCODE_75_PROBLEMS, query, category, difficulty, status, progress]);
   const update = (number: number, patch: Partial<Progress[number]>) => {
     const current = progress[number] ?? { status: 'Not started' as Status, notes: '' };
     const next = { ...progress, [number]: { ...current, ...patch } };

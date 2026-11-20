@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { ExternalLink, Search, Target, Trophy, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
-import { TOP_INTERVIEW_100_CATEGORIES, TOP_INTERVIEW_100, topInterview100Url, type Top100Difficulty } from '../data/topInterview100';
+import { topInterview100Url, type Top100Difficulty } from '../data/topInterview100';
 
 type Status = 'Not started' | 'In progress' | 'Solved';
 type Progress = Record<number, { status: Status; notes: string }>;
 export function TopInterview100Track() {
+  const {
+    data: { problems: TOP_INTERVIEW_100, categories: TOP_INTERVIEW_100_CATEGORIES },
+  } = useAsyncCatalog('top-interview-100');
   const [progress, setProgress] = useAccountState<Progress>('top-interview-100-progress', {});
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All categories');
@@ -21,7 +25,7 @@ export function TopInterview100Track() {
       && (category === 'All categories' || problem.category === category)
       && (difficulty === 'All' || problem.difficulty === difficulty)
       && (status === 'All' || (progress[problem.number]?.status ?? 'Not started') === status);
-  }), [query, category, difficulty, status, progress]);
+  }), [TOP_INTERVIEW_100, query, category, difficulty, status, progress]);
   const update = (number: number, patch: Partial<Progress[number]>) => {
     const current = progress[number] ?? { status: 'Not started' as Status, notes: '' };
     const next = { ...progress, [number]: { ...current, ...patch } };

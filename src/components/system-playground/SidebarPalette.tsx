@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, GripVertical, Plus, Search, X } from 'lucide-react';
-import { CATEGORY_META, CATEGORY_ORDER, COMPONENT_CATALOG } from '../../data/componentCatalog';
+import { CATEGORY_META, CATEGORY_ORDER } from '../../data/componentCatalog';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import type { ComponentCategory, ComponentType } from '../../types/system';
 import { getComponentIcon } from './iconMap';
 
@@ -15,14 +16,15 @@ export const SidebarPalette: React.FC<SidebarPaletteProps> = ({
   isOpenMobile,
   onCloseMobile,
 }) => {
+  const { data: componentCatalog } = useAsyncCatalog('system-design-components');
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const groups: { category: ComponentCategory; items: typeof COMPONENT_CATALOG }[] = [];
+    const groups: { category: ComponentCategory; items: typeof componentCatalog }[] = [];
     for (const cat of CATEGORY_ORDER) {
-      const items = COMPONENT_CATALOG.filter((item) => {
+      const items = componentCatalog.filter((item) => {
         if (item.category !== cat) return false;
         if (!q) return true;
         return (
@@ -37,7 +39,7 @@ export const SidebarPalette: React.FC<SidebarPaletteProps> = ({
       }
     }
     return groups;
-  }, [query]);
+  }, [query, componentCatalog]);
 
   const handleDragStart = (event: React.DragEvent, type: ComponentType) => {
     event.dataTransfer.setData('application/systemforge-component', type);

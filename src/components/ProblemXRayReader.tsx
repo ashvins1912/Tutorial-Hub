@@ -1,8 +1,8 @@
 import { ArrowRight, CheckCircle2, Eye, Gauge, Lock, XCircle } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
-import { PROBLEMS } from '../data/problems';
 import { ConstraintComplexityDecoder } from './ConstraintComplexityDecoder';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 const LEGACY_XRAY_DECODED_KEY = 'patternforge_xray_decoded_v1';
 
@@ -57,6 +57,7 @@ function formatOps(ops: number): string {
 }
 
 export function ProblemXRayReader() {
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);
   const selectSignal = usePatternForgeStore((s) => s.selectSignal);

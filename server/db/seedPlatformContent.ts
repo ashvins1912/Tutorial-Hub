@@ -1,39 +1,40 @@
 import crypto from 'crypto';
 import { isMongoConnected } from './connectMongo';
-import { ContentBundleKey, PlatformContentBundle } from '../models/PlatformContentBundle';
-import { ALGORITHMS_CATALOG } from '../../src/data/algorithmsCatalog';
+import { PlatformContentBundle } from '../models/PlatformContentBundle';
 import {
-  ALGORITHM_POWER_COMBOS,
-  MASTER_73_ROADMAP,
-} from '../../src/data/algorithmCombinationsAndRoadmap';
-import { CURRICULUM_TOPICS } from '../../src/features/topics/data/curriculumIndex';
-import { CURATED_INTERVIEW_BANK } from '../../src/features/topics/data/curatedInterviewBank';
-import { STRATEGIES_CATALOG } from '../../src/core/knowledge-base/strategiesCatalog';
-import {
-  getAlgorithmLogicBoard,
-  getTopicLogicBoard,
-} from '../../src/data/algorithmLogicBoards';
+  ALL_CONTENT_BUNDLE_KEYS,
+  CANONICAL_BUNDLE_DEFINITIONS,
+  type ContentBundleKey,
+  type ContentDomainId,
+  getCanonicalFallbackBundle,
+  isValidContentBundleKey,
+} from '../../src/data/canonicalDataRegistry';
 
-const SCHEMA_VERSION = '2026.3';
+const SCHEMA_VERSION = '2026.4';
 
 export interface StoredContentBundleSummary {
   collectionKey: ContentBundleKey;
+  domain: ContentDomainId;
+  label: string;
   schemaVersion: string;
   checksum: string;
   itemCount: number;
+  byteSize: number;
   syncedAt: string;
   source: 'mongodb' | 'in-memory';
 }
 
 export interface ContentBundleRecord extends StoredContentBundleSummary {
-  payload: unknown[];
+  payload: unknown;
 }
 
 export interface ContentPushReport {
   pushed: boolean;
   storageMode: 'mongodb' | 'in-memory';
   syncedAt: string;
+  totalCollections: number;
   totalItems: number;
+  totalBytes: number;
   collections: StoredContentBundleSummary[];
 }
 
@@ -42,9 +43,20 @@ export interface ContentBootstrapResponse {
   pushOnStartupEnabled: boolean;
   storageMode: 'mongodb' | 'in-memory' | 'static-local';
   syncedAt: string;
+  totalCollections: number;
   totalItems: number;
+  totalBytes: number;
   collections: StoredContentBundleSummary[];
-  bundles: Partial<Record<ContentBundleKey, unknown[]>>;
+  bundles: Partial<Record<ContentBundleKey, unknown>>;
+}
+
+export interface SingleBundlePullResponse {
+  pullEnabled: boolean;
+  collectionKey: ContentBundleKey;
+  found: boolean;
+  storageMode: 'mongodb' | 'in-memory' | 'static-local';
+  meta: StoredContentBundleSummary | null;
+  payload: unknown;
 }
 
 const memoryContentStore = new Map<ContentBundleKey, ContentBundleRecord>();
@@ -61,106 +73,61 @@ export function isDbContentPullEnabled(): boolean {
   return raw !== 'false' && raw !== '0' && raw !== 'off';
 }
 
-function hashPayload(payload: unknown): string {
-  return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 16);
+function hashAndMeasure(payload: unknown): { checksum: string; byteSize: number } {
+  const serialized = JSON.stringify(payload);
+  const checksum = crypto.createHash('sha256').update(serialized).digest('hex').slice(0, 16);
+  const byteSize = Buffer.byteLength(serialized, 'utf8');
+  return { checksum, byteSize };
 }
 
-function buildCanonicalContentBundles(): Array<{ key: ContentBundleKey; payload: unknown[] }> {
-  const compactAlgorithms = ALGORITHMS_CATALOG.map((algo) => {
-    const enrichment = getAlgorithmLogicBoard(algo);
+function buildCanonicalContentBundles(keys?: ContentBundleKey[]): Array<{
+  key: ContentBundleKey;
+  domain: ContentDomainId;
+  label: string;
+  itemCount: number;
+  payload: unknown;
+}> {
+  const targetKeys =
+    keys && keys.length > 0
+      ? keys.filter((k) => isValidContentBundleKey(k))
+      : ALL_CONTENT_BUNDLE_KEYS;
+
+  return targetKeys.map((key) => {
+    const def = CANONICAL_BUNDLE_DEFINITIONS[key];
+    const payload = getCanonicalFallbackBundle(key);
+    const itemCount = def.countItems(payload as never);
     return {
-      id: algo.id,
-      name: algo.name,
-      shortName: algo.shortName,
-      category: algo.category,
-      timeComplexity: algo.timeComplexity,
-      spaceComplexity: algo.spaceComplexity,
-      complexityLeap: algo.complexityLeap,
-      tagline: algo.tagline,
-      coreIdea: algo.coreIdea,
-      loopInvariant: algo.loopInvariant,
-      formalDefinition: enrichment.formalDefinition,
-      problemStatementForm: enrichment.problemStatementForm,
-      logicBoard: enrichment.logicBoard,
-      mathematics: enrichment.mathematics,
-      patternRecommendations: enrichment.patternRecommendations,
-      whenToUse: algo.whenToUse,
-      whenItFails: algo.whenItFails,
-      linkedTopics: algo.linkedTopics,
-      linkedProblemSlugs: algo.linkedProblemSlugs,
-      frameCount: algo.frames.length,
+      key,
+      domain: def.domain,
+      label: def.label,
+      itemCount,
+      payload,
     };
   });
-
-  const compactTopics = CURRICULUM_TOPICS.map((topic) => {
-    const enrichment = getTopicLogicBoard(topic);
-    return {
-      id: topic.id,
-      order: topic.order,
-      title: topic.title,
-      shortTitle: topic.shortTitle,
-      tier: topic.tier,
-      category: topic.category,
-      tagline: topic.tagline,
-      keywords: topic.keywords,
-      mentalModelSteps: topic.mentalModelSteps,
-      formalDefinition: enrichment.formalDefinition,
-      problemStatementForm: enrichment.problemStatementForm,
-      logicBoard: enrichment.logicBoard,
-      mathematics: enrichment.mathematics,
-      patternRecommendations: enrichment.patternRecommendations,
-      optimalTime: topic.solutions.optimal.timeComplexity,
-      optimalSpace: topic.solutions.optimal.spaceComplexity,
-      patternClues: topic.patternClues,
-      problemCount: topic.problemLadder.length,
-    };
-  });
-
-  const compactStrategies = STRATEGIES_CATALOG.map((strategy) => ({
-    id: strategy.id,
-    name: strategy.name,
-    category: strategy.category,
-    difficulty: strategy.difficulty,
-    domains: strategy.domains,
-    workspaceKind: strategy.workspaceKind,
-    curriculumTopicId: strategy.curriculumTopicId,
-    mentalModel: strategy.mentalModel,
-    structuralClues: strategy.structuralClues,
-    triggerKeywords: strategy.triggerKeywords,
-    optimalTime: strategy.optimalTime,
-    optimalSpace: strategy.optimalSpace,
-    complexityRank: strategy.complexityRank,
-  }));
-
-  return [
-    { key: 'algorithms-catalog', payload: compactAlgorithms },
-    { key: 'master-73-roadmap', payload: MASTER_73_ROADMAP },
-    { key: 'algorithm-power-combos', payload: ALGORITHM_POWER_COMBOS },
-    { key: 'curriculum-topics', payload: compactTopics },
-    { key: 'curated-interview-bank', payload: CURATED_INTERVIEW_BANK },
-    { key: 'solver-strategies', payload: compactStrategies },
-  ];
 }
 
 export async function pushPlatformContentToDb(options?: {
   force?: boolean;
+  keys?: ContentBundleKey[];
 }): Promise<ContentPushReport> {
   const force = Boolean(options?.force);
   const now = new Date();
   const syncedAtIso = now.toISOString();
-  const bundles = buildCanonicalContentBundles();
+  const bundles = buildCanonicalContentBundles(options?.keys);
   const mongoReady = isMongoConnected();
   const summaries: StoredContentBundleSummary[] = [];
 
-  for (const { key, payload } of bundles) {
-    const checksum = hashPayload(payload);
-    const itemCount = payload.length;
+  for (const { key, domain, label, itemCount, payload } of bundles) {
+    const { checksum, byteSize } = hashAndMeasure(payload);
 
     memoryContentStore.set(key, {
       collectionKey: key,
+      domain,
+      label,
       schemaVersion: SCHEMA_VERSION,
       checksum,
       itemCount,
+      byteSize,
       syncedAt: syncedAtIso,
       source: mongoReady ? 'mongodb' : 'in-memory',
       payload,
@@ -177,9 +144,12 @@ export async function pushPlatformContentToDb(options?: {
           {
             $set: {
               collectionKey: key,
+              domain,
+              label,
               schemaVersion: SCHEMA_VERSION,
               checksum,
               itemCount,
+              byteSize,
               payload,
               syncedAt: now,
             },
@@ -191,26 +161,33 @@ export async function pushPlatformContentToDb(options?: {
 
     summaries.push({
       collectionKey: key,
+      domain,
+      label,
       schemaVersion: SCHEMA_VERSION,
       checksum,
       itemCount,
+      byteSize,
       syncedAt: syncedAtIso,
       source: mongoReady ? 'mongodb' : 'in-memory',
     });
   }
 
   const totalItems = summaries.reduce((acc, s) => acc + s.itemCount, 0);
+  const totalBytes = summaries.reduce((acc, s) => acc + s.byteSize, 0);
+
   console.log(
-    `[PatternForge ContentSync] Synced ${summaries.length} content collections (${totalItems} items) to ${
-      mongoReady ? 'MongoDB' : 'in-memory snapshot store'
-    }.`
+    `[PatternForge ContentSync] Synced ${summaries.length} canonical bundles (${totalItems} records, ${(
+      totalBytes / 1024
+    ).toFixed(1)} KB) to ${mongoReady ? 'MongoDB' : 'in-memory snapshot store'}.`
   );
 
   return {
     pushed: true,
     storageMode: mongoReady ? 'mongodb' : 'in-memory',
     syncedAt: syncedAtIso,
+    totalCollections: summaries.length,
     totalItems,
+    totalBytes,
     collections: summaries,
   };
 }
@@ -237,68 +214,86 @@ export async function pullPlatformContentFromDb(options?: {
       pushOnStartupEnabled,
       storageMode: 'static-local',
       syncedAt: new Date().toISOString(),
+      totalCollections: 0,
       totalItems: 0,
+      totalBytes: 0,
       collections: [],
       bundles: {},
     };
   }
 
-  // Ensure snapshot exists in dev mode even if startup push was disabled
-  if (!isMongoConnected() && memoryContentStore.size === 0) {
+  if (!isMongoConnected() && memoryContentStore.size < ALL_CONTENT_BUNDLE_KEYS.length) {
     await pushPlatformContentToDb({ force: false });
   }
 
   if (isMongoConnected()) {
-    const docs = await PlatformContentBundle.find({})
-      .lean<
-        Array<{
-          collectionKey: ContentBundleKey;
-          schemaVersion: string;
-          checksum: string;
-          itemCount: number;
-          payload: unknown[];
-          syncedAt: Date;
-        }>
-      >();
+    const query = includePayload
+      ? PlatformContentBundle.find({})
+      : PlatformContentBundle.find({}).select('-payload');
 
-    if (docs.length === 0) {
-      await pushPlatformContentToDb({ force: true });
+    const docs = await query.lean<
+      Array<{
+        collectionKey: ContentBundleKey;
+        domain?: ContentDomainId;
+        label?: string;
+        schemaVersion: string;
+        checksum: string;
+        itemCount: number;
+        byteSize?: number;
+        payload?: unknown;
+        syncedAt: Date;
+      }>
+    >();
+
+    // Auto-seed if DB is empty or still on older schema version with fewer collections
+    if (docs.length < ALL_CONTENT_BUNDLE_KEYS.length) {
+      await pushPlatformContentToDb({ force: false });
       return pullPlatformContentFromDb(options);
     }
 
-    const bundles: Partial<Record<ContentBundleKey, unknown[]>> = {};
-    const collections: StoredContentBundleSummary[] = docs.map((doc) => {
-      if (includePayload) {
-        bundles[doc.collectionKey] = Array.isArray(doc.payload) ? doc.payload : [];
-      }
-      return {
-        collectionKey: doc.collectionKey,
-        schemaVersion: doc.schemaVersion,
-        checksum: doc.checksum,
-        itemCount: doc.itemCount,
-        syncedAt: new Date(doc.syncedAt).toISOString(),
-        source: 'mongodb',
-      };
-    });
+    const bundles: Partial<Record<ContentBundleKey, unknown>> = {};
+    const collections: StoredContentBundleSummary[] = docs
+      .filter((doc) => isValidContentBundleKey(doc.collectionKey))
+      .map((doc) => {
+        const def = CANONICAL_BUNDLE_DEFINITIONS[doc.collectionKey];
+        if (includePayload) {
+          bundles[doc.collectionKey] = doc.payload ?? null;
+        }
+        return {
+          collectionKey: doc.collectionKey,
+          domain: doc.domain ?? def.domain,
+          label: doc.label || def.label,
+          schemaVersion: doc.schemaVersion,
+          checksum: doc.checksum,
+          itemCount: doc.itemCount,
+          byteSize: doc.byteSize ?? 0,
+          syncedAt: new Date(doc.syncedAt).toISOString(),
+          source: 'mongodb',
+        };
+      });
 
     const totalItems = collections.reduce((acc, c) => acc + c.itemCount, 0);
-    const latestSync = collections
-      .map((c) => c.syncedAt)
-      .sort()
-      .at(-1) ?? new Date().toISOString();
+    const totalBytes = collections.reduce((acc, c) => acc + c.byteSize, 0);
+    const latestSync =
+      collections
+        .map((c) => c.syncedAt)
+        .sort()
+        .at(-1) ?? new Date().toISOString();
 
     return {
       pullEnabled: true,
       pushOnStartupEnabled,
       storageMode: 'mongodb',
       syncedAt: latestSync,
+      totalCollections: collections.length,
       totalItems,
+      totalBytes,
       collections,
       bundles,
     };
   }
 
-  const bundles: Partial<Record<ContentBundleKey, unknown[]>> = {};
+  const bundles: Partial<Record<ContentBundleKey, unknown>> = {};
   const collections: StoredContentBundleSummary[] = [];
   for (const record of memoryContentStore.values()) {
     if (includePayload) {
@@ -306,27 +301,130 @@ export async function pullPlatformContentFromDb(options?: {
     }
     collections.push({
       collectionKey: record.collectionKey,
+      domain: record.domain,
+      label: record.label,
       schemaVersion: record.schemaVersion,
       checksum: record.checksum,
       itemCount: record.itemCount,
+      byteSize: record.byteSize,
       syncedAt: record.syncedAt,
       source: 'in-memory',
     });
   }
 
   const totalItems = collections.reduce((acc, c) => acc + c.itemCount, 0);
-  const latestSync = collections
-    .map((c) => c.syncedAt)
-    .sort()
-    .at(-1) ?? new Date().toISOString();
+  const totalBytes = collections.reduce((acc, c) => acc + c.byteSize, 0);
+  const latestSync =
+    collections
+      .map((c) => c.syncedAt)
+      .sort()
+      .at(-1) ?? new Date().toISOString();
 
   return {
     pullEnabled: true,
     pushOnStartupEnabled,
     storageMode: 'in-memory',
     syncedAt: latestSync,
+    totalCollections: collections.length,
     totalItems,
+    totalBytes,
     collections,
     bundles,
+  };
+}
+
+export async function pullSingleContentBundleFromDb(
+  collectionKey: ContentBundleKey,
+  options?: { overrideFlag?: boolean }
+): Promise<SingleBundlePullResponse> {
+  const pullEnabled = options?.overrideFlag ?? isDbContentPullEnabled();
+
+  if (!pullEnabled) {
+    return {
+      pullEnabled: false,
+      collectionKey,
+      found: false,
+      storageMode: 'static-local',
+      meta: null,
+      payload: null,
+    };
+  }
+
+  if (isMongoConnected()) {
+    let doc = await PlatformContentBundle.findOne({ collectionKey }).lean<{
+      collectionKey: ContentBundleKey;
+      domain?: ContentDomainId;
+      label?: string;
+      schemaVersion: string;
+      checksum: string;
+      itemCount: number;
+      byteSize?: number;
+      payload?: unknown;
+      syncedAt: Date;
+    } | null>();
+
+    if (!doc) {
+      await pushPlatformContentToDb({ force: false, keys: [collectionKey] });
+      doc = await PlatformContentBundle.findOne({ collectionKey }).lean();
+    }
+
+    if (!doc) {
+      return {
+        pullEnabled: true,
+        collectionKey,
+        found: false,
+        storageMode: 'mongodb',
+        meta: null,
+        payload: null,
+      };
+    }
+
+    const def = CANONICAL_BUNDLE_DEFINITIONS[collectionKey];
+    const meta: StoredContentBundleSummary = {
+      collectionKey,
+      domain: doc.domain ?? def.domain,
+      label: doc.label || def.label,
+      schemaVersion: doc.schemaVersion,
+      checksum: doc.checksum,
+      itemCount: doc.itemCount,
+      byteSize: doc.byteSize ?? 0,
+      syncedAt: new Date(doc.syncedAt).toISOString(),
+      source: 'mongodb',
+    };
+
+    return {
+      pullEnabled: true,
+      collectionKey,
+      found: doc.payload !== null && doc.payload !== undefined,
+      storageMode: 'mongodb',
+      meta,
+      payload: doc.payload ?? null,
+    };
+  }
+
+  if (!memoryContentStore.has(collectionKey)) {
+    await pushPlatformContentToDb({ force: false, keys: [collectionKey] });
+  }
+
+  const record = memoryContentStore.get(collectionKey);
+  if (!record) {
+    return {
+      pullEnabled: true,
+      collectionKey,
+      found: false,
+      storageMode: 'in-memory',
+      meta: null,
+      payload: null,
+    };
+  }
+
+  const { payload, ...meta } = record;
+  return {
+    pullEnabled: true,
+    collectionKey,
+    found: payload !== null && payload !== undefined,
+    storageMode: 'in-memory',
+    meta,
+    payload,
   };
 }

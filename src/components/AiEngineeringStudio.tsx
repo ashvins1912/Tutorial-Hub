@@ -16,12 +16,12 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
-  AI_ENGINEERING_PHASES,
   TOTAL_AI_PHASES,
   TOTAL_AI_QUIZZES,
   type AiPhaseId,
 } from '../data/aiEngineeringData';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { AiDfdVisualizer } from './AiDfdVisualizer';
 
 interface AiEngineeringProgress {
@@ -42,6 +42,7 @@ type WorkspaceTab = 'ontology-dfd' | 'patterns' | 'lab' | 'quiz';
 type RoadmapPace = 'fast-3m' | 'deep-6m';
 
 export function AiEngineeringStudio() {
+  const { data: AI_ENGINEERING_PHASES } = useAsyncCatalog('ai-engineering-phases');
   const [progress, setProgress] = useAccountState<AiEngineeringProgress>(
     'ai-engineering-progress',
     EMPTY_AI_PROGRESS

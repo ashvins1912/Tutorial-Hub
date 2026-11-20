@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, CheckSquare, ExternalLink, GraduationCap, Square, X } from 'lucide-react';
-import { TOPIC_RESOURCES } from '../../data/academyResources';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
-import { PROBLEMS } from '../../data/problems';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 
 export function ConceptAcademyDrawer({
   open,
@@ -11,6 +10,10 @@ export function ConceptAcademyDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
+  const {
+    data: { topicResources: TOPIC_RESOURCES },
+  } = useAsyncCatalog('academy-resources');
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
   const resource =

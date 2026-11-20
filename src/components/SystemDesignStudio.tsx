@@ -41,12 +41,10 @@ import {
 } from 'lucide-react';
 import {
   evaluateSystemArchitecture,
-  SYSTEM_COMPONENTS,
-  SYSTEM_LAYERS,
-  SYSTEM_SCENARIOS,
   SystemComponentBlock,
   SystemLayerId,
 } from '../data/systemDesignData';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 interface ComponentVisualMeta {
   icon: LucideIcon;
@@ -531,6 +529,13 @@ function ProbabilisticLab() {
 }
 
 export function SystemDesignStudio() {
+  const {
+    data: {
+      scenarios: SYSTEM_SCENARIOS,
+      components: SYSTEM_COMPONENTS,
+      layers: SYSTEM_LAYERS,
+    },
+  } = useAsyncCatalog('system-design-scenarios');
   const [subTab, setSubTab] = useState<
     'playground' | 'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'
   >('playground');

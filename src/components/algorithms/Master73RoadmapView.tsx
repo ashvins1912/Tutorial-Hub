@@ -9,14 +9,13 @@ import {
   Search,
   Star,
 } from 'lucide-react';
-import { ALGORITHMS_CATALOG, AlgorithmDefinition } from '../../data/algorithmsCatalog';
+import { type AlgorithmDefinition } from '../../data/algorithmsCatalog';
 import {
-  ALGORITHM_POWER_COMBOS,
-  MASTER_73_ROADMAP,
   MASTER_73_SECTIONS,
-  Master73Item,
+  type Master73Item,
 } from '../../data/algorithmCombinationsAndRoadmap';
 import { useAccountState } from '../../hooks/useAccountState';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import type { MasteryReviewEntry } from '../shared/MasteryReviewPanel';
 import type { AlgorithmDetailTab } from '../../store/usePatternForgeStore';
 
@@ -32,6 +31,9 @@ export function Master73RoadmapView({
   implementedIds,
   onSelectAlgorithm,
 }: Master73RoadmapViewProps) {
+  const { data: ALGORITHMS_CATALOG } = useAsyncCatalog('algorithms-catalog');
+  const { data: MASTER_73_ROADMAP } = useAsyncCatalog('master-73-roadmap');
+  const { data: ALGORITHM_POWER_COMBOS } = useAsyncCatalog('algorithm-power-combos');
   const [sectionFilter, setSectionFilter] = useState<SectionFilter>('all');
   const [progressFilter, setProgressFilter] = useState<ProgressFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +50,7 @@ export function Master73RoadmapView({
       map.set(algo.id, algo);
     }
     return map;
-  }, []);
+  }, [ALGORITHMS_CATALOG]);
 
   const implementedSet = useMemo(() => new Set(implementedIds), [implementedIds]);
 

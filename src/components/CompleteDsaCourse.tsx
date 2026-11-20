@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, GraduationCap, Search } from 'lucide-react';
-import { DSA_COMPLETE_LESSONS, DSA_LESSON_STEPS, type DsaLesson } from '../data/dsaCompleteLessons';
+import { type DsaLesson } from '../data/dsaCompleteLessons';
 import { MatrixProblemBank } from './MatrixProblemBank';
 import { DpLearningLab } from './DpLearningLab';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 type SectionKey = 'concepts' | 'recognition' | 'method' | 'workedExample' | 'complexity' | 'pitfalls' | 'practice' | 'interviewChecks';
 
@@ -39,6 +40,9 @@ function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionK
 }
 
 export function CompleteDsaCourse() {
+  const {
+    data: { lessons: DSA_COMPLETE_LESSONS, steps: DSA_LESSON_STEPS },
+  } = useAsyncCatalog('dsa-complete-lessons');
   const [activeId, setActiveId] = useState(DSA_COMPLETE_LESSONS[0].id);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<SectionKey[]>(['concepts', 'recognition', 'method', 'workedExample']);
@@ -49,7 +53,7 @@ export function CompleteDsaCourse() {
     if (!q) return DSA_COMPLETE_LESSONS;
     return DSA_COMPLETE_LESSONS.filter((lesson) =>
       [lesson.title, lesson.promise, lesson.mentalModel, ...lesson.concepts, ...lesson.recognition].join(' ').toLowerCase().includes(q));
-  }, [search]);
+  }, [DSA_COMPLETE_LESSONS, search]);
   const doneCount = DSA_COMPLETE_LESSONS.filter((lesson) => (progress[lesson.id]?.length ?? 0) === DSA_LESSON_STEPS.length).length;
   const toggleStep = (step: string) => {
     const current = progress[active.id] ?? [];

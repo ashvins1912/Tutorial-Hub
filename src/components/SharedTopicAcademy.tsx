@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronRight, Code2, Eye, GraduationCap, Search, Target } from 'lucide-react';
-import { SHARED_TOPIC_LESSONS, SHARED_TOPIC_PROBLEMS, type SharedProblem } from '../data/sharedTopicAcademy';
+import { type SharedProblem } from '../data/sharedTopicAcademy';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 type Mastery = Record<string, boolean>;
 type Solved = Record<string, boolean>;
@@ -12,6 +13,9 @@ interface LeetCodeProblemDetails {
 }
 
 export function SharedTopicAcademy() {
+  const {
+    data: { lessons: SHARED_TOPIC_LESSONS, problems: SHARED_TOPIC_PROBLEMS },
+  } = useAsyncCatalog('shared-topic-academy');
   const [activeTopicId, setActiveTopicId] = useState(SHARED_TOPIC_LESSONS[0].id);
   const [activeProblem, setActiveProblem] = useState<SharedProblem | null>(null);
   const [leetcodeDetails, setLeetcodeDetails] = useState<LeetCodeProblemDetails | null>(null);
@@ -55,7 +59,7 @@ export function SharedTopicAcademy() {
   }, [activeProblem?.slug]);
 
   const topic = SHARED_TOPIC_LESSONS.find(item => item.id === activeTopicId) ?? SHARED_TOPIC_LESSONS[0];
-  const topicProblems = useMemo(() => SHARED_TOPIC_PROBLEMS.filter(problem => problem.topicId === topic.id), [topic.id]);
+  const topicProblems = useMemo(() => SHARED_TOPIC_PROBLEMS.filter(problem => problem.topicId === topic.id), [SHARED_TOPIC_PROBLEMS, topic.id]);
   const filteredProblems = topicProblems.filter(problem =>
     (!search || `${problem.title} ${problem.category} ${problem.number}`.toLowerCase().includes(search.toLowerCase()))
     && (source === 'All tracks' || problem.source === source)

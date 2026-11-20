@@ -13,11 +13,9 @@ import {
 } from 'lucide-react';
 import {
   type BankDifficulty,
-  COMPANY_PATTERN_CHEATSHEET,
-  MASTER_13_TOPIC_BANK,
-  PRODUCT_COMPANY_HIGH_YIELD,
 } from '../../data/productCompanyMasterBank';
 import { useAccountState } from '../../hooks/useAccountState';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import {
   useProblemStatusTracker,
   type ProblemDifficulty,
@@ -54,6 +52,13 @@ export const ProductCompanyMasterBankView: React.FC<ProductCompanyMasterBankView
   onAnalyzeInSolver,
   onOpenCurriculumTopic,
 }) => {
+  const {
+    data: {
+      highYield: PRODUCT_COMPANY_HIGH_YIELD,
+      master13: MASTER_13_TOPIC_BANK,
+      companyCheatsheet: COMPANY_PATTERN_CHEATSHEET,
+    },
+  } = useAsyncCatalog('product-company-bank');
   const [mode, setMode] = useState<'product-companies' | 'master-13'>('product-companies');
   const [companyFilter, setCompanyFilter] = useState<string>('All');
   const [selectedDifficulties, setSelectedDifficulties] = useState<ProblemDifficulty[]>([]);

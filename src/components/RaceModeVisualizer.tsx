@@ -16,10 +16,10 @@ import {
   Zap,
 } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
-import { PROBLEMS } from '../data/problems';
 import { CodeLanguage, ProblemDefinition, RaceFrame } from '../types/dsa';
 import { useSpeechNarrator } from '../hooks/useSpeechNarrator';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 interface SavedRaceCodeLines {
   init: string[];
@@ -629,6 +629,7 @@ function RaceReplayStudio({
 }
 
 export function RaceModeVisualizer() {
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const activeLanguage = usePatternForgeStore((s) => s.activeLanguage);
   const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);

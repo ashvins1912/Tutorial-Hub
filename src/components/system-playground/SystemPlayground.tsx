@@ -12,8 +12,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { BLUEPRINTS } from '../../data/blueprints';
 import { CATEGORY_META } from '../../data/componentCatalog';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { useSystemStore } from '../../store/useSystemStore';
 import type { ComponentType, SystemNode } from '../../types/system';
 import { AnimatedTrafficEdge } from './AnimatedTrafficEdge';
@@ -35,6 +35,8 @@ const edgeTypes: EdgeTypes = {
 function PlaygroundWorkspaceInner() {
   const reactFlowWrapper = useRef<HTMLDivElement | null>(null);
   const { screenToFlowPosition, fitView } = useReactFlow();
+  const { data: blueprintsList } = useAsyncCatalog('system-design-blueprints');
+  useAsyncCatalog('system-design-components');
 
   const nodes = useSystemStore((s) => s.nodes);
   const edges = useSystemStore((s) => s.edges);
@@ -147,7 +149,9 @@ function PlaygroundWorkspaceInner() {
     [highlightNodes, fitView],
   );
 
-  const activeBlueprint = activeBlueprintId ? BLUEPRINTS[activeBlueprintId] : null;
+  const activeBlueprint = activeBlueprintId
+    ? blueprintsList.find((bp) => bp.id === activeBlueprintId) ?? null
+    : null;
   const walkthroughSteps = activeBlueprint?.architecturalWalkthrough ?? [];
   const currentWalkthrough = walkthroughSteps[activeWalkthroughStep] ?? null;
 

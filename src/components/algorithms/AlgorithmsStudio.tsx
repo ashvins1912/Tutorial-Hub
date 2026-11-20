@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import {
   ADVANCED_ALGORITHM_CATEGORIES,
-  ALGORITHMS_CATALOG,
   ALL_PRACTICE_CHALLENGES,
   AlgorithmCategory,
   AlgorithmDefinition,
@@ -50,13 +49,13 @@ import {
   getAlgorithmCombinations,
   getAlgorithmFlowStages,
 } from '../../data/algorithmCombinationsAndRoadmap';
-import { CURATED_INTERVIEW_BANK } from '../../features/topics/data/curatedInterviewBank';
 import { PatternRecognitionDrill } from './PatternRecognitionDrill';
 import { Master73RoadmapView } from './Master73RoadmapView';
 import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
 import { CategoryMasteryHeatmap } from './CategoryMasteryHeatmap';
 import { getAlgorithmLogicBoard } from '../../data/algorithmLogicBoards';
 import { LogicBoardMathCard } from '../shared/LogicBoardMathCard';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 
 type TierFilter = 'all' | 'core' | 'advanced' | 'systems';
 type DetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
@@ -95,6 +94,8 @@ export function AlgorithmsStudio({
 }: {
   onOpenCurriculumTopic?: (topicId: string) => void;
 }) {
+  const { data: ALGORITHMS_CATALOG } = useAsyncCatalog('algorithms-catalog');
+  const { data: CURATED_INTERVIEW_BANK } = useAsyncCatalog('curated-interview-bank');
   const setActiveView = usePatternForgeStore((s) => s.setActiveView);
   const selectedAlgoId = usePatternForgeStore((s) => s.activeAlgorithmId);
   const setSelectedAlgoId = usePatternForgeStore((s) => s.setActiveAlgorithmId);

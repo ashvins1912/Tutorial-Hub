@@ -1,19 +1,17 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import type { ContentBundleKey, ContentDomainId } from '../../src/data/canonicalDataRegistry';
 
-export type ContentBundleKey =
-  | 'algorithms-catalog'
-  | 'master-73-roadmap'
-  | 'algorithm-power-combos'
-  | 'curriculum-topics'
-  | 'curated-interview-bank'
-  | 'solver-strategies';
+export type { ContentBundleKey, ContentDomainId };
 
 export interface IPlatformContentBundle extends Document {
   collectionKey: ContentBundleKey;
+  domain: ContentDomainId;
+  label: string;
   schemaVersion: string;
   checksum: string;
   itemCount: number;
-  payload: unknown[];
+  byteSize: number;
+  payload: unknown;
   syncedAt: Date;
 }
 
@@ -25,16 +23,32 @@ const PlatformContentBundleSchema = new Schema<IPlatformContentBundle>(
       unique: true,
       index: true,
     },
+    domain: {
+      type: String,
+      required: true,
+      default: 'algorithms',
+      index: true,
+    },
+    label: {
+      type: String,
+      required: true,
+      default: '',
+    },
     schemaVersion: {
       type: String,
       required: true,
-      default: '2026.1',
+      default: '2026.4',
     },
     checksum: {
       type: String,
       required: true,
     },
     itemCount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    byteSize: {
       type: Number,
       required: true,
       default: 0,

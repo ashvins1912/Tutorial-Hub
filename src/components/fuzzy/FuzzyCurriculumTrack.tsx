@@ -9,13 +9,13 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
-  FUZZY_CURRICULUM_MODULES,
   type FuzzyCurriculumModule,
   type ModuleStudioLink,
 } from '../../data/fuzzyCurriculumModules';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
 import { useSprintStore } from '../../store/useSprintStore';
 import { useAccountState } from '../../hooks/useAccountState';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 
 interface TestOutcome {
   label: string;
@@ -28,6 +28,9 @@ interface TestOutcome {
 const MODULE_STORAGE_KEY = 'patternforge_fuzzy_modules_done_v1';
 
 export function FuzzyCurriculumTrack() {
+  const {
+    data: { curriculumModules: FUZZY_CURRICULUM_MODULES },
+  } = useAsyncCatalog('ngram-fuzzy-catalog');
   const setActiveView = usePatternForgeStore((s) => s.setActiveView);
   const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
   const openArchitecture = usePatternForgeStore((s) => s.openArchitecture);

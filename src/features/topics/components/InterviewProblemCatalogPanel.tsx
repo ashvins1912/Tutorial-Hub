@@ -23,8 +23,8 @@ import {
   StatusCycleButton,
   toggleFilterValue,
 } from '../../../components/shared/ProblemFilterBar';
+import { useAsyncCatalog } from '../../../hooks/useAsyncCatalog';
 import {
-  CURATED_INTERVIEW_BANK,
   CURATED_TOPIC_OPTIONS,
   type CuratedInterviewQuestion,
   type InterviewDifficulty,
@@ -73,6 +73,7 @@ export function InterviewProblemCatalogPanel({
   onSelectCurriculumTopic,
   onOpenProblemTrainer,
 }: InterviewProblemCatalogPanelProps) {
+  const { data: CURATED_INTERVIEW_BANK } = useAsyncCatalog('curated-interview-bank');
   const [syncWithActiveTopic, setSyncWithActiveTopic] = useState(false);
   const [manualTopicId, setManualTopicId] = useState<string>('all');
   const [trackFilter, setTrackFilter] = useState<TrackFilter>('all');

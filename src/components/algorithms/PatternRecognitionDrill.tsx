@@ -10,11 +10,11 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
-  PATTERN_DRILL_SCENARIOS,
   type DrillCategory,
   type PatternDrillScenario,
 } from '../../data/patternDrillScenarios';
 import { useAccountState } from '../../hooks/useAccountState';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 
 interface PatternRecognitionDrillProps {
   onInspectAlgorithm: (algoId: string, tab?: 'mental' | 'practice') => void;
@@ -47,6 +47,7 @@ const CATEGORIES: ('All' | DrillCategory)[] = [
 export function PatternRecognitionDrill({
   onInspectAlgorithm,
 }: PatternRecognitionDrillProps) {
+  const { data: PATTERN_DRILL_SCENARIOS } = useAsyncCatalog('pattern-drill-scenarios');
   const [category, setCategory] = useState<'All' | DrillCategory>('All');
   const [difficulty, setDifficulty] = useState<'All' | 'Medium' | 'Hard'>('All');
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -64,7 +65,7 @@ export function PatternRecognitionDrill({
       if (difficulty !== 'All' && s.difficulty !== difficulty) return false;
       return true;
     });
-  }, [category, difficulty]);
+  }, [PATTERN_DRILL_SCENARIOS, category, difficulty]);
 
   const safeIdx = Math.min(currentIdx, Math.max(0, filteredScenarios.length - 1));
   const scenario: PatternDrillScenario | undefined = filteredScenarios[safeIdx];

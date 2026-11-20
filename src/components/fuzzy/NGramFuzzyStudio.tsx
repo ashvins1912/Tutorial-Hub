@@ -7,11 +7,10 @@ import {
   SkipForward,
 } from 'lucide-react';
 import {
-  NGRAM_ALGORITHMS,
-  NGRAM_STAGES,
   type NGramAlgorithmEntry,
   type NGramStageId,
 } from '../../data/ngramTaxonomy';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { computeAllSimilarityMetrics } from '../../utils/ngramEngine';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
 import { NGramVisualStage } from './NGramVisualStage';
@@ -33,6 +32,9 @@ const PRESETS = [
 ];
 
 export function NGramFuzzyStudio() {
+  const {
+    data: { algorithms: NGRAM_ALGORITHMS, stages: NGRAM_STAGES },
+  } = useAsyncCatalog('ngram-fuzzy-catalog');
   const studioMode = usePatternForgeStore((s) => s.activeNGramMode);
   const setStudioMode = usePatternForgeStore((s) => s.setActiveNGramMode);
   const storeAlgoId = usePatternForgeStore((s) => s.activeNGramAlgoId);
@@ -48,7 +50,7 @@ export function NGramFuzzyStudio() {
       if (found.defaultA) setStringA(found.defaultA);
       if (found.defaultB) setStringB(found.defaultB);
     }
-  }, [storeAlgoId]);
+  }, [storeAlgoId, NGRAM_ALGORITHMS]);
 
   // Live sandbox inputs
   const [stringA, setStringA] = useState('algorithm');
@@ -66,7 +68,7 @@ export function NGramFuzzyStudio() {
 
   const stageAlgorithms = useMemo(
     () => NGRAM_ALGORITHMS.filter((a) => a.stage === stageId),
-    [stageId]
+    [stageId, NGRAM_ALGORITHMS]
   );
 
   const algorithm: NGramAlgorithmEntry = useMemo(
@@ -74,7 +76,7 @@ export function NGramFuzzyStudio() {
       NGRAM_ALGORITHMS.find((a) => a.id === selectedAlgoId) ??
       stageAlgorithms[0] ??
       NGRAM_ALGORITHMS[0],
-    [selectedAlgoId, stageAlgorithms]
+    [selectedAlgoId, stageAlgorithms, NGRAM_ALGORITHMS]
   );
 
   const activeStageMeta = NGRAM_STAGES.find((s) => s.id === stageId) ?? NGRAM_STAGES[0];

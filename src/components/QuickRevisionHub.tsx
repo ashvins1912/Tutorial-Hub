@@ -10,12 +10,15 @@ import {
   NotebookPen,
   RefreshCw,
 } from 'lucide-react';
-import { CURRICULUM_PATTERNS } from '../data/curriculum';
-import { PROBLEMS } from '../data/problems';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { apiFetch } from '../lib/apiFetch';
 
 export function QuickRevisionHub() {
+  const {
+    data: { patterns: CURRICULUM_PATTERNS },
+  } = useAsyncCatalog('curriculum-patterns');
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
   const [cardIdx, setCardIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);

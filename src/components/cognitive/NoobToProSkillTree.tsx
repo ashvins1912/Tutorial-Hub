@@ -11,7 +11,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
-import { CURRICULUM_PATTERNS, CURRICULUM_TIERS } from '../../data/curriculum';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { RankTier } from '../../types/dsa';
 
 const RANKS: {
@@ -59,6 +59,9 @@ const RANKS: {
 ];
 
 export function NoobToProSkillTree() {
+  const {
+    data: { patterns: CURRICULUM_PATTERNS, tiers: CURRICULUM_TIERS },
+  } = useAsyncCatalog('curriculum-patterns');
   const brainProfile = usePatternForgeStore((s) => s.brainProfile);
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
   const openTopicQuiz = usePatternForgeStore((s) => s.openTopicQuiz);

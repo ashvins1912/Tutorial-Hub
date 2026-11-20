@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { CompleteDsaCourse } from './CompleteDsaCourse';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { Search, CheckCircle2, Circle, BookOpen, Target, Brain, Filter } from 'lucide-react';
-import { COMPLETE_DSA_ROADMAP, DSA_LEVELS, LESSON_FLOW, MASTERY_CHECKLIST, type DsaLevel, type DsaRoadmapTopic } from '../data/completeDsaRoadmap';
+import { type DsaLevel, type DsaRoadmapTopic } from '../data/completeDsaRoadmap';
 
 const levelStyles: Record<DsaLevel, string> = {
   Foundation: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
@@ -14,6 +15,14 @@ const levelStyles: Record<DsaLevel, string> = {
 type Progress = Record<string, { completed: boolean; gates: string[] }>;
 
 export function CompleteDsaRoadmap() {
+  const {
+    data: {
+      topics: COMPLETE_DSA_ROADMAP,
+      levels: DSA_LEVELS,
+      lessonFlow: LESSON_FLOW,
+      masteryChecklist: MASTERY_CHECKLIST,
+    },
+  } = useAsyncCatalog('complete-dsa-roadmap');
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'All' | DsaLevel>('All');
   const [activeTopicId, setActiveTopicId] = useState(COMPLETE_DSA_ROADMAP[0].id);
@@ -27,7 +36,7 @@ export function CompleteDsaRoadmap() {
       const searchable = [item.title, item.group, ...item.subtopics, ...item.recognition].join(' ').toLowerCase();
       return matchesLevel && (!q || searchable.includes(q));
     });
-  }, [query, levelFilter]);
+  }, [COMPLETE_DSA_ROADMAP, query, levelFilter]);
 
   const completedCount = Object.values(progress).filter((item) => item.completed).length;
   const persist = (next: Progress) => {

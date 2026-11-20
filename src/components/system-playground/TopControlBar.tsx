@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
-import { BLUEPRINT_LIST } from '../../data/blueprints';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { useSystemStore } from '../../store/useSystemStore';
 import { formatRps } from './iconMap';
 
@@ -48,6 +48,7 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
   isFullscreen,
   onToggleFullscreen,
 }) => {
+  const { data: BLUEPRINT_LIST } = useAsyncCatalog('system-design-blueprints');
   const activeBlueprintId = useSystemStore((s) => s.activeBlueprintId);
   const isSimulating = useSystemStore((s) => s.isSimulating);
   const baseEntryRps = useSystemStore((s) => s.baseEntryRps);

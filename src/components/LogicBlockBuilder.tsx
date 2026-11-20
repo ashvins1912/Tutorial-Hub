@@ -23,10 +23,10 @@ import {
   Wand2,
 } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
-import { PROBLEMS } from '../data/problems';
 import { CodeLanguage, LogicBlock, PipelineSlotId, ProblemDefinition } from '../types/dsa';
 import { ActiveRecallCodeEditor } from './ActiveRecallCodeEditor';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 const LEGACY_RECALL_UNLOCKED_KEY = 'patternforge_logic_recall_unlocked_v1';
 
@@ -236,6 +236,7 @@ function PipelineDropSlot({
 }
 
 export function LogicBlockBuilder() {
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
   const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);
   const activeLanguage = usePatternForgeStore((s) => s.activeLanguage);

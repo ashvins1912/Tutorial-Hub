@@ -7,7 +7,8 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { CURRICULUM_TOPICS, TOPIC_TIERS } from '../data/curriculumIndex';
+import { TOPIC_TIERS } from '../data/curriculumIndex';
+import { useAsyncCatalog } from '../../../hooks/useAsyncCatalog';
 import { fuzzySearchTopics } from '../utils/fuzzyTopicSearch';
 import type { TopicDifficultyTier } from '../types';
 
@@ -35,11 +36,15 @@ export function TopicSidebar({
   onCloseMobile,
   onCollapseDesktop,
 }: TopicSidebarProps) {
+  const { data: CURRICULUM_TOPICS } = useAsyncCatalog('curriculum-topics');
   const [query, setQuery] = useState('');
   const [collapsedTiers, setCollapsedTiers] = useState<Record<string, boolean>>({});
 
   const masteredSet = useMemo(() => new Set(masteredTopicIds), [masteredTopicIds]);
-  const searchResults = useMemo(() => fuzzySearchTopics(CURRICULUM_TOPICS, query), [query]);
+  const searchResults = useMemo(
+    () => fuzzySearchTopics(CURRICULUM_TOPICS, query),
+    [CURRICULUM_TOPICS, query]
+  );
 
   const groupedByTier = useMemo(() => {
     const map = new Map<TopicDifficultyTier, typeof searchResults>();

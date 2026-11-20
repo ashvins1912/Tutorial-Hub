@@ -18,7 +18,7 @@ import { useSprintStore } from './store/useSprintStore';
 import { useContentBootstrapStore } from './store/useContentBootstrapStore';
 import { useAuth } from './auth/AuthContext';
 import { apiFetch } from './lib/apiFetch';
-import { PROBLEMS } from './data/problems';
+import { useAsyncCatalog } from './hooks/useAsyncCatalog';
 import { BIG_TECH_36_PROBLEMS } from '../server/seed/bigTechTopicSeed';
 import { MasteryStepper } from './components/MasteryStepper';
 import { PolyaWorkflowBar } from './components/cognitive/PolyaWorkflowBar';
@@ -112,6 +112,7 @@ export default function App() {
   >('product-master');
   const [hubSubTab, setHubSubTab] = useState<HubSubTab>('notes');
 
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const activeProblem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
   const trainerProblem = activeTrainerSlug
     ? BIG_TECH_36_PROBLEMS.find((p) => p.slug === activeTrainerSlug) ?? null

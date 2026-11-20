@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowUpRight, Search } from 'lucide-react';
-import { HIGH_ROI_45_PROBLEMS, HighRoiProblemEntry } from '../data/highRoi45';
+import { type HighRoiProblemEntry } from '../data/highRoi45';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import {
   useProblemStatusTracker,
@@ -17,6 +18,7 @@ import {
 const COLLECTIONS = ['All', 'Blind 75', 'NeetCode 150', 'Grind 75', 'Sean Prashad', 'Top Interview 150'] as const;
 
 export function ProblemBank45View() {
+  const { data: HIGH_ROI_45_PROBLEMS } = useAsyncCatalog('high-roi-45');
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
   const completedProblemIds = usePatternForgeStore((s) => s.brainProfile.completedProblemIds);
   const [query, setQuery] = useState('');
@@ -34,7 +36,7 @@ export function ProblemBank45View() {
 
   const uniquePatterns = useMemo(
     () => ['All', ...Array.from(new Set(HIGH_ROI_45_PROBLEMS.map((p) => p.primaryPattern)))],
-    []
+    [HIGH_ROI_45_PROBLEMS]
   );
 
   const baseScope = useMemo(() => {
@@ -52,7 +54,7 @@ export function ProblemBank45View() {
         p.signalPhrases.some((s) => s.toLowerCase().includes(q));
       return matchesCollection && matchesPattern && matchesQuery;
     });
-  }, [collection, patternFilter, query]);
+  }, [HIGH_ROI_45_PROBLEMS, collection, patternFilter, query]);
 
   const filterCounts = useMemo(() => {
     const difficulty = { Easy: 0, Medium: 0, Hard: 0 };

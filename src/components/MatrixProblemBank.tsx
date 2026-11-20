@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Search } from 'lucide-react';
-import { MATRIX_PROBLEMS, type MatrixGroup, type MatrixLevel } from '../data/matrixProblems';
+import { type MatrixGroup, type MatrixLevel } from '../data/matrixProblems';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 const groups: Array<'All' | MatrixGroup> = ['All', 'Traversal', 'Transformation', 'Search', 'Prefix Sum', 'Grid BFS/DFS', 'Backtracking', 'Dynamic Programming', 'Optimization'];
 const levels: Array<'All' | MatrixLevel> = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
 export function MatrixProblemBank() {
+  const { data: MATRIX_PROBLEMS } = useAsyncCatalog('matrix-problems');
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState<(typeof groups)[number]>('All');
   const [level, setLevel] = useState<(typeof levels)[number]>('All');
@@ -19,7 +21,7 @@ export function MatrixProblemBank() {
   const filtered = useMemo(() => MATRIX_PROBLEMS.filter((problem) => {
     const matchesQuery = !query.trim() || [problem.title, problem.prompt, problem.approach, problem.group].join(' ').toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (group === 'All' || problem.group === group) && (level === 'All' || problem.level === level);
-  }), [query, group, level]);
+  }), [MATRIX_PROBLEMS, query, group, level]);
   const done = completed.length;
   const toggleDone = (id: string) => setCompleted((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   const toggleExpanded = (id: string) => setExpanded((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);

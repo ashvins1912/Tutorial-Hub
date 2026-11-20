@@ -1,6 +1,6 @@
 import { Check, ChevronRight } from 'lucide-react';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
-import { PROBLEMS } from '../data/problems';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 const STAGES: { id: 1 | 2 | 3 | 4 | 5; label: string; detail: string }[] = [
   { id: 1, label: '1. Read & Signals', detail: 'Big-O & Clues' },
@@ -11,6 +11,7 @@ const STAGES: { id: 1 | 2 | 3 | 4 | 5; label: string; detail: string }[] = [
 ];
 
 export function MasteryStepper() {
+  const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const currentStage = usePatternForgeStore((s) => s.currentStage);
   const setCurrentStage = usePatternForgeStore((s) => s.setCurrentStage);
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);

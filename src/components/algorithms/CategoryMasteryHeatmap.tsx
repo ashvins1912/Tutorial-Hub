@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import { ArrowRight, Flame, Grid2X2, Target } from 'lucide-react';
 import {
   ADVANCED_ALGORITHM_CATEGORIES,
-  ALGORITHMS_CATALOG,
   AlgorithmCategory,
   AlgorithmDefinition,
   CORE_ALGORITHM_CATEGORIES,
   SYSTEMS_ALGORITHM_CATEGORIES,
 } from '../../data/algorithmsCatalog';
 import { useAccountState } from '../../hooks/useAccountState';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import type { MasteryReviewEntry } from '../shared/MasteryReviewPanel';
 
 interface CategoryMasteryRow {
@@ -79,6 +79,7 @@ export function CategoryMasteryHeatmap({
   onSelectCategory,
   onSelectAlgorithm,
 }: CategoryMasteryHeatmapProps) {
+  const { data: ALGORITHMS_CATALOG } = useAsyncCatalog('algorithms-catalog');
   const [studentReviews] = useAccountState<Record<string, MasteryReviewEntry>>(
     'student-mastery-reviews-v1',
     {},

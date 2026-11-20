@@ -11,8 +11,8 @@ import {
   PlayCircle,
   Puzzle,
 } from 'lucide-react';
-import { CURRICULUM_TOPICS, getTopicById } from '../data/curriculumIndex';
 import { getCurriculumDfdGraph } from '../data/curriculumDfdBuilder';
+import { useAsyncCatalog } from '../../../hooks/useAsyncCatalog';
 import { TopicSidebar } from './TopicSidebar';
 import { TheoryMentalModelPane } from './TheoryMentalModelPane';
 import { CurriculumDfdVisualizer } from './CurriculumDfdVisualizer';
@@ -43,6 +43,7 @@ export function CurriculumWorkbench({
   onOpenAlgorithmMatcher,
   onOpenClassicLab,
 }: CurriculumWorkbenchProps) {
+  const { data: CURRICULUM_TOPICS } = useAsyncCatalog('curriculum-topics');
   const [activeTopicId, setActiveTopicId] = useState<string>(CURRICULUM_TOPICS[0].id);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -94,7 +95,8 @@ export function CurriculumWorkbench({
     }
   };
 
-  const topic = getTopicById(activeTopicId);
+  const topic =
+    CURRICULUM_TOPICS.find((t) => t.id === activeTopicId) ?? CURRICULUM_TOPICS[0];
   const isMastered = masteredIds.includes(topic.id);
 
   // Resolve DFD graph & active node dynamically from the active curriculum topic

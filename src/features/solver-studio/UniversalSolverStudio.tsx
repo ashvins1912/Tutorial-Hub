@@ -34,10 +34,7 @@ import {
   STRATEGY_META_MAP,
   matchAlgorithmsAndTopics,
 } from '../../core/engine/catalogStrategyBridge';
-import {
-  PURE_LOGIC_MODULES,
-  SAMPLE_PROBLEMS,
-} from '../../core/knowledge-base/strategiesCatalog';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import {
   buildStaticSystemProblemCatalog,
   mergeDbInterviewProblems,
@@ -112,6 +109,12 @@ export const UniversalSolverStudio: React.FC<UniversalSolverStudioProps> = ({
   externalProblem,
   onConsumeExternalProblem,
 }) => {
+  const {
+    data: {
+      pureLogicModules: PURE_LOGIC_MODULES,
+      sampleProblems: SAMPLE_PROBLEMS,
+    },
+  } = useAsyncCatalog('solver-strategies');
   const staticCatalog = useMemo(() => buildStaticSystemProblemCatalog(), []);
   const [systemCatalog, setSystemCatalog] = useState<SystemSolverProblem[]>(staticCatalog);
   const [catalogOpen, setCatalogOpen] = useState<boolean>(false);

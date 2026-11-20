@@ -13,6 +13,7 @@ import { apiFetch } from '../lib/apiFetch';
 import { usePatternForgeStore, TopView } from '../store/usePatternForgeStore';
 import type { CodeLanguage, RankTier } from '../types/dsa';
 import { MonthlyLearningResetCard } from './profile/MonthlyLearningResetCard';
+import { DbSyncInspectorCard } from './profile/DbSyncInspectorCard';
 
 interface UserPreferences {
   targetRole: string;
@@ -1532,6 +1533,9 @@ export function ProfileStatsView() {
           </section>
         </div>
       )}
+
+      {/* Unified Async Content Store & DB Sync Inspector */}
+      <DbSyncInspectorCard />
 
       {/* Account-Level Learning Reset (Strictly Once Per 30 Days) */}
       <MonthlyLearningResetCard onResetComplete={() => loadStats(true)} />

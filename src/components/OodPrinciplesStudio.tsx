@@ -17,11 +17,9 @@ import {
   Sparkles,
   XCircle,
 } from 'lucide-react';
-import { OOPS_AND_SOLID_CONCEPTS } from '../data/ood/oopsAndSolidData';
-import { PATTERNS_AND_OOD_CONCEPTS } from '../data/ood/patternsAndOodData';
-import { EXTENDED_GOF_PATTERNS } from '../data/ood/extendedPatternsData';
 import type { OodConcept, OodTrackId } from '../data/ood/oodTypes';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { OodAnimationStage } from './OodAnimationStage';
 
 const TRACK_ORDER: Record<OodTrackId, number> = {
@@ -32,12 +30,6 @@ const TRACK_ORDER: Record<OodTrackId, number> = {
   behavioral: 5,
   'ood-systems': 6,
 };
-
-const ALL_OOD_CONCEPTS: OodConcept[] = [
-  ...OOPS_AND_SOLID_CONCEPTS,
-  ...PATTERNS_AND_OOD_CONCEPTS,
-  ...EXTENDED_GOF_PATTERNS,
-].sort((a, b) => TRACK_ORDER[a.track] - TRACK_ORDER[b.track]);
 
 type StudioTab = 'visual' | 'code' | 'interview';
 type CodeLang = 'python' | 'java' | 'typescript';
@@ -111,6 +103,16 @@ function getDifficultyClasses(difficulty: OodConcept['difficulty']): string {
 }
 
 export function OodPrinciplesStudio() {
+  const { data: oodCatalog } = useAsyncCatalog('ood-principles-catalog');
+  const ALL_OOD_CONCEPTS = useMemo<OodConcept[]>(
+    () =>
+      [
+        ...oodCatalog.oopsAndSolid,
+        ...oodCatalog.patternsAndOod,
+        ...oodCatalog.extendedGof,
+      ].sort((a, b) => TRACK_ORDER[a.track] - TRACK_ORDER[b.track]),
+    [oodCatalog]
+  );
   const [masteredIds, setMasteredIds] = useAccountState<string[]>('ood-mastery-progress', []);
   const [selectedTrack, setSelectedTrack] = useState<'all' | OodTrackId>('all');
   const [searchQuery, setSearchQuery] = useState('');

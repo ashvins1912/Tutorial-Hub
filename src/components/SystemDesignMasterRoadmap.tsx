@@ -7,14 +7,9 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react';
-import {
-  CORE_ROADMAP_MODULES,
-  DISTRIBUTED_ALGORITHMS,
-  DistributedAlgoId,
-  INTERVIEW_FRAMEWORK_STEPS,
-  REASONING_QUIZ_ITEMS,
-} from '../data/systemDesignMasterRoadmapData';
+import { type DistributedAlgoId } from '../data/systemDesignMasterRoadmapData';
 import { useAccountState } from '../hooks/useAccountState';
+import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 
 type RoadmapSection = 'framework' | 'modules' | 'algorithms' | 'quiz';
 
@@ -672,6 +667,14 @@ function VectorClockComparator() {
 }
 
 export function SystemDesignMasterRoadmap() {
+  const {
+    data: {
+      coreModules: CORE_ROADMAP_MODULES,
+      distributedAlgorithms: DISTRIBUTED_ALGORITHMS,
+      frameworkSteps: INTERVIEW_FRAMEWORK_STEPS,
+      quizItems: REASONING_QUIZ_ITEMS,
+    },
+  } = useAsyncCatalog('system-design-roadmap');
   const [section, setSection] = useState<RoadmapSection>('framework');
   const [activeModuleId, setActiveModuleId] = useState(CORE_ROADMAP_MODULES[0].id);
   const [activeAlgoId, setActiveAlgoId] = useState<DistributedAlgoId>('consistent-hashing');

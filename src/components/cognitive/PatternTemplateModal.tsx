@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, Copy, FileCode2, X } from 'lucide-react';
-import { GOLDEN_PATTERN_TEMPLATES } from '../../data/academyResources';
+import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { CodeLanguage } from '../../types/dsa';
 
 export function PatternTemplateModal({
@@ -10,6 +10,9 @@ export function PatternTemplateModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const {
+    data: { goldenTemplates: GOLDEN_PATTERN_TEMPLATES },
+  } = useAsyncCatalog('academy-resources');
   const [selectedId, setSelectedId] = useState(GOLDEN_PATTERN_TEMPLATES[0].id);
   const [lang, setLang] = useState<CodeLanguage>('python');
   const [copied, setCopied] = useState(false);

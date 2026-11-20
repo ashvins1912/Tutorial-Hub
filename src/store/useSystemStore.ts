@@ -7,6 +7,10 @@ import {
 } from '@xyflow/react';
 import { BLUEPRINTS } from '../data/blueprints';
 import { COMPONENT_CATALOG_MAP } from '../data/componentCatalog';
+import {
+  selectBundleData,
+  useContentBootstrapStore,
+} from './useContentBootstrapStore';
 import { analyzeArchitecture } from '../engine/architectureJudge';
 import {
   runSimulationTick,
@@ -89,7 +93,12 @@ function cloneBlueprintGraph(blueprintId: string): {
   edges: SystemEdge[];
   recommendedEntryRps: number;
 } {
-  const bp = BLUEPRINTS[blueprintId];
+  const catalogBlueprints = selectBundleData(
+    useContentBootstrapStore.getState(),
+    'system-design-blueprints'
+  );
+  const bp =
+    catalogBlueprints.find((item) => item.id === blueprintId) ?? BLUEPRINTS[blueprintId];
   if (!bp) {
     return { nodes: [], edges: [], recommendedEntryRps: 5_000 };
   }
@@ -117,7 +126,12 @@ function createNodeInstance(
   position: { x: number; y: number },
   customLabel?: string,
 ): SystemNode {
-  const catalog = COMPONENT_CATALOG_MAP[type];
+  const catalogComponents = selectBundleData(
+    useContentBootstrapStore.getState(),
+    'system-design-components'
+  );
+  const catalog =
+    catalogComponents.find((item) => item.type === type) ?? COMPONENT_CATALOG_MAP[type];
   const uniqueId = `${type}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
   return {
     id: uniqueId,
