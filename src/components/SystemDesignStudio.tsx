@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { SystemDesignLearningAcademy as SystemDesignLearningAcademyBase } from './SystemDesignLearningAcademy';
 import { SystemDesignMasterRoadmap as SystemDesignMasterRoadmapBase } from './SystemDesignMasterRoadmap';
 import { SystemPlayground as SystemPlaygroundBase } from './system-playground/SystemPlayground';
+import { DatabaseVisualAnimator as DatabaseVisualAnimatorBase } from './database/DatabaseVisualAnimator';
+import { VISUAL_FLOW_SCENARIOS } from '../data/databaseVisualData';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
 
@@ -13,6 +15,9 @@ const SystemDesignMasterRoadmap = withStudioBoundary(SystemDesignMasterRoadmapBa
 });
 const SystemPlayground = withStudioBoundary(SystemPlaygroundBase, {
   studioName: 'Live Traffic Playground',
+});
+const DatabaseVisualAnimator = withStudioBoundary(DatabaseVisualAnimatorBase, {
+  studioName: 'Database DFD Visualization & Animations',
 });
 import {
   DndContext,
@@ -549,8 +554,9 @@ export function SystemDesignStudio() {
     },
   } = useAsyncCatalog('system-design-scenarios');
   const [subTab, setSubTab] = useState<
-    'playground' | 'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'
+    'playground' | 'roadmap' | 'db-dfd' | 'builder' | 'animations' | 'probabilistic' | 'academy'
   >('playground');
+  const [selectedDbFlowId, setSelectedDbFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
   const [scenarioId, setScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
 
   const scenario = SYSTEM_SCENARIOS.find((s) => s.id === scenarioId) ?? SYSTEM_SCENARIOS[0];
@@ -642,8 +648,10 @@ export function SystemDesignStudio() {
           ariaLabel="System Design Studio modes"
           activeTab={subTab}
           onChange={setSubTab}
+          wrap
           tabs={[
             { id: 'playground', label: 'Live Traffic Playground' },
+            { id: 'db-dfd', label: 'DB DFD & Animations', count: VISUAL_FLOW_SCENARIOS.length },
             { id: 'roadmap', label: 'Master Roadmap & Algos' },
             { id: 'builder', label: 'Tier Estimator' },
             { id: 'animations', label: 'System Animations' },
@@ -656,7 +664,16 @@ export function SystemDesignStudio() {
       {/* Mode 0: Full Interactive React Flow System Design Playground & Live Traffic Simulator */}
       {subTab === 'playground' && <SystemPlayground />}
 
+      {/* Mode 0B: Interactive Database DFD Visualizations, Animations & Plain-English Explanations */}
+      {subTab === 'db-dfd' && (
+        <DatabaseVisualAnimator
+          selectedFlowId={selectedDbFlowId}
+          onSelectFlowId={setSelectedDbFlowId}
+        />
+      )}
+
       {subTab !== 'playground' &&
+        subTab !== 'db-dfd' &&
         subTab !== 'probabilistic' &&
         subTab !== 'academy' &&
         subTab !== 'roadmap' && (

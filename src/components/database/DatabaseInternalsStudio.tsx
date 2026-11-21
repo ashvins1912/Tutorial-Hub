@@ -103,7 +103,7 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('sql-basics');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('visual-dfd');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
@@ -282,7 +282,15 @@ export function DatabaseInternalsStudio() {
             ariaLabel="Database Internals Studio workspaces"
             activeTab={activeTab}
             onChange={setActiveTab}
+            wrap
             tabs={[
+              {
+                id: 'visual-dfd',
+                label: 'Visual DFD & Animations',
+                shortLabel: 'Visual DFD',
+                count: VISUAL_FLOW_SCENARIOS.length,
+                icon: PlayCircle,
+              },
               {
                 id: 'sql-basics',
                 label: 'SQL Basics & Syntax Lab',
@@ -306,12 +314,6 @@ export function DatabaseInternalsStudio() {
                 label: 'Taxonomy, SQL & Sharding',
                 shortLabel: 'SQL & Tax.',
                 icon: Compass,
-              },
-              {
-                id: 'visual-dfd',
-                label: 'Visual DFD & Animations',
-                shortLabel: 'Visual DFD',
-                icon: PlayCircle,
               },
               {
                 id: 'concepts',

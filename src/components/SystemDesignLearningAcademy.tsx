@@ -1,6 +1,38 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Search, Target } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Database, Search, Target } from 'lucide-react';
 import { useAccountState } from '../hooks/useAccountState';
+import { DatabaseVisualAnimator } from './database/DatabaseVisualAnimator';
+
+const TOPIC_TO_DB_DFD: Record<string, string> = {
+  relational: 'query-pipeline-dfd',
+  document: 'query-pipeline-dfd',
+  'key-value': 'lsm-tree-dfd',
+  'wide-column': 'lsm-tree-dfd',
+  graph: 'query-pipeline-dfd',
+  timeseries: 'lsm-tree-dfd',
+  'search-engine': 'rls-cdc-rag-dfd',
+  'object-storage': 'rls-cdc-rag-dfd',
+  'btree-lsm': 'btree-index-visual',
+  replication: 'distributed-quorum-raft',
+  'multi-leader': 'distributed-quorum-raft',
+  'sync-async': 'mvcc-aries-dfd',
+  partitioning: 'btree-index-visual',
+  sharding: 'distributed-quorum-raft',
+  'consistent-hash': 'distributed-quorum-raft',
+  'connection-pool': 'query-pipeline-dfd',
+  normalization: 'query-pipeline-dfd',
+  '2pc-saga': 'mvcc-aries-dfd',
+  cap: 'distributed-quorum-raft',
+  pacelc: 'distributed-quorum-raft',
+  'consistency-models': 'distributed-quorum-raft',
+  'acid-base': 'mvcc-aries-dfd',
+  consensus: 'distributed-quorum-raft',
+  bloom: 'lsm-tree-dfd',
+  kafka: 'rls-cdc-rag-dfd',
+  eda: 'rls-cdc-rag-dfd',
+  cqrs: 'rls-cdc-rag-dfd',
+  'event-sourcing': 'rls-cdc-rag-dfd',
+};
 
 type Topic = {
   id: string; title: string; level: 'Foundation' | 'Intermediate' | 'Advanced';
@@ -110,6 +142,7 @@ export function SystemDesignLearningAcademy() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [activeStage, setActiveStage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedDbFlowId, setSelectedDbFlowId] = useState<string>('query-pipeline-dfd');
   const [progress, setProgress] = useAccountState<Progress>(
     'system-design-academy-progress',
     {},
@@ -117,6 +150,7 @@ export function SystemDesignLearningAcademy() {
   );
   const category = curriculum.find(c => c.id === categoryId) ?? curriculum[0];
   const topic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
+  const matchedDbFlowId = TOPIC_TO_DB_DFD[topic.id];
   const allTopics = useMemo(() => curriculum.flatMap(c => c.topics.map(x => ({...x, categoryId:c.id, categoryTitle:c.title}))), []);
   const filtered = allTopics.filter(x => (level === 'All' || x.level === level) && (x.title + ' ' + x.categoryTitle + ' ' + x.model + ' ' + x.use).toLowerCase().includes(query.toLowerCase()));
   const doneCount = allTopics.filter(x => progress[x.id]?.done).length;
@@ -128,7 +162,13 @@ export function SystemDesignLearningAcademy() {
     { id:'tradeoffs', title:'4. Stress-test trade-offs', label:'FAILURE MODES', body:topic.tradeoff, question:'What breaks first, and what is the fallback?' },
     { id:'practice', title:'5. Apply and explain', label:'HANDS-ON / INTERVIEW', body:topic.exercise + ' ' + topic.interview + ' Expected reasoning: ' + topic.answer, question:'Can you defend the design and explain its trade-offs?' },
   ];
-  useEffect(() => { setActiveStage(0); setIsPlaying(false); }, [topic.id]);
+  useEffect(() => {
+    setActiveStage(0);
+    setIsPlaying(false);
+    if (matchedDbFlowId) {
+      setSelectedDbFlowId(matchedDbFlowId);
+    }
+  }, [topic.id, matchedDbFlowId]);
   useEffect(() => {
     if (!isPlaying) return;
     const timer = window.setInterval(() => setActiveStage(current => (current + 1) % stages.length), 2600);
@@ -194,6 +234,18 @@ export function SystemDesignLearningAcademy() {
           </div>
           <div className="mt-3 flex items-center justify-between gap-2"><button type="button" onClick={()=>{setIsPlaying(false);setActiveStage(s=>(s+stages.length-1)%stages.length);}} className="rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-700">Previous stage</button><span className="text-[11px] text-slate-500">Stage {activeStage+1} of 5</span><button type="button" onClick={()=>{setIsPlaying(false);setActiveStage(s=>(s+1)%stages.length);}} className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white">Next stage</button></div>
         </section>
+        {matchedDbFlowId && (
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-sky-700 dark:text-sky-400">
+              <Database className="w-4 h-4 shrink-0" aria-hidden="true" />
+              INTERACTIVE DB DFD VISUALIZATION, ANIMATION &amp; EXPLANATION FOR {topic.title.toUpperCase()}
+            </div>
+            <DatabaseVisualAnimator
+              selectedFlowId={selectedDbFlowId}
+              onSelectFlowId={setSelectedDbFlowId}
+            />
+          </section>
+        )}
         <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/20">
           <div className="flex items-center gap-2 text-sm font-bold"><Code2 className="h-4 w-4 text-indigo-600"/> Interview checkpoint</div><p className="mt-2 text-sm leading-relaxed">{topic.interview}</p><button onClick={()=>setShowAnswer(x=>!x)} className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">{showAnswer?'Hide explanation':'Reveal expected reasoning'}</button>{showAnswer&&<p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{topic.answer}</p>}
           <div className="mt-4 border-t border-indigo-200 pt-4 dark:border-indigo-900"><div className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Apply it</div><p className="mt-2 text-sm">{topic.exercise}</p></div>

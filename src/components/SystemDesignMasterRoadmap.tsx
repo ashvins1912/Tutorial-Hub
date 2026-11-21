@@ -10,6 +10,7 @@ import {
 import { type DistributedAlgoId } from '../data/systemDesignMasterRoadmapData';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
+import { DatabaseVisualAnimator } from './database/DatabaseVisualAnimator';
 
 type RoadmapSection = 'framework' | 'modules' | 'algorithms' | 'quiz';
 
@@ -34,6 +35,18 @@ function simpleAngleHash(label: string): number {
     h = Math.imul(h, 16777619);
   }
   return Math.abs(h) % 360;
+}
+
+function EmbeddedModuleDbDfd({ initialFlowId }: { initialFlowId: string }) {
+  const [flowId, setFlowId] = useState(initialFlowId);
+  return (
+    <div className="space-y-2 pt-1">
+      <div className="text-xs font-mono font-semibold text-sky-700 dark:text-sky-400">
+        INTERACTIVE DATABASE DFD VISUALIZATION, ANIMATION &amp; EXPLANATION
+      </div>
+      <DatabaseVisualAnimator selectedFlowId={flowId} onSelectFlowId={setFlowId} />
+    </div>
+  );
 }
 
 function NetworkingDfdDiagram() {
@@ -1071,6 +1084,7 @@ export function SystemDesignMasterRoadmap() {
                   </div>
 
                   {sub.hasNetworkingDfd && <NetworkingDfdDiagram />}
+                  {sub.id === 'sql-nosql-repl' && <EmbeddedModuleDbDfd initialFlowId="distributed-quorum-raft" />}
 
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                     {sub.bullets.map((b) => (

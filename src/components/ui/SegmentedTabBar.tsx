@@ -16,13 +16,14 @@ export interface SegmentedTabBarProps<T extends string = string> {
   onChange: (tabId: T) => void;
   ariaLabel: string;
   size?: 'xs' | 'sm';
+  wrap?: boolean;
   className?: string;
 }
 
 /**
  * Reusable accessible segmented tab bar for top-level sub-tabs and inner
  * studio navigation. Guarantees single-line items, consistent dual light/dark
- * contrast, and clean horizontal scrolling on compact viewports.
+ * contrast, and clean horizontal scrolling or multi-row wrapping when requested.
  */
 export function SegmentedTabBar<T extends string>({
   tabs,
@@ -30,6 +31,7 @@ export function SegmentedTabBar<T extends string>({
   onChange,
   ariaLabel,
   size = 'sm',
+  wrap = false,
   className = '',
 }: SegmentedTabBarProps<T>) {
   const buttonPad = size === 'xs' ? 'px-2.5 py-1 text-[11px]' : 'px-3.5 py-1.5 text-xs';
@@ -38,7 +40,9 @@ export function SegmentedTabBar<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full w-fit overflow-x-auto no-scrollbar ${className}`}
+      className={`flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full ${
+        wrap ? 'flex-wrap w-full' : 'w-fit overflow-x-auto no-scrollbar'
+      } ${className}`}
     >
       {tabs.map((tab) => {
         const active = tab.id === activeTab;
