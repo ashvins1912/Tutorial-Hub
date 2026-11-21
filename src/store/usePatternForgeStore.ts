@@ -23,6 +23,7 @@ export type TopView =
   | 'system-design'
   | 'db-internals'
   | 'languages'
+  | 'full-stack'
   | 'ood'
   | 'ai-engineering'
   | 'revision'
