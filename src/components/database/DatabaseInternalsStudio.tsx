@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
+  BookOpen,
+  Code2,
   Cpu,
   Database,
+  PlayCircle,
   ShieldAlert,
   Sliders,
   Terminal,
@@ -11,28 +14,56 @@ import {
   OUTAGE_SCENARIOS,
   PRODUCTION_CHECKLIST,
 } from '../../data/databaseInternalsData';
+import {
+  ARCHITECT_CONCEPTS,
+  PRACTICE_CHALLENGES,
+  VISUAL_FLOW_SCENARIOS,
+} from '../../data/databaseVisualData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { DatabaseVisualAnimator } from './DatabaseVisualAnimator';
+import { DatabaseConceptGuide } from './DatabaseConceptGuide';
+import { DatabasePracticeWorkbench } from './DatabasePracticeWorkbench';
 import { QueryPipelinePlayground } from './QueryPipelinePlayground';
 import { ExplainAndNoSqlLab } from './ExplainAndNoSqlLab';
 import { ProductionOpsAndCapacityLab } from './ProductionOpsAndCapacityLab';
 import { ChaosDrillAndQuizLab } from './ChaosDrillAndQuizLab';
 
-type DbStudioTab = 'engine' | 'explain' | 'production' | 'chaos-quiz';
+type DbStudioTab =
+  | 'visual-dfd'
+  | 'concepts'
+  | 'practice'
+  | 'engine'
+  | 'explain'
+  | 'production'
+  | 'chaos-quiz';
 
 interface DatabaseInternalsProgress {
   solvedQuizIds: string[];
   solvedOutageIds: string[];
   completedChecklistIds: string[];
+  understoodConceptIds?: string[];
+  completedPracticeIds?: string[];
 }
 
 const DEFAULT_DB_PROGRESS: DatabaseInternalsProgress = {
   solvedQuizIds: [],
   solvedOutageIds: [],
   completedChecklistIds: [],
+  understoodConceptIds: [],
+  completedPracticeIds: [],
 };
 
+const BoundedDatabaseVisualAnimator = withStudioBoundary(DatabaseVisualAnimator, {
+  studioName: 'Visual DFD & Algorithm Animation Lab',
+});
+const BoundedDatabaseConceptGuide = withStudioBoundary(DatabaseConceptGuide, {
+  studioName: 'Technical Architect Concept Encyclopedia',
+});
+const BoundedDatabasePracticeWorkbench = withStudioBoundary(DatabasePracticeWorkbench, {
+  studioName: 'Hands-On Practice & Confidence Workbench',
+});
 const BoundedQueryPipelinePlayground = withStudioBoundary(QueryPipelinePlayground, {
   studioName: 'Query Pipeline & SQL Optimizer Playground',
 });
@@ -47,7 +78,9 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('engine');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('visual-dfd');
+  const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
+
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
     'db-internals-progress',
     DEFAULT_DB_PROGRESS,
@@ -59,64 +92,114 @@ export function DatabaseInternalsStudio() {
   const completedChecklistIds = Array.isArray(progress?.completedChecklistIds)
     ? progress.completedChecklistIds
     : [];
+  const understoodConceptIds = Array.isArray(progress?.understoodConceptIds)
+    ? progress.understoodConceptIds
+    : [];
+  const completedPracticeIds = Array.isArray(progress?.completedPracticeIds)
+    ? progress.completedPracticeIds
+    : [];
 
   const totalMilestones =
-    DATABASE_MASTERY_QUIZ.length + OUTAGE_SCENARIOS.length + PRODUCTION_CHECKLIST.length;
+    ARCHITECT_CONCEPTS.length +
+    PRACTICE_CHALLENGES.length +
+    DATABASE_MASTERY_QUIZ.length +
+    OUTAGE_SCENARIOS.length +
+    PRODUCTION_CHECKLIST.length;
   const completedMilestones =
-    solvedQuizIds.length + solvedOutageIds.length + completedChecklistIds.length;
+    understoodConceptIds.length +
+    completedPracticeIds.length +
+    solvedQuizIds.length +
+    solvedOutageIds.length +
+    completedChecklistIds.length;
   const masteryPct = Math.round((completedMilestones / Math.max(1, totalMilestones)) * 100);
 
-  const handleMarkQuizSolved = (questionId: string) => {
-    setProgress((prev) => {
-      const existing = Array.isArray(prev?.solvedQuizIds) ? prev.solvedQuizIds : [];
-      if (existing.includes(questionId)) return prev;
-      return {
-        solvedQuizIds: [...existing, questionId],
-        solvedOutageIds: Array.isArray(prev?.solvedOutageIds) ? prev.solvedOutageIds : [],
-        completedChecklistIds: Array.isArray(prev?.completedChecklistIds)
-          ? prev.completedChecklistIds
-          : [],
-      };
-    });
-  };
+  const patchProgress = useCallback(
+    (updater: (current: Required<DatabaseInternalsProgress>) => Required<DatabaseInternalsProgress>) => {
+      setProgress((prev) => {
+        const normalized: Required<DatabaseInternalsProgress> = {
+          solvedQuizIds: Array.isArray(prev?.solvedQuizIds) ? prev.solvedQuizIds : [],
+          solvedOutageIds: Array.isArray(prev?.solvedOutageIds) ? prev.solvedOutageIds : [],
+          completedChecklistIds: Array.isArray(prev?.completedChecklistIds)
+            ? prev.completedChecklistIds
+            : [],
+          understoodConceptIds: Array.isArray(prev?.understoodConceptIds)
+            ? prev.understoodConceptIds
+            : [],
+          completedPracticeIds: Array.isArray(prev?.completedPracticeIds)
+            ? prev.completedPracticeIds
+            : [],
+        };
+        return updater(normalized);
+      });
+    },
+    [setProgress]
+  );
 
-  const handleResetQuizProgress = () => {
-    setProgress((prev) => ({
-      solvedQuizIds: [],
-      solvedOutageIds: Array.isArray(prev?.solvedOutageIds) ? prev.solvedOutageIds : [],
-      completedChecklistIds: Array.isArray(prev?.completedChecklistIds)
-        ? prev.completedChecklistIds
-        : [],
-    }));
-  };
+  const handleMarkQuizSolved = useCallback(
+    (questionId: string) => {
+      patchProgress((curr) =>
+        curr.solvedQuizIds.includes(questionId)
+          ? curr
+          : { ...curr, solvedQuizIds: [...curr.solvedQuizIds, questionId] }
+      );
+    },
+    [patchProgress]
+  );
 
-  const handleMarkOutageSolved = (scenarioId: string) => {
-    setProgress((prev) => {
-      const existing = Array.isArray(prev?.solvedOutageIds) ? prev.solvedOutageIds : [];
-      if (existing.includes(scenarioId)) return prev;
-      return {
-        solvedQuizIds: Array.isArray(prev?.solvedQuizIds) ? prev.solvedQuizIds : [],
-        solvedOutageIds: [...existing, scenarioId],
-        completedChecklistIds: Array.isArray(prev?.completedChecklistIds)
-          ? prev.completedChecklistIds
-          : [],
-      };
-    });
-  };
+  const handleResetQuizProgress = useCallback(() => {
+    patchProgress((curr) => ({ ...curr, solvedQuizIds: [] }));
+  }, [patchProgress]);
 
-  const handleToggleChecklistId = (itemId: string) => {
-    setProgress((prev) => {
-      const existing = Array.isArray(prev?.completedChecklistIds) ? prev.completedChecklistIds : [];
-      const next = existing.includes(itemId)
-        ? existing.filter((id) => id !== itemId)
-        : [...existing, itemId];
-      return {
-        solvedQuizIds: Array.isArray(prev?.solvedQuizIds) ? prev.solvedQuizIds : [],
-        solvedOutageIds: Array.isArray(prev?.solvedOutageIds) ? prev.solvedOutageIds : [],
-        completedChecklistIds: next,
-      };
-    });
-  };
+  const handleMarkOutageSolved = useCallback(
+    (scenarioId: string) => {
+      patchProgress((curr) =>
+        curr.solvedOutageIds.includes(scenarioId)
+          ? curr
+          : { ...curr, solvedOutageIds: [...curr.solvedOutageIds, scenarioId] }
+      );
+    },
+    [patchProgress]
+  );
+
+  const handleToggleChecklistId = useCallback(
+    (itemId: string) => {
+      patchProgress((curr) => ({
+        ...curr,
+        completedChecklistIds: curr.completedChecklistIds.includes(itemId)
+          ? curr.completedChecklistIds.filter((id) => id !== itemId)
+          : [...curr.completedChecklistIds, itemId],
+      }));
+    },
+    [patchProgress]
+  );
+
+  const handleToggleConceptUnderstood = useCallback(
+    (conceptId: string) => {
+      patchProgress((curr) => ({
+        ...curr,
+        understoodConceptIds: curr.understoodConceptIds.includes(conceptId)
+          ? curr.understoodConceptIds.filter((id) => id !== conceptId)
+          : [...curr.understoodConceptIds, conceptId],
+      }));
+    },
+    [patchProgress]
+  );
+
+  const handleMarkPracticeSolved = useCallback(
+    (challengeId: string) => {
+      patchProgress((curr) =>
+        curr.completedPracticeIds.includes(challengeId)
+          ? curr
+          : { ...curr, completedPracticeIds: [...curr.completedPracticeIds, challengeId] }
+      );
+    },
+    [patchProgress]
+  );
+
+  const handleOpenVisualFlow = useCallback((flowId: string) => {
+    setSelectedFlowId(flowId);
+    setActiveTab('visual-dfd');
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -130,39 +213,40 @@ export function DatabaseInternalsStudio() {
                 Staff / Principal Database Engineering Studio
               </span>
               <span aria-hidden="true">·</span>
-              <span>PostgreSQL · MySQL · MongoDB · Cassandra · DynamoDB · pgvector</span>
+              <span>Visual DFD Animations · Simple English Definitions · Hands-On Practice</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
-              Database Internals, Query Optimization &amp; Production SRE Lab
+              Database Internals, Visual Architecture &amp; Practice Studio
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-6">
-              Trace queries through the 5-stage engine pipeline, tune 20M-row execution plans, simulate quorum and consistent hashing, calculate HNSW &amp; IOPS capacity, and diagnose live SEV-1 outages.
+              Learn database internals visually through animated Data Flow Diagrams, plain-English explanations paired with standard technical definitions and exact algorithms, live hands-on SQL practice labs, and SEV-1 outage simulations.
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2.5 shrink-0 min-w-[260px]">
             <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">Overall Mastery</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">Confidence Score</div>
               <div className="text-xl font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
                 {masteryPct}%
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">Quiz Score</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">Concepts Clear</div>
               <div className="text-xl font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
-                {solvedQuizIds.length}/{DATABASE_MASTERY_QUIZ.length}
+                {understoodConceptIds.length}/{ARCHITECT_CONCEPTS.length}
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">Outage Drills</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">Practice Labs</div>
               <div className="text-xl font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
-                {solvedOutageIds.length}/{OUTAGE_SCENARIOS.length}
+                {completedPracticeIds.length}/{PRACTICE_CHALLENGES.length}
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">Prod Checklist</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">Quiz &amp; Drills</div>
               <div className="text-xl font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
-                {completedChecklistIds.length}/{PRODUCTION_CHECKLIST.length}
+                {solvedQuizIds.length + solvedOutageIds.length}/
+                {DATABASE_MASTERY_QUIZ.length + OUTAGE_SCENARIOS.length}
               </div>
             </div>
           </div>
@@ -175,27 +259,47 @@ export function DatabaseInternalsStudio() {
             onChange={setActiveTab}
             tabs={[
               {
+                id: 'visual-dfd',
+                label: 'Visual DFD & Animations',
+                shortLabel: 'Visual DFD',
+                icon: PlayCircle,
+              },
+              {
+                id: 'concepts',
+                label: 'Concepts & Algorithms',
+                shortLabel: 'Concepts',
+                count: ARCHITECT_CONCEPTS.length,
+                icon: BookOpen,
+              },
+              {
+                id: 'practice',
+                label: 'Practice Lab',
+                shortLabel: 'Practice',
+                count: completedPracticeIds.length,
+                icon: Code2,
+              },
+              {
                 id: 'engine',
-                label: 'Engine Internals & SQL Optimizer',
-                shortLabel: 'Engine & SQL',
+                label: 'SQL Optimizer & Engine',
+                shortLabel: 'Optimizer',
                 icon: Cpu,
               },
               {
                 id: 'explain',
-                label: 'EXPLAIN ANALYZE & NoSQL Lab',
-                shortLabel: 'EXPLAIN Lab',
+                label: 'EXPLAIN & NoSQL',
+                shortLabel: 'EXPLAIN',
                 icon: Terminal,
               },
               {
                 id: 'production',
-                label: 'Capacity, RLS, CDC & Cheat Sheets',
-                shortLabel: 'Ops & Capacity',
+                label: 'Capacity, RLS & CDC',
+                shortLabel: 'Capacity',
                 icon: Sliders,
               },
               {
                 id: 'chaos-quiz',
-                label: 'Live Chaos Drill, Quiz & AI Tasks',
-                shortLabel: 'Chaos & Quiz',
+                label: 'Chaos Drill & Quiz',
+                shortLabel: 'Quiz',
                 count: solvedQuizIds.length + solvedOutageIds.length,
                 icon: ShieldAlert,
               },
@@ -204,7 +308,26 @@ export function DatabaseInternalsStudio() {
         </div>
       </section>
 
-      {/* Active Studio Workspace (Isolated by withStudioBoundary HOC) */}
+      {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'visual-dfd' && (
+        <BoundedDatabaseVisualAnimator
+          selectedFlowId={selectedFlowId}
+          onSelectFlowId={setSelectedFlowId}
+        />
+      )}
+      {activeTab === 'concepts' && (
+        <BoundedDatabaseConceptGuide
+          understoodConceptIds={understoodConceptIds}
+          onToggleUnderstood={handleToggleConceptUnderstood}
+          onOpenVisualFlow={handleOpenVisualFlow}
+        />
+      )}
+      {activeTab === 'practice' && (
+        <BoundedDatabasePracticeWorkbench
+          completedPracticeIds={completedPracticeIds}
+          onMarkPracticeSolved={handleMarkPracticeSolved}
+        />
+      )}
       {activeTab === 'engine' && <BoundedQueryPipelinePlayground />}
       {activeTab === 'explain' && <BoundedExplainAndNoSqlLab />}
       {activeTab === 'production' && (
