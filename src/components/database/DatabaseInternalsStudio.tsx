@@ -34,9 +34,11 @@ import { ProductionOpsAndCapacityLab } from './ProductionOpsAndCapacityLab';
 import { ChaosDrillAndQuizLab } from './ChaosDrillAndQuizLab';
 import { ConcurrencyRecoverySecurityLab } from './ConcurrencyRecoverySecurityLab';
 import { SqlBasicsPlayground } from './SqlBasicsPlayground';
+import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
 
 type DbStudioTab =
   | 'sql-basics'
+  | 'sql-intelligence'
   | 'live-labs'
   | 'taxonomy-sql'
   | 'visual-dfd'
@@ -86,6 +88,9 @@ const BoundedProductionOpsAndCapacityLab = withStudioBoundary(ProductionOpsAndCa
 });
 const BoundedSqlBasicsPlayground = withStudioBoundary(SqlBasicsPlayground, {
   studioName: 'SQL Basics, Indexing & Syntax Check Playground',
+});
+const BoundedSqlQueryIntelligenceLab = withStudioBoundary(SqlQueryIntelligenceLab, {
+  studioName: 'SQL Operators, Joins, Intelligence Engine & Compression Lab',
 });
 const BoundedConcurrencyRecoverySecurityLab = withStudioBoundary(
   ConcurrencyRecoverySecurityLab,
@@ -285,6 +290,12 @@ export function DatabaseInternalsStudio() {
                 icon: Database,
               },
               {
+                id: 'sql-intelligence',
+                label: 'SQL Joins, Fns & Optimizer',
+                shortLabel: 'SQL Intel',
+                icon: Cpu,
+              },
+              {
                 id: 'live-labs',
                 label: 'Deadlock, PITR & RLS',
                 shortLabel: 'Deadlock/PITR/RLS',
@@ -348,6 +359,7 @@ export function DatabaseInternalsStudio() {
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
       {activeTab === 'sql-basics' && <BoundedSqlBasicsPlayground />}
+      {activeTab === 'sql-intelligence' && <BoundedSqlQueryIntelligenceLab />}
       {activeTab === 'live-labs' && <BoundedConcurrencyRecoverySecurityLab />}
       {activeTab === 'taxonomy-sql' && <BoundedTaxonomyAndSqlMasteryLab />}
       {activeTab === 'visual-dfd' && (

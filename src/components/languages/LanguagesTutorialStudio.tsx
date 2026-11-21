@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   BookOpen,
   Code2,
+  Cpu,
   Languages,
   PlayCircle,
   ShieldCheck,
@@ -17,11 +18,12 @@ import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
 import { LanguageVisualAnimator } from './LanguageVisualAnimator';
+import { CollectionsConcurrencyPlayground } from './CollectionsConcurrencyPlayground';
 import { LanguageConceptGuide } from './LanguageConceptGuide';
 import { LanguagePracticeWorkbench } from './LanguagePracticeWorkbench';
 import { LanguageMasteryQuiz } from './LanguageMasteryQuiz';
 
-type LangStudioTab = 'visual-dfd' | 'concepts' | 'practice' | 'quiz';
+type LangStudioTab = 'visual-dfd' | 'collections-concurrency' | 'concepts' | 'practice' | 'quiz';
 
 interface LanguagesStudioProgress {
   understoodConceptIds: string[];
@@ -38,6 +40,12 @@ const DEFAULT_LANG_PROGRESS: LanguagesStudioProgress = {
 const BoundedLanguageVisualAnimator = withStudioBoundary(LanguageVisualAnimator, {
   studioName: 'Python 3.13+ & Java 21+ Runtime Animations',
 });
+const BoundedCollectionsConcurrencyPlayground = withStudioBoundary(
+  CollectionsConcurrencyPlayground,
+  {
+    studioName: 'Collections Internals & Multithreading Lifecycle Playground',
+  }
+);
 const BoundedLanguageConceptGuide = withStudioBoundary(LanguageConceptGuide, {
   studioName: 'Python & Java Simple English Concept Guide',
 });
@@ -151,13 +159,13 @@ export function LanguagesTutorialStudio() {
                 Modern Languages Visual Studio
               </span>
               <span aria-hidden="true">·</span>
-              <span>Python 3.13+ (Latest) &amp; Java 21+ (LTS) · Basic to Advanced</span>
+              <span>Python 3.13+ (Latest) &amp; Java 21+ (LTS) · Basics, OOP, Collections, Multithreading &amp; Concurrency</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
               Python 3.13+ &amp; Java 21+ Visual Learning Studio
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-6">
-              Master modern Python and Java from core syntax to runtime internals through animated execution diagrams, plain-English explanations paired with standard definitions, side-by-side idiom comparisons, and live syntax-checked coding labs.
+              Master modern Python and Java end-to-end—from core syntax, OOP, and Collections internals to Multithreading lifecycles, GIL/No-GIL, and Virtual Threads—through animated DFD diagrams, live interactive playgrounds, plain-English guides, and syntax-checked labs.
             </p>
           </div>
 
@@ -198,9 +206,16 @@ export function LanguagesTutorialStudio() {
             tabs={[
               {
                 id: 'visual-dfd',
-                label: 'Visual Runtime & Animations',
+                label: 'Visual DFD & Lifecycles',
                 shortLabel: 'Animations',
+                count: LANGUAGE_VISUAL_FLOWS.length,
                 icon: PlayCircle,
+              },
+              {
+                id: 'collections-concurrency',
+                label: 'Collections & Threads Lab',
+                shortLabel: 'Playground',
+                icon: Cpu,
               },
               {
                 id: 'concepts',
@@ -247,6 +262,9 @@ export function LanguagesTutorialStudio() {
           onSelectFlowId={setSelectedFlowId}
           languageFilter={languageFilter}
         />
+      )}
+      {activeTab === 'collections-concurrency' && (
+        <BoundedCollectionsConcurrencyPlayground languageFilter={languageFilter} />
       )}
       {activeTab === 'concepts' && (
         <BoundedLanguageConceptGuide

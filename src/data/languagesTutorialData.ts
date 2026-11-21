@@ -388,6 +388,192 @@ export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
     },
   },
   {
+    id: 'py-collections-internals',
+    language: 'python',
+    level: 'Intermediate',
+    category: 'Python Collections Internals',
+    shortTitle: 'dict, list & deque Memory',
+    title: 'Python Collections Lifecycle: Compact Hash Table (dict), Dynamic Array (list) & Block Deque',
+    tagline: 'See how Python 3.7+ keeps dicts insertion-ordered using 20% less RAM, why list.append is O(1) amortized, and how deque achieves O(1) head/tail pops.',
+    standardDefinition:
+      'CPython dict separates a sparse open-addressed hash-index array (`dk_indices`) from a dense insertion-ordered entries array (`dk_entries`), resolving collisions via pseudo-random perturbation probing and resizing at 2/3 load factor.',
+    algorithmName: 'Compact Open-Addressing Hash Table + Perturbation Probing + Block-Linked Deque',
+    complexity: 'dict/set lookup O(1) avg · list.append O(1) amortized · deque.popleft() O(1)',
+    nodes: [
+      { id: 'key', label: 'hash(key)', sublabel: '64-bit SipHash', x: 75, y: 120, kind: 'source' },
+      { id: 'idx', label: 'Sparse Indices', sublabel: 'mask = size - 1', x: 245, y: 68, kind: 'process' },
+      { id: 'ent', label: 'Compact Entries', sublabel: '[hash, key, val]', x: 430, y: 68, kind: 'memory' },
+      { id: 'probe', label: 'Perturb Probe', sublabel: 'Open Addressing', x: 245, y: 185, kind: 'runtime' },
+      { id: 'resize', label: 'Resize @ 2/3 Load', sublabel: 'Rehash Table 2x', x: 585, y: 120, kind: 'output' },
+    ],
+    edges: [
+      { id: 'e1', from: 'key', to: 'idx', label: 'h & mask' },
+      { id: 'e2', from: 'idx', to: 'ent', label: 'Slot Index' },
+      { id: 'e3', from: 'idx', to: 'probe', label: 'Collision' },
+      { id: 'e4', from: 'probe', to: 'ent', label: 'Empty Slot' },
+      { id: 'e5', from: 'ent', to: 'resize', label: 'Load > 66%' },
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: '1. Hash Key via Randomized SipHash',
+        plainEnglish: 'When you write `cache["user_42"] = data`, Python hashes the immutable key into a 64-bit integer and masks the low bits to pick a slot in the sparse index table.',
+        technicalDetail: 'CPython randomizes string hashes per process (PYTHONHASHSEED) using SipHash-1-3 to defeat HashDoS collision attacks in web services.',
+        activeNodeIds: ['key', 'idx'],
+        activeEdgeIds: ['e1'],
+        packetEdgeId: 'e1',
+        packetLabel: 'hash & mask',
+        metrics: [
+          { label: 'Hash Algo', value: 'SipHash-1-3' },
+          { label: 'Key Rule', value: 'Must be Hashable' },
+        ],
+      },
+      {
+        stepNumber: 2,
+        title: '2. Sparse Indices -> Compact Entries Array',
+        plainEnglish: 'Instead of storing big empty buckets everywhere, Python stores tiny 1-byte/2-byte slot numbers that point into a tightly packed entries list—keeping insertion order for free!',
+        technicalDetail: 'Split-table compact dict (PEP 412 / Python 3.6+) stores `(hash, key*, value*)` sequentially in `dk_entries`, preserving insertion order and cutting RAM by 20–25%.',
+        activeNodeIds: ['idx', 'ent'],
+        activeEdgeIds: ['e2'],
+        packetEdgeId: 'e2',
+        packetLabel: 'entry[idx]',
+        metrics: [
+          { label: 'Order Guarantee', value: 'Insertion Ordered' },
+          { label: 'RAM Savings', value: '20–25% Compact' },
+        ],
+      },
+      {
+        stepNumber: 3,
+        title: '3. Collision Resolution via Perturbation Probing',
+        plainEnglish: 'If two different keys land on the same index slot, Python jumps to a pseudo-random alternative slot using the upper bits of the hash until it finds the matching key or an empty spot.',
+        technicalDetail: 'Open addressing formula `j = ((5 * j) + 1 + perturb) & mask; perturb >>= 5` avoids primary clustering and stays CPU-cache friendly without linked-list pointers.',
+        activeNodeIds: ['idx', 'probe', 'ent'],
+        activeEdgeIds: ['e3', 'e4'],
+        packetEdgeId: 'e3',
+        packetLabel: 'perturb >>= 5',
+        metrics: [
+          { label: 'Strategy', value: 'Open Addressing' },
+          { label: 'Cache Locality', value: 'High (No Node Ptrs)' },
+        ],
+      },
+      {
+        stepNumber: 4,
+        title: '4. Dynamic Resize @ 2/3 Load (and Why deque Beats list.pop(0))',
+        plainEnglish: 'Once the dict is 2/3 full, Python allocates a larger table and re-indexes keys so lookups stay O(1). For queues, use `collections.deque` (O(1) both ends) instead of `list.pop(0)` (O(n) shift).',
+        technicalDetail: '`list` over-allocates by ~12.5% for O(1) amortized `.append()`, while `collections.deque` uses a doubly-linked list of 64-element C blocks for thread-safe O(1) `.appendleft()` / `.popleft()`.',
+        activeNodeIds: ['ent', 'resize'],
+        activeEdgeIds: ['e5'],
+        packetEdgeId: 'e5',
+        packetLabel: 'Rehash 2x',
+        metrics: [
+          { label: 'Dict Resize At', value: '66.7% (2/3) Full' },
+          { label: 'deque popleft', value: 'O(1) vs list O(n)' },
+        ],
+      },
+    ],
+    asciiDfd: {
+      level0: `[Key / Element Ops] ---> ( CPython Compact Hash & Block-Deque Engine ) ---> [O(1) Lookup & Ordered State]`,
+      level1: `[key] --(SipHash & mask)--> [Sparse dk_indices] --(idx)--> [Compact dk_entries: (h, k, v)]
+                                    |                                     |
+                              (Collision)                           (Load > 2/3)
+                                    v                                     v
+                           (Perturbation Probe)                  [Rehash & Grow Table]`,
+    },
+  },
+  {
+    id: 'py-multithreading-gil',
+    language: 'python',
+    level: 'Advanced',
+    category: 'Python Multithreading & Lifecycle',
+    shortTitle: 'Threads, GIL & Pools',
+    title: 'Python Multithreading Lifecycle: OS Threads, GIL Handoff, Lock/Queue & 3.13t Free-Threading',
+    tagline: 'Trace a Python thread from start() through GIL acquisition, I/O release, mutex contention, and true multi-core execution in ProcessPoolExecutor or 3.13t.',
+    standardDefinition:
+      'Standard CPython maps `threading.Thread` 1:1 to OS kernel threads serialized on Python bytecode by the Global Interpreter Lock (GIL, switched every 5ms or released on blocking I/O/C-extensions); Python 3.13t (PEP 703) removes the GIL for multi-core CPU threads.',
+    algorithmName: 'OS Preemptive Threading + 5ms GIL Switch Interval / PEP 703 Biased RefCounting',
+    complexity: 'I/O threads: concurrent scaling · CPU threads: 1x (GIL) vs N-core (3.13t / ProcessPool)',
+    nodes: [
+      { id: 'new', label: 'Thread NEW', sublabel: 'Thread(target=fn)', x: 75, y: 120, kind: 'source' },
+      { id: 'gil', label: 'GIL / Lock Gate', sublabel: '5ms Switch / Lock', x: 245, y: 120, kind: 'runtime' },
+      { id: 'run', label: 'RUNNING Bytecode', sublabel: 'Holds GIL (or 3.13t)', x: 425, y: 65, kind: 'process' },
+      { id: 'wait', label: 'BLOCKED / I/O Wait', sublabel: 'Releases GIL!', x: 425, y: 185, kind: 'memory' },
+      { id: 'done', label: 'TERMINATED', sublabel: 'join() Returns', x: 590, y: 120, kind: 'output' },
+    ],
+    edges: [
+      { id: 'e1', from: 'new', to: 'gil', label: 't.start()' },
+      { id: 'e2', from: 'gil', to: 'run', label: 'Acquire GIL' },
+      { id: 'e3', from: 'run', to: 'wait', label: 'I/O or Lock Wait' },
+      { id: 'e4', from: 'wait', to: 'gil', label: 'I/O Ready' },
+      { id: 'e5', from: 'run', to: 'done', label: 'Return / Exit' },
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: '1. Thread Creation -> OS Kernel Thread Start',
+        plainEnglish: 'Calling `t.start()` asks the operating system to create a real OS thread and place it in the ready queue to compete for CPU execution.',
+        technicalDetail: '`threading.Thread.start()` spawns a POSIX pthread / Windows thread. In `ThreadPoolExecutor`, worker threads are pre-spawned and pull work items from a thread-safe queue.',
+        activeNodeIds: ['new', 'gil'],
+        activeEdgeIds: ['e1'],
+        packetEdgeId: 'e1',
+        packetLabel: 'pthread_create',
+        metrics: [
+          { label: 'Thread Type', value: '1:1 OS Kernel Thread' },
+          { label: 'Pool API', value: 'ThreadPoolExecutor' },
+        ],
+      },
+      {
+        stepNumber: 2,
+        title: '2. GIL Acquisition vs. Python 3.13t Free-Threading',
+        plainEnglish: 'On standard Python, only ONE thread holds the GIL microphone to run Python bytecode at a time (switching every 5ms). On Python 3.13t (`--disable-gil`), all threads run bytecode across every core at once!',
+        technicalDetail: '`sys.getswitchinterval()` defaults to 0.005s. Even with the GIL, compound operations like `count += 1` (LOAD -> ADD -> STORE) are NOT atomic—always guard shared mutations with `threading.Lock`.',
+        activeNodeIds: ['gil', 'run'],
+        activeEdgeIds: ['e2'],
+        packetEdgeId: 'e2',
+        packetLabel: 'Execute Bytecode',
+        metrics: [
+          { label: 'GIL Interval', value: '5 ms default' },
+          { label: 'Shared State', value: 'Needs Lock / Queue' },
+        ],
+      },
+      {
+        stepNumber: 3,
+        title: '3. Blocking I/O & C-Extensions Release the GIL',
+        plainEnglish: 'Whenever a thread waits on a database, HTTP socket, disk file, or NumPy C-math, it politely drops the GIL so other threads run immediately at full speed!',
+        technicalDetail: 'C macros `Py_BEGIN_ALLOW_THREADS` / `Py_END_ALLOW_THREADS` release the GIL around blocking syscalls (`recv`, `read`, `sleep`) and C/Rust math kernels (NumPy, PyTorch).',
+        activeNodeIds: ['run', 'wait', 'gil'],
+        activeEdgeIds: ['e3', 'e4'],
+        packetEdgeId: 'e3',
+        packetLabel: 'Release GIL',
+        metrics: [
+          { label: 'I/O Speedup', value: 'High (Multi-thread)' },
+          { label: 'Safe Handoff', value: 'queue.Queue (FIFO)' },
+        ],
+      },
+      {
+        stepNumber: 4,
+        title: '4. Clean Shutdown, join() & ProcessPool for CPU Work',
+        plainEnglish: 'Once the function returns, the thread terminates and `t.join()` wakes the caller. For heavy pure-Python CPU math on standard Python, use `ProcessPoolExecutor` so each core gets its own interpreter.',
+        technicalDetail: '`with ThreadPoolExecutor() as ex:` automatically calls `shutdown(wait=True)` on exit; `ProcessPoolExecutor` bypasses the GIL via separate OS processes.',
+        activeNodeIds: ['run', 'done'],
+        activeEdgeIds: ['e5'],
+        packetEdgeId: 'e5',
+        packetLabel: 'join() Done',
+        metrics: [
+          { label: 'CPU-Bound (GIL)', value: 'ProcessPoolExecutor' },
+          { label: 'CPU-Bound (3.13t)', value: 'ThreadPoolExecutor' },
+        ],
+      },
+    ],
+    asciiDfd: {
+      level0: `[Concurrent Tasks] ---> ( Python Thread Lifecycle & GIL/No-GIL Engine ) ---> [Thread-Safe Results]`,
+      level1: `[NEW] --(start)--> (RUNNABLE / GIL Gate) --(Acquire)--> (RUNNING Bytecode) --(Exit)--> [TERMINATED]
+                              ^                                  |
+                         (I/O Ready / Notify)             (I/O / Lock.acquire / sleep)
+                              |                                  v
+                              +-------------------- [WAITING / BLOCKED (GIL Released)]`,
+    },
+  },
+  {
     id: 'java-jvm-jit-zgc',
     language: 'java',
     level: 'Basic',
@@ -658,6 +844,193 @@ export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
       level1: `[sealed Payment] --> (switch TypeSwitch) --> (Record Deconstruction) --> (when Guard) --> [Value]`,
     },
   },
+  {
+    id: 'java-collections-hashmap',
+    language: 'java',
+    level: 'Intermediate',
+    category: 'Java Collections Framework',
+    shortTitle: 'HashMap & ConcurrentMap',
+    title: 'Java Collections Lifecycle: HashMap Buckets, Red-Black Treeification & ConcurrentHashMap CAS',
+    tagline: 'Watch how Java HashMap hashes keys, handles collisions, converts long chains into O(log n) Red-Black trees at 8 nodes, and scales thread-safely via CAS.',
+    standardDefinition:
+      'Java `HashMap` stores entries in a power-of-two `Node<K,V>[]` bucket array (`loadFactor = 0.75`), upgrading colliding linked lists to balanced Red-Black trees when bucket depth reaches `TREEIFY_THRESHOLD = 8` (and table capacity >= 64). `ConcurrentHashMap` locks only the head node of an individual bucket via CAS + fine-grained `synchronized`.',
+    algorithmName: 'Bit-Spread Hashing + Chained Buckets -> Red-Black Treeify (8) + Per-Bin CAS Locking',
+    complexity: 'Lookup O(1) avg · Worst-case collision O(log n) via RB-Tree · Resize 2x @ 0.75 load',
+    nodes: [
+      { id: 'hash', label: 'hashCode() Spread', sublabel: 'h ^ (h >>> 16)', x: 75, y: 120, kind: 'source' },
+      { id: 'bucket', label: 'Bucket Array [n]', sublabel: '(n - 1) & hash', x: 245, y: 120, kind: 'memory' },
+      { id: 'list', label: 'Linked List Bin', sublabel: 'Nodes < 8', x: 425, y: 65, kind: 'process' },
+      { id: 'tree', label: 'Red-Black Tree', sublabel: 'Treeify @ >= 8', x: 425, y: 185, kind: 'runtime' },
+      { id: 'cas', label: 'CAS / Resize 2x', sublabel: 'Load > 0.75 / CHM', x: 590, y: 120, kind: 'output' },
+    ],
+    edges: [
+      { id: 'e1', from: 'hash', to: 'bucket', label: 'Bucket Idx' },
+      { id: 'e2', from: 'bucket', to: 'list', label: 'Chain Node' },
+      { id: 'e3', from: 'list', to: 'tree', label: 'Len >= 8' },
+      { id: 'e4', from: 'list', to: 'cas', label: 'Size > 0.75n' },
+      { id: 'e5', from: 'tree', to: 'cas', label: 'O(log n) Op' },
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: '1. Hash Bit-Spreading & Fast Power-of-2 Index',
+        plainEnglish: 'Java mixes the upper 16 bits of `key.hashCode()` into the lower 16 bits so similar keys spread evenly across buckets, then uses a super-fast bitwise AND to pick the bucket slot.',
+        technicalDetail: '`int h = key.hashCode(); int spread = h ^ (h >>> 16); int idx = (n - 1) & spread;` avoids slow modulo division because capacity `n` is always a power of 2 (default 16).',
+        activeNodeIds: ['hash', 'bucket'],
+        activeEdgeIds: ['e1'],
+        packetEdgeId: 'e1',
+        packetLabel: '(n-1) & h',
+        metrics: [
+          { label: 'Default Cap', value: '16 buckets' },
+          { label: 'Key Contract', value: 'equals() + hashCode()' },
+        ],
+      },
+      {
+        stepNumber: 2,
+        title: '2. Empty Slot vs. Collision Chaining',
+        plainEnglish: 'If the bucket is empty, the entry drops right in (O(1)). If another key shares that bucket, Java chains them as a tiny linked list and checks `.equals()` on each node.',
+        technicalDetail: 'In `ConcurrentHashMap`, inserting into an empty bucket uses a lock-free `VarHandle`/`Unsafe` Compare-And-Swap (CAS) instruction—zero OS lock overhead!',
+        activeNodeIds: ['bucket', 'list'],
+        activeEdgeIds: ['e2'],
+        packetEdgeId: 'e2',
+        packetLabel: 'Bin Node',
+        metrics: [
+          { label: 'Empty Insert', value: 'O(1) / Lock-Free CAS' },
+          { label: 'CHM Reads', value: 'Volatile Lock-Free' },
+        ],
+      },
+      {
+        stepNumber: 3,
+        title: '3. Treeification Guard: LinkedList -> Red-Black Tree @ 8',
+        plainEnglish: 'If 8+ colliding keys pile into one bucket (e.g., bad hash or attack), Java automatically upgrades that bucket into a balanced Red-Black tree so lookups never degrade to slow O(n)!',
+        technicalDetail: 'When bin count hits `TREEIFY_THRESHOLD = 8` and table size >= `MIN_TREEIFY_CAPACITY = 64`, `treeifyBin()` converts nodes into `TreeNode`, guaranteeing O(log n) worst-case lookup (and untreeifies back to list at <= 6).',
+        activeNodeIds: ['list', 'tree'],
+        activeEdgeIds: ['e3'],
+        packetEdgeId: 'e3',
+        packetLabel: 'Treeify(8)',
+        metrics: [
+          { label: 'Treeify At', value: '8 nodes (cap >= 64)' },
+          { label: 'Worst-Case', value: 'O(log n) Protected' },
+        ],
+      },
+      {
+        stepNumber: 4,
+        title: '4. 2x Resizing @ 0.75 Load & ConcurrentHashMap Scaling',
+        plainEnglish: 'When 75% of buckets fill up, Java doubles the array and cleanly splits every bucket into either its same index (`lo`) or `index + oldCap` (`hi`) without recomputing `hashCode()`.',
+        technicalDetail: 'Bit test `(e.hash & oldCap) == 0` splits chains in O(n) total time. Under multi-threading, `ConcurrentHashMap` lets multiple threads help transfer buckets concurrently during resize.',
+        activeNodeIds: ['list', 'tree', 'cas'],
+        activeEdgeIds: ['e4', 'e5'],
+        packetEdgeId: 'e4',
+        packetLabel: 'Resize 2x',
+        metrics: [
+          { label: 'Load Factor', value: '0.75 default' },
+          { label: 'Thread-Safe', value: 'ConcurrentHashMap' },
+        ],
+      },
+    ],
+    asciiDfd: {
+      level0: `[put(K,V) / get(K)] ---> ( Java HashMap / ConcurrentHashMap Engine ) ---> [O(1) Value / Atomic Update]`,
+      level1: `[Key] --(h ^ h>>>16)--> [Bucket Table n] --(empty)--> [CAS Insert O(1)]
+                                    |
+                               (Collision)
+                                    v
+                            [LinkedList < 8] --(>= 8 & n>=64)--> [Red-Black Tree O(log n)]`,
+    },
+  },
+  {
+    id: 'java-thread-lifecycle-concurrency',
+    language: 'java',
+    level: 'Advanced',
+    category: 'Java Multithreading & Lifecycle',
+    shortTitle: 'Thread States & Pools',
+    title: 'Java Thread Lifecycle (Thread.State FSM), ThreadPoolExecutor Queueing & CompletableFuture',
+    tagline: 'Master all 6 official JVM Thread.State transitions (NEW -> RUNNABLE -> BLOCKED / WAITING / TIMED_WAITING -> TERMINATED) and ThreadPoolExecutor sizing.',
+    standardDefinition:
+      'Every Java `Thread` progresses through 6 canonical `Thread.State` values defined by the JVM (`NEW`, `RUNNABLE`, `BLOCKED`, `WAITING`, `TIMED_WAITING`, `TERMINATED`). Production workloads submit tasks to bounded `ThreadPoolExecutor` / `ForkJoinPool` executors or compose non-blocking DAGs via `CompletableFuture`.',
+    algorithmName: 'JVM 6-State Thread FSM + Bounded Queue-First ThreadPoolExecutor + Async DAG',
+    complexity: 'Core Pool -> Queue -> Max Pool -> RejectPolicy · Safe Handoff via Happens-Before',
+    nodes: [
+      { id: 'new', label: 'NEW', sublabel: 'new Thread()', x: 75, y: 120, kind: 'source' },
+      { id: 'run', label: 'RUNNABLE', sublabel: 'Ready / On CPU', x: 245, y: 120, kind: 'runtime' },
+      { id: 'blk', label: 'BLOCKED', sublabel: 'Monitor Lock Wait', x: 425, y: 52, kind: 'memory' },
+      { id: 'wait', label: 'WAITING / TIMED', sublabel: 'wait/join/sleep/park', x: 425, y: 188, kind: 'process' },
+      { id: 'term', label: 'TERMINATED', sublabel: 'run() Finished', x: 590, y: 120, kind: 'output' },
+    ],
+    edges: [
+      { id: 'e1', from: 'new', to: 'run', label: 'start()' },
+      { id: 'e2', from: 'run', to: 'blk', label: 'synchronized wait' },
+      { id: 'e3', from: 'blk', to: 'run', label: 'Lock Acquired' },
+      { id: 'e4', from: 'run', to: 'wait', label: 'wait / sleep / park' },
+      { id: 'e5', from: 'wait', to: 'run', label: 'notify / timeout' },
+      { id: 'e6', from: 'run', to: 'term', label: 'Complete / Throw' },
+    ],
+    steps: [
+      {
+        stepNumber: 1,
+        title: '1. NEW -> RUNNABLE via start() (Never call run() Directly!)',
+        plainEnglish: 'Creating `new Thread(task)` only allocates a Java object in state `NEW`. Calling `.start()` registers it with the scheduler as `RUNNABLE` (either queued for CPU or actively executing).',
+        technicalDetail: 'Calling `t.run()` directly executes synchronously on the caller thread! Inside `ThreadPoolExecutor`, incoming tasks fill `corePoolSize` first, then enqueue in `BlockingQueue`, and only grow to `maxPoolSize` if the queue is FULL.',
+        activeNodeIds: ['new', 'run'],
+        activeEdgeIds: ['e1'],
+        packetEdgeId: 'e1',
+        packetLabel: 't.start()',
+        metrics: [
+          { label: 'JVM State', value: 'NEW -> RUNNABLE' },
+          { label: 'Pool Trap', value: 'Queue fills BEFORE maxPool' },
+        ],
+      },
+      {
+        stepNumber: 2,
+        title: '2. RUNNABLE <-> BLOCKED (Monitor Lock Contention)',
+        plainEnglish: 'When Thread B tries to enter a `synchronized` block currently owned by Thread A, Thread B enters `BLOCKED` until Thread A exits the block and releases the monitor lock.',
+        technicalDetail: '`BLOCKED` specifically denotes waiting to acquire an intrinsic monitor lock (`monitorenter`). Waiting on a `ReentrantLock` uses `LockSupport.park()`, placing the thread in `WAITING` instead!',
+        activeNodeIds: ['run', 'blk'],
+        activeEdgeIds: ['e2', 'e3'],
+        packetEdgeId: 'e2',
+        packetLabel: 'Monitor Contention',
+        metrics: [
+          { label: 'State Trigger', value: 'synchronized entry' },
+          { label: 'Avoid Deadlock', value: 'Consistent lock order' },
+        ],
+      },
+      {
+        stepNumber: 3,
+        title: '3. RUNNABLE <-> WAITING / TIMED_WAITING (Coordination & Sleep)',
+        plainEnglish: 'When a thread pauses for a signal (`Object.wait()`, `LockSupport.park()`, `Future.get()`, `CountDownLatch.await()`) or a timer (`Thread.sleep(ms)`), it yields the CPU cleanly without spinning.',
+        technicalDetail: '`wait()` releases the monitor lock and waits for `notifyAll()` (always check the predicate inside a `while` loop to guard against spurious wakeups). `Thread.sleep()` keeps any held locks!',
+        activeNodeIds: ['run', 'wait'],
+        activeEdgeIds: ['e4', 'e5'],
+        packetEdgeId: 'e4',
+        packetLabel: 'park() / sleep()',
+        metrics: [
+          { label: 'wait() Loop', value: 'Always while (!cond)' },
+          { label: 'Async Compose', value: 'CompletableFuture' },
+        ],
+      },
+      {
+        stepNumber: 4,
+        title: '4. RUNNABLE -> TERMINATED & Clean Pool Shutdown',
+        plainEnglish: 'Once `run()` finishes normally or throws an uncaught exception, the thread becomes `TERMINATED` permanently and cannot be restarted.',
+        technicalDetail: 'Use `try (var pool = Executors.newFixedThreadPool(8))` (Java 19+ `AutoCloseable` `ExecutorService`) or `shutdown()` + `awaitTermination()` so in-flight requests drain gracefully.',
+        activeNodeIds: ['run', 'term'],
+        activeEdgeIds: ['e6'],
+        packetEdgeId: 'e6',
+        packetLabel: 'TERMINATED',
+        metrics: [
+          { label: 'Restartable?', value: 'No (IllegalThreadState)' },
+          { label: 'Java 21 Drain', value: 'try-with-resources Pool' },
+        ],
+      },
+    ],
+    asciiDfd: {
+      level0: `[Submitted Runnables / Callables] ---> ( JVM Thread FSM & ExecutorService ) ---> [Completed Futures]`,
+      level1: `[NEW] --(start)--> [RUNNABLE] --(synchronized lock busy)--> [BLOCKED] --(lock free)--> [RUNNABLE]
+                             |  ^                                                             |
+            (wait/park/sleep)|  |(notifyAll/unpark/timeout)                            (run() exits)
+                             v  |                                                             v
+                   [WAITING / TIMED_WAITING]                                           [TERMINATED]`,
+    },
+  },
 ];
 
 export const LANGUAGE_CONCEPTS: LanguageConcept[] = [
@@ -882,6 +1255,207 @@ buf = bytearray(b"HEADER:PAYLOAD_DATA")
 payload_view = memoryview(buf)[7:]  # Zero-copy O(1) view`,
     relatedFlowId: 'py-memory-gc',
   },
+  {
+    id: 'py-functions-closures-legb',
+    language: 'python',
+    versionTag: 'Python 3.13+',
+    level: 'Basic',
+    category: 'Core Foundations',
+    title: 'Functions, *args/**kwargs, Keyword-Only Params & Closures (LEGB Scope)',
+    simpleEnglish:
+      'Python functions are first-class objects you can pass around like numbers. Closures let inner functions remember variables from their outer scope using the LEGB lookup rule (Local -> Enclosing -> Global -> Built-in).',
+    standardDefinition:
+      'CPython resolves names via LEGB scope rules, captures enclosing free variables in `cell` objects (`__closure__`), and supports positional-only (`/`) and keyword-only (`*`) API boundaries (PEP 570).',
+    realWorldApplication:
+      'Building clean SDK/API signatures where boolean flags must be passed by name, writing factory functions, callbacks, and stateful decorators.',
+    runtimeAndComplexity: 'Local (`LOAD_FAST`) & closure (`LOAD_DEREF`) lookup O(1) array index · Global lookup O(1) dict hash',
+    commonTrap: 'Creating closures inside a `for` loop (`[lambda: i for i in range(3)]`)—every lambda captures the SAME final value `2` due to late binding!',
+    clearSolution: 'Bind the loop variable as a default argument (`lambda i=i: i`) or use `functools.partial`, and declare `nonlocal` when mutating an enclosing variable.',
+    codeExample: `def make_rate_limiter(max_calls: int, *, window_sec: float = 60.0):
+    count = 0
+
+    def allow() -> bool:
+        nonlocal count  # Rebinds enclosing LEGB cell variable
+        if count >= max_calls:
+            return False
+        count += 1
+        return True
+
+    return allow
+
+# Keyword-only '*' enforces clear call sites:
+limiter = make_rate_limiter(3, window_sec=10.0)
+print(limiter(), limiter())  # True True`,
+    relatedFlowId: 'py-execution-jit',
+  },
+  {
+    id: 'py-oop-mro-abc',
+    language: 'python',
+    versionTag: 'Python 3.13+',
+    level: 'Basic',
+    category: 'OOP & Design',
+    title: 'OOP in Python: Classes, Dunder Methods, C3 MRO Inheritance & ABCs',
+    simpleEnglish:
+      'Classes bundle data and behavior. Special double-underscore ("dunder") methods like `__repr__`, `__len__`, and `__eq__` let your custom objects behave like native Python lists and numbers.',
+    standardDefinition:
+      'Python supports single and multiple inheritance resolved deterministically by the C3 Linearization Method Resolution Order (`Class.__mro__`). `abc.ABC` + `@abstractmethod` enforces interface contracts at instantiation time.',
+    realWorldApplication:
+      'Designing plugin architectures, custom domain value objects with operator overloading, and clean mixin hierarchies in Django/FastAPI.',
+    runtimeAndComplexity: 'Attribute/method lookup caches MRO slots via PEP 659 inline caches (O(1) hot path)',
+    commonTrap: 'Calling parent `__init__` directly (`Parent.__init__(self)`) in multiple inheritance, causing diamond parents to run twice instead of cooperating via `super()`.',
+    clearSolution: 'Always delegate via cooperative `super().__init__(**kwargs)`, define `__repr__` for debugging, and prefer composition or `Protocol` over deep inheritance trees.',
+    codeExample: `from abc import ABC, abstractmethod
+
+class StorageBackend(ABC):
+    @abstractmethod
+    def save(self, key: str, payload: bytes) -> None: ...
+
+class InMemoryStorage(StorageBackend):
+    def __init__(self) -> None:
+        self._store: dict[str, bytes] = {}
+
+    def save(self, key: str, payload: bytes) -> None:
+        self._store[key] = payload
+
+    def __len__(self) -> int:
+        return len(self._store)  # Enables len(storage)`,
+    relatedFlowId: 'py-memory-gc',
+  },
+  {
+    id: 'py-collections-advanced',
+    language: 'python',
+    versionTag: 'Python 3.13+',
+    level: 'Intermediate',
+    category: 'Collections & Data Structures',
+    title: 'Advanced Collections: deque, Counter, defaultdict, ChainMap & heapq',
+    simpleEnglish:
+      'Beyond plain `list` and `dict`, Python’s standard library ships high-speed specialized structures: `deque` for O(1) queues/sliding windows, `Counter` for instant tallies, `defaultdict` for grouping, and `heapq` for priority queues.',
+    standardDefinition:
+      '`collections.deque` implements a bounded or unbounded doubly-linked block queue (O(1) ends); `Counter` is a multiset `dict` subclass with `.most_common(k)`; `heapq` maintains a binary min-heap in-place on a `list` (O(log n) push/pop).',
+    realWorldApplication:
+      'Sliding-window rate limiters (`deque(maxlen=N)`), log error aggregation (`Counter`), inverted indexes (`defaultdict(list)`), and job priority schedulers (`heapq`).',
+    runtimeAndComplexity: 'deque append/pop both ends O(1) · heapq push/pop O(log n) · Counter.most_common(k) O(n log k)',
+    commonTrap: 'Using `list.pop(0)` in a BFS or worker queue—shifting every remaining element makes a 100k-item queue take O(n^2) time!',
+    clearSolution: 'Always use `collections.deque` for FIFO queues/sliding windows and `heapq` for Top-K or priority scheduling.',
+    codeExample: `from collections import Counter, defaultdict, deque
+import heapq
+
+window: deque[int] = deque(maxlen=3)  # Auto-evicts oldest in O(1)
+for ms in (12, 18, 45, 22):
+    window.append(ms)  # deque([18, 45, 22])
+
+counts = Counter(["err", "ok", "err", "timeout", "err"])
+top_event = counts.most_common(1)  # [('err', 3)]
+
+by_region: defaultdict[str, list[str]] = defaultdict(list)
+by_region["us-east"].append("node-1")
+
+pq: list[tuple[int, str]] = []
+heapq.heappush(pq, (1, "critical_alert"))
+priority, task = heapq.heappop(pq)  # O(log n) min-heap`,
+    relatedFlowId: 'py-collections-internals',
+  },
+  {
+    id: 'py-exceptions-groups',
+    language: 'python',
+    versionTag: 'Python 3.11–3.13+',
+    level: 'Intermediate',
+    category: 'Error Handling & Resilience',
+    title: 'Structured Exceptions: try/except/else/finally, Chaining & except* (PEP 654)',
+    simpleEnglish:
+      'Put only the risky line inside `try:`, run success logic in `else:`, and guarantee cleanup in `finally:`. When multiple concurrent tasks fail at once, Python 3.11+ lets you catch each error type cleanly with `except*`.',
+    standardDefinition:
+      'Python separates EAFP (`try/except/else/finally`) exception flows, explicit cause chaining (`raise DomainError(...) from err`), and `ExceptionGroup` + `except*` (PEP 654) for splitting concurrent failures.',
+    realWorldApplication:
+      'Wrapping low-level DB/HTTP errors into clean API domain exceptions without losing the original stack trace, and handling partial failures inside `asyncio.TaskGroup`.',
+    runtimeAndComplexity: 'Zero-cost `try` blocks in Python 3.11+ (no runtime overhead when no exception is raised!)',
+    commonTrap: 'Writing bare `except:` or `except Exception: pass`—this silently hides bugs, keyboard interrupts (`Ctrl+C`), and crashes.',
+    clearSolution: 'Catch specific exception classes, preserve root causes with `raise CustomError(...) from exc`, and use `except*` for `TaskGroup` errors.',
+    codeExample: `class PaymentDeclinedError(Exception):
+    pass
+
+def charge(raw_amount: str) -> float:
+    try:
+        amount = float(raw_amount)
+    except ValueError as err:
+        raise PaymentDeclinedError("Invalid numeric amount") from err
+    else:
+        return round(amount, 2)
+
+# Handling concurrent ExceptionGroup (Python 3.11+):
+try:
+    raise ExceptionGroup("batch", [ValueError("bad id"), TimeoutError("slow")])
+except* ValueError as eg:
+    print("Validation failures:", len(eg.exceptions))
+except* TimeoutError as eg:
+    print("Retryable timeouts:", len(eg.exceptions))`,
+    relatedFlowId: 'py-asyncio-loop',
+  },
+  {
+    id: 'py-multithreading-sync',
+    language: 'python',
+    versionTag: 'Python 3.13+',
+    level: 'Advanced',
+    category: 'Multithreading & Concurrency',
+    title: 'Multithreading: Thread, Lock, RLock, Condition, Event, queue.Queue & ThreadPoolExecutor',
+    simpleEnglish:
+      'Multiple Python threads share the same memory space and are great for running blocking I/O (DB queries, file reads, SDK calls) concurrently. Always protect shared writes with a `Lock` or pass data safely through `queue.Queue`.',
+    standardDefinition:
+      'Python’s `threading` module wraps OS native threads with synchronization primitives (`Lock`, `RLock`, `Semaphore`, `Event`, `Condition`, `Barrier`) and `queue.Queue` (internally lock-protected FIFO/Priority queues) orchestrated by `concurrent.futures.ThreadPoolExecutor`.',
+    realWorldApplication:
+      'Parallelizing synchronous libraries (`boto3`, `psycopg`, legacy SOAP/REST clients), producer-consumer background log flushers, and multi-core CPU pools on Python 3.13t.',
+    runtimeAndComplexity: 'OS thread ~1–8 MB stack · Context switch ~1–5 us · `queue.Queue` O(1) thread-safe put/get',
+    commonTrap: 'Incrementing shared counters (`total += 1`) across threads without a `threading.Lock`—the GIL can switch between `LOAD` and `STORE`, silently losing updates!',
+    clearSolution: 'Protect every shared mutation with `with lock:`, or better yet, decouple threads with message passing via `queue.Queue` and `ThreadPoolExecutor`.',
+    codeExample: `import queue
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+lock = threading.Lock()
+processed = 0
+jobs: queue.Queue[str] = queue.Queue(maxsize=100)
+
+def worker(job_id: str) -> str:
+    global processed
+    # Simulate blocking I/O (releases GIL!)
+    with lock:
+        processed += 1
+    return f"done:{job_id}"
+
+with ThreadPoolExecutor(max_workers=8) as pool:
+    results = list(pool.map(worker, ["a", "b", "c", "d"]))`,
+    relatedFlowId: 'py-multithreading-gil',
+  },
+  {
+    id: 'py-multiprocessing-ipc',
+    language: 'python',
+    versionTag: 'Python 3.13+',
+    level: 'Advanced',
+    category: 'Multithreading & Concurrency',
+    title: 'Multiprocessing, ProcessPoolExecutor & SharedMemory for CPU-Bound Parallelism',
+    simpleEnglish:
+      'On standard GIL-enabled Python, threads cannot speed up pure-Python number crunching. `ProcessPoolExecutor` launches separate Python processes—one per CPU core—giving true parallel speedup!',
+    standardDefinition:
+      '`multiprocessing` and `concurrent.futures.ProcessPoolExecutor` spawn isolated OS processes with independent Python interpreters and GILs, communicating via pickle IPC pipes or zero-copy `multiprocessing.shared_memory.SharedMemory`.',
+    realWorldApplication:
+      'Image/PDF batch processing, feature engineering, cryptography, video transcoding orchestration, and parallel Monte Carlo simulations.',
+    runtimeAndComplexity: 'True N-core CPU scaling · Startup/IPC cost higher than threads (batch work into coarse chunks)',
+    commonTrap: 'Forgetting `if __name__ == "__main__":` on macOS/Windows (`spawn` start method), causing infinite recursive process spawning, or pickling giant 500 MB arrays per task.',
+    clearSolution: 'Guard entrypoints with `if __name__ == "__main__":`, pass chunked batches (`chunksize`), or share large buffers via `SharedMemory` (or migrate to Python 3.13t No-GIL).',
+    codeExample: `from concurrent.futures import ProcessPoolExecutor
+
+def count_primes(limit: int) -> int:
+    return sum(
+        1 for n in range(2, limit)
+        if all(n % d != 0 for d in range(2, int(n ** 0.5) + 1))
+    )
+
+if __name__ == "__main__":
+    with ProcessPoolExecutor() as pool:
+        # Runs in parallel across all CPU cores (independent GILs)
+        totals = list(pool.map(count_primes, [20_000] * 4))`,
+    relatedFlowId: 'py-multithreading-gil',
+  },
 
   // JAVA 21+ (BASIC -> ADVANCED)
   {
@@ -1083,6 +1657,194 @@ try (Arena arena = Arena.ofConfined()) {
 } // Off-heap native memory freed deterministically right here!`,
     relatedFlowId: 'java-jvm-jit-zgc',
   },
+  {
+    id: 'java-oop-generics-pecs',
+    language: 'java',
+    versionTag: 'Java 21 LTS',
+    level: 'Basic',
+    category: 'OOP & Type System',
+    title: 'OOP Foundations, Interfaces, Polymorphism & Generics Wildcards (PECS)',
+    simpleEnglish:
+      'Java organizes code into strongly typed classes and interfaces. Generics (`List<T>`) catch type errors at compile time, and the PECS rule ("Producer Extends, Consumer Super") makes generic APIs flexible and safe.',
+    standardDefinition:
+      'Java enforces single class inheritance with multiple interface implementation (including `default` and `private` interface methods). Generics are invariant (`List<Integer>` is not a `List<Number>`) with compile-time type erasure and bounded wildcards (`? extends T`, `? super T`).',
+    realWorldApplication:
+      'Designing reusable Spring repositories (`Repository<T, ID>`), type-safe utility libraries (`Collections.copy`), and clean hexagonal domain interfaces.',
+    runtimeAndComplexity: 'Zero runtime generic overhead (erased to bounds) · Monomorphic virtual calls inlined by C2 JIT',
+    commonTrap: 'Using raw types (`List items = new ArrayList()`) or trying to insert elements into a `List<? extends Number>` (fails compile because the exact subtype is unknown).',
+    clearSolution: 'Remember PECS: read from `List<? extends T>` (Producer), write into `List<? super T>` (Consumer), and prefer interfaces (`List`, `Map`) over concrete types in method signatures.',
+    codeExample: `interface DiscountPolicy {
+    double apply(double price);
+    default String label() { return "standard"; }
+}
+
+// PECS: Producer Extends (read), Consumer Super (write)
+static <T> void copyAll(List<? extends T> src, List<? super T> dest) {
+    for (T item : src) {
+        dest.add(item);
+    }
+}`,
+    relatedFlowId: 'java-jvm-jit-zgc',
+  },
+  {
+    id: 'java-collections-framework',
+    language: 'java',
+    versionTag: 'Java 21 LTS',
+    level: 'Intermediate',
+    category: 'Collections & Data Structures',
+    title: 'Java Collections Framework: ArrayList, HashMap, TreeMap, ArrayDeque & PriorityQueue',
+    simpleEnglish:
+      'Picking the right Java collection makes code 10x faster: `ArrayList` for indexed lists, `HashMap` for O(1) key lookups, `LinkedHashMap` for insertion/LRU order, `TreeMap` for sorted range queries, and `ArrayDeque` for stacks/queues.',
+    standardDefinition:
+      'The Java Collections Framework separates `Collection` (`List`, `Set`, `Queue`/`Deque`) and `Map`. `ArrayList` grows 1.5x; `HashMap` hashes with RB-tree collision protection at 8 nodes; `TreeMap` is a Red-Black BST; `ArrayDeque` is a cache-friendly circular ring buffer.',
+    realWorldApplication:
+      'Caching (`LinkedHashMap`), rate-limit time buckets (`TreeMap.subMap`), BFS/undo stacks (`ArrayDeque`), and event scheduling (`PriorityQueue`).',
+    runtimeAndComplexity: 'ArrayList get O(1) · HashMap O(1) avg / O(log n) worst · TreeMap O(log n) · ArrayDeque head/tail O(1)',
+    commonTrap: 'Using legacy `LinkedList` or `Stack` (synchronized legacy Vector!) for queues/stacks, or forgetting to override BOTH `equals()` and `hashCode()` on custom `HashMap` keys.',
+    clearSolution: 'Always prefer `ArrayDeque` over `Stack`/`LinkedList` for queues/stacks, use `record` keys (auto `equals`/`hashCode`), and size initial capacities when counts are known.',
+    codeExample: `// 1. O(1) ring-buffer queue/stack (faster than LinkedList & Stack)
+Deque<String> queue = new ArrayDeque<>();
+queue.offerLast("req-1");
+String next = queue.pollFirst();
+
+// 2. Sorted range map (Red-Black Tree, O(log n))
+NavigableMap<Integer, String> scores = new TreeMap<>();
+scores.put(95, "Alice");
+scores.put(80, "Bob");
+var topRange = scores.tailMap(90, true); // {95=Alice}
+
+// 3. Min-heap priority queue
+PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+minHeap.offer(42);
+minHeap.offer(7);
+int smallest = minHeap.poll(); // 7`,
+    relatedFlowId: 'java-collections-hashmap',
+  },
+  {
+    id: 'java-concurrent-collections',
+    language: 'java',
+    versionTag: 'Java 21 LTS',
+    level: 'Intermediate',
+    category: 'Collections & Data Structures',
+    title: 'Concurrent Collections: ConcurrentHashMap, BlockingQueue & CopyOnWriteArrayList',
+    simpleEnglish:
+      'Plain `HashMap` and `ArrayList` corrupt data or throw `ConcurrentModificationException` when modified by multiple threads. Java’s `java.util.concurrent` collections give lock-free reads and safe atomic updates at high speed.',
+    standardDefinition:
+      '`ConcurrentHashMap` uses lock-free volatile reads, CAS empty-bin inserts, and per-bucket locking (`compute`, `merge`). `ArrayBlockingQueue`/`LinkedBlockingQueue` coordinate producer-consumer backpressure. `CopyOnWriteArrayList` duplicates the backing array on writes for zero-lock snapshot iteration.',
+    realWorldApplication:
+      'Shared in-memory caches, API rate-limit counters, producer-consumer worker queues, and read-heavy event listener registries.',
+    runtimeAndComplexity: 'CHM read: O(1) lock-free · BlockingQueue: bounded backpressure · CopyOnWrite: O(1) read / O(n) write',
+    commonTrap: 'Writing `if (!map.containsKey(k)) map.put(k, v);` on a `ConcurrentHashMap`—two threads can interleave between check and put (check-then-act race)!',
+    clearSolution: 'Use atomic single-call compound methods (`computeIfAbsent`, `merge`, `putIfAbsent`) on `ConcurrentHashMap`, and bound every `BlockingQueue` to prevent OOM.',
+    codeExample: `var hits = new ConcurrentHashMap<String, Long>();
+// Atomic thread-safe increment (no check-then-act race!)
+hits.merge("/api/orders", 1L, Long::sum);
+
+// Bounded producer-consumer queue with backpressure
+BlockingQueue<String> workQueue = new ArrayBlockingQueue<>(1000);
+workQueue.put("invoice-901");     // Blocks if full
+String job = workQueue.take();    // Blocks if empty
+
+// Read-mostly listener list (safe concurrent iteration)
+List<Runnable> listeners = new CopyOnWriteArrayList<>();`,
+    relatedFlowId: 'java-collections-hashmap',
+  },
+  {
+    id: 'java-multithreading-lifecycle',
+    language: 'java',
+    versionTag: 'Java 21 LTS',
+    level: 'Advanced',
+    category: 'Multithreading & Concurrency',
+    title: 'Multithreading Fundamentals: Thread.State Lifecycle, synchronized, wait/notify & volatile',
+    simpleEnglish:
+      'Every Java thread moves through 6 clear states (`NEW`, `RUNNABLE`, `BLOCKED`, `WAITING`, `TIMED_WAITING`, `TERMINATED`). `synchronized` guarantees mutual exclusion + visibility, while `volatile` guarantees cross-thread visibility for flags.',
+    standardDefinition:
+      'Java threads share heap memory and have private stacks. Intrinsic monitors (`synchronized`) provide mutual exclusion and Happens-Before memory barriers; `wait()`/`notifyAll()` coordinate condition queues while releasing the monitor; `volatile` enforces memory visibility without locking.',
+    realWorldApplication:
+      'Diagnosing production thread dumps (`jstack`) by reading `BLOCKED` vs `WAITING` states, graceful shutdown flags (`volatile boolean running`), and low-level guarded queues.',
+    runtimeAndComplexity: 'OS thread ~1 MB stack · Uncontended lock: fast biased/thin lock · Contended lock: OS futex park',
+    commonTrap: 'Calling `t.run()` instead of `t.start()`, checking `wait()` conditions with `if` instead of `while` (spurious wakeup bug), or acquiring two locks in opposite order (deadlock).',
+    clearSolution: 'Always use `while (!ready) lock.wait();`, enforce global lock ordering, and prefer `java.util.concurrent` (`ExecutorService`, `BlockingQueue`, `AtomicBoolean`) over raw `Thread`/`wait`/`notify`.',
+    codeExample: `class GracefulWorker implements Runnable {
+    private volatile boolean running = true; // Visible across CPU cores
+
+    public void stop() { running = false; }
+
+    @Override
+    public void run() {
+        while (running) {
+            // Process work batch cleanly
+        }
+    }
+}
+
+var worker = new GracefulWorker();
+Thread t = Thread.ofPlatform().name("ingest-1").start(worker);
+worker.stop();
+t.join(); // Transitions caller to WAITING until t is TERMINATED`,
+    relatedFlowId: 'java-thread-lifecycle-concurrency',
+  },
+  {
+    id: 'java-executors-completablefuture',
+    language: 'java',
+    versionTag: 'Java 21 LTS',
+    level: 'Advanced',
+    category: 'Multithreading & Concurrency',
+    title: 'ExecutorService, ThreadPoolExecutor Sizing & CompletableFuture Async Pipelines',
+    simpleEnglish:
+      'Never spawn unbounded raw threads per request—use an `ExecutorService` pool (or Virtual Threads for I/O). `CompletableFuture` lets you fan out multiple async tasks, combine their results, apply timeouts, and handle fallbacks cleanly.',
+    standardDefinition:
+      '`ThreadPoolExecutor` manages core threads, a bounded `BlockingQueue`, max threads, and `RejectedExecutionHandler`. `CompletableFuture` implements a non-blocking completion stage DAG (`supplyAsync`, `thenCombine`, `allOf`, `orTimeout`, `exceptionally`).',
+    realWorldApplication:
+      'Aggregating user profile + pricing + inventory microservices in parallel with strict SLA timeouts and graceful degradation.',
+    runtimeAndComplexity: 'CPU-bound pool size ≈ `Runtime.getRuntime().availableProcessors()` · I/O-bound: Virtual Threads',
+    commonTrap: 'Using `Executors.newFixedThreadPool` or `newCachedThreadPool` blindly in production—fixed pools use an unbounded queue (OOM risk) and cached pools spawn unlimited OS threads!',
+    clearSolution: 'Configure explicit bounded queues + `CallerRunsPolicy` on `ThreadPoolExecutor` for CPU pools, pass a dedicated executor to `CompletableFuture.supplyAsync(..., pool)`, and always attach `.orTimeout(...)`.',
+    codeExample: `try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+    var profileF = CompletableFuture.supplyAsync(() -> "Alice", pool);
+    var scoreF = CompletableFuture.supplyAsync(() -> 98, pool);
+
+    String summary = profileF
+        .thenCombine(scoreF, (name, score) -> name + " (" + score + ")")
+        .orTimeout(500, TimeUnit.MILLISECONDS)
+        .exceptionally(err -> "Fallback guest (0)")
+        .join();
+}`,
+    relatedFlowId: 'java-thread-lifecycle-concurrency',
+  },
+  {
+    id: 'java-locks-synchronizers',
+    language: 'java',
+    versionTag: 'Java 21 LTS',
+    level: 'Advanced',
+    category: 'Multithreading & Concurrency',
+    title: 'Explicit Locks & Synchronizers: ReentrantLock, ReadWriteLock, Semaphore & CountDownLatch',
+    simpleEnglish:
+      'When `synchronized` is too rigid, Java gives precision tools: `ReentrantLock` adds `tryLock(timeout)` to prevent deadlocks, `ReadWriteLock` lets many readers run together, `Semaphore` caps concurrency, and `CountDownLatch` waits for N startup tasks.',
+    standardDefinition:
+      'Built on AbstractQueuedSynchronizer (AQS), `ReentrantLock` supports fairness, interruptibility, and timed acquisition; `ReentrantReadWriteLock`/`StampedLock` optimize read-heavy workloads; `Semaphore`, `CountDownLatch`, and `CyclicBarrier` coordinate multi-thread phases.',
+    realWorldApplication:
+      'Deadlock-free account transfers (`tryLock`), bounding concurrent DB/API calls under Virtual Threads (`Semaphore`), and multi-service cache warm-up gates (`CountDownLatch`).',
+    runtimeAndComplexity: 'AQS CLH FIFO queue O(1) park/unpark · `StampedLock.tryOptimisticRead()` zero-lock reads',
+    commonTrap: 'Forgetting to call `lock.unlock()` inside a `finally` block—if an exception is thrown, the lock stays permanently locked and freezes every waiting thread forever!',
+    clearSolution: 'Always pair `lock.lock()` immediately with `try { ... } finally { lock.unlock(); }`, and use `Semaphore` (not thread pool size) to throttle downstream resources with Virtual Threads.',
+    codeExample: `var dbLimiter = new Semaphore(20); // Max 20 concurrent DB calls
+var lock = new ReentrantLock();
+
+if (lock.tryLock(100, TimeUnit.MILLISECONDS)) {
+    try {
+        dbLimiter.acquire();
+        try {
+            // Safe, deadlock-bounded, rate-limited critical section
+        } finally {
+            dbLimiter.release();
+        }
+    } finally {
+        lock.unlock();
+    }
+}`,
+    relatedFlowId: 'java-thread-lifecycle-concurrency',
+  },
 ];
 
 export const LANGUAGE_COMPARISON_PAIRS: LanguageComparisonPair[] = [
@@ -1160,6 +1922,67 @@ class User:
         .toList();
 }`,
     keyTakeaway: 'Python uses cooperative `async/await` + `TaskGroup` on 1 event-loop thread; Java 21 uses Virtual Threads so plain synchronous code scales effortlessly.',
+  },
+  {
+    id: 'cmp-collections',
+    topic: 'Collections, Queues & Counting',
+    level: 'Intermediate',
+    summary: 'O(1) double-ended queues and frequency histograms in both ecosystems.',
+    pythonCode: `from collections import Counter, deque
+
+q = deque(["a", "b", "c"], maxlen=3)
+q.append("d")        # O(1), evicts "a"
+first = q.popleft()  # O(1)
+
+freq = Counter(["ok", "err", "ok"])
+top = freq.most_common(1)  # [('ok', 2)]`,
+    javaCode: `Deque<String> q = new ArrayDeque<>(List.of("a", "b", "c"));
+q.offerLast("d");     // O(1) ring buffer
+String first = q.pollFirst();
+
+Map<String, Long> freq = List.of("ok", "err", "ok").stream()
+    .collect(Collectors.groupingBy(s -> s, Collectors.counting()));`,
+    keyTakeaway: 'Python’s `deque` & `Counter` give concise O(1) primitives; Java pairs `ArrayDeque` (faster than `LinkedList`) with `Collectors.groupingBy`.',
+  },
+  {
+    id: 'cmp-thread-safe',
+    topic: 'Thread-Safe Shared State',
+    level: 'Advanced',
+    summary: 'Safe multi-threaded counters and producer-consumer queues without race conditions.',
+    pythonCode: `import queue, threading
+
+lock = threading.Lock()
+counts: dict[str, int] = {}
+jobs: queue.Queue[str] = queue.Queue(maxsize=100)
+
+with lock:
+    counts["hits"] = counts.get("hits", 0) + 1
+jobs.put("task-1")`,
+    javaCode: `var counts = new ConcurrentHashMap<String, Long>();
+var jobs = new ArrayBlockingQueue<String>(100);
+
+// Atomic per-bucket update (no global lock!)
+counts.merge("hits", 1L, Long::sum);
+jobs.put("task-1");`,
+    keyTakeaway: 'Python guards shared dicts with `threading.Lock` and decouples threads with `queue.Queue`; Java provides lock-free reads & atomic `.merge()` via `ConcurrentHashMap` + `BlockingQueue`.',
+  },
+  {
+    id: 'cmp-pools-futures',
+    topic: 'Thread Pools & Futures',
+    level: 'Advanced',
+    summary: 'Running parallel tasks across worker pools with clean shutdown.',
+    pythonCode: `from concurrent.futures import ThreadPoolExecutor, as_completed
+
+with ThreadPoolExecutor(max_workers=8) as pool:
+    futs = [pool.submit(fetch, u) for u in urls]
+    results = [f.result() for f in as_completed(futs)]`,
+    javaCode: `try (var pool = Executors.newFixedThreadPool(8)) {
+    var futs = urls.stream()
+        .map(u -> CompletableFuture.supplyAsync(() -> fetch(u), pool))
+        .toList();
+    var results = futs.stream().map(CompletableFuture::join).toList();
+}`,
+    keyTakeaway: 'Both languages support scoped auto-closing thread pools (`with` in Python, `try-with-resources` in Java 19+) to guarantee graceful drain without thread leaks.',
   },
 ];
 
@@ -1466,6 +2289,211 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
     whyItWorks:
       '`try-with-resources` waits for all submitted virtual threads to finish before closing, and `ReentrantLock` lets the JVM unmount the virtual thread cleanly instead of pinning the OS carrier thread.',
   },
+  {
+    id: 'py-lab-4-collections',
+    number: 7,
+    language: 'python',
+    level: 'Intermediate',
+    title: 'Collections: Counter, defaultdict & deque',
+    scenario: 'An observability pipeline needs an O(1) sliding window of the last 5 latencies (`deque(maxlen=5)`) and a frequency tally of HTTP status codes using `Counter`.',
+    goal: 'Import `Counter` and `deque` from `collections`, create a bounded `deque(maxlen=5)`, and return `Counter(statuses).most_common(2)`.',
+    starterCode: `from collections import Counter, deque
+
+def summarize(latencies: list[int], statuses: list[int]):
+    # 1. Create a bounded deque(maxlen=5) from latencies
+    # 2. Compute top 2 statuses with Counter(statuses).most_common(2)
+    pass`,
+    buildingBlocks: [
+      { label: 'Bounded deque', snippet: '    window = deque(latencies, maxlen=5)' },
+      { label: 'Counter top 2', snippet: '    top_codes = Counter(statuses).most_common(2)' },
+      { label: 'Return Tuple', snippet: '    return list(window), top_codes' },
+    ],
+    rules: [
+      {
+        id: 'bounded-deque',
+        label: 'Uses `deque(..., maxlen=5)` for O(1) sliding window',
+        hint: 'Pass `maxlen=5` to `deque(...)`.',
+        test: (c) => /deque\s*\([^)]*maxlen\s*=\s*5/.test(c),
+      },
+      {
+        id: 'counter-most-common',
+        label: 'Uses `Counter(...).most_common(2)`',
+        hint: 'Call `Counter(statuses).most_common(2)`.',
+        test: (c) => /Counter\s*\([^)]*\)[\s\S]*\.most_common\s*\(\s*2\s*\)/.test(c),
+      },
+      {
+        id: 'returns-result',
+        label: 'Returns both the window and top status frequencies',
+        hint: 'Add `return list(window), top_codes`.',
+        test: (c) => /\breturn\b/.test(c),
+      },
+    ],
+    referenceSolution: `from collections import Counter, deque
+
+def summarize(latencies: list[int], statuses: list[int]):
+    window = deque(latencies, maxlen=5)
+    top_codes = Counter(statuses).most_common(2)
+    return list(window), top_codes`,
+    whyItWorks:
+      '`deque(maxlen=5)` drops expired entries in O(1) time without shifting elements like a list, and `Counter.most_common(2)` uses a C-backed heap selection.',
+  },
+  {
+    id: 'py-lab-5-threading',
+    number: 8,
+    language: 'python',
+    level: 'Advanced',
+    title: 'Thread-Safe Counter + ThreadPoolExecutor',
+    scenario: 'Multiple worker threads process webhooks concurrently and increment a shared `total` counter. Without a `threading.Lock`, race conditions lose increments.',
+    goal: 'Guard shared updates with `with lock:` using `threading.Lock()` and run workers cleanly inside `with ThreadPoolExecutor(max_workers=4) as pool:`.',
+    starterCode: `import threading
+from concurrent.futures import ThreadPoolExecutor
+
+# 1. Create lock = threading.Lock()
+# 2. Protect shared counter increment using with lock:
+# 3. Execute tasks inside with ThreadPoolExecutor(max_workers=4) as pool:`,
+    buildingBlocks: [
+      { label: 'threading.Lock()', snippet: 'lock = threading.Lock()\ntotal = 0' },
+      { label: 'Locked Worker', snippet: 'def process(item: int) -> int:\n    global total\n    with lock:\n        total += item\n    return total' },
+      { label: 'ThreadPoolExecutor', snippet: 'with ThreadPoolExecutor(max_workers=4) as pool:\n    results = list(pool.map(process, [10, 20, 30, 40]))' },
+    ],
+    rules: [
+      {
+        id: 'create-lock',
+        label: 'Instantiates `threading.Lock()`',
+        hint: 'Create `lock = threading.Lock()`.',
+        test: (c) => /threading\.Lock\s*\(\s*\)/.test(c),
+      },
+      {
+        id: 'with-lock',
+        label: 'Protects shared mutation using `with lock:` context manager',
+        hint: 'Wrap `total += ...` inside `with lock:`.',
+        test: (c) => /with\s+lock\s*:/.test(c),
+      },
+      {
+        id: 'thread-pool',
+        label: 'Uses `with ThreadPoolExecutor(...) as pool:` for structured shutdown',
+        hint: 'Run tasks inside `with ThreadPoolExecutor(max_workers=4) as pool:`.',
+        test: (c) => /with\s+ThreadPoolExecutor\s*\([^)]*\)\s+as\s+\w+/.test(c),
+      },
+    ],
+    referenceSolution: `import threading
+from concurrent.futures import ThreadPoolExecutor
+
+lock = threading.Lock()
+total = 0
+
+def process(item: int) -> int:
+    global total
+    with lock:
+        total += item
+    return total
+
+with ThreadPoolExecutor(max_workers=4) as pool:
+    results = list(pool.map(process, [10, 20, 30, 40]))`,
+    whyItWorks:
+      '`with lock:` guarantees mutual exclusion even across GIL switches and releases the lock on exceptions; `with ThreadPoolExecutor` waits for all threads before exiting.',
+  },
+  {
+    id: 'java-lab-4-collections',
+    number: 9,
+    language: 'java',
+    level: 'Intermediate',
+    title: 'ConcurrentHashMap.merge() & ArrayDeque',
+    scenario: 'A multi-threaded API gateway counts hits per endpoint safely without check-then-act race conditions and buffers recent request IDs in an O(1) `ArrayDeque`.',
+    goal: 'Use `ConcurrentHashMap` with atomic `.merge(key, 1L, Long::sum)` and an `ArrayDeque<String>` with `.offerLast(...)` / `.pollFirst()`.',
+    starterCode: `import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.concurrent.ConcurrentHashMap;
+
+// 1. Create ConcurrentHashMap<String, Long> and atomically increment via .merge()
+// 2. Create Deque<String> using ArrayDeque and enqueue/dequeue in O(1)`,
+    buildingBlocks: [
+      { label: 'ConcurrentHashMap + merge', snippet: 'var hits = new ConcurrentHashMap<String, Long>();\nhits.merge("/v1/pay", 1L, Long::sum);' },
+      { label: 'ArrayDeque FIFO', snippet: 'Deque<String> queue = new ArrayDeque<>();\nqueue.offerLast("req-101");\nString head = queue.pollFirst();' },
+    ],
+    rules: [
+      {
+        id: 'chm-merge',
+        label: 'Uses `ConcurrentHashMap` with atomic `.merge(..., Long::sum)`',
+        hint: 'Call `hits.merge("/v1/pay", 1L, Long::sum);` instead of `get` + `put`.',
+        test: (c) => /ConcurrentHashMap/.test(c) && /\.merge\s*\(/.test(c),
+      },
+      {
+        id: 'array-deque',
+        label: 'Uses `ArrayDeque` (not legacy `LinkedList`/`Stack`)',
+        hint: 'Instantiate `new ArrayDeque<>()`.',
+        test: (c) => /new\s+ArrayDeque\s*</.test(c) || /new\s+ArrayDeque\s*\(\s*\)/.test(c),
+      },
+      {
+        id: 'deque-ops',
+        label: 'Uses O(1) queue operations (`offerLast`/`pollFirst` or `offer`/`poll`)',
+        hint: 'Enqueue with `.offerLast(...)` and dequeue with `.pollFirst()`.',
+        test: (c) => /\.(offerLast|offer|addLast)\s*\(/.test(c) && /\.(pollFirst|poll|removeFirst)\s*\(/.test(c),
+      },
+    ],
+    referenceSolution: `import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.concurrent.ConcurrentHashMap;
+
+var hits = new ConcurrentHashMap<String, Long>();
+hits.merge("/v1/pay", 1L, Long::sum);
+
+Deque<String> queue = new ArrayDeque<>();
+queue.offerLast("req-101");
+String head = queue.pollFirst();`,
+    whyItWorks:
+      '`ConcurrentHashMap.merge()` executes atomically per bucket without locking the entire map, and `ArrayDeque` uses a cache-friendly circular array with zero node allocations.',
+  },
+  {
+    id: 'java-lab-5-completablefuture',
+    number: 10,
+    language: 'java',
+    level: 'Advanced',
+    title: 'CompletableFuture Parallel Fan-Out + Timeout',
+    scenario: 'A checkout API must fetch user credit score and fraud risk in parallel on a bounded `ExecutorService`, combine both results, and enforce a 500ms timeout with a safe fallback.',
+    goal: 'Launch two `CompletableFuture.supplyAsync(..., pool)` tasks, join them with `.thenCombine(...)`, and chain `.orTimeout(...)` + `.exceptionally(...)`.',
+    starterCode: `import java.util.concurrent.*;
+
+// Fan out two CompletableFuture.supplyAsync calls on a try-with-resources executor
+// Combine with .thenCombine(...), guard with .orTimeout(...) and .exceptionally(...)`,
+    buildingBlocks: [
+      { label: 'Scoped Pool + Futures', snippet: 'try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {\n    var f1 = CompletableFuture.supplyAsync(() -> 780, pool);\n    var f2 = CompletableFuture.supplyAsync(() -> "LOW", pool);' },
+      { label: 'thenCombine + Timeout + Fallback', snippet: '    String res = f1.thenCombine(f2, (s, r) -> s + ":" + r)\n        .orTimeout(500, TimeUnit.MILLISECONDS)\n        .exceptionally(ex -> "0:UNKNOWN")\n        .join();\n}' },
+    ],
+    rules: [
+      {
+        id: 'supply-async-pool',
+        label: 'Passes an explicit executor to `CompletableFuture.supplyAsync(..., pool)`',
+        hint: 'Avoid blocking the global `commonPool` by passing your executor as the 2nd argument.',
+        test: (c) => /CompletableFuture\.supplyAsync\s*\([^)]+,\s*\w+\s*\)/.test(c),
+      },
+      {
+        id: 'then-combine',
+        label: 'Combines parallel futures with `.thenCombine(...)`',
+        hint: 'Chain `f1.thenCombine(f2, (a, b) -> ...)`.',
+        test: (c) => /\.thenCombine\s*\(/.test(c),
+      },
+      {
+        id: 'timeout-fallback',
+        label: 'Enforces SLA via `.orTimeout(...)` and `.exceptionally(...)`',
+        hint: 'Chain `.orTimeout(500, TimeUnit.MILLISECONDS)` and `.exceptionally(...)`.',
+        test: (c) => /\.orTimeout\s*\(/.test(c) && /\.exceptionally\s*\(/.test(c),
+      },
+    ],
+    referenceSolution: `import java.util.concurrent.*;
+
+try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+    var f1 = CompletableFuture.supplyAsync(() -> 780, pool);
+    var f2 = CompletableFuture.supplyAsync(() -> "LOW", pool);
+
+    String res = f1.thenCombine(f2, (score, risk) -> score + ":" + risk)
+        .orTimeout(500, TimeUnit.MILLISECONDS)
+        .exceptionally(ex -> "0:UNKNOWN")
+        .join();
+}`,
+    whyItWorks:
+      'Passing an explicit executor avoids starving `ForkJoinPool.commonPool()`, `thenCombine` runs non-blockingly once both futures complete, and `orTimeout` + `exceptionally` guarantees SLA resilience.',
+  },
 ];
 
 export const LANGUAGE_MASTERY_QUIZ: LanguageQuizQuestion[] = [
@@ -1588,5 +2616,95 @@ export const LANGUAGE_MASTERY_QUIZ: LanguageQuizQuestion[] = [
     correctOptionId: 'a',
     simpleExplanation: 'Most Java objects die right after a single request finishes. Collecting young objects separately lets ZGC keep pauses under half a millisecond while using far less CPU and memory.',
     technicalNote: 'JEP 439 introduced Generational ZGC in Java 21 LTS, combining weak-generational efficiency with concurrent colored-pointer relocation.',
+  },
+  {
+    id: 'lq-9',
+    language: 'python',
+    level: 'Intermediate',
+    topic: 'Python Collections Performance',
+    question: 'Why should you use `collections.deque` instead of a regular `list` for a 500,000-item FIFO work queue?',
+    options: [
+      { id: 'a', text: '`list` cannot store more than 100,000 elements' },
+      { id: 'b', text: '`deque.popleft()` is O(1) via doubly-linked C blocks, whereas `list.pop(0)` shifts every remaining element in O(n) time' },
+      { id: 'c', text: '`deque` automatically persists items to SQLite on disk' },
+    ],
+    correctOptionId: 'b',
+    simpleExplanation: 'Removing index 0 from a Python `list` forces Python to slide all 499,999 remaining pointers one slot to the left. `deque` simply moves a head pointer in constant O(1) time.',
+    technicalNote: 'CPython `deque` is implemented as a doubly-linked list of 64-item C pointer blocks, providing O(1) ends and atomic `append`/`popleft`.',
+  },
+  {
+    id: 'lq-10',
+    language: 'python',
+    level: 'Advanced',
+    topic: 'Python Multithreading & Race Conditions',
+    question: 'In standard GIL-enabled Python, is `counter += 1` across 4 `threading.Thread` workers guaranteed to be thread-safe without a `Lock`?',
+    options: [
+      { id: 'a', text: 'Yes, the GIL makes every single line of Python code atomic' },
+      { id: 'b', text: 'No—`counter += 1` compiles to multiple bytecode instructions (LOAD, BINARY_OP, STORE), and the GIL can switch threads in between, losing updates' },
+      { id: 'c', text: 'Yes, because integers are immutable in Python' },
+    ],
+    correctOptionId: 'b',
+    simpleExplanation: 'Even though only one thread runs bytecode at a time under the GIL, Thread A can read `counter = 10`, pause before saving `11`, while Thread B also reads `10` and saves `11`—losing one increment!',
+    technicalNote: 'Always guard shared read-modify-write state with `with threading.Lock():` or communicate via thread-safe `queue.Queue`.',
+  },
+  {
+    id: 'lq-11',
+    language: 'python',
+    level: 'Advanced',
+    topic: 'Threading vs Multiprocessing vs asyncio',
+    question: 'You have a pure-Python CPU-heavy image hashing loop running on standard GIL-enabled Python 3.13. Which concurrency tool gives true multi-core speedup?',
+    options: [
+      { id: 'a', text: '`asyncio.TaskGroup` on a single event loop' },
+      { id: 'b', text: '`ProcessPoolExecutor` (separate OS processes with independent GILs) — or migrating to free-threaded `python3.13t` with threads' },
+      { id: 'c', text: 'Spawning 64 `threading.Thread` workers on standard GIL Python' },
+    ],
+    correctOptionId: 'b',
+    simpleExplanation: 'Standard Python threads take turns on one GIL for CPU bytecode, and `asyncio` uses a single thread. `ProcessPoolExecutor` gives every CPU core its own Python interpreter and GIL.',
+    technicalNote: 'Rule of thumb: I/O-bound -> `asyncio` or `ThreadPoolExecutor`; CPU-bound -> `ProcessPoolExecutor`, C/Rust extensions (NumPy), or free-threaded `python3.13t`.',
+  },
+  {
+    id: 'lq-12',
+    language: 'java',
+    level: 'Intermediate',
+    topic: 'Java HashMap Internals',
+    question: 'What happens inside a Java 8–21 `HashMap` when 8 or more colliding keys hash into the same bucket (with table capacity >= 64)?',
+    options: [
+      { id: 'a', text: 'HashMap throws a `HashCollisionException`' },
+      { id: 'b', text: 'That bucket’s linked list is automatically converted into a balanced Red-Black Tree (`treeifyBin`), keeping worst-case lookup at O(log n)' },
+      { id: 'c', text: 'Old colliding keys are evicted like an LRU cache' },
+    ],
+    correctOptionId: 'b',
+    simpleExplanation: 'Instead of letting a long linked list slow lookups down to O(n), Java upgrades crowded buckets into a self-balancing tree so searches stay fast even under heavy collisions.',
+    technicalNote: '`TREEIFY_THRESHOLD = 8`, `UNTREEIFY_THRESHOLD = 6`, `MIN_TREEIFY_CAPACITY = 64`.',
+  },
+  {
+    id: 'lq-13',
+    language: 'java',
+    level: 'Advanced',
+    topic: 'Java Thread.State Lifecycle',
+    question: 'In a Java thread dump (`jstack`), what is the difference between a thread in state `BLOCKED` versus `WAITING`?',
+    options: [
+      { id: 'a', text: '`BLOCKED` means waiting to enter a `synchronized` monitor lock; `WAITING` means parked indefinitely via `Object.wait()`, `Thread.join()`, or `LockSupport.park()` (including `ReentrantLock`)' },
+      { id: 'b', text: '`BLOCKED` means the thread crashed; `WAITING` means it is running on the CPU' },
+      { id: 'c', text: 'They are identical aliases in the JVM' },
+    ],
+    correctOptionId: 'a',
+    simpleExplanation: 'Seeing many `BLOCKED` threads points immediately to `synchronized` lock contention. Seeing `WAITING` threads means threads are parked waiting for a signal, queue item, or `ReentrantLock`.',
+    technicalNote: 'Timed waits (`Thread.sleep(ms)`, `wait(ms)`, `tryLock(ms)`) appear as `TIMED_WAITING`.',
+  },
+  {
+    id: 'lq-14',
+    language: 'java',
+    level: 'Advanced',
+    topic: 'ConcurrentHashMap Atomicity',
+    question: 'Why is `if (!map.containsKey(k)) { map.put(k, compute(k)); }` unsafe on a `ConcurrentHashMap`?',
+    options: [
+      { id: 'a', text: '`ConcurrentHashMap` does not support `containsKey()`' },
+      { id: 'b', text: 'It is a non-atomic check-then-act race: two threads can both see `false` and overwrite each other; use `map.computeIfAbsent(k, ...)` instead' },
+      { id: 'c', text: 'It locks the entire JVM heap forever' },
+    ],
+    correctOptionId: 'b',
+    simpleExplanation: 'Even though `containsKey` and `put` are individually thread-safe, combining two separate calls leaves a gap between them where another thread can sneak in.',
+    technicalNote: 'Always prefer atomic compound methods: `computeIfAbsent`, `compute`, `merge`, and `putIfAbsent`.',
   },
 ];

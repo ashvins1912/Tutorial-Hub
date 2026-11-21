@@ -218,9 +218,7 @@ export function LanguagePracticeWorkbench({
 
         {/* Balanced Lab Selector Grid */}
         <div
-          className={`grid grid-cols-1 sm:grid-cols-2 gap-2.5 ${
-            visibleChallenges.length <= 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-6'
-          }`}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5"
         >
           {visibleChallenges.map((item) => {
             const active = item.id === challenge.id;
@@ -267,7 +265,7 @@ export function LanguagePracticeWorkbench({
           <div className="lg:col-span-7 space-y-4">
             <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-4 space-y-1.5 text-xs leading-5">
               <div className="font-semibold text-slate-900 dark:text-slate-100">
-                Lab 0{challenge.number}: {challenge.title}
+                Lab {String(challenge.number).padStart(2, '0')}: {challenge.title}
               </div>
               <p className="text-slate-600 dark:text-slate-400">{challenge.scenario}</p>
               <p className="text-sky-800 dark:text-sky-300 font-medium">Goal: {challenge.goal}</p>

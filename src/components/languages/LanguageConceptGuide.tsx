@@ -28,6 +28,9 @@ export function LanguageConceptGuide({
   onOpenVisualFlow,
 }: LanguageConceptGuideProps) {
   const [levelFilter, setLevelFilter] = useState<'All' | SkillLevel>('All');
+  const [topicFilter, setTopicFilter] = useState<
+    'all' | 'foundations' | 'collections' | 'concurrency' | 'runtime'
+  >('all');
   const [query, setQuery] = useState('');
 
   const filteredConcepts = useMemo(() => {
@@ -35,6 +38,33 @@ export function LanguageConceptGuide({
     return LANGUAGE_CONCEPTS.filter((c) => {
       if (languageFilter !== 'all' && c.language !== languageFilter) return false;
       if (levelFilter !== 'All' && c.level !== levelFilter) return false;
+      if (topicFilter !== 'all') {
+        const hay = `${c.category} ${c.title}`.toLowerCase();
+        if (
+          topicFilter === 'collections' &&
+          !/(collection|deque|hashmap|list|dict|set|queue|stream)/.test(hay)
+        ) {
+          return false;
+        }
+        if (
+          topicFilter === 'concurrency' &&
+          !/(thread|concurrency|async|gil|lock|executor|completable|multiprocess|virtual)/.test(hay)
+        ) {
+          return false;
+        }
+        if (
+          topicFilter === 'foundations' &&
+          !/(foundation|oop|control|exception|optional|resilient|idiomatic|pattern|data-oriented)/.test(hay)
+        ) {
+          return false;
+        }
+        if (
+          topicFilter === 'runtime' &&
+          !/(memory|zgc|jmm|panama|jit|descriptor|typing|generic|frontier)/.test(hay)
+        ) {
+          return false;
+        }
+      }
       if (!q) return true;
       return (
         c.title.toLowerCase().includes(q) ||
@@ -44,38 +74,59 @@ export function LanguageConceptGuide({
         c.codeExample.toLowerCase().includes(q)
       );
     });
-  }, [languageFilter, levelFilter, query]);
+  }, [languageFilter, levelFilter, topicFilter, query]);
 
   return (
     <div className="space-y-5">
       {/* Filter Toolbar */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <SegmentedTabBar<'All' | SkillLevel>
-          ariaLabel="Filter concepts by skill level"
-          activeTab={levelFilter}
-          onChange={setLevelFilter}
-          size="xs"
-          tabs={[
-            { id: 'All', label: 'All Levels' },
-            { id: 'Basic', label: 'Basic' },
-            { id: 'Intermediate', label: 'Intermediate' },
-            { id: 'Advanced', label: 'Advanced' },
-          ]}
-        />
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <SegmentedTabBar<'All' | SkillLevel>
+            ariaLabel="Filter concepts by skill level"
+            activeTab={levelFilter}
+            onChange={setLevelFilter}
+            size="xs"
+            tabs={[
+              { id: 'All', label: 'All Levels' },
+              { id: 'Basic', label: 'Basic' },
+              { id: 'Intermediate', label: 'Intermediate' },
+              { id: 'Advanced', label: 'Advanced' },
+            ]}
+          />
 
-        <div className="relative w-full md:w-72">
-          <Search
-            className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
-            aria-hidden="true"
+          <div className="relative w-full md:w-72">
+            <Search
+              className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+              aria-hidden="true"
+            />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search HashMap, deque, Lock, GIL, Virtual..."
+              aria-label="Search Python and Java concepts"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <SegmentedTabBar<'all' | 'foundations' | 'collections' | 'concurrency' | 'runtime'>
+            ariaLabel="Filter concepts by topic domain"
+            activeTab={topicFilter}
+            onChange={setTopicFilter}
+            size="xs"
+            tabs={[
+              { id: 'all', label: 'All Topics' },
+              { id: 'foundations', label: 'Basics, OOP & Errors' },
+              { id: 'collections', label: 'Collections & Streams' },
+              { id: 'concurrency', label: 'Multithreading & Async' },
+              { id: 'runtime', label: 'Memory, Types & Internals' },
+            ]}
           />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search GIL, Virtual Threads, sealed..."
-            aria-label="Search Python and Java concepts"
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
-          />
+          <span className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+            Showing {filteredConcepts.length} of {LANGUAGE_CONCEPTS.length} topics
+          </span>
         </div>
       </div>
 

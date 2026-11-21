@@ -57,6 +57,28 @@ export interface StatementExecutionResult {
   rows?: TableRow[];
 }
 
+export interface SqlIntelligenceFinding {
+  id: string;
+  severity: 'critical' | 'high' | 'optimization' | 'good';
+  category: 'Fetch Speed' | 'Indexing' | 'Join / Rewrite' | 'Insert & Compression' | 'Correctness';
+  title: string;
+  explanation: string;
+  recommendation: string;
+  suggestedSql?: string;
+  estimatedImpact: string;
+}
+
+export interface SqlIntelligenceReport {
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+  detectedScan: string;
+  recommendedScan: string;
+  estimatedSpeedup: string;
+  compressionOpportunity: string;
+  findings: SqlIntelligenceFinding[];
+  optimizedSql: string;
+}
+
 export interface SqlRunResponse {
   syntaxValid: boolean;
   issues: SyntaxIssue[];
@@ -278,17 +300,50 @@ interface WhereClauseEval {
   predicate: (row: TableRow) => boolean;
 }
 
+function splitAndConditionsRespectingBetween(group: string): string[] {
+  // Split on AND unless it belongs to BETWEEN <low> AND <high>
+  const tokens = group.split(/\s+/);
+  const parts: string[] = [];
+  let buf: string[] = [];
+  let awaitingBetweenAnd = false;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const upper = t.toUpperCase();
+    if (upper === 'BETWEEN') {
+      awaitingBetweenAnd = true;
+      buf.push(t);
+      continue;
+    }
+    if (upper === 'AND') {
+      if (awaitingBetweenAnd) {
+        awaitingBetweenAnd = false;
+        buf.push(t);
+        continue;
+      }
+      if (buf.length > 0) {
+        parts.push(buf.join(' ').trim());
+        buf = [];
+      }
+      continue;
+    }
+    buf.push(t);
+  }
+  if (buf.length > 0) parts.push(buf.join(' ').trim());
+  return parts.filter(Boolean);
+}
+
 function parseWhereClause(
   whereText: string,
   validCols: Set<string>
 ): { ok: true; eval: WhereClauseEval } | { ok: false; error: string; suggestion: string } {
-  // Support OR groups of AND clauses
+  // Support OR groups of AND clauses (including BETWEEN ... AND ..., IN (...), NOT LIKE, IS NULL)
   const orGroups = whereText.split(/\s+OR\s+/i).map((g) => g.trim()).filter(Boolean);
   if (orGroups.length === 0) {
     return {
       ok: false,
       error: 'Empty WHERE clause.',
-      suggestion: "Provide a condition like WHERE status = 'PAID' or WHERE amount >= 100.",
+      suggestion: "Provide a condition like WHERE status = 'PAID' or WHERE amount BETWEEN 50 AND 500.",
     };
   }
 
@@ -296,11 +351,11 @@ function parseWhereClause(
   const groupFns: ((row: TableRow) => boolean)[] = [];
 
   for (const group of orGroups) {
-    const andParts = group.split(/\s+AND\s+/i).map((p) => p.trim()).filter(Boolean);
+    const andParts = splitAndConditionsRespectingBetween(group);
     const partFns: ((row: TableRow) => boolean)[] = [];
 
     for (const part of andParts) {
-      // IS NULL / IS NOT NULL
+      // 1. IS NULL / IS NOT NULL
       const nullMatch = part.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s+IS\s+(NOT\s+)?NULL$/i);
       if (nullMatch) {
         const col = nullMatch[1].toLowerCase().split('.').pop()!;
@@ -313,22 +368,111 @@ function parseWhereClause(
         }
         referencedCols.push(col);
         const isNot = Boolean(nullMatch[2]);
-        partFns.push((row) => (isNot ? row[col] !== null && row[col] !== undefined : row[col] === null || row[col] === undefined));
+        partFns.push((row) =>
+          isNot
+            ? row[col] !== null && row[col] !== undefined
+            : row[col] === null || row[col] === undefined
+        );
         continue;
       }
 
-      // Comparison operators
-      const cmpMatch = part.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s*(=|!=|<>|>=|<=|>|<|LIKE)\s*(.+)$/i);
+      // 2. [NOT] BETWEEN low AND high
+      const betweenMatch = part.match(
+        /^([a-zA-Z_][a-zA-Z0-9_.]*)\s+(NOT\s+)?BETWEEN\s+(.+?)\s+AND\s+(.+)$/i
+      );
+      if (betweenMatch) {
+        const col = betweenMatch[1].toLowerCase().split('.').pop()!;
+        const isNot = Boolean(betweenMatch[2]);
+        if (!validCols.has(col)) {
+          return {
+            ok: false,
+            error: `Unknown column "${col}" in BETWEEN condition.`,
+            suggestion: `Available columns: ${Array.from(validCols).join(', ')}.`,
+          };
+        }
+        const lowLit = parseLiteral(betweenMatch[3]);
+        const highLit = parseLiteral(betweenMatch[4]);
+        if (!lowLit.ok || !highLit.ok) {
+          return {
+            ok: false,
+            error: `Invalid BETWEEN bounds in "${part}".`,
+            suggestion: 'Example: WHERE amount BETWEEN 100 AND 500.',
+          };
+        }
+        referencedCols.push(col);
+        const lowN = Number(lowLit.value);
+        const highN = Number(highLit.value);
+        partFns.push((row) => {
+          const v = row[col];
+          if (v === null || v === undefined) return false;
+          const nv = Number(v);
+          const inside =
+            !Number.isNaN(nv) && !Number.isNaN(lowN) && !Number.isNaN(highN)
+              ? nv >= lowN && nv <= highN
+              : String(v) >= String(lowLit.value) && String(v) <= String(highLit.value);
+          return isNot ? !inside : inside;
+        });
+        continue;
+      }
+
+      // 3. [NOT] IN (v1, v2, ...)
+      const inMatch = part.match(/^([a-zA-Z_][a-zA-Z0-9_.]*)\s+(NOT\s+)?IN\s*\(([^)]+)\)$/i);
+      if (inMatch) {
+        const col = inMatch[1].toLowerCase().split('.').pop()!;
+        const isNot = Boolean(inMatch[2]);
+        if (!validCols.has(col)) {
+          return {
+            ok: false,
+            error: `Unknown column "${col}" in IN (...) condition.`,
+            suggestion: `Available columns: ${Array.from(validCols).join(', ')}.`,
+          };
+        }
+        const rawItems = splitCommaRespectingQuotesAndParens(inMatch[3]);
+        const parsedVals: SqlValue[] = [];
+        for (const ri of rawItems) {
+          const lit = parseLiteral(ri);
+          if (!lit.ok) {
+            return {
+              ok: false,
+              error: lit.error ?? `Invalid value "${ri}" inside IN (...).`,
+              suggestion: "Example: WHERE status IN ('PAID', 'SHIPPED').",
+            };
+          }
+          parsedVals.push(lit.value);
+        }
+        referencedCols.push(col);
+        const hasNullInList = parsedVals.some((v) => v === null);
+        partFns.push((row) => {
+          const v = row[col];
+          if (v === null || v === undefined) return false;
+          const matched = parsedVals.some(
+            (pv) => pv !== null && String(pv).toLowerCase() === String(v).toLowerCase()
+          );
+          if (isNot) {
+            // SQL 3-valued logic: NOT IN with NULL returns UNKNOWN (false)
+            if (hasNullInList) return false;
+            return !matched;
+          }
+          return matched;
+        });
+        continue;
+      }
+
+      // 4. Comparison operators including NOT LIKE / ILIKE
+      const cmpMatch = part.match(
+        /^([a-zA-Z_][a-zA-Z0-9_.]*)\s*(=|!=|<>|>=|<=|>|<|NOT\s+LIKE|NOT\s+ILIKE|ILIKE|LIKE)\s*(.+)$/i
+      );
       if (!cmpMatch) {
         return {
           ok: false,
           error: `Could not parse WHERE condition "${part}".`,
-          suggestion: "Use standard comparisons like column = 'value', amount > 100, or name LIKE 'A%'.",
+          suggestion:
+            "Use comparisons like status = 'PAID', amount BETWEEN 50 AND 500, status IN ('PAID', 'SHIPPED'), or product LIKE 'Cloud%'.",
         };
       }
 
       const col = cmpMatch[1].toLowerCase().split('.').pop()!;
-      const op = cmpMatch[2].toUpperCase();
+      const op = cmpMatch[2].replace(/\s+/g, ' ').toUpperCase();
       const rawVal = cmpMatch[3].trim();
 
       if (!validCols.has(col)) {
@@ -354,11 +498,20 @@ function parseWhereClause(
       partFns.push((row) => {
         const v = row[col];
         if (v === null || v === undefined) return false;
-        if (op === '=') return String(v).toLowerCase() === String(target).toLowerCase() && (typeof v === typeof target || String(v) === String(target));
+        if (op === '=') {
+          return (
+            String(v).toLowerCase() === String(target).toLowerCase() &&
+            (typeof v === typeof target || String(v) === String(target))
+          );
+        }
         if (op === '!=' || op === '<>') return String(v) !== String(target);
-        if (op === 'LIKE') {
-          const pattern = String(target).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*').replace(/_/g, '.');
-          return new RegExp(`^${pattern}$`, 'i').test(String(v));
+        if (op === 'LIKE' || op === 'ILIKE' || op === 'NOT LIKE' || op === 'NOT ILIKE') {
+          const pattern = String(target)
+            .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            .replace(/%/g, '.*')
+            .replace(/_/g, '.');
+          const matched = new RegExp(`^${pattern}$`, 'i').test(String(v));
+          return op.startsWith('NOT') ? !matched : matched;
         }
         const nV = Number(v);
         const nT = Number(target);
@@ -1172,10 +1325,10 @@ export function runMiniSql(
       return;
     }
 
-    // 8. SELECT
+    // 8. SELECT (Supports DISTINCT, INNER/LEFT/RIGHT/FULL/CROSS JOIN, WHERE, GROUP BY, HAVING, Scalar Functions, ORDER BY, LIMIT, OFFSET)
     if (/^SELECT\b/i.test(stmt)) {
       const m = stmt.match(
-        /^SELECT\s+([\s\S]+?)\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+(?:INNER\s+|LEFT\s+)?JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+ON\s+([a-zA-Z0-9_.]+)\s*=\s*([a-zA-Z0-9_.]+))?(?:\s+WHERE\s+([\s\S]+?))?(?:\s+GROUP\s+BY\s+([a-zA-Z_][a-zA-Z0-9_]*))?(?:\s+ORDER\s+BY\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+(ASC|DESC))?)?(?:\s+LIMIT\s+(\d+))?$/i
+        /^SELECT\s+(DISTINCT\s+)?([\s\S]+?)\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+(?:AS\s+)?(?!INNER\b|LEFT\b|RIGHT\b|FULL\b|CROSS\b|JOIN\b|WHERE\b|GROUP\b|ORDER\b|LIMIT\b|OFFSET\b)[a-zA-Z_][a-zA-Z0-9_]*)?(?:\s+(INNER|LEFT(?:\s+OUTER)?|RIGHT(?:\s+OUTER)?|FULL(?:\s+OUTER)?|CROSS)?\s*JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)(?:\s+(?:AS\s+)?(?!ON\b|WHERE\b|GROUP\b|ORDER\b|LIMIT\b|OFFSET\b)[a-zA-Z_][a-zA-Z0-9_]*)?(?:\s+ON\s+([a-zA-Z0-9_.]+)\s*=\s*([a-zA-Z0-9_.]+))?)?(?:\s+WHERE\s+([\s\S]+?))?(?:\s+GROUP\s+BY\s+([a-zA-Z_][a-zA-Z0-9_.]*))?(?:\s+HAVING\s+([\s\S]+?))?(?:\s+ORDER\s+BY\s+([a-zA-Z_][a-zA-Z0-9_.]*)(?:\s+(ASC|DESC))?)?(?:\s+LIMIT\s+(\d+))?(?:\s+OFFSET\s+(\d+))?$/i
       );
       if (!m) {
         issues.push({
@@ -1183,22 +1336,28 @@ export function runMiniSql(
           statementPreview: preview,
           severity: 'error',
           code: 'SYNTAX_SELECT',
-          message: 'Invalid SELECT syntax — check clause order: SELECT ... FROM ... [JOIN ...] [WHERE ...] [GROUP BY ...] [ORDER BY ...] [LIMIT n].',
-          suggestion: "Example: SELECT order_id, product, amount FROM orders WHERE status = 'PAID' ORDER BY amount DESC LIMIT 5;",
+          message:
+            'Invalid SELECT syntax — check clause order: SELECT [DISTINCT] ... FROM ... [JOIN ...] [WHERE ...] [GROUP BY ...] [HAVING ...] [ORDER BY ...] [LIMIT n] [OFFSET m].',
+          suggestion:
+            "Example: SELECT status, COUNT(*) AS cnt, SUM(amount) AS rev FROM orders WHERE amount BETWEEN 50 AND 900 GROUP BY status HAVING rev > 100 ORDER BY rev DESC LIMIT 5;",
         });
         return;
       }
 
-      const selectRaw = m[1].trim();
-      const tableName = m[2].toLowerCase();
-      const joinTableName = m[3]?.toLowerCase();
-      const joinLeft = m[4]?.toLowerCase();
-      const joinRight = m[5]?.toLowerCase();
-      const whereRaw = m[6]?.trim();
-      const groupByCol = m[7]?.toLowerCase();
-      const orderByCol = m[8]?.toLowerCase();
-      const orderDir = (m[9]?.toUpperCase() as 'ASC' | 'DESC' | undefined) ?? 'ASC';
-      const limitNum = m[10] ? Number(m[10]) : undefined;
+      const isDistinct = Boolean(m[1]);
+      const selectRaw = m[2].trim();
+      const tableName = m[3].toLowerCase();
+      const joinKindRaw = (m[4] ?? 'INNER').replace(/\s+/g, ' ').toUpperCase();
+      const joinTableName = m[5]?.toLowerCase();
+      const joinLeft = m[6]?.toLowerCase();
+      const joinRight = m[7]?.toLowerCase();
+      const whereRaw = m[8]?.trim();
+      const groupByCol = m[9]?.toLowerCase().split('.').pop();
+      const havingRaw = m[10]?.trim();
+      const orderByCol = m[11]?.toLowerCase().split('.').pop();
+      const orderDir = (m[12]?.toUpperCase() as 'ASC' | 'DESC' | undefined) ?? 'ASC';
+      const limitNum = m[13] ? Number(m[13]) : undefined;
+      const offsetNum = m[14] ? Number(m[14]) : 0;
 
       const baseTbl = workingDb.tables[tableName];
       if (!baseTbl) {
@@ -1230,25 +1389,65 @@ export function runMiniSql(
           return;
         }
         joinTbl.columns.forEach((c) => validColSet.add(c.name));
-        const leftCol = joinLeft!.split('.').pop()!;
-        const rightCol = joinRight!.split('.').pop()!;
-        const isLeftJoin = /\bLEFT\s+JOIN\b/i.test(stmt);
-
         const joined: TableRow[] = [];
-        for (const lr of baseTbl.rows) {
-          const matches = joinTbl.rows.filter(
-            (rr) =>
-              (lr[leftCol] !== undefined && lr[leftCol] === rr[rightCol]) ||
-              (lr[rightCol] !== undefined && lr[rightCol] === rr[leftCol])
-          );
-          if (matches.length > 0) {
-            matches.forEach((mr) => joined.push({ ...mr, ...lr }));
-          } else if (isLeftJoin) {
-            const nullFill: TableRow = {};
-            joinTbl.columns.forEach((c) => {
-              nullFill[c.name] = null;
+
+        if (joinKindRaw === 'CROSS') {
+          for (const lr of baseTbl.rows) {
+            for (const rr of joinTbl.rows) {
+              joined.push({ ...rr, ...lr });
+            }
+          }
+        } else {
+          if (!joinLeft || !joinRight) {
+            issues.push({
+              statementIndex: stmtNum,
+              statementPreview: preview,
+              severity: 'error',
+              code: 'MISSING_JOIN_ON',
+              message: `${joinKindRaw} JOIN requires an ON condition (e.g. ON orders.user_id = users.id).`,
+              suggestion: 'Add ON left_table.col = right_table.col or use CROSS JOIN.',
             });
-            joined.push({ ...nullFill, ...lr });
+            return;
+          }
+          const leftCol = joinLeft.split('.').pop()!;
+          const rightCol = joinRight.split('.').pop()!;
+          const isLeft = joinKindRaw.startsWith('LEFT');
+          const isRight = joinKindRaw.startsWith('RIGHT');
+          const isFull = joinKindRaw.startsWith('FULL');
+
+          const matchedRightIndices = new Set<number>();
+
+          for (const lr of baseTbl.rows) {
+            let hadMatch = false;
+            joinTbl.rows.forEach((rr, rIdx) => {
+              const isMatch =
+                (lr[leftCol] !== undefined && lr[leftCol] === rr[rightCol]) ||
+                (lr[rightCol] !== undefined && lr[rightCol] === rr[leftCol]);
+              if (isMatch) {
+                hadMatch = true;
+                matchedRightIndices.add(rIdx);
+                joined.push({ ...rr, ...lr });
+              }
+            });
+            if (!hadMatch && (isLeft || isFull)) {
+              const nullFill: TableRow = {};
+              joinTbl.columns.forEach((c) => {
+                nullFill[c.name] = null;
+              });
+              joined.push({ ...nullFill, ...lr });
+            }
+          }
+
+          if (isRight || isFull) {
+            joinTbl.rows.forEach((rr, rIdx) => {
+              if (!matchedRightIndices.has(rIdx)) {
+                const nullLeft: TableRow = {};
+                baseTbl.columns.forEach((c) => {
+                  nullLeft[c.name] = null;
+                });
+                joined.push({ ...nullLeft, ...rr });
+              }
+            });
           }
         }
         combinedRows = joined;
@@ -1275,7 +1474,78 @@ export function runMiniSql(
       const filteredRows = combinedRows.filter(whereEval.predicate);
       const matchedIdx = findMatchingIndex(workingDb, tableName, whereEval.referencedCols);
 
-      // Handle GROUP BY or aggregate functions
+      const evalScalarExpr = (expr: string, row: TableRow): { ok: true; val: SqlValue } | { ok: false; col: string } => {
+        const trimmed = expr.trim();
+        // UPPER(col) / LOWER(col) / LENGTH(col) / ABS(col)
+        const unaryFn = trimmed.match(/^(UPPER|LOWER|LENGTH|ABS)\s*\(\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\)$/i);
+        if (unaryFn) {
+          const fn = unaryFn[1].toUpperCase();
+          const col = unaryFn[2].toLowerCase().split('.').pop()!;
+          if (!validColSet.has(col)) return { ok: false, col };
+          const v = row[col];
+          if (v === null || v === undefined) return { ok: true, val: null };
+          if (fn === 'UPPER') return { ok: true, val: String(v).toUpperCase() };
+          if (fn === 'LOWER') return { ok: true, val: String(v).toLowerCase() };
+          if (fn === 'LENGTH') return { ok: true, val: String(v).length };
+          if (fn === 'ABS') return { ok: true, val: Math.abs(Number(v)) };
+        }
+
+        // COALESCE(col, fallback)
+        const coalFn = trimmed.match(/^COALESCE\s*\((.+)\)$/i);
+        if (coalFn) {
+          const args = splitCommaRespectingQuotesAndParens(coalFn[1]);
+          for (const a of args) {
+            const lit = parseLiteral(a);
+            if (lit.ok && !validColSet.has(a.toLowerCase().split('.').pop()!)) {
+              if (lit.value !== null) return { ok: true, val: lit.value };
+            } else {
+              const col = a.toLowerCase().split('.').pop()!;
+              if (!validColSet.has(col)) return { ok: false, col };
+              if (row[col] !== null && row[col] !== undefined) return { ok: true, val: row[col] };
+            }
+          }
+          return { ok: true, val: null };
+        }
+
+        // ROUND(col, digits)
+        const roundFn = trimmed.match(/^ROUND\s*\(\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*(?:,\s*(\d+))?\s*\)$/i);
+        if (roundFn) {
+          const col = roundFn[1].toLowerCase().split('.').pop()!;
+          if (!validColSet.has(col)) return { ok: false, col };
+          const digits = roundFn[2] ? Number(roundFn[2]) : 0;
+          const n = Number(row[col]);
+          return { ok: true, val: Number.isNaN(n) ? null : Number(n.toFixed(digits)) };
+        }
+
+        // Simple CASE WHEN col op val THEN res [ELSE fallback] END
+        const caseMatch = trimmed.match(
+          /^CASE\s+WHEN\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*(=|!=|>|>=|<|<=)\s*([^\s]+)\s+THEN\s+(.+?)(?:\s+ELSE\s+(.+?))?\s+END$/i
+        );
+        if (caseMatch) {
+          const col = caseMatch[1].toLowerCase().split('.').pop()!;
+          if (!validColSet.has(col)) return { ok: false, col };
+          const op = caseMatch[2];
+          const cmpLit = parseLiteral(caseMatch[3]);
+          const thenLit = parseLiteral(caseMatch[4]);
+          const elseLit = caseMatch[5] ? parseLiteral(caseMatch[5]) : { ok: true, value: null };
+          const v = row[col];
+          let cond = false;
+          if (v !== null && v !== undefined && cmpLit.ok) {
+            if (op === '=') cond = String(v).toLowerCase() === String(cmpLit.value).toLowerCase();
+            else if (op === '!=') cond = String(v) !== String(cmpLit.value);
+            else if (op === '>') cond = Number(v) > Number(cmpLit.value);
+            else if (op === '>=') cond = Number(v) >= Number(cmpLit.value);
+            else if (op === '<') cond = Number(v) < Number(cmpLit.value);
+            else if (op === '<=') cond = Number(v) <= Number(cmpLit.value);
+          }
+          return { ok: true, val: cond ? thenLit.value : elseLit.value };
+        }
+
+        const plainCol = trimmed.toLowerCase().split('.').pop()!;
+        if (!validColSet.has(plainCol)) return { ok: false, col: plainCol };
+        return { ok: true, val: row[plainCol] ?? null };
+      };
+
       const selectItems = splitCommaRespectingQuotesAndParens(selectRaw);
       const hasAggregate = selectItems.some((item) => /^(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(item));
 
@@ -1312,64 +1582,150 @@ export function runMiniSql(
           return aliasMatch ? aliasMatch[1].toLowerCase() : it.trim().toLowerCase();
         });
 
+        const computeAggregateValue = (
+          fn: string,
+          distinctAgg: boolean,
+          targetColRaw: string,
+          grpRows: TableRow[]
+        ): SqlValue => {
+          const targetCol = targetColRaw.toLowerCase().split('.').pop()!;
+          if (fn === 'COUNT') {
+            if (targetCol === '*') return grpRows.length;
+            const nonNull = grpRows
+              .map((r) => r[targetCol])
+              .filter((v) => v !== null && v !== undefined);
+            return distinctAgg ? new Set(nonNull.map(String)).size : nonNull.length;
+          }
+          const nums = grpRows
+            .map((r) => Number(r[targetCol]))
+            .filter((n) => !Number.isNaN(n));
+          if (nums.length === 0) return null;
+          if (fn === 'SUM') return Number(nums.reduce((a, b) => a + b, 0).toFixed(2));
+          if (fn === 'AVG') return Number((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2));
+          if (fn === 'MIN') return Math.min(...nums);
+          if (fn === 'MAX') return Math.max(...nums);
+          return null;
+        };
+
+        // Pre-parse any aggregate expressions used directly in HAVING (e.g., HAVING SUM(amount) > 100)
+        const havingAggSpecs: { key: string; fn: string; distinctAgg: boolean; targetCol: string }[] = [];
+        let normalizedHaving = havingRaw ?? '';
+        if (normalizedHaving) {
+          normalizedHaving = normalizedHaving.replace(
+            /(COUNT|SUM|AVG|MIN|MAX)\s*\(\s*(DISTINCT\s+)?(\*|[a-zA-Z_][a-zA-Z0-9_.]*)\s*\)/gi,
+            (_full, fnRaw: string, distRaw: string | undefined, colRaw: string) => {
+              const key = `__hav_agg_${havingAggSpecs.length}`;
+              havingAggSpecs.push({
+                key,
+                fn: fnRaw.toUpperCase(),
+                distinctAgg: Boolean(distRaw),
+                targetCol: colRaw,
+              });
+              return key;
+            }
+          );
+        }
+
+        const groupedPairs: { out: TableRow; evalRow: TableRow }[] = [];
+
         for (const [, grpRows] of groups) {
           const out: TableRow = {};
           selectItems.forEach((it, i) => {
             const colKey = outputCols[i];
             const cleanExpr = it.replace(/\s+AS\s+[a-zA-Z_][a-zA-Z0-9_]*$/i, '').trim();
-            const aggMatch = cleanExpr.match(/^(COUNT|SUM|AVG|MIN|MAX)\s*\(\s*(\*|[a-zA-Z_][a-zA-Z0-9_]*)\s*\)$/i);
+            const aggMatch = cleanExpr.match(
+              /^(COUNT|SUM|AVG|MIN|MAX)\s*\(\s*(DISTINCT\s+)?(\*|[a-zA-Z_][a-zA-Z0-9_.]*)\s*\)$/i
+            );
             if (aggMatch) {
-              const fn = aggMatch[1].toUpperCase();
-              const targetCol = aggMatch[2].toLowerCase();
-              if (fn === 'COUNT') {
-                out[colKey] =
-                  targetCol === '*'
-                    ? grpRows.length
-                    : grpRows.filter((r) => r[targetCol] !== null && r[targetCol] !== undefined).length;
-              } else {
-                const nums = grpRows
-                  .map((r) => Number(r[targetCol]))
-                  .filter((n) => !Number.isNaN(n));
-                if (nums.length === 0) out[colKey] = null;
-                else if (fn === 'SUM') out[colKey] = Number(nums.reduce((a, b) => a + b, 0).toFixed(2));
-                else if (fn === 'AVG') out[colKey] = Number((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2));
-                else if (fn === 'MIN') out[colKey] = Math.min(...nums);
-                else if (fn === 'MAX') out[colKey] = Math.max(...nums);
-              }
+              out[colKey] = computeAggregateValue(
+                aggMatch[1].toUpperCase(),
+                Boolean(aggMatch[2]),
+                aggMatch[3],
+                grpRows
+              );
             } else {
               const plainCol = cleanExpr.toLowerCase().split('.').pop()!;
               out[colKey] = grpRows[0]?.[plainCol] ?? null;
             }
           });
-          outputRows.push(out);
+
+          const evalRow: TableRow = { ...out };
+          havingAggSpecs.forEach((spec) => {
+            evalRow[spec.key] = computeAggregateValue(spec.fn, spec.distinctAgg, spec.targetCol, grpRows);
+          });
+          groupedPairs.push({ out, evalRow });
+        }
+
+        if (havingRaw) {
+          const havingCols = new Set([...outputCols, ...havingAggSpecs.map((s) => s.key)]);
+          const parsedHaving = parseWhereClause(normalizedHaving, havingCols);
+          if (!parsedHaving.ok) {
+            issues.push({
+              statementIndex: stmtNum,
+              statementPreview: preview,
+              severity: 'error',
+              code: 'SYNTAX_HAVING',
+              message: parsedHaving.error.replace('WHERE', 'HAVING'),
+              suggestion: `Use aggregate functions or grouped aliases in HAVING, e.g. HAVING SUM(amount) > 100 or HAVING ${outputCols[outputCols.length - 1]} > 100.`,
+            });
+            return;
+          }
+          outputRows = groupedPairs
+            .filter((pair) => parsedHaving.eval.predicate(pair.evalRow))
+            .map((pair) => pair.out);
+        } else {
+          outputRows = groupedPairs.map((pair) => pair.out);
         }
       } else {
         if (selectRaw === '*') {
           outputCols = Array.from(validColSet);
+          outputRows = filteredRows.map((r) => {
+            const projected: TableRow = {};
+            outputCols.forEach((c) => {
+              projected[c] = r[c] ?? null;
+            });
+            return projected;
+          });
         } else {
-          outputCols = [];
-          for (const item of selectItems) {
-            const clean = item.replace(/\s+AS\s+[a-zA-Z_][a-zA-Z0-9_]*$/i, '').trim().toLowerCase().split('.').pop()!;
-            if (!validColSet.has(clean)) {
-              issues.push({
-                statementIndex: stmtNum,
-                statementPreview: preview,
-                severity: 'error',
-                code: 'UNKNOWN_SELECT_COL',
-                message: `Unknown column "${clean}" in SELECT list.`,
-                suggestion: `Available columns: ${Array.from(validColSet).join(', ')}.`,
-              });
-              return;
+          const parsedItems = selectItems.map((item) => {
+            const aliasMatch = item.match(/\s+AS\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i);
+            const cleanExpr = item.replace(/\s+AS\s+[a-zA-Z_][a-zA-Z0-9_]*$/i, '').trim();
+            const label = aliasMatch
+              ? aliasMatch[1].toLowerCase()
+              : cleanExpr.toLowerCase().split('.').pop()!;
+            return { cleanExpr, label };
+          });
+          outputCols = parsedItems.map((p) => p.label);
+
+          for (const r of filteredRows) {
+            const projected: TableRow = {};
+            for (const p of parsedItems) {
+              const res = evalScalarExpr(p.cleanExpr, r);
+              if (!res.ok) {
+                issues.push({
+                  statementIndex: stmtNum,
+                  statementPreview: preview,
+                  severity: 'error',
+                  code: 'UNKNOWN_SELECT_COL',
+                  message: `Unknown column "${res.col}" in SELECT list.`,
+                  suggestion: `Available columns: ${Array.from(validColSet).join(', ')}.`,
+                });
+                return;
+              }
+              projected[p.label] = res.val;
             }
-            outputCols.push(clean);
+            outputRows.push(projected);
           }
         }
-        outputRows = filteredRows.map((r) => {
-          const projected: TableRow = {};
-          outputCols.forEach((c) => {
-            projected[c] = r[c] ?? null;
-          });
-          return projected;
+      }
+
+      if (isDistinct) {
+        const seen = new Set<string>();
+        outputRows = outputRows.filter((row) => {
+          const sig = outputCols.map((c) => String(row[c] ?? 'NULL')).join('\u0001');
+          if (seen.has(sig)) return false;
+          seen.add(sig);
+          return true;
         });
       }
 
@@ -1399,8 +1755,11 @@ export function runMiniSql(
         });
       }
 
-      if (limitNum !== undefined) {
-        outputRows = outputRows.slice(0, limitNum);
+      if (offsetNum > 0 || limitNum !== undefined) {
+        outputRows = outputRows.slice(
+          offsetNum,
+          limitNum !== undefined ? offsetNum + limitNum : undefined
+        );
       }
 
       completedOps.add('SELECT');
@@ -1409,7 +1768,7 @@ export function runMiniSql(
       results.push({
         statementIndex: stmtNum,
         sql: stmt,
-        kind: 'SELECT',
+        kind: joinTableName ? `SELECT (${joinKindRaw} JOIN)` : 'SELECT',
         success: true,
         message: `Returned ${outputRows.length} row${outputRows.length === 1 ? '' : 's'}.`,
         columns: outputCols,
@@ -1437,7 +1796,7 @@ export function runMiniSql(
       code: 'UNSUPPORTED_SQL',
       message: `Unrecognized SQL statement starting with "${stmt.split(/\s+/)[0]}".`,
       suggestion:
-        'Supported commands: CREATE TABLE, INSERT INTO, SELECT, UPDATE, DELETE FROM, CREATE [UNIQUE] INDEX, DROP INDEX, DROP TABLE, TRUNCATE TABLE.',
+        'Supported commands: CREATE TABLE, INSERT INTO, SELECT (with DISTINCT/JOIN/WHERE/BETWEEN/IN/GROUP BY/HAVING/ORDER BY/LIMIT/OFFSET), UPDATE, DELETE FROM, CREATE [UNIQUE] INDEX, DROP INDEX, DROP TABLE, TRUNCATE TABLE.',
     });
   });
 
@@ -1450,3 +1809,270 @@ export function runMiniSql(
     completedOps: mode === 'execute' && !hasErrors ? Array.from(completedOps) : [],
   };
 }
+
+/**
+ * Principal-level SQL Intelligence Review, Fast-Fetch & Insert-Compression Analyzer.
+ */
+export function analyzeSqlIntelligence(
+  rawSql: string,
+  db?: MiniDatabaseState
+): SqlIntelligenceReport {
+  const sql = stripSqlComments(rawSql).trim();
+  const findings: SqlIntelligenceFinding[] = [];
+  let score = 100;
+  let optimizedSql = sql;
+
+  const hasSelectStar = /\bSELECT\s+(?:DISTINCT\s+)?\*/i.test(sql);
+  if (hasSelectStar) {
+    score -= 18;
+    findings.push({
+      id: 'select-star',
+      severity: 'high',
+      category: 'Fetch Speed',
+      title: 'SELECT * prevents Index-Only Scans & inflates network + TOAST decompression I/O',
+      explanation:
+        'Fetching every column forces heap page lookups (random I/O), decompresses wide TEXT/JSONB TOAST columns unnecessarily, and saturates network buffers.',
+      recommendation:
+        'Project only the exact columns your caller needs so the planner can serve the query directly from a covering B-Tree index (`INCLUDE (...)`).',
+      suggestedSql: sql.replace(/SELECT\s+\*/i, 'SELECT order_id, user_id, amount, status'),
+      estimatedImpact: '2x–6x lower I/O & enables Index-Only Scan',
+    });
+    optimizedSql = optimizedSql.replace(/SELECT\s+\*/i, 'SELECT order_id, user_id, amount, status');
+  }
+
+  // Non-SARGable function wrapped around WHERE column
+  const nonSargFn = sql.match(
+    /\bWHERE\b[\s\S]*?\b(LOWER|UPPER|YEAR|MONTH|DATE|SUBSTRING|COALESCE|CAST)\s*\(\s*([a-zA-Z0-9_.]+)\s*\)/i
+  );
+  if (nonSargFn) {
+    score -= 22;
+    const fnName = nonSargFn[1].toUpperCase();
+    const colName = nonSargFn[2];
+    findings.push({
+      id: 'non-sargable-fn',
+      severity: 'critical',
+      category: 'Indexing',
+      title: `Non-SARGable predicate ${fnName}(${colName}) disables standard B-Tree index`,
+      explanation:
+        'Wrapping an indexed column in a function forces the database to compute that function on every single row in a Full Table Scan.',
+      recommendation:
+        fnName === 'YEAR' || fnName === 'DATE'
+          ? `Rewrite using a half-open range predicate (${colName} >= '2026-01-01' AND ${colName} < '2027-01-01') so the B-Tree range scan stays active.`
+          : `Create a functional/expression index: CREATE INDEX CONCURRENTLY idx_${colName.replace(/\./g, '_')}_${fnName.toLowerCase()} ON table (${fnName}(${colName}));`,
+      suggestedSql:
+        fnName === 'YEAR' || fnName === 'DATE'
+          ? `WHERE ${colName} >= '2026-01-01' AND ${colName} < '2027-01-01'`
+          : `CREATE INDEX CONCURRENTLY idx_expr_${colName.replace(/\./g, '_')} ON users (${fnName}(${colName}));`,
+      estimatedImpact: '10x–200x faster (Full Seq Scan -> B-Tree Range Scan)',
+    });
+  }
+
+  // Leading wildcard LIKE '%...'
+  if (/\b(?:I?LIKE)\s+'%/i.test(sql)) {
+    score -= 20;
+    findings.push({
+      id: 'leading-wildcard',
+      severity: 'critical',
+      category: 'Indexing',
+      title: "Leading wildcard LIKE '%...' cannot traverse a standard B-Tree index",
+      explanation:
+        "B-Tree indexes sort strings left-to-right. A leading '%' forces a full scan over every row in the table.",
+      recommendation:
+        'Use a prefix match (`LIKE \'Cloud%\'`) for B-Tree, or create a PostgreSQL GIN Trigram index (`pg_trgm`) / Full-Text `tsvector` GIN index for substring search.',
+      suggestedSql:
+        'CREATE EXTENSION IF NOT EXISTS pg_trgm;\nCREATE INDEX CONCURRENTLY idx_orders_product_trgm ON orders USING GIN (product gin_trgm_ops);',
+      estimatedImpact: '15x–100x faster substring search on 1M+ rows',
+    });
+  }
+
+  // Deep OFFSET pagination
+  const offsetMatch = sql.match(/\bOFFSET\s+(\d+)/i);
+  if (offsetMatch) {
+    const offVal = Number(offsetMatch[1]);
+    score -= offVal >= 100 ? 20 : 12;
+    findings.push({
+      id: 'offset-pagination',
+      severity: offVal >= 100 ? 'critical' : 'high',
+      category: 'Fetch Speed',
+      title: `OFFSET ${offVal} wastes CPU/RAM scanning and discarding skipped rows`,
+      explanation:
+        'Even with an index, `OFFSET N` must read, sort, and throw away N rows before returning the next page—degrading linearly to O(N) on deep pages.',
+      recommendation:
+        'Switch to Keyset (Seek) Pagination using the last seen indexed cursor (`WHERE order_id > $last_id ORDER BY order_id ASC LIMIT 50`).',
+      suggestedSql:
+        'SELECT order_id, user_id, amount, status\nFROM orders\nWHERE order_id > :last_seen_order_id\nORDER BY order_id ASC\nLIMIT 50;',
+      estimatedImpact: 'Constant O(log N) latency across page 1 to page 100,000',
+    });
+  }
+
+  // NOT IN subquery NULL hazard
+  if (/\bNOT\s+IN\s*\(\s*SELECT\b/i.test(sql)) {
+    score -= 18;
+    findings.push({
+      id: 'not-in-null-trap',
+      severity: 'critical',
+      category: 'Correctness',
+      title: 'NOT IN (SELECT ...) silently returns 0 rows if any subquery value is NULL',
+      explanation:
+        'Under SQL three-valued logic, `x != NULL` evaluates to UNKNOWN, causing the entire `NOT IN` anti-join to return an empty set.',
+      recommendation:
+        'Rewrite with `NOT EXISTS (...)` or a `LEFT JOIN ... WHERE right.id IS NULL` anti-join—both are NULL-safe and unlock Hash/Merge Anti-Join plans.',
+      suggestedSql:
+        'SELECT u.id, u.name\nFROM users u\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o WHERE o.user_id = u.id\n);',
+      estimatedImpact: 'Eliminates silent NULL bugs + enables Hash Anti-Join',
+    });
+  }
+
+  // UNION vs UNION ALL
+  if (/\bUNION\b(?!\s+ALL\b)/i.test(sql)) {
+    score -= 10;
+    findings.push({
+      id: 'union-sort',
+      severity: 'optimization',
+      category: 'Fetch Speed',
+      title: 'UNION performs an implicit global sort/hash deduplication pass',
+      explanation:
+        'If branches are already disjoint (e.g. active + archived partitions), `UNION` wastes memory and CPU sorting millions of rows just to check for duplicates.',
+      recommendation: 'Use `UNION ALL` unless cross-branch duplicate elimination is strictly required.',
+      suggestedSql: sql.replace(/\bUNION\b(?!\s+ALL\b)/gi, 'UNION ALL'),
+      estimatedImpact: '2x–5x faster streaming combine, zero temp sort spill',
+    });
+  }
+
+  // OR across different columns
+  if (/\bWHERE\b[\s\S]*\bOR\b/i.test(sql)) {
+    score -= 10;
+    findings.push({
+      id: 'or-bitmap-union',
+      severity: 'optimization',
+      category: 'Indexing',
+      title: 'OR predicate can force Seq Scan or expensive BitmapOr merges',
+      explanation:
+        'When OR filters span distinct columns, single B-Tree indexes lose selectivity and may fall back to a sequential scan.',
+      recommendation:
+        'Use `IN (...)` when testing the same column, or split into two indexed `UNION ALL` branches when filtering distinct indexed columns.',
+      estimatedImpact: 'Restores sharp B-Tree index selectivity',
+    });
+  }
+
+  // Single-row INSERT loops or unbatched writes -> Fast-Fetch to Insert Compression guidance
+  const insertCount = (sql.match(/\bINSERT\s+INTO\b/gi) ?? []).length;
+  if (insertCount >= 1) {
+    if (insertCount >= 2) {
+      score -= 18;
+      findings.push({
+        id: 'multi-insert-loop',
+        severity: 'high',
+        category: 'Insert & Compression',
+        title: `${insertCount} separate INSERT statements multiply WAL fsync, parse & round-trip overhead`,
+        explanation:
+          'Sending individual INSERTs causes 1 network RTT + 1 WAL commit record + per-row B-Tree page locks per statement.',
+        recommendation:
+          'Batch 500–5,000 rows per multi-row `INSERT INTO ... VALUES (...), (...)` or stream via PostgreSQL `COPY FROM STDIN (FORMAT binary)` with ZSTD/LZ4 transport compression and deferred secondary index creation.',
+        suggestedSql:
+          "-- Fast Bulk Ingest + LZ4 Compression Pattern:\nALTER TABLE events_archive ALTER COLUMN payload SET COMPRESSION lz4;\nCOPY events_archive (id, tenant_id, payload) FROM STDIN WITH (FORMAT binary);",
+        estimatedImpact: '10x–45x higher ingest rows/sec & 3x–6x smaller disk footprint',
+      });
+    } else {
+      findings.push({
+        id: 'single-insert-compression',
+        severity: 'optimization',
+        category: 'Insert & Compression',
+        title: 'Insert-Compression & Fast-Ingest Tuning Tip',
+        explanation:
+          'For high-volume ETL or fetch-to-insert pipelines, row-by-row inserts incur heavy WAL and random B-Tree split amplification.',
+        recommendation:
+          'Use `INSERT INTO dest SELECT ...` with a Covering Index fetch, `SET COMPRESSION lz4` (PG 14+) on wide columns, or columnar ZSTD + Dictionary/Delta encoding for analytical sinks.',
+        estimatedImpact: '60%–82% storage savings via LZ4/ZSTD + batching',
+      });
+    }
+  }
+
+  // Missing WHERE on UPDATE/DELETE
+  if (/\b(UPDATE|DELETE\s+FROM)\b/i.test(sql) && !/\bWHERE\b/i.test(sql)) {
+    score -= 30;
+    findings.push({
+      id: 'unbounded-dml',
+      severity: 'critical',
+      category: 'Correctness',
+      title: 'Unbounded UPDATE/DELETE without WHERE will mutate or wipe the entire table',
+      explanation:
+        'An accidental table-wide write acquires locks on every row, explodes MVCC dead tuples & WAL volume, and can cause immediate data loss.',
+      recommendation:
+        'Add an indexed `WHERE` filter (or batch by primary key chunks of 5,000 rows) before running in production.',
+      estimatedImpact: 'Prevents SEV-1 data loss & table-wide lock stalls',
+    });
+  }
+
+  // Check missing index on live mini-DB tables if available
+  const fromMatch = sql.match(/\bFROM\s+([a-zA-Z_][a-zA-Z0-9_]*)/i);
+  const whereMatch = sql.match(/\bWHERE\s+([a-zA-Z_][a-zA-Z0-9_.]*)\s*(=|>=|<=|>|<|BETWEEN|IN)/i);
+  if (fromMatch && whereMatch && db) {
+    const tbl = fromMatch[1].toLowerCase();
+    const col = whereMatch[1].toLowerCase().split('.').pop()!;
+    const hasIdx = db.indexes.some((i) => i.tableName === tbl && i.columns[0] === col);
+    if (!hasIdx && db.tables[tbl]) {
+      score -= 14;
+      const ddl = `CREATE INDEX CONCURRENTLY idx_${tbl}_${col} ON ${tbl} (${col});`;
+      findings.push({
+        id: 'missing-where-index',
+        severity: 'high',
+        category: 'Indexing',
+        title: `No leading B-Tree index on ${tbl}(${col}) — planner falls back to Seq Scan`,
+        explanation: `Filtering "${tbl}" by "${col}" scans every page because no active index starts with "${col}".`,
+        recommendation: `Add a non-blocking B-Tree (or covering INCLUDE) index on ${tbl}(${col}).`,
+        suggestedSql: ddl,
+        estimatedImpact: 'O(N) Seq Scan -> O(log N) Index Scan',
+      });
+    }
+  }
+
+  if (findings.length === 0) {
+    findings.push({
+      id: 'well-tuned',
+      severity: 'good',
+      category: 'Fetch Speed',
+      title: 'Query follows SARGable indexing & explicit column projection best practices',
+      explanation:
+        'No anti-patterns detected (`SELECT *`, leading wildcards, non-SARGable functions, deep `OFFSET`, or unsafe DML).',
+      recommendation:
+        'Verify actual buffer hits in production with `EXPLAIN (ANALYZE, BUFFERS)` and add `INCLUDE (...)` columns if heap fetches dominate.',
+      estimatedImpact: 'Optimal Index / Index-Only Scan ready',
+    });
+  }
+
+  score = Math.max(15, Math.min(100, score));
+  const grade: SqlIntelligenceReport['grade'] =
+    score >= 88 ? 'A' : score >= 70 ? 'B' : score >= 50 ? 'C' : 'D';
+
+  const hasCritical = findings.some((f) => f.severity === 'critical');
+  const detectedScan = hasCritical
+    ? 'Full Seq Scan / Unoptimized I/O'
+    : score < 88
+      ? 'Suboptimal Scan / Extra Heap & Sort Overhead'
+      : 'SARGable Index / Covering Scan';
+  const recommendedScan =
+    insertCount > 0
+      ? 'Batched COPY / Multi-Row Insert + LZ4/ZSTD Compression'
+      : 'Covering Index-Only Scan + Keyset Seek';
+
+  const estimatedSpeedup =
+    score < 50 ? '15x – 120x faster' : score < 75 ? '4x – 20x faster' : score < 90 ? '1.8x – 4x faster' : 'Already near-optimal';
+
+  const compressionOpportunity =
+    insertCount > 0 || hasSelectStar
+      ? '3.2x – 6.5x storage & wire reduction (LZ4 / ZSTD + narrow projection)'
+      : '2.5x – 4.0x disk savings with TOAST LZ4 / Columnar ZSTD';
+
+  return {
+    score,
+    grade,
+    detectedScan,
+    recommendedScan,
+    estimatedSpeedup,
+    compressionOpportunity,
+    findings,
+    optimizedSql,
+  };
+}
+

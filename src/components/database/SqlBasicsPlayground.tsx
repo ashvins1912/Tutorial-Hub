@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import {
+  analyzeSqlIntelligence,
   createInitialMiniDatabase,
   runMiniSql,
   type MiniDatabaseState,
@@ -135,6 +136,40 @@ CREATE INDEX IF NOT EXISTS idx_orders_status_amount ON orders (status, amount);
 SELECT order_id, product, amount FROM orders WHERE status = 'PAID';`,
   },
   {
+    id: 'operators-functions-having',
+    category: '07 · OPS & FUNCTIONS',
+    title: 'BETWEEN, IN, CASE, Scalar Fns & HAVING',
+    plainEnglish:
+      'Test live SQL operators (BETWEEN, IN, LIKE), scalar functions (UPPER, COALESCE, CASE WHEN), DISTINCT, and post-group HAVING filters.',
+    syntaxPattern: 'SELECT UPPER(col), CASE WHEN ... FROM t WHERE col BETWEEN a AND b GROUP BY ... HAVING ...;',
+    sql: `-- 1. Operators (BETWEEN, IN) + Scalar Functions (UPPER, CASE WHEN)
+SELECT order_id, UPPER(product) AS product_upper, amount,
+  CASE WHEN amount >= 300 THEN 'ENTERPRISE' ELSE 'STANDARD' END AS tier
+FROM orders
+WHERE amount BETWEEN 40 AND 900 AND status IN ('PAID', 'SHIPPED')
+ORDER BY amount DESC;
+
+-- 2. GROUP BY + COUNT(DISTINCT) + HAVING post-aggregate filter
+SELECT status, COUNT(*) AS orders_cnt, SUM(amount) AS revenue
+FROM orders
+GROUP BY status
+HAVING revenue >= 100
+ORDER BY revenue DESC;`,
+  },
+  {
+    id: 'all-joins-demo',
+    category: '08 · ALL JOINS',
+    title: 'LEFT, RIGHT, FULL & CROSS JOIN',
+    plainEnglish:
+      'Execute LEFT OUTER JOIN with COALESCE fallback and FULL OUTER JOIN live against users and orders.',
+    syntaxPattern: 'SELECT ... FROM users LEFT JOIN orders ON users.id = orders.user_id;',
+    sql: `-- LEFT JOIN preserves every user (COALESCE handles NULLs cleanly)
+SELECT u.name, COALESCE(o.product, 'No Order') AS item, COALESCE(o.amount, 0) AS spend
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+ORDER BY spend DESC;`,
+  },
+  {
     id: 'broken-syntax-demo',
     category: 'Syntax Check Demo',
     title: 'Test Syntax Checker (Broken SQL)',
@@ -182,6 +217,11 @@ export function SqlBasicsPlayground() {
   const activePreset = useMemo(
     () => SQL_BASIC_PRESETS.find((p) => p.id === activePresetId) ?? SQL_BASIC_PRESETS[0],
     [activePresetId]
+  );
+
+  const liveIntelligence = useMemo(
+    () => analyzeSqlIntelligence(sqlInput, db),
+    [sqlInput, db]
   );
 
   const handleLoadPreset = (preset: SqlLessonPreset) => {
@@ -280,8 +320,8 @@ export function SqlBasicsPlayground() {
           </div>
         </div>
 
-        {/* 7 Interactive Lesson Cards (Create, Insert, Select, Update, Delete, Index, Syntax Error Demo) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+        {/* Interactive Lesson Cards (Create, Insert, Select, Update, Delete, Index, Ops/Fns, Joins, Syntax Demo) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5">
           {SQL_BASIC_PRESETS.map((preset) => {
             const active = preset.id === activePresetId;
             return (
@@ -390,6 +430,22 @@ export function SqlBasicsPlayground() {
               <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
               Reset Sample DB
             </button>
+          </div>
+
+          {/* Live Inline SQL Intelligence Advisor Strip */}
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-3 text-xs space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px]">
+              <span className="font-semibold text-sky-700 dark:text-sky-400">
+                SQL Intelligence Review · Health {liveIntelligence.score}/100 ({liveIntelligence.grade})
+              </span>
+              <span className="text-slate-600 dark:text-slate-400">
+                {liveIntelligence.estimatedSpeedup}
+              </span>
+            </div>
+            <div className="text-slate-700 dark:text-slate-300 leading-5">
+              <strong>Top Recommendation:</strong> {liveIntelligence.findings[0]?.title} —{' '}
+              {liveIntelligence.findings[0]?.recommendation}
+            </div>
           </div>
 
           {/* Syntax Diagnostics & Execution Output */}
