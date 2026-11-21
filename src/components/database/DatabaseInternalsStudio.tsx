@@ -6,6 +6,7 @@ import {
   Cpu,
   Database,
   GitBranch,
+  Layers,
   PlayCircle,
   ShieldAlert,
   Sliders,
@@ -21,9 +22,15 @@ import {
   PRACTICE_CHALLENGES,
   VISUAL_FLOW_SCENARIOS,
 } from '../../data/databaseVisualData';
+import {
+  DB_OBJECT_AND_ASSOC_MODULES,
+  DB_SCHEMA_DESIGN_TECHNIQUES,
+  SQL_PROGRESSIVE_SCENARIOS,
+} from '../../data/dbCompleteObjectsAndSchemaData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { DbObjectsAndSchemaAcademy } from './DbObjectsAndSchemaAcademy';
 import { DatabaseVisualAnimator } from './DatabaseVisualAnimator';
 import { DatabaseConceptGuide } from './DatabaseConceptGuide';
 import { DatabasePracticeWorkbench } from './DatabasePracticeWorkbench';
@@ -38,6 +45,7 @@ import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
+  | 'db-complete-academy'
   | 'sql-basics'
   | 'sql-intelligence'
   | 'live-labs'
@@ -66,6 +74,9 @@ const DEFAULT_DB_PROGRESS: DatabaseInternalsProgress = {
   completedPracticeIds: [],
 };
 
+const BoundedDbObjectsAndSchemaAcademy = withStudioBoundary(DbObjectsAndSchemaAcademy, {
+  studioName: 'Views, Triggers, Windows, NoSQL & Schema Design Academy',
+});
 const BoundedTaxonomyAndSqlMasteryLab = withStudioBoundary(TaxonomyAndSqlMasteryLab, {
   studioName: 'Database Taxonomy, SQL Mastery & Sharding Lab',
 });
@@ -104,7 +115,7 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('visual-dfd');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('db-complete-academy');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
@@ -286,6 +297,16 @@ export function DatabaseInternalsStudio() {
             wrap
             tabs={[
               {
+                id: 'db-complete-academy',
+                label: 'Views, Triggers, NoSQL & Schema Design',
+                shortLabel: 'DB & Schema',
+                count:
+                  DB_OBJECT_AND_ASSOC_MODULES.length +
+                  SQL_PROGRESSIVE_SCENARIOS.length +
+                  DB_SCHEMA_DESIGN_TECHNIQUES.length,
+                icon: Layers,
+              },
+              {
                 id: 'visual-dfd',
                 label: 'Visual DFD & Animations',
                 shortLabel: 'Visual DFD',
@@ -361,6 +382,7 @@ export function DatabaseInternalsStudio() {
       </section>
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'db-complete-academy' && <BoundedDbObjectsAndSchemaAcademy />}
       {activeTab === 'sql-basics' && <BoundedSqlBasicsPlayground />}
       {activeTab === 'sql-intelligence' && <BoundedSqlQueryIntelligenceLab />}
       {activeTab === 'live-labs' && <BoundedConcurrencyRecoverySecurityLab />}
