@@ -25,6 +25,7 @@ import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { AiDfdVisualizer as AiDfdVisualizerBase } from './AiDfdVisualizer';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
+import { TopicBridgeBar } from './shared/TopicBridgeBar';
 
 const AiDfdVisualizer = withStudioBoundary(AiDfdVisualizerBase, {
   studioName: 'AI Architecture DFD Visualizer',
@@ -850,6 +851,8 @@ export function AiEngineeringStudio() {
           <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
       </div>
+
+      <TopicBridgeBar studioId="ai-engineering" />
     </div>
   );
 }

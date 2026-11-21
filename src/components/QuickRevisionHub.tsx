@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
+  ArrowRight,
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Compass,
   Download,
   Lightbulb,
   NotebookPen,
@@ -11,6 +13,7 @@ import {
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { apiFetch } from '../lib/apiFetch';
+import { BEGINNER_TO_ADVANCED_PATH } from '../data/knowledgeLinkRegistry';
 import { CopyButton } from './ui';
 
 export function QuickRevisionHub() {
@@ -19,6 +22,7 @@ export function QuickRevisionHub() {
   } = useAsyncCatalog('curriculum-patterns');
   const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
   const selectProblem = usePatternForgeStore((s) => s.selectProblem);
+  const setActiveView = usePatternForgeStore((s) => s.setActiveView);
   const [cardIdx, setCardIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
@@ -292,6 +296,64 @@ export function QuickRevisionHub() {
           </p>
         </section>
       </div>
+
+      {/* Beginner-to-Advanced Full-Curriculum Transfer Map */}
+      <section className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-5">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
+            <Compass className="w-3.5 h-3.5" aria-hidden="true" />
+            Complete Beginner-to-Advanced Engineering Roadmap
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Jump Across Connected Studios in Learning Order
+          </h3>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Follow Stages 01 → 03 sequentially to transfer knowledge smoothly from language fundamentals and algorithms to databases, distributed systems, and AI infrastructure.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {BEGINNER_TO_ADVANCED_PATH.map((stage) => (
+            <div
+              key={stage.stageNumber}
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-3 flex flex-col justify-between"
+            >
+              <div className="space-y-1">
+                <div className="text-[11px] font-mono text-sky-700 dark:text-sky-400">
+                  Stage {stage.stageNumber} · {stage.tier}
+                </div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {stage.title}
+                </h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {stage.summary}
+                </p>
+              </div>
+              <div className="space-y-2 pt-2 border-t border-slate-200/70 dark:border-slate-800">
+                {stage.items.map((item) => (
+                  <button
+                    key={item.viewId}
+                    type="button"
+                    onClick={() => setActiveView(item.viewId)}
+                    className="group w-full text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5 hover:border-sky-500 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      <span>{item.label}</span>
+                      <ArrowRight
+                        className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 shrink-0"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      {item.whatYouLearn}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

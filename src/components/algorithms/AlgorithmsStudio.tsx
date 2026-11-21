@@ -43,6 +43,7 @@ import { RecursionBacktrackingLab as RecursionBacktrackingLabBase } from '../../
 import { ComplexityDepthToggle } from '../../features/visualizer/components/ComplexityDepthToggle';
 import { useAccountState } from '../../hooks/useAccountState';
 import { getAlgorithmComplexityProfile } from '../../features/visualizer/data/complexityComparisonData';
+import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 import { getAlgorithmTutorGuide } from '../../data/algorithmTutorGuides';
 import { getAlgorithmUpgradeSpec } from '../../data/algorithmUpgradeLadders';
 import {
@@ -1804,6 +1805,8 @@ export function AlgorithmsStudio({
       />
         </>
       )}
+
+      <TopicBridgeBar studioId="algorithms" />
     </div>
   );
 }

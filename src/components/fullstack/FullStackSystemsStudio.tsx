@@ -20,6 +20,7 @@ import { FrameworkRuntimeMatrixLab } from './FrameworkRuntimeMatrixLab';
 import { AiInferenceHardwareLab } from './AiInferenceHardwareLab';
 import { PolyglotStackCodeLab } from './PolyglotStackCodeLab';
 import { StorageAndDiagnosticsLab } from './StorageAndDiagnosticsLab';
+import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type FullStackTab = 'storyboard' | 'frameworks' | 'ai-gpu' | 'polyglot' | 'storage-ops';
 
@@ -128,6 +129,7 @@ export function FullStackSystemsStudio() {
             ariaLabel="Full-Stack Systems Studio workspaces"
             activeTab={activeTab}
             onChange={setActiveTab}
+            wrap
             tabs={[
               {
                 id: 'storyboard',
@@ -177,6 +179,8 @@ export function FullStackSystemsStudio() {
           onToggleRunbook={handleToggleRunbook}
         />
       )}
+
+      <TopicBridgeBar studioId="full-stack" />
     </div>
   );
 }

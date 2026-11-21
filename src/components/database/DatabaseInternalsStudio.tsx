@@ -35,6 +35,7 @@ import { ChaosDrillAndQuizLab } from './ChaosDrillAndQuizLab';
 import { ConcurrencyRecoverySecurityLab } from './ConcurrencyRecoverySecurityLab';
 import { SqlBasicsPlayground } from './SqlBasicsPlayground';
 import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
+import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
   | 'sql-basics'
@@ -400,6 +401,8 @@ export function DatabaseInternalsStudio() {
           onMarkOutageSolved={handleMarkOutageSolved}
         />
       )}
+
+      <TopicBridgeBar studioId="db-internals" />
     </div>
   );
 }

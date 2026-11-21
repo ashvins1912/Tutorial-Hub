@@ -22,6 +22,7 @@ import { CollectionsConcurrencyPlayground } from './CollectionsConcurrencyPlaygr
 import { LanguageConceptGuide } from './LanguageConceptGuide';
 import { LanguagePracticeWorkbench } from './LanguagePracticeWorkbench';
 import { LanguageMasteryQuiz } from './LanguageMasteryQuiz';
+import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type LangStudioTab = 'visual-dfd' | 'collections-concurrency' | 'concepts' | 'practice' | 'quiz';
 
@@ -289,6 +290,8 @@ export function LanguagesTutorialStudio() {
           onResetQuizProgress={handleResetQuizProgress}
         />
       )}
+
+      <TopicBridgeBar studioId="languages" />
     </div>
   );
 }

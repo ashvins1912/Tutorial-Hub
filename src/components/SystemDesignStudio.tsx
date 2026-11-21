@@ -6,6 +6,7 @@ import { DatabaseVisualAnimator as DatabaseVisualAnimatorBase } from './database
 import { VISUAL_FLOW_SCENARIOS } from '../data/databaseVisualData';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
+import { TopicBridgeBar } from './shared/TopicBridgeBar';
 
 const SystemDesignLearningAcademy = withStudioBoundary(SystemDesignLearningAcademyBase, {
   studioName: 'System Design Deep Academy',
@@ -572,6 +573,7 @@ export function SystemDesignStudio() {
   // Animation state
   const [animStep, setAnimStep] = useState(0);
   const [animPlaying, setAnimPlaying] = useState(false);
+  const [animSpeedMs, setAnimSpeedMs] = useState(1800);
 
   const handleSelectScenario = (id: string) => {
     const next = SYSTEM_SCENARIOS.find((s) => s.id === id) ?? SYSTEM_SCENARIOS[0];
@@ -589,9 +591,9 @@ export function SystemDesignStudio() {
     if (!animPlaying) return;
     const timer = window.setInterval(() => {
       setAnimStep((prev) => (prev + 1) % scenario.animationSteps.length);
-    }, 1600);
+    }, animSpeedMs);
     return () => window.clearInterval(timer);
-  }, [animPlaying, scenario.animationSteps.length]);
+  }, [animPlaying, animSpeedMs, scenario.animationSteps.length]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -962,90 +964,373 @@ export function SystemDesignStudio() {
         </div>
       )}
 
-      {/* Mode 2: Existing System Animations */}
-      {subTab === 'animations' && (
-        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-xs font-mono text-sky-600 dark:text-sky-400">
-                REFERENCE ARCHITECTURE ANIMATION · {scenario.title.toUpperCase()}
-              </p>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
-                Step {currentAnimFrame.step}/{scenario.animationSteps.length}: {currentAnimFrame.title}
-              </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                {currentAnimFrame.packetNote}
-              </p>
-            </div>
+      {/* Mode 2: Interactive SVG System DFD & Packet Flow Simulator */}
+      {subTab === 'animations' && (() => {
+        const scenarioNodes = SYSTEM_COMPONENTS.filter(
+          (c) =>
+            scenario.requiredComponents.some((r) => r.id === c.id) ||
+            scenario.recommendedComponents.some((r) => r.id === c.id) ||
+            scenario.animationSteps.some((st) => st.activeNodes.includes(c.id))
+        );
+        const layerOrder: SystemLayerId[] = ['edge', 'compute', 'cache_async', 'storage'];
+        const layerLabels: Record<SystemLayerId, string> = {
+          edge: '1. Edge & Routing',
+          compute: '2. API & Compute',
+          cache_async: '3. Cache & Async',
+          storage: '4. Database & Shards',
+        };
+        const positioned = scenarioNodes.map((node) => {
+          const colIdx = layerOrder.indexOf(node.layer);
+          const peersInCol = scenarioNodes.filter((n) => n.layer === node.layer);
+          const rowIdx = peersInCol.findIndex((n) => n.id === node.id);
+          const colX = 28 + colIdx * 218;
+          const totalH = peersInCol.length * 74 + Math.max(0, peersInCol.length - 1) * 16;
+          const startY = Math.max(48, (270 - totalH) / 2 + 16);
+          const rowY = startY + rowIdx * 90;
+          return { node, x: colX, y: rowY, w: 178, h: 64, colIdx };
+        });
 
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-semibold mr-2 tabular-nums">
-                Elapsed: {currentAnimFrame.latencyMs} ms
-              </span>
-              <button
-                type="button"
-                onClick={() => setAnimPlaying((p) => !p)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold"
-              >
-                {animPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                {animPlaying ? 'Pause Flow' : 'Animate Request Flow'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAnimPlaying(false);
-                  setAnimStep((s) => (s + 1) % scenario.animationSteps.length);
-                }}
-                className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300"
-              >
-                Next Hop
-              </button>
-            </div>
-          </div>
+        const dfdLinks: { from: typeof positioned[number]; to: typeof positioned[number]; active: boolean }[] = [];
+        for (let i = 0; i < layerOrder.length - 1; i++) {
+          const srcNodes = positioned.filter((p) => p.colIdx === i);
+          const dstNodes = positioned.filter((p) => p.colIdx === i + 1);
+          srcNodes.forEach((s) => {
+            dstNodes.forEach((d) => {
+              const bothActive =
+                currentAnimFrame.activeNodes.includes(s.node.id) &&
+                currentAnimFrame.activeNodes.includes(d.node.id);
+              dfdLinks.push({ from: s, to: d, active: bothActive });
+            });
+          });
+        }
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {SYSTEM_COMPONENTS.filter((c) =>
-              scenario.requiredComponents.some((r) => r.id === c.id) ||
-              scenario.recommendedComponents.some((r) => r.id === c.id) ||
-              scenario.animationSteps.some((st) => st.activeNodes.includes(c.id))
-            ).map((node) => {
-              const active = currentAnimFrame.activeNodes.includes(node.id);
-              const nodeVisual = getComponentVisual(node);
-              const NodeIcon = nodeVisual.icon;
-              return (
-                <div
-                  key={node.id}
-                  className={`p-4 rounded-xl border transition-all ${
-                    active
-                      ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 ring-2 ring-sky-500/30'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 opacity-80'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${nodeVisual.tileClass}`}
-                      >
-                        <NodeIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                      </div>
-                      <span className={`text-[11px] font-mono font-semibold truncate ${nodeVisual.labelClass}`}>
-                        {nodeVisual.categoryLabel}
-                      </span>
-                    </div>
-                    {active && (
-                      <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
-                    )}
-                  </div>
-                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {node.name}
-                  </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{node.role}</div>
+        const totalLatency =
+          scenario.animationSteps[scenario.animationSteps.length - 1]?.latencyMs ||
+          currentAnimFrame.latencyMs ||
+          1;
+        const latencyPct = Math.min(100, Math.round((currentAnimFrame.latencyMs / totalLatency) * 100));
+
+        return (
+          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-xs font-mono text-sky-700 dark:text-sky-400">
+                  Interactive System Architecture DFD · {scenario.title}
+                </p>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Step {currentAnimFrame.step}/{scenario.animationSteps.length}: {currentAnimFrame.title}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  {currentAnimFrame.packetNote}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-semibold mr-1 tabular-nums">
+                  Elapsed: {currentAnimFrame.latencyMs} ms ({latencyPct}%)
+                </span>
+                <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-0.5 text-[11px] font-mono">
+                  {[
+                    { label: '0.5×', ms: 2800 },
+                    { label: '1×', ms: 1800 },
+                    { label: '2×', ms: 950 },
+                  ].map((sp) => (
+                    <button
+                      key={sp.label}
+                      type="button"
+                      onClick={() => setAnimSpeedMs(sp.ms)}
+                      className={`px-2 py-1 rounded ${
+                        animSpeedMs === sp.ms
+                          ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 font-semibold'
+                          : 'text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {sp.label}
+                    </button>
+                  ))}
                 </div>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => setAnimPlaying((p) => !p)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold"
+                >
+                  {animPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  {animPlaying ? 'Pause DFD' : 'Animate Flow'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAnimPlaying(false);
+                    setAnimStep((s) => (s + 1) % scenario.animationSteps.length);
+                  }}
+                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Next Hop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAnimPlaying(false);
+                    setAnimStep(0);
+                  }}
+                  aria-label="Reset animation to step 1"
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            {/* Step Scrubber Timeline */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+              {scenario.animationSteps.map((st, idx) => {
+                const isCurr = idx === animStep;
+                const isPast = idx < animStep;
+                return (
+                  <button
+                    key={st.step}
+                    type="button"
+                    onClick={() => {
+                      setAnimPlaying(false);
+                      setAnimStep(idx);
+                    }}
+                    className={`rounded-lg border p-2.5 text-left transition-colors ${
+                      isCurr
+                        ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40'
+                        : isPast
+                          ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                      <span>Step {st.step}</span>
+                      <span>{st.latencyMs} ms</span>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate mt-0.5">
+                      {st.title}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Layered SVG Data Flow Diagram (Edge -> Compute -> Cache/Async -> Storage) */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 p-4 overflow-x-auto">
+              <svg
+                viewBox="0 0 900 310"
+                className="w-full min-w-[720px] h-auto"
+                role="img"
+                aria-label={`Animated request flow DFD for ${scenario.title}`}
+              >
+                <defs>
+                  <marker
+                    id="sys-dfd-arrow-muted"
+                    viewBox="0 0 10 10"
+                    refX="8"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto"
+                  >
+                    <path d="M 0 1 L 10 5 L 0 9 z" className="fill-slate-300 dark:fill-slate-700" />
+                  </marker>
+                  <marker
+                    id="sys-dfd-arrow-active"
+                    viewBox="0 0 10 10"
+                    refX="8"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto"
+                  >
+                    <path d="M 0 1 L 10 5 L 0 9 z" className="fill-sky-600 dark:fill-sky-400" />
+                  </marker>
+                </defs>
+
+                {/* Tier Swimlane Headers */}
+                {layerOrder.map((layerId, i) => (
+                  <g key={layerId}>
+                    <rect
+                      x={18 + i * 218}
+                      y={10}
+                      width={198}
+                      height={286}
+                      rx={10}
+                      className="fill-white/60 dark:fill-slate-900/40 stroke-slate-200 dark:stroke-slate-800"
+                      strokeDasharray="4 4"
+                    />
+                    <text
+                      x={117 + i * 218}
+                      y={28}
+                      textAnchor="middle"
+                      className="fill-slate-500 dark:fill-slate-400 text-[10px] font-mono font-semibold"
+                    >
+                      {layerLabels[layerId]}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Directional DFD Edges */}
+                {dfdLinks.map((lnk, idx) => {
+                  const x1 = lnk.from.x + lnk.from.w;
+                  const y1 = lnk.from.y + lnk.from.h / 2;
+                  const x2 = lnk.to.x - 4;
+                  const y2 = lnk.to.y + lnk.to.h / 2;
+                  const pathD = `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`;
+                  return (
+                    <g key={idx}>
+                      <path
+                        d={pathD}
+                        fill="none"
+                        strokeWidth={lnk.active ? 2.6 : 1.2}
+                        className={
+                          lnk.active
+                            ? 'stroke-sky-600 dark:stroke-sky-400'
+                            : 'stroke-slate-300 dark:stroke-slate-700'
+                        }
+                        markerEnd={
+                          lnk.active ? 'url(#sys-dfd-arrow-active)' : 'url(#sys-dfd-arrow-muted)'
+                        }
+                      />
+                      {lnk.active && (
+                        <circle r={4.5} className="fill-sky-500 dark:fill-sky-300">
+                          <animateMotion dur="1.1s" repeatCount="indefinite" path={pathD} />
+                        </circle>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Architecture Nodes */}
+                {positioned.map(({ node, x, y, w, h }) => {
+                  const active = currentAnimFrame.activeNodes.includes(node.id);
+                  const vis = getComponentVisual(node);
+                  return (
+                    <g key={node.id}>
+                      <rect
+                        x={x}
+                        y={y}
+                        width={w}
+                        height={h}
+                        rx={10}
+                        strokeWidth={active ? 2.4 : 1.2}
+                        className={
+                          active
+                            ? 'fill-sky-600 dark:fill-sky-500 stroke-sky-700 dark:stroke-sky-300'
+                            : 'fill-white dark:fill-slate-900 stroke-slate-300 dark:stroke-slate-700'
+                        }
+                      />
+                      <text
+                        x={x + 12}
+                        y={y + 20}
+                        className={`text-[9px] font-mono font-semibold ${
+                          active
+                            ? 'fill-sky-100 dark:fill-slate-900'
+                            : 'fill-slate-500 dark:fill-slate-400'
+                        }`}
+                      >
+                        {vis.categoryLabel}
+                      </text>
+                      <text
+                        x={x + 12}
+                        y={y + 39}
+                        className={`text-[12px] font-semibold ${
+                          active
+                            ? 'fill-white dark:fill-slate-950'
+                            : 'fill-slate-900 dark:fill-slate-100'
+                        }`}
+                      >
+                        {node.name.length > 22 ? `${node.name.slice(0, 21)}…` : node.name}
+                      </text>
+                      <text
+                        x={x + 12}
+                        y={y + 54}
+                        className={`text-[9px] font-mono ${
+                          active
+                            ? 'fill-sky-100 dark:fill-slate-900'
+                            : 'fill-slate-500 dark:fill-slate-400'
+                        }`}
+                      >
+                        {active ? 'ACTIVE HOP' : 'STANDBY'}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Plain-English + Standard Architect Explanation & Active Node Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-1.5">
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  What Happens at This Hop (Plain English)
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  {currentAnimFrame.packetNote}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-1.5">
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  Active Components &amp; Latency Budget
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Active nodes:{' '}
+                  <span className="font-mono text-sky-700 dark:text-sky-400">
+                    {currentAnimFrame.activeNodes.join(' → ')}
+                  </span>
+                  . Cumulative end-to-end latency is{' '}
+                  <span className="font-mono font-semibold tabular-nums">
+                    {currentAnimFrame.latencyMs} ms
+                  </span>{' '}
+                  against the scenario SLA budget of{' '}
+                  <span className="font-mono font-semibold tabular-nums">
+                    {scenario.defaultLatencyBudgetMs} ms
+                  </span>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {scenarioNodes.map((node) => {
+                const active = currentAnimFrame.activeNodes.includes(node.id);
+                const nodeVisual = getComponentVisual(node);
+                const NodeIcon = nodeVisual.icon;
+                return (
+                  <div
+                    key={node.id}
+                    className={`p-4 rounded-xl border transition-all ${
+                      active
+                        ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50'
+                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 opacity-80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${nodeVisual.tileClass}`}
+                        >
+                          <NodeIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                        </div>
+                        <span className={`text-[11px] font-mono font-semibold truncate ${nodeVisual.labelClass}`}>
+                          {nodeVisual.categoryLabel}
+                        </span>
+                      </div>
+                      {active && (
+                        <CheckCircle2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {node.name}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{node.role}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Mode 0: System Design & Distributed Algorithms Master Roadmap */}
       {subTab === 'roadmap' && <SystemDesignMasterRoadmap />}
@@ -1055,6 +1340,8 @@ export function SystemDesignStudio() {
 
       {/* Mode 4: Deep System Design Learning Academy */}
       {subTab === 'academy' && <SystemDesignLearningAcademy />}
+
+      <TopicBridgeBar studioId="system-design" />
     </div>
   );
 }

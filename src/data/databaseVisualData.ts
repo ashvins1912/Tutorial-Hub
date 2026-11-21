@@ -1050,6 +1050,68 @@ DROP TABLE events_2025_10;`,
 ON knowledge_base USING hnsw ((embedding::halfvec(1536)) halfvec_cosine_ops)
 WITH (m = 16, ef_construction = 64);`,
   },
+  {
+    id: 'sql-operators-joins-windows',
+    number: 15,
+    category: 'Query Engine',
+    title: 'SQL Operators, 7 Join Patterns, Window Functions & SARGability',
+    relatedFlowId: 'query-pipeline-dfd',
+    simpleEnglish:
+      'SQL is how you ask the database precise questions—filtering with SARGable operators (BETWEEN, IN, EXISTS), combining tables cleanly with the right Join, and ranking rows with Window Functions without collapsing them.',
+    standardDefinition:
+      'Declarative relational algebra covering predicate pushdown (SARGable filters), inner/outer/anti/self/cross join strategies, CTEs & correlated subqueries, and analytic window frames (OVER PARTITION BY ORDER BY).',
+    realWorldApplication:
+      'Powers reporting dashboards, leaderboards, deduplication, cohort retention analytics, and multi-table transactional APIs without N+1 query round trips.',
+    algorithmDetails: {
+      name: 'Predicate Pushdown + Hash/Merge Join + Window Partition Sort',
+      dataStructure: 'B+ Tree Index Seek + In-Memory Hash Table + Bounded Sort Buffer',
+      complexity: 'O(log N + K) for indexed SARGable filters; O(M + N) for Hash Joins; O(K log K) for Window Sorts',
+      howItWorks:
+        'Keeps indexed columns bare (never wrapped in LOWER(col) or DATE(col)) so the planner seeks the B+ Tree first, executes Hash/Nested-Loop Joins on the reduced set, then computes ROW_NUMBER/LAG/SUM OVER partitions in one pass.',
+    },
+    commonTrap:
+      'Using NOT IN (subquery) when the subquery can return NULL causes SQL 3-valued logic to silently return 0 rows, and wrapping indexed columns in functions forces full Sequential Scans.',
+    clearSolution:
+      'Use NOT EXISTS (anti-join) instead of NOT IN, keep WHERE predicates SARGable with range bounds, replace UNION with UNION ALL when rows are disjoint, and use Window Functions instead of self-joins.',
+    codeExample: `SELECT u.id, u.name,
+       COALESCE(o.status, 'NO_ORDER') AS ord_status,
+       ROW_NUMBER() OVER (PARTITION BY u.plan ORDER BY o.amount DESC) AS plan_rank
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE u.created_at >= '2026-01-01' AND u.created_at < '2026-02-01';`,
+  },
+  {
+    id: 'fast-fetch-insert-compression',
+    number: 16,
+    category: 'Storage & Indexing',
+    title: 'Fast Fetch (Keyset Seek) → Bulk Ingest (COPY) & Storage Compression',
+    relatedFlowId: 'btree-index-visual',
+    simpleEnglish:
+      'Reading and loading millions of rows fast means stopping two silent killers: deep OFFSET pagination (which throws away scanned rows) and row-by-row INSERTs (which trigger a network + WAL round-trip per row).',
+    standardDefinition:
+      'High-throughput ETL and OLTP ingestion combining Keyset (Seek) pagination, covering Index-Only scans, unlogged/batched COPY streaming, deferred index builds, and LZ4/ZSTD/Columnar compression.',
+    realWorldApplication:
+      'Used in analytics pipelines, multi-million-row migrations, event ingestion, and time-series archival where storage cost and load time must drop by 5×–50×.',
+    algorithmDetails: {
+      name: 'Keyset B+ Tree Seek + Streaming Bulk COPY + Delta/Dictionary ZSTD Compression',
+      dataStructure: 'Covering Composite B+ Tree (INCLUDE) + 8KB TOAST / Columnar Stripes',
+      complexity: 'O(log N + page_size) constant-time pagination regardless of page depth; 20×–50× lower WAL amplification on COPY',
+      howItWorks:
+        'Fetches slices with WHERE (created_at, id) > ($last_ts, $last_id) LIMIT 5000, streams via binary COPY with deferred secondary index creation, and compresses payloads using LZ4 (low-latency OLTP) or Delta+ZSTD (5×–10× smaller columnar archives).',
+    },
+    commonTrap:
+      'Paginating deep exports with OFFSET 500000 scans and discards 500k rows per page, while inserting 100k rows inside a 1-row-per-commit loop stalls on 100k WAL fsync round trips.',
+    clearSolution:
+      'Switch pagination to Keyset Seek with a composite index, batch writes (1,000–5,000 rows/tx) or use COPY with deferred index creation, and enable LZ4 TOAST or columnar ZSTD compression.',
+    codeExample: `-- 1. Fast O(log N) Keyset Fetch
+SELECT id, tenant_id, amount FROM orders
+WHERE (created_at, id) > ('2026-11-01', 90421)
+ORDER BY created_at ASC, id ASC LIMIT 5000;
+
+-- 2. Fast Bulk Ingest + LZ4 Compression
+ALTER TABLE events ALTER COLUMN payload SET COMPRESSION lz4;
+COPY events (id, tenant_id, payload) FROM STDIN WITH (FORMAT binary);`,
+  },
 ];
 
 export const PRACTICE_CHALLENGES: PracticeChallenge[] = [

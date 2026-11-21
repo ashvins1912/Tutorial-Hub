@@ -23,6 +23,7 @@ import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { OodAnimationStage as OodAnimationStageBase } from './OodAnimationStage';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
+import { TopicBridgeBar } from './shared/TopicBridgeBar';
 
 const OodAnimationStage = withStudioBoundary(OodAnimationStageBase, {
   studioName: 'OOD Visual Animation Stage',
@@ -808,6 +809,8 @@ export function OodPrinciplesStudio() {
           </div>
         </section>
       </div>
+
+      <TopicBridgeBar studioId="ood" />
     </div>
   );
 }

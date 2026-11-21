@@ -12,6 +12,7 @@ import { NGramVisualStage } from './NGramVisualStage';
 import { ProductSearchCaseStudy as ProductSearchCaseStudyBase } from './ProductSearchCaseStudy';
 import { PruningLogicSimulator as PruningLogicSimulatorBase } from './PruningLogicSimulator';
 import { FuzzyCurriculumTrack as FuzzyCurriculumTrackBase } from './FuzzyCurriculumTrack';
+import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 const ProductSearchCaseStudy = withStudioBoundary(ProductSearchCaseStudyBase, {
   studioName: '10M Product Search Case Study',
@@ -539,6 +540,8 @@ export function NGramFuzzyStudio() {
           </section>
         </>
       )}
+
+      <TopicBridgeBar studioId="fuzzy-search" />
     </div>
   );
 }

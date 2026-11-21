@@ -377,22 +377,19 @@ export function OodAnimationStage({ concept }: OodAnimationStageProps) {
                   {KIND_TAG_LABELS[node.kind]}
                 </span>
                 {node.state === 'active' && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse shrink-0"
-                    aria-hidden="true"
-                  />
+                  <span className="text-[9px] font-mono font-bold text-sky-700 dark:text-sky-300 shrink-0">
+                    ACTIVE
+                  </span>
                 )}
                 {node.state === 'error' && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"
-                    aria-hidden="true"
-                  />
+                  <span className="text-[9px] font-mono font-bold text-rose-700 dark:text-rose-300 shrink-0">
+                    ERROR
+                  </span>
                 )}
                 {node.state === 'success' && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
-                    aria-hidden="true"
-                  />
+                  <span className="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-300 shrink-0">
+                    DONE
+                  </span>
                 )}
               </div>
 
