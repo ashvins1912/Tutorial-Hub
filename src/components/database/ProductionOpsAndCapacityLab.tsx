@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
   Calculator,
   CheckCircle2,
   CheckSquare,
@@ -10,7 +9,6 @@ import {
   Database,
   FileCode2,
   HardDrive,
-  Lock,
   ShieldCheck,
   Square,
   Workflow,
@@ -21,6 +19,8 @@ import {
   type StackCheatSheet,
 } from '../../data/databaseInternalsData';
 import { CopyButton, SegmentedTabBar } from '../ui';
+import { PitrRecoveryPlayground } from './PitrRecoveryPlayground';
+import { RowLevelSecurityVisualizer } from './RowLevelSecurityVisualizer';
 
 type OpsSubTab = 'capacity' | 'security-cdc' | 'pitr-hardware' | 'cheatsheets';
 
@@ -28,27 +28,6 @@ interface ProductionOpsAndCapacityLabProps {
   completedChecklistIds: string[];
   onToggleChecklistId: (id: string) => void;
 }
-
-const RLS_SQL_SNIPPET = `-- 1. Enable Row-Level Security on the vector knowledge base
-ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
-ALTER TABLE knowledge_base FORCE ROW LEVEL SECURITY;
-
--- 2. Enforce tenant isolation policy at the storage engine level
-CREATE POLICY tenant_isolation_policy ON knowledge_base
-  USING (tenant_id = current_setting('app.current_tenant_id')::UUID);
-
--- 3. Application sets session variable per pooled transaction (safe with PgBouncer)
-BEGIN;
-SET LOCAL app.current_tenant_id = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
-SELECT doc_id, title FROM knowledge_base ORDER BY embedding <=> $1 LIMIT 5;
-COMMIT;`;
-
-const RAG_SAMPLE_DOCS = [
-  { id: 'doc-101', tenant: 'Tenant A (Acme)', title: 'Acme Q4 M&A Term Sheet (Confidential)', similarity: '0.94' },
-  { id: 'doc-204', tenant: 'Tenant B (Globex)', title: 'Globex Payroll & Equity Ledger 2026', similarity: '0.91' },
-  { id: 'doc-108', tenant: 'Tenant A (Acme)', title: 'Acme Production Runbook: Payment Retries', similarity: '0.88' },
-  { id: 'doc-219', tenant: 'Tenant B (Globex)', title: 'Globex Enterprise Customer Contracts', similarity: '0.86' },
-];
 
 export function ProductionOpsAndCapacityLab({
   completedChecklistIds,
@@ -65,10 +44,6 @@ export function ProductionOpsAndCapacityLab({
   const [vectorsMillions, setVectorsMillions] = useState(2);
   const [vectorDims, setVectorDims] = useState(1536);
   const [vectorQuantization, setVectorQuantization] = useState<'fp32' | 'halfvec'>('halfvec');
-
-  // RLS Simulator State
-  const [rlsEnabled, setRlsEnabled] = useState(true);
-  const [activeTenant, setActiveTenant] = useState<'Tenant A (Acme)' | 'Tenant B (Globex)'>('Tenant A (Acme)');
 
   // CDC vs Dual-Write State
   const [pipelineMode, setPipelineMode] = useState<'cdc' | 'dual-write'>('cdc');
@@ -120,11 +95,6 @@ export function ProductionOpsAndCapacityLab({
     vectorDims,
     vectorQuantization,
   ]);
-
-  const visibleRagDocs = useMemo(
-    () => (rlsEnabled ? RAG_SAMPLE_DOCS.filter((d) => d.tenant === activeTenant) : RAG_SAMPLE_DOCS),
-    [rlsEnabled, activeTenant]
-  );
 
   const activeCheatSheet = useMemo(
     () => STACK_CHEAT_SHEETS.find((s) => s.id === selectedStackId) ?? STACK_CHEAT_SHEETS[0],
@@ -346,110 +316,8 @@ export function ProductionOpsAndCapacityLab({
       {/* SUB-TAB 2: MULTI-TENANT RLS FOR AI RAG & LOG-BASED CDC VS DUAL WRITES */}
       {subTab === 'security-cdc' && (
         <div className="space-y-6">
-          {/* Interactive Multi-Tenant RLS Lab */}
-          <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-                  Multi-Tenant Row-Level Security (RLS) Simulator for AI RAG
-                </h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
-                  Test what happens when a developer forgets <code className="font-mono">WHERE tenant_id = ?</code> on a vector similarity search.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRlsEnabled((v) => !v)}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap ${
-                    rlsEnabled
-                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
-                      : 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300'
-                  }`}
-                >
-                  {rlsEnabled ? 'RLS Policy: ENABLED (Engine-Enforced)' : 'RLS Policy: DISABLED (App Filter Missing)'}
-                </button>
-                <SegmentedTabBar<'Tenant A (Acme)' | 'Tenant B (Globex)'>
-                  ariaLabel="Active session tenant"
-                  activeTab={activeTenant}
-                  onChange={setActiveTenant}
-                  size="xs"
-                  tabs={[
-                    { id: 'Tenant A (Acme)', label: 'Session: Tenant A' },
-                    { id: 'Tenant B (Globex)', label: 'Session: Tenant B' },
-                  ]}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              <div className="lg:col-span-6 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    PostgreSQL Engine Policy + PgBouncer-Safe SET LOCAL
-                  </span>
-                  <CopyButton text={RLS_SQL_SNIPPET} label="Copy RLS SQL" copiedLabel="Copied" size="xs" />
-                </div>
-                <pre className="p-4 rounded-lg bg-slate-950 text-sky-300 font-mono text-xs leading-5 overflow-x-auto border border-slate-800">
-                  {RLS_SQL_SNIPPET}
-                </pre>
-              </div>
-
-              <div className="lg:col-span-6 space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono text-slate-600 dark:text-slate-400">
-                    Executed: SELECT doc_id, title FROM knowledge_base;
-                  </span>
-                  <span
-                    className={`font-semibold ${
-                      rlsEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
-                    }`}
-                  >
-                    {rlsEnabled ? 'Zero Cross-Tenant Leak' : 'CRITICAL: Cross-Tenant Data Leak'}
-                  </span>
-                </div>
-
-                <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-                  {visibleRagDocs.map((doc) => {
-                    const isLeak = doc.tenant !== activeTenant;
-                    return (
-                      <div
-                        key={doc.id}
-                        className={`p-3 flex items-center justify-between gap-3 text-xs ${
-                          isLeak
-                            ? 'bg-rose-50/70 dark:bg-rose-950/30'
-                            : 'bg-slate-50/50 dark:bg-slate-950/40'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                            {doc.title}
-                          </div>
-                          <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                            {doc.id} · Owner: {doc.tenant}
-                          </div>
-                        </div>
-                        <span
-                          className={`font-mono font-semibold whitespace-nowrap shrink-0 ${
-                            isLeak
-                              ? 'text-rose-700 dark:text-rose-400'
-                              : 'text-emerald-700 dark:text-emerald-400'
-                          }`}
-                        >
-                          {isLeak ? 'LEAKED' : `sim ${doc.similarity}`}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-5">
-                  Pair RLS with <strong>Column-Level Encryption</strong> (Envelope KMS keys for PII/tokens), <strong>Dynamic Data Masking</strong> for support roles, and strict <strong>Parameterized Queries</strong> to eliminate SQL injection.
-                </p>
-              </div>
-            </div>
-          </section>
+          {/* Interactive Multi-Tenant RLS Visualizer */}
+          <RowLevelSecurityVisualizer />
 
           {/* Log-Based CDC vs Dual-Write Pipeline */}
           <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-5">
@@ -582,6 +450,8 @@ export function ProductionOpsAndCapacityLab({
       {/* SUB-TAB 3: PITR, HARDWARE PHYSICS & PRODUCTION CHECKLIST */}
       {subTab === 'pitr-hardware' && (
         <div className="space-y-6">
+          <PitrRecoveryPlayground />
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
               <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -607,23 +477,12 @@ export function ProductionOpsAndCapacityLab({
             <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
               <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-                Disaster Recovery (PITR, RPO/RTO) &amp; Observability
+                RPO/RTO Targets &amp; Observability Signals
               </h2>
               <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 leading-5">
-                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-3 space-y-1.5">
-                  <div className="font-semibold text-slate-900 dark:text-slate-100">
-                    Point-in-Time Recovery (PITR) Timeline
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-sky-700 dark:text-sky-400">
-                    <span>Nightly Base Backup (00:00)</span>
-                    <ArrowRight className="w-3 h-3" aria-hidden="true" />
-                    <span>Continuous WAL to S3 (pgBackRest)</span>
-                    <ArrowRight className="w-3 h-3" aria-hidden="true" />
-                    <span className="text-emerald-700 dark:text-emerald-400">Restore: 19:22:59 (1s before DROP TABLE)</span>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Target <strong>RPO</strong> (max acceptable data loss: &lt;1 min via WAL shipping) and <strong>RTO</strong> (max downtime: &lt;15 min via warm standby + automated restore drills).
-                  </p>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-3">
+                  <strong className="text-slate-900 dark:text-slate-100">RPO vs. RTO Budgets:</strong>{' '}
+                  Target <strong>RPO</strong> (max acceptable data loss: &lt;1 min via continuous WAL archiving to S3) and <strong>RTO</strong> (max downtime: &lt;15 min via warm standby + automated restore drills).
                 </div>
                 <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-3">
                   <strong className="text-slate-900 dark:text-slate-100">Critical Telemetry Signals:</strong>{' '}

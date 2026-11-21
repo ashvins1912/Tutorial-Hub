@@ -5,6 +5,7 @@ import {
   Compass,
   Cpu,
   Database,
+  GitBranch,
   PlayCircle,
   ShieldAlert,
   Sliders,
@@ -31,8 +32,12 @@ import { QueryPipelinePlayground } from './QueryPipelinePlayground';
 import { ExplainAndNoSqlLab } from './ExplainAndNoSqlLab';
 import { ProductionOpsAndCapacityLab } from './ProductionOpsAndCapacityLab';
 import { ChaosDrillAndQuizLab } from './ChaosDrillAndQuizLab';
+import { ConcurrencyRecoverySecurityLab } from './ConcurrencyRecoverySecurityLab';
+import { SqlBasicsPlayground } from './SqlBasicsPlayground';
 
 type DbStudioTab =
+  | 'sql-basics'
+  | 'live-labs'
   | 'taxonomy-sql'
   | 'visual-dfd'
   | 'concepts'
@@ -79,12 +84,21 @@ const BoundedExplainAndNoSqlLab = withStudioBoundary(ExplainAndNoSqlLab, {
 const BoundedProductionOpsAndCapacityLab = withStudioBoundary(ProductionOpsAndCapacityLab, {
   studioName: 'Capacity Planner, RLS & CDC Lab',
 });
+const BoundedSqlBasicsPlayground = withStudioBoundary(SqlBasicsPlayground, {
+  studioName: 'SQL Basics, Indexing & Syntax Check Playground',
+});
+const BoundedConcurrencyRecoverySecurityLab = withStudioBoundary(
+  ConcurrencyRecoverySecurityLab,
+  {
+    studioName: 'Deadlock, PITR & Row-Level Security Visualizers',
+  }
+);
 const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
   studioName: 'SRE Chaos Simulator & Mastery Quiz',
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('visual-dfd');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('sql-basics');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
@@ -265,6 +279,18 @@ export function DatabaseInternalsStudio() {
             onChange={setActiveTab}
             tabs={[
               {
+                id: 'sql-basics',
+                label: 'SQL Basics & Syntax Lab',
+                shortLabel: 'SQL Basics',
+                icon: Database,
+              },
+              {
+                id: 'live-labs',
+                label: 'Deadlock, PITR & RLS',
+                shortLabel: 'Deadlock/PITR/RLS',
+                icon: GitBranch,
+              },
+              {
                 id: 'taxonomy-sql',
                 label: 'Taxonomy, SQL & Sharding',
                 shortLabel: 'SQL & Tax.',
@@ -321,6 +347,8 @@ export function DatabaseInternalsStudio() {
       </section>
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'sql-basics' && <BoundedSqlBasicsPlayground />}
+      {activeTab === 'live-labs' && <BoundedConcurrencyRecoverySecurityLab />}
       {activeTab === 'taxonomy-sql' && <BoundedTaxonomyAndSqlMasteryLab />}
       {activeTab === 'visual-dfd' && (
         <BoundedDatabaseVisualAnimator
