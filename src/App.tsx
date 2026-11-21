@@ -128,6 +128,10 @@ const PublishedLessonView = withLazyStudio(
   () => import('./features/intelligent-engine/components/PublishedLessonView').then((m) => ({ default: m.PublishedLessonView })),
   { studioName: 'Published Lesson' }
 );
+const DatabaseInternalsStudio = withLazyStudio(
+  () => import('./components/database/DatabaseInternalsStudio').then((m) => ({ default: m.DatabaseInternalsStudio })),
+  { studioName: 'Database Internals Studio' }
+);
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -390,6 +394,7 @@ export default function App() {
     { id: 'ood', label: 'OOPs & OOD', isActive: activeView === 'ood' },
     { id: 'ai-engineering', label: 'AI Engineer', isActive: activeView === 'ai-engineering' },
     { id: 'system-design', label: 'System Design', isActive: isHubView },
+    { id: 'db-internals', label: 'DB Internals', isActive: activeView === 'db-internals' },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
     { id: 'sprint', label: 'Sprint', isActive: activeView === 'sprint' },
     { id: 'community', label: 'Community', isActive: activeView === 'community' },
@@ -707,6 +712,8 @@ export default function App() {
           {activeView === 'ood' && <OodPrinciplesStudio />}
 
           {activeView === 'ai-engineering' && <AiEngineeringStudio />}
+
+          {activeView === 'db-internals' && <DatabaseInternalsStudio />}
 
           {activeView === 'profile' && <ProfileStatsView />}
 

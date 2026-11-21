@@ -21,6 +21,7 @@ export type TopView =
   | 'sprint'
   | 'roadmap'
   | 'system-design'
+  | 'db-internals'
   | 'ood'
   | 'ai-engineering'
   | 'revision'
