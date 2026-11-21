@@ -91,6 +91,10 @@ const ProductCompanyMasterBankView = withStudioBoundary(
   lazy(() => import('./components/interview/ProductCompanyMasterBankView').then((m) => ({ default: m.ProductCompanyMasterBankView }))),
   { studioName: 'Product Company Master Bank' }
 );
+const Patterns28RoadmapView = withStudioBoundary(
+  lazy(() => import('./components/Patterns28RoadmapView').then((m) => ({ default: m.Patterns28RoadmapView }))),
+  { studioName: '28-Pattern DSA Roadmap' }
+);
 const IntelligentEngineStudio = withStudioBoundary(
   lazy(() => import('./features/intelligent-engine/components/IntelligentEngineStudio').then((m) => ({ default: m.IntelligentEngineStudio }))),
   { studioName: 'Concept Knowledge Engine' }
@@ -168,8 +172,8 @@ export default function App() {
     topics?: string[];
   } | null>(null);
   const [bankSubTab, setBankSubTab] = useState<
-    'product-master' | 'bigtech48' | 'highroi45' | 'skilltree'
-  >('product-master');
+    'patterns28' | 'product-master' | 'bigtech48' | 'highroi45' | 'skilltree'
+  >('patterns28');
   const [hubSubTab, setHubSubTab] = useState<HubSubTab>('notes');
 
   const { data: PROBLEMS } = useAsyncCatalog('interactive-problems');
@@ -740,6 +744,7 @@ export default function App() {
                 <>
                   <div className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full w-fit overflow-x-auto no-scrollbar">
                     {[
+                      { id: 'patterns28' as const, label: '28-Pattern Roadmap' },
                       { id: 'product-master' as const, label: 'Product Co. 75 & Master 95' },
                       { id: 'bigtech48' as const, label: 'Topic & Company Bank (48)' },
                       { id: 'highroi45' as const, label: '45 High-ROI Sheet' },
@@ -749,7 +754,7 @@ export default function App() {
                         key={tab.id}
                         type="button"
                         onClick={() => setBankSubTab(tab.id)}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                           bankSubTab === tab.id
                             ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
@@ -760,6 +765,14 @@ export default function App() {
                     ))}
                   </div>
 
+                  {bankSubTab === 'patterns28' && (
+                    <Patterns28RoadmapView
+                      onAnalyzeInSolver={(prob) => {
+                        setSolverExternalProblem(prob);
+                        setActiveView('solver');
+                      }}
+                    />
+                  )}
                   {bankSubTab === 'product-master' && (
                     <ProductCompanyMasterBankView
                       onAnalyzeInSolver={(prob) => {

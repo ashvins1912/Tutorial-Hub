@@ -68,6 +68,14 @@ import {
   SAMPLE_PROBLEMS,
   STRATEGIES_CATALOG,
 } from '../core/knowledge-base/strategiesCatalog';
+import {
+  DSA28_CANONICAL_BUNDLE,
+  type Dsa28BundlePayload,
+} from './dsa28Patterns';
+import {
+  DSA28_TRICKY_TEMPLATES,
+  type TrickyPatternTemplate,
+} from './dsa28PatternTemplates';
 
 export type ContentDomainId =
   | 'algorithms'
@@ -141,6 +149,9 @@ export interface CanonicalBundlePayloadMap {
   };
   'matrix-problems': typeof MATRIX_PROBLEMS;
   'pattern-drill-scenarios': typeof PATTERN_DRILL_SCENARIOS;
+  'dsa-28-patterns': Dsa28BundlePayload & {
+    templates: TrickyPatternTemplate[];
+  };
   'solver-strategies': {
     strategies: typeof STRATEGIES_CATALOG;
     pureLogicModules: typeof PURE_LOGIC_MODULES;
@@ -397,6 +408,20 @@ export const CANONICAL_BUNDLE_DEFINITIONS: {
     countItems: (p) => p.length,
     isValidPayload: (p): p is typeof PATTERN_DRILL_SCENARIOS =>
       isNonEmptyArray(p) && typeof (p[0] as { id?: unknown })?.id === 'string',
+  },
+  'dsa-28-patterns': {
+    key: 'dsa-28-patterns',
+    label: '28-Pattern DSA Roadmap & Templates',
+    domain: 'problems',
+    description: '28 core interview patterns across 5 topic groups, compact 28-question revision list, 168 curated LeetCode problems, and 14 multi-language tricky pattern templates.',
+    getData: () => ({
+      ...DSA28_CANONICAL_BUNDLE,
+      templates: DSA28_TRICKY_TEMPLATES,
+    }),
+    countItems: (p) =>
+      p.patterns.reduce((sum, pat) => sum + pat.problems.length, 0) + p.templates.length,
+    isValidPayload: (p): p is CanonicalBundlePayloadMap['dsa-28-patterns'] =>
+      isRecordWithNonEmptyArrays(p, ['groups', 'patterns', 'crossCutting', 'templates']),
   },
   'solver-strategies': {
     key: 'solver-strategies',

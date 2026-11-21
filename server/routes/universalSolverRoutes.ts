@@ -58,12 +58,34 @@ const LEETCODE_QUERY = `
   }
 `;
 
-export function parseProblemUrl(rawUrl: string):
+export function parseProblemUrl(
+  rawUrl: string,
+  hintPlatform?: 'LeetCode' | 'GeeksforGeeks'
+):
   | { platform: 'LeetCode' | 'GeeksforGeeks'; slug: string; canonicalUrl: string }
   | { error: string } {
   const trimmed = rawUrl.trim();
   if (!trimmed) {
-    return { error: 'Please paste a LeetCode or GeeksforGeeks problem URL.' };
+    return { error: 'Please paste a LeetCode or GeeksforGeeks problem URL or slug.' };
+  }
+
+  // Allow bare slug when user selects a platform explicitly (e.g. "koko-eating-bananas")
+  if (!trimmed.includes('/') && !trimmed.includes('.') && hintPlatform) {
+    const cleanSlug = trimmed.toLowerCase();
+    if (hintPlatform === 'LeetCode' && /^[a-z0-9-]+$/i.test(cleanSlug)) {
+      return {
+        platform: 'LeetCode',
+        slug: cleanSlug,
+        canonicalUrl: `https://leetcode.com/problems/${cleanSlug}/`,
+      };
+    }
+    if (hintPlatform === 'GeeksforGeeks' && /^[a-z0-9-_]+$/i.test(cleanSlug)) {
+      return {
+        platform: 'GeeksforGeeks',
+        slug: cleanSlug,
+        canonicalUrl: `https://www.geeksforgeeks.org/problems/${cleanSlug}/1`,
+      };
+    }
   }
 
   let parsed: URL;
@@ -72,6 +94,14 @@ export function parseProblemUrl(rawUrl: string):
     parsed = new URL(withProtocol);
   } catch {
     return { error: 'Invalid URL format. Example: https://leetcode.com/problems/two-sum/ or https://www.geeksforgeeks.org/problems/kadanes-algorithm-1587115620/1' };
+  }
+
+  // Strictly enforce HTTPS, no embedded credentials, and no non-standard ports
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return { error: 'Only standard web URLs on leetcode.com and geeksforgeeks.org are allowed.' };
+  }
+  if (parsed.username || parsed.password || (parsed.port && parsed.port !== '443' && parsed.port !== '80')) {
+    return { error: 'URLs with custom ports or embedded credentials are not allowed.' };
   }
 
   const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
@@ -224,6 +254,7 @@ function normalizeDifficulty(raw?: string): 'Easy' | 'Medium' | 'Hard' {
 async function fetchLeetCodeBySlug(slug: string, canonicalUrl: string): Promise<FetchedExternalProblem> {
   const response = await fetch(LEETCODE_GRAPHQL_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(10000),
     headers: {
       'Content-Type': 'application/json',
       Referer: canonicalUrl,
@@ -304,6 +335,7 @@ async function fetchGeeksForGeeksBySlug(
   for (const endpoint of apiEndpoints) {
     try {
       const response = await fetch(endpoint, {
+        signal: AbortSignal.timeout(10000),
         headers: {
           Accept: 'application/json',
           'User-Agent': 'Mozilla/5.0 (compatible; PatternForgeDSA/1.0)',
@@ -356,6 +388,7 @@ async function fetchGeeksForGeeksBySlug(
 
   // Fallback: fetch public problem HTML and inspect __NEXT_DATA__
   const pageRes = await fetch(canonicalUrl, {
+    signal: AbortSignal.timeout(10000),
     headers: {
       Accept: 'text/html',
       'User-Agent': 'Mozilla/5.0 (compatible; PatternForgeDSA/1.0)',
@@ -423,8 +456,12 @@ async function fetchGeeksForGeeksBySlug(
  * Pulls a real LeetCode or GeeksforGeeks problem statement, examples, constraints, and topics.
  */
 router.post('/fetch-url', async (req, res) => {
-  const rawUrl = typeof req.body?.url === 'string' ? req.body.url : '';
-  const parsed = parseProblemUrl(rawUrl);
+  const rawUrl = typeof req.body?.url === 'string' ? req.body.url.slice(0, 500) : '';
+  const hintPlatform =
+    req.body?.platform === 'LeetCode' || req.body?.platform === 'GeeksforGeeks'
+      ? req.body.platform
+      : undefined;
+  const parsed = parseProblemUrl(rawUrl, hintPlatform);
 
   if ('error' in parsed) {
     res.status(400).json({ error: parsed.error });
