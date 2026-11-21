@@ -3,7 +3,10 @@ import { SystemDesignLearningAcademy as SystemDesignLearningAcademyBase } from '
 import { SystemDesignMasterRoadmap as SystemDesignMasterRoadmapBase } from './SystemDesignMasterRoadmap';
 import { SystemPlayground as SystemPlaygroundBase } from './system-playground/SystemPlayground';
 import { DatabaseVisualAnimator as DatabaseVisualAnimatorBase } from './database/DatabaseVisualAnimator';
+import { SystemDfdSimulator as SystemDfdSimulatorBase } from './system-design/SystemDfdSimulator';
 import { VISUAL_FLOW_SCENARIOS } from '../data/databaseVisualData';
+import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
+import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
 import { TopicBridgeBar } from './shared/TopicBridgeBar';
@@ -20,6 +23,9 @@ const SystemPlayground = withStudioBoundary(SystemPlaygroundBase, {
 const DatabaseVisualAnimator = withStudioBoundary(DatabaseVisualAnimatorBase, {
   studioName: 'Database DFD Visualization & Animations',
 });
+const SystemDfdSimulator = withStudioBoundary(SystemDfdSimulatorBase, {
+  studioName: 'Interactive System Design DFD Simulator',
+});
 import {
   DndContext,
   DragEndEvent,
@@ -34,7 +40,9 @@ import {
   Activity,
   AlertTriangle,
   ArrowDown,
+  ArrowRight,
   CheckCircle2,
+  Code2,
   Copy,
   Cpu,
   Database,
@@ -546,7 +554,22 @@ function ProbabilisticLab() {
   );
 }
 
-export function SystemDesignStudio() {
+const SCENARIO_TO_DFD_PATTERN: Record<string, string> = {
+  'url-shortener': 'bloom-url-shortener',
+  'social-feed': 'cache-aside-read',
+  'distributed-rate-limiter': 'rate-limiter-gateway',
+  'realtime-chat': 'realtime-chat-fanout',
+};
+
+export interface SystemDesignStudioProps {
+  onOpenLabProblem?: (problemId: string) => void;
+}
+
+export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps) {
+  const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
+  const selectProblem = usePatternForgeStore((s) => s.selectProblem);
+  const setActiveView = usePatternForgeStore((s) => s.setActiveView);
+
   const {
     data: {
       scenarios: SYSTEM_SCENARIOS,
@@ -555,12 +578,50 @@ export function SystemDesignStudio() {
     },
   } = useAsyncCatalog('system-design-scenarios');
   const [subTab, setSubTab] = useState<
-    'playground' | 'roadmap' | 'db-dfd' | 'builder' | 'animations' | 'probabilistic' | 'academy'
-  >('playground');
+    'playground' | 'dfd-simulator' | 'db-dfd' | 'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'
+  >('dfd-simulator');
+  const [selectedDfdPatternId, setSelectedDfdPatternId] = useState<string>(SYSTEM_DFD_PATTERNS[0].id);
   const [selectedDbFlowId, setSelectedDbFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
+  const [roadmapExternalModuleId, setRoadmapExternalModuleId] = useState<string | null>(null);
+  const [academyExternalTarget, setAcademyExternalTarget] = useState<{
+    categoryId: string;
+    topicId: string;
+  } | null>(null);
   const [scenarioId, setScenarioId] = useState(SYSTEM_SCENARIOS[0].id);
 
   const scenario = SYSTEM_SCENARIOS.find((s) => s.id === scenarioId) ?? SYSTEM_SCENARIOS[0];
+  const matchedScenarioDfd =
+    SYSTEM_DFD_PATTERNS.find((p) => p.id === (SCENARIO_TO_DFD_PATTERN[scenario.id] ?? 'cache-aside-read')) ??
+    SYSTEM_DFD_PATTERNS[0];
+
+  const handleOpenDfdPattern = (patternId: string) => {
+    setSelectedDfdPatternId(patternId);
+    setSubTab('dfd-simulator');
+  };
+
+  const handleOpenRoadmapModule = (moduleId: string) => {
+    setRoadmapExternalModuleId(moduleId);
+    setSubTab('roadmap');
+  };
+
+  const handleOpenAcademyTopic = (categoryId: string, topicId: string) => {
+    setAcademyExternalTarget({ categoryId, topicId });
+    setSubTab('academy');
+  };
+
+  const handleOpenDbFlow = (flowId: string) => {
+    setSelectedDbFlowId(flowId);
+    setSubTab('db-dfd');
+  };
+
+  const handleOpenProblem = (problemId: string) => {
+    if (onOpenLabProblem) {
+      onOpenLabProblem(problemId);
+      return;
+    }
+    selectProblem(problemId);
+    setActiveView('workspace');
+  };
 
   // Builder state
   const [dauMillions, setDauMillions] = useState(scenario.defaultDauMillions);
@@ -652,6 +713,7 @@ export function SystemDesignStudio() {
           onChange={setSubTab}
           wrap
           tabs={[
+            { id: 'dfd-simulator', label: 'System DFD Simulator', count: SYSTEM_DFD_PATTERNS.length },
             { id: 'playground', label: 'Live Traffic Playground' },
             { id: 'db-dfd', label: 'DB DFD & Animations', count: VISUAL_FLOW_SCENARIOS.length },
             { id: 'roadmap', label: 'Master Roadmap & Algos' },
@@ -662,6 +724,18 @@ export function SystemDesignStudio() {
           ]}
         />
       </div>
+
+      {/* Mode 0A: Interactive System Design DFD Simulator with SVG Animation Engine & Bidirectional Links */}
+      {subTab === 'dfd-simulator' && (
+        <SystemDfdSimulator
+          selectedPatternId={selectedDfdPatternId}
+          onSelectPatternId={setSelectedDfdPatternId}
+          onOpenRoadmapModule={handleOpenRoadmapModule}
+          onOpenAcademyTopic={handleOpenAcademyTopic}
+          onOpenDbFlow={handleOpenDbFlow}
+          onOpenLabProblem={handleOpenProblem}
+        />
+      )}
 
       {/* Mode 0: Full Interactive React Flow System Design Playground & Live Traffic Simulator */}
       {subTab === 'playground' && <SystemPlayground />}
@@ -674,7 +748,8 @@ export function SystemDesignStudio() {
         />
       )}
 
-      {subTab !== 'playground' &&
+      {subTab !== 'dfd-simulator' &&
+        subTab !== 'playground' &&
         subTab !== 'db-dfd' &&
         subTab !== 'probabilistic' &&
         subTab !== 'academy' &&
@@ -712,10 +787,20 @@ export function SystemDesignStudio() {
                 <Activity className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
                 User Scale & SLA Inputs (Back-of-the-Envelope Estimator)
               </h3>
-              <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
-                Est. Avg: {evaluation.estimatedQps.toLocaleString()} QPS · Peak:{' '}
-                {evaluation.estimatedPeakQps.toLocaleString()} QPS · Storage: {evaluation.dailyStorageGb} GB/day
-              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                  Est. Avg: {evaluation.estimatedQps.toLocaleString()} QPS · Peak:{' '}
+                  {evaluation.estimatedPeakQps.toLocaleString()} QPS · Storage: {evaluation.dailyStorageGb} GB/day
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDfdPattern(matchedScenarioDfd.id)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-xs font-semibold text-sky-800 dark:text-sky-300 hover:border-sky-500 whitespace-nowrap"
+                >
+                  Simulate in DFD
+                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
@@ -1328,18 +1413,70 @@ export function SystemDesignStudio() {
                 );
               })}
             </div>
+            {/* Bidirectional Bridge to Deep DFD Simulator & Coding Problems */}
+            <div className="rounded-xl border border-sky-200 dark:border-sky-900 bg-sky-50/40 dark:bg-sky-950/20 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-sky-800 dark:text-sky-300">
+                  Deepen This Architecture:
+                </span>
+                {matchedScenarioDfd.linkedAlgorithms.map((algo) => (
+                  <button
+                    key={algo.algoId}
+                    type="button"
+                    onClick={() => openAlgorithm(algo.algoId, 'mental')}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-indigo-500 transition-colors"
+                  >
+                    <Cpu className="w-3 h-3 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                    {algo.label}
+                  </button>
+                ))}
+                {matchedScenarioDfd.linkedProblems.map((prob) => (
+                  <button
+                    key={prob.problemId}
+                    type="button"
+                    onClick={() => handleOpenProblem(prob.problemId)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-amber-500 transition-colors"
+                  >
+                    <Code2 className="w-3 h-3 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                    #{prob.number} {prob.title}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenDfdPattern(matchedScenarioDfd.id)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold whitespace-nowrap"
+              >
+                Open {matchedScenarioDfd.shortTitle} DFD Simulator
+                <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         );
       })()}
 
       {/* Mode 0: System Design & Distributed Algorithms Master Roadmap */}
-      {subTab === 'roadmap' && <SystemDesignMasterRoadmap />}
+      {subTab === 'roadmap' && (
+        <SystemDesignMasterRoadmap
+          externalModuleId={roadmapExternalModuleId}
+          onConsumeExternalModule={() => setRoadmapExternalModuleId(null)}
+          onOpenDfdPattern={handleOpenDfdPattern}
+          onOpenLabProblem={handleOpenProblem}
+        />
+      )}
 
       {/* Mode 3: Probabilistic Data Structures Lab */}
       {subTab === 'probabilistic' && <ProbabilisticLab />}
 
       {/* Mode 4: Deep System Design Learning Academy */}
-      {subTab === 'academy' && <SystemDesignLearningAcademy />}
+      {subTab === 'academy' && (
+        <SystemDesignLearningAcademy
+          externalTarget={academyExternalTarget}
+          onConsumeExternalTarget={() => setAcademyExternalTarget(null)}
+          onOpenDfdPattern={handleOpenDfdPattern}
+          onOpenLabProblem={handleOpenProblem}
+        />
+      )}
 
       <TopicBridgeBar studioId="system-design" />
     </div>

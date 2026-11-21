@@ -4,6 +4,7 @@ import {
   Code2,
   Cpu,
   Languages,
+  Layers,
   PlayCircle,
   ShieldCheck,
 } from 'lucide-react';
@@ -14,17 +15,28 @@ import {
   LANGUAGE_VISUAL_FLOWS,
   type LangTrack,
 } from '../../data/languagesTutorialData';
+import {
+  CUSTOM_DS_BLUEPRINTS,
+  OOP_CODING_MODULES,
+} from '../../data/langOopCustomDsData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
 import { LanguageVisualAnimator } from './LanguageVisualAnimator';
+import { OopCustomDsAcademy } from './OopCustomDsAcademy';
 import { CollectionsConcurrencyPlayground } from './CollectionsConcurrencyPlayground';
 import { LanguageConceptGuide } from './LanguageConceptGuide';
 import { LanguagePracticeWorkbench } from './LanguagePracticeWorkbench';
 import { LanguageMasteryQuiz } from './LanguageMasteryQuiz';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
-type LangStudioTab = 'visual-dfd' | 'collections-concurrency' | 'concepts' | 'practice' | 'quiz';
+type LangStudioTab =
+  | 'oop-custom-ds'
+  | 'visual-dfd'
+  | 'collections-concurrency'
+  | 'concepts'
+  | 'practice'
+  | 'quiz';
 
 interface LanguagesStudioProgress {
   understoodConceptIds: string[];
@@ -38,6 +50,9 @@ const DEFAULT_LANG_PROGRESS: LanguagesStudioProgress = {
   solvedQuizIds: [],
 };
 
+const BoundedOopCustomDsAcademy = withStudioBoundary(OopCustomDsAcademy, {
+  studioName: 'Zero-to-Pro OOP Internals & Custom Data Structures Academy',
+});
 const BoundedLanguageVisualAnimator = withStudioBoundary(LanguageVisualAnimator, {
   studioName: 'Python 3.13+ & Java 21+ Runtime Animations',
 });
@@ -58,7 +73,7 @@ const BoundedLanguageMasteryQuiz = withStudioBoundary(LanguageMasteryQuiz, {
 });
 
 export function LanguagesTutorialStudio() {
-  const [activeTab, setActiveTab] = useState<LangStudioTab>('visual-dfd');
+  const [activeTab, setActiveTab] = useState<LangStudioTab>('oop-custom-ds');
   const [languageFilter, setLanguageFilter] = useState<'all' | LangTrack>('all');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(LANGUAGE_VISUAL_FLOWS[0].id);
 
@@ -204,7 +219,15 @@ export function LanguagesTutorialStudio() {
             ariaLabel="Languages Studio workspaces"
             activeTab={activeTab}
             onChange={setActiveTab}
+            wrap
             tabs={[
+              {
+                id: 'oop-custom-ds',
+                label: 'Zero-to-Pro OOP & Custom DS',
+                shortLabel: 'OOP & Custom DS',
+                count: OOP_CODING_MODULES.length + CUSTOM_DS_BLUEPRINTS.length,
+                icon: Layers,
+              },
               {
                 id: 'visual-dfd',
                 label: 'Visual DFD & Lifecycles',
@@ -257,6 +280,9 @@ export function LanguagesTutorialStudio() {
       </section>
 
       {/* Active Workspace (Each Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'oop-custom-ds' && (
+        <BoundedOopCustomDsAcademy languageFilter={languageFilter} />
+      )}
       {activeTab === 'visual-dfd' && (
         <BoundedLanguageVisualAnimator
           selectedFlowId={selectedFlowId}

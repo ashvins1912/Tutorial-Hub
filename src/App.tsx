@@ -871,7 +871,15 @@ export default function App() {
                 ]}
               />
 
-              {currentHubTab === 'system-design' && <SystemDesignStudio />}
+              {currentHubTab === 'system-design' && (
+                <SystemDesignStudio
+                  onOpenLabProblem={(problemId) => {
+                    selectProblem(problemId);
+                    setWorkspaceMode('classic-lab');
+                    setActiveView('workspace');
+                  }}
+                />
+              )}
               {currentHubTab === 'notes' && <QuickRevisionHub />}
               {currentHubTab === 'skill-tree' && <NoobToProSkillTree />}
               {currentHubTab === 'schemas' && <SchemasReferenceView />}

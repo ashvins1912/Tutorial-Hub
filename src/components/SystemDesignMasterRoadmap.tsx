@@ -1,16 +1,45 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  ArrowRight,
   Check,
   CheckCircle2,
+  Code2,
+  Cpu,
+  Layers,
   Plus,
   RotateCcw,
   Trash2,
   XCircle,
 } from 'lucide-react';
 import { type DistributedAlgoId } from '../data/systemDesignMasterRoadmapData';
+import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
+import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { DatabaseVisualAnimator } from './database/DatabaseVisualAnimator';
+
+export interface SystemDesignMasterRoadmapProps {
+  externalModuleId?: string | null;
+  onConsumeExternalModule?: () => void;
+  onOpenDfdPattern?: (patternId: string) => void;
+  onOpenLabProblem?: (problemId: string) => void;
+}
+
+const MODULE_TO_DFD_PATTERN: Record<string, string> = {
+  'mod-1-networking': 'realtime-chat-fanout',
+  'mod-2-storage': 'sharded-db-routing',
+  'mod-3-caching': 'cache-aside-read',
+  'mod-4-distributed': 'rate-limiter-gateway',
+};
+
+const DIST_ALGO_TO_DFD_PATTERN: Record<DistributedAlgoId, string> = {
+  'consistent-hashing': 'sharded-db-routing',
+  'token-bucket': 'rate-limiter-gateway',
+  'bloom-filter': 'bloom-url-shortener',
+  raft: 'sharded-db-routing',
+  'quadtree-geohash': 'cache-aside-read',
+  'vector-merkle': 'write-behind-queue',
+};
 
 type RoadmapSection = 'framework' | 'modules' | 'algorithms' | 'quiz';
 
@@ -679,7 +708,12 @@ function VectorClockComparator() {
   );
 }
 
-export function SystemDesignMasterRoadmap() {
+export function SystemDesignMasterRoadmap({
+  externalModuleId,
+  onConsumeExternalModule,
+  onOpenDfdPattern,
+  onOpenLabProblem,
+}: SystemDesignMasterRoadmapProps) {
   const {
     data: {
       coreModules: CORE_ROADMAP_MODULES,
@@ -688,9 +722,32 @@ export function SystemDesignMasterRoadmap() {
       quizItems: REASONING_QUIZ_ITEMS,
     },
   } = useAsyncCatalog('system-design-roadmap');
+  const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
+  const selectProblem = usePatternForgeStore((s) => s.selectProblem);
+  const setActiveView = usePatternForgeStore((s) => s.setActiveView);
+
   const [section, setSection] = useState<RoadmapSection>('framework');
   const [activeModuleId, setActiveModuleId] = useState(CORE_ROADMAP_MODULES[0].id);
   const [activeAlgoId, setActiveAlgoId] = useState<DistributedAlgoId>('consistent-hashing');
+
+  useEffect(() => {
+    if (!externalModuleId) return;
+    const exists = CORE_ROADMAP_MODULES.some((m) => m.id === externalModuleId);
+    if (exists) {
+      setSection('modules');
+      setActiveModuleId(externalModuleId);
+    }
+    onConsumeExternalModule?.();
+  }, [externalModuleId, CORE_ROADMAP_MODULES, onConsumeExternalModule]);
+
+  const handleOpenProblem = (problemId: string) => {
+    if (onOpenLabProblem) {
+      onOpenLabProblem(problemId);
+      return;
+    }
+    selectProblem(problemId);
+    setActiveView('workspace');
+  };
 
   // Interactive Back-of-the-Envelope Estimator state
   const [dauMillions, setDauMillions] = useState(50);
@@ -1071,6 +1128,56 @@ export function SystemDesignMasterRoadmap() {
               </button>
             </div>
 
+            {(() => {
+              const matchedDfdId = MODULE_TO_DFD_PATTERN[activeModule.id] ?? 'cache-aside-read';
+              const matchedDfd = SYSTEM_DFD_PATTERNS.find((p) => p.id === matchedDfdId);
+              if (!matchedDfd) return null;
+              return (
+                <div className="rounded-lg border border-sky-200 dark:border-sky-900 bg-sky-50/40 dark:bg-sky-950/20 p-3.5 space-y-2.5 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-sky-800 dark:text-sky-300">
+                      <Layers className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      Bidirectional DFD &amp; Algorithm Practice
+                    </span>
+                    {onOpenDfdPattern && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenDfdPattern(matchedDfd.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold whitespace-nowrap"
+                      >
+                        Simulate {matchedDfd.shortTitle} in DFD
+                        <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {matchedDfd.linkedAlgorithms.map((algo) => (
+                      <button
+                        key={algo.algoId}
+                        type="button"
+                        onClick={() => openAlgorithm(algo.algoId, 'mental')}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-indigo-500 transition-colors"
+                      >
+                        <Cpu className="w-3 h-3 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                        {algo.label}
+                      </button>
+                    ))}
+                    {matchedDfd.linkedProblems.map((prob) => (
+                      <button
+                        key={prob.problemId}
+                        type="button"
+                        onClick={() => handleOpenProblem(prob.problemId)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-amber-500 transition-colors"
+                      >
+                        <Code2 className="w-3 h-3 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                        #{prob.number} {prob.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="space-y-8">
               {activeModule.subTopics.map((sub) => (
                 <div key={sub.id} className="space-y-4">
@@ -1217,6 +1324,39 @@ export function SystemDesignMasterRoadmap() {
                 {progress.reviewedAlgos?.includes(activeAlgo.id) ? 'Mastered' : 'Mark Mastered'}
               </button>
             </div>
+
+            {(() => {
+              const matchedDfdId = DIST_ALGO_TO_DFD_PATTERN[activeAlgo.id] ?? 'sharded-db-routing';
+              const matchedDfd = SYSTEM_DFD_PATTERNS.find((p) => p.id === matchedDfdId);
+              if (!matchedDfd) return null;
+              return (
+                <div className="rounded-lg border border-sky-200 dark:border-sky-900 bg-sky-50/40 dark:bg-sky-950/20 p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {matchedDfd.linkedProblems.map((prob) => (
+                      <button
+                        key={prob.problemId}
+                        type="button"
+                        onClick={() => handleOpenProblem(prob.problemId)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-amber-500 transition-colors"
+                      >
+                        <Code2 className="w-3 h-3 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                        Practice #{prob.number} {prob.title}
+                      </button>
+                    ))}
+                  </div>
+                  {onOpenDfdPattern && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenDfdPattern(matchedDfd.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold whitespace-nowrap"
+                    >
+                      Animate in System DFD
+                      <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Interactive Simulation Widget per Algorithm */}
             {activeAlgo.id === 'consistent-hashing' && <ConsistentHashingSimulator />}

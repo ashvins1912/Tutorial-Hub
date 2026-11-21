@@ -1,7 +1,60 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Database, Search, Target } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Code2, Cpu, Database, Layers, Search, Target } from 'lucide-react';
+import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
 import { useAccountState } from '../hooks/useAccountState';
+import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { DatabaseVisualAnimator } from './database/DatabaseVisualAnimator';
+
+export interface SystemDesignLearningAcademyProps {
+  externalTarget?: { categoryId: string; topicId: string } | null;
+  onConsumeExternalTarget?: () => void;
+  onOpenDfdPattern?: (patternId: string) => void;
+  onOpenLabProblem?: (problemId: string) => void;
+}
+
+const TOPIC_TO_SYSTEM_DFD: Record<string, string> = {
+  'cache-layers': 'cache-aside-read',
+  'redis-memcached': 'cache-aside-read',
+  'cache-aside': 'cache-aside-read',
+  'read-write-through': 'cache-aside-read',
+  eviction: 'cache-aside-read',
+  'invalidation-ttl': 'cache-aside-read',
+  stampede: 'cache-aside-read',
+  'write-behind': 'write-behind-queue',
+  queues: 'write-behind-queue',
+  kafka: 'write-behind-queue',
+  dlq: 'write-behind-queue',
+  eda: 'write-behind-queue',
+  cqrs: 'write-behind-queue',
+  'event-sourcing': 'write-behind-queue',
+  sharding: 'sharded-db-routing',
+  partitioning: 'sharded-db-routing',
+  replication: 'sharded-db-routing',
+  'multi-leader': 'sharded-db-routing',
+  'sync-async': 'sharded-db-routing',
+  'consistent-hash': 'sharded-db-routing',
+  'rate-limit': 'rate-limiter-gateway',
+  'circuit-retry': 'rate-limiter-gateway',
+  'api-gateway': 'rate-limiter-gateway',
+  'lb-l4-l7': 'rate-limiter-gateway',
+  'lb-algorithms': 'rate-limiter-gateway',
+  bloom: 'bloom-url-shortener',
+  'unique-ids': 'bloom-url-shortener',
+  websocket: 'realtime-chat-fanout',
+  pubsub: 'realtime-chat-fanout',
+  'sse-polling': 'realtime-chat-fanout',
+};
+
+const CATEGORY_TO_SYSTEM_DFD: Record<string, string> = {
+  pillars: 'cache-aside-read',
+  network: 'realtime-chat-fanout',
+  traffic: 'rate-limiter-gateway',
+  data: 'sharded-db-routing',
+  dbscale: 'sharded-db-routing',
+  cache: 'cache-aside-read',
+  distributed: 'write-behind-queue',
+  architecture: 'write-behind-queue',
+};
 
 const TOPIC_TO_DB_DFD: Record<string, string> = {
   relational: 'query-pipeline-dfd',
@@ -133,7 +186,16 @@ const curriculum: Category[] = [
 
 const storageKey = 'patternforge-system-design-academy-v1';
 type Progress = Record<string, { done: boolean; note: string }>;
-export function SystemDesignLearningAcademy() {
+export function SystemDesignLearningAcademy({
+  externalTarget,
+  onConsumeExternalTarget,
+  onOpenDfdPattern,
+  onOpenLabProblem,
+}: SystemDesignLearningAcademyProps) {
+  const openAlgorithm = usePatternForgeStore((s) => s.openAlgorithm);
+  const selectProblem = usePatternForgeStore((s) => s.selectProblem);
+  const setActiveView = usePatternForgeStore((s) => s.setActiveView);
+
   const [categoryId, setCategoryId] = useState(curriculum[0].id);
   const [topicId, setTopicId] = useState(curriculum[0].topics[0].id);
   const [query, setQuery] = useState('');
@@ -148,9 +210,35 @@ export function SystemDesignLearningAcademy() {
     {},
     storageKey
   );
+
+  useEffect(() => {
+    if (!externalTarget) return;
+    const cat = curriculum.find((c) => c.id === externalTarget.categoryId);
+    if (cat) {
+      setCategoryId(cat.id);
+      const foundTopic = cat.topics.find((x) => x.id === externalTarget.topicId) ?? cat.topics[0];
+      if (foundTopic) setTopicId(foundTopic.id);
+      setShowAnswer(false);
+      setOpened('model');
+      setActiveStage(0);
+      setIsPlaying(false);
+    }
+    onConsumeExternalTarget?.();
+  }, [externalTarget, onConsumeExternalTarget]);
+
   const category = curriculum.find(c => c.id === categoryId) ?? curriculum[0];
   const topic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
   const matchedDbFlowId = TOPIC_TO_DB_DFD[topic.id];
+  const matchedSystemDfdId = TOPIC_TO_SYSTEM_DFD[topic.id] ?? CATEGORY_TO_SYSTEM_DFD[category.id] ?? 'cache-aside-read';
+  const matchedSystemDfd = SYSTEM_DFD_PATTERNS.find((p) => p.id === matchedSystemDfdId) ?? SYSTEM_DFD_PATTERNS[0];
+  const handleOpenProblem = (problemId: string) => {
+    if (onOpenLabProblem) {
+      onOpenLabProblem(problemId);
+      return;
+    }
+    selectProblem(problemId);
+    setActiveView('workspace');
+  };
   const allTopics = useMemo(() => curriculum.flatMap(c => c.topics.map(x => ({...x, categoryId:c.id, categoryTitle:c.title}))), []);
   const filtered = allTopics.filter(x => (level === 'All' || x.level === level) && (x.title + ' ' + x.categoryTitle + ' ' + x.model + ' ' + x.use).toLowerCase().includes(query.toLowerCase()));
   const doneCount = allTopics.filter(x => progress[x.id]?.done).length;
@@ -209,6 +297,48 @@ export function SystemDesignLearningAcademy() {
       <main className="min-w-0 space-y-4">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">{category.title} · {topic.level}</div><h3 className="mt-2 text-2xl font-bold">{topic.title}</h3><p className="mt-2 text-xs text-slate-500">{category.outcome}</p></div><Target className="h-7 w-7 text-indigo-500"/></div>
+          <div className="mt-4 rounded-xl border border-sky-200 dark:border-sky-900 bg-sky-50/40 dark:bg-sky-950/20 p-3.5 space-y-2.5 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-sky-800 dark:text-sky-300">
+                <Layers className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                Connected DFD Simulator &amp; Algorithmic Practice
+              </span>
+              {onOpenDfdPattern && (
+                <button
+                  type="button"
+                  onClick={() => onOpenDfdPattern(matchedSystemDfd.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold whitespace-nowrap"
+                >
+                  Open {matchedSystemDfd.shortTitle} DFD
+                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {matchedSystemDfd.linkedAlgorithms.map((algo) => (
+                <button
+                  key={algo.algoId}
+                  type="button"
+                  onClick={() => openAlgorithm(algo.algoId, 'mental')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-indigo-500 transition-colors"
+                >
+                  <Cpu className="w-3 h-3 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                  {algo.label}
+                </button>
+              ))}
+              {matchedSystemDfd.linkedProblems.map((prob) => (
+                <button
+                  key={prob.problemId}
+                  type="button"
+                  onClick={() => handleOpenProblem(prob.problemId)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:border-amber-500 transition-colors"
+                >
+                  <Code2 className="w-3 h-3 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                  #{prob.number} {prob.title}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="mt-5 space-y-2">{sections.map(([id,title,body])=><section key={id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><button onClick={()=>setOpened(opened===id?'':id)} aria-expanded={opened===id} className="flex w-full items-center justify-between gap-3 p-4 text-left"><span className="text-sm font-semibold">{title}</span>{opened===id?<ChevronDown className="h-4 w-4"/>:<ChevronRight className="h-4 w-4"/>}</button>{opened===id&&<div className="border-t border-slate-100 p-4 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:text-slate-300">{body}</div>}</section>)}</div>
         </section>
         <section className="rounded-2xl border border-sky-200 bg-white p-5 dark:border-sky-900 dark:bg-slate-900 sm:p-6">
