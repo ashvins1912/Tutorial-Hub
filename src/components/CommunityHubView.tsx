@@ -23,6 +23,7 @@ import {
 import { apiFetch } from '../lib/apiFetch';
 import { PROBLEMS } from '../data/problems';
 import { parsePlatformUrl } from '../utils/platformUrlParser';
+import { SegmentedTabBar } from './ui';
 
 type CommunityTab = 'leaderboard' | 'feed' | 'invites';
 type PostType = 'problem' | 'challenge' | 'read';
@@ -665,38 +666,16 @@ export function CommunityHubView({ onOpenProblem }: CommunityHubViewProps) {
 
       {/* Tab Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="tablist"
-          aria-label="Community sections"
-          className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-        >
-          {(
-            [
-              { id: 'leaderboard', label: 'Community Leaderboard', icon: Trophy },
-              { id: 'feed', label: 'Problems, Challenges & Reads', icon: BookOpen },
-              { id: 'invites', label: 'Invite People', icon: Users },
-            ] as const
-          ).map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabBar<CommunityTab>
+          ariaLabel="Community sections"
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { id: 'leaderboard', label: 'Community Leaderboard', shortLabel: 'Leaderboard', icon: Trophy },
+            { id: 'feed', label: 'Problems, Challenges & Reads', shortLabel: 'Feed', icon: BookOpen },
+            { id: 'invites', label: 'Invite People', shortLabel: 'Invites', icon: Users },
+          ]}
+        />
 
         <button
           type="button"

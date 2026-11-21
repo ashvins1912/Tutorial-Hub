@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -9,6 +9,7 @@ import {
   LogOut,
   Moon,
   NotebookPen,
+  Plus,
   Sun,
   User,
   X,
@@ -19,8 +20,12 @@ import { useContentBootstrapStore } from './store/useContentBootstrapStore';
 import { useAuth } from './auth/AuthContext';
 import { apiFetch } from './lib/apiFetch';
 import { useAsyncCatalog } from './hooks/useAsyncCatalog';
+import { useAccountState } from './hooks/useAccountState';
+import { DSA28_PATTERNS, type CustomPattern28Problem } from './data/dsa28Patterns';
 import { BIG_TECH_36_PROBLEMS } from '../server/seed/bigTechTopicSeed';
-import { withStudioBoundary } from './components/hoc';
+import { withLazyStudio } from './components/hoc';
+import { SegmentedTabBar } from './components/ui';
+import { AddCustomProblemModal } from './components/AddCustomProblemModal';
 import { MasteryStepper } from './components/MasteryStepper';
 import { PolyaWorkflowBar } from './components/cognitive/PolyaWorkflowBar';
 import { ProblemXRayReader } from './components/ProblemXRayReader';
@@ -42,85 +47,85 @@ import { Mock45SimulatorModal } from './components/sprint/Mock45SimulatorModal';
 import { AlgorithmMatcherModal } from './components/AlgorithmMatcherModal';
 import { PatternRecognitionQuizModal } from './features/quiz/components/PatternRecognitionQuizModal';
 
-// Code-split heavy studios isolated in scoped ErrorBoundary + Suspense via withStudioBoundary HOC
-const AlgorithmsStudio = withStudioBoundary(
-  lazy(() => import('./components/algorithms/AlgorithmsStudio').then((m) => ({ default: m.AlgorithmsStudio }))),
+// Code-split heavy studios isolated in resilient withLazyStudio HOC (retry + stale-deploy chunk recovery + scoped ErrorBoundary + Suspense)
+const AlgorithmsStudio = withLazyStudio(
+  () => import('./components/algorithms/AlgorithmsStudio').then((m) => ({ default: m.AlgorithmsStudio })),
   { studioName: 'Algorithms Studio' }
 );
-const NGramFuzzyStudio = withStudioBoundary(
-  lazy(() => import('./components/fuzzy/NGramFuzzyStudio').then((m) => ({ default: m.NGramFuzzyStudio }))),
+const NGramFuzzyStudio = withLazyStudio(
+  () => import('./components/fuzzy/NGramFuzzyStudio').then((m) => ({ default: m.NGramFuzzyStudio })),
   { studioName: 'N-Gram Fuzzy Search Lab' }
 );
-const NoobToProSkillTree = withStudioBoundary(
-  lazy(() => import('./components/cognitive/NoobToProSkillTree').then((m) => ({ default: m.NoobToProSkillTree }))),
+const NoobToProSkillTree = withLazyStudio(
+  () => import('./components/cognitive/NoobToProSkillTree').then((m) => ({ default: m.NoobToProSkillTree })),
   { studioName: 'Noob-to-Pro Skill Tree' }
 );
-const ProblemBank45View = withStudioBoundary(
-  lazy(() => import('./components/ProblemBank45View').then((m) => ({ default: m.ProblemBank45View }))),
+const ProblemBank45View = withLazyStudio(
+  () => import('./components/ProblemBank45View').then((m) => ({ default: m.ProblemBank45View })),
   { studioName: '45 High-ROI Problem Bank' }
 );
-const SchemasReferenceView = withStudioBoundary(
-  lazy(() => import('./components/SchemasReferenceView').then((m) => ({ default: m.SchemasReferenceView }))),
+const SchemasReferenceView = withLazyStudio(
+  () => import('./components/SchemasReferenceView').then((m) => ({ default: m.SchemasReferenceView })),
   { studioName: 'DB & API Schemas Reference' }
 );
-const SystemDesignStudio = withStudioBoundary(
-  lazy(() => import('./components/SystemDesignStudio').then((m) => ({ default: m.SystemDesignStudio }))),
+const SystemDesignStudio = withLazyStudio(
+  () => import('./components/SystemDesignStudio').then((m) => ({ default: m.SystemDesignStudio })),
   { studioName: 'System Design Studio' }
 );
-const QuickRevisionHub = withStudioBoundary(
-  lazy(() => import('./components/QuickRevisionHub').then((m) => ({ default: m.QuickRevisionHub }))),
+const QuickRevisionHub = withLazyStudio(
+  () => import('./components/QuickRevisionHub').then((m) => ({ default: m.QuickRevisionHub })),
   { studioName: 'Quick Revision Hub' }
 );
-const TopicPatternExplorer = withStudioBoundary(
-  lazy(() => import('./components/interview/TopicPatternExplorer').then((m) => ({ default: m.TopicPatternExplorer }))),
+const TopicPatternExplorer = withLazyStudio(
+  () => import('./components/interview/TopicPatternExplorer').then((m) => ({ default: m.TopicPatternExplorer })),
   { studioName: 'Topic & Company Pattern Bank' }
 );
-const SprintWarRoomDashboard = withStudioBoundary(
-  lazy(() => import('./components/sprint/SprintWarRoomDashboard').then((m) => ({ default: m.SprintWarRoomDashboard }))),
+const SprintWarRoomDashboard = withLazyStudio(
+  () => import('./components/sprint/SprintWarRoomDashboard').then((m) => ({ default: m.SprintWarRoomDashboard })),
   { studioName: '14-Day Sprint War Room' }
 );
-const CurriculumWorkbench = withStudioBoundary(
-  lazy(() => import('./features/topics/components/CurriculumWorkbench').then((m) => ({ default: m.CurriculumWorkbench }))),
+const CurriculumWorkbench = withLazyStudio(
+  () => import('./features/topics/components/CurriculumWorkbench').then((m) => ({ default: m.CurriculumWorkbench })),
   { studioName: 'DSA Curriculum Workbench' }
 );
-const UniversalSolverStudio = withStudioBoundary(
-  lazy(() => import('./features/solver-studio/UniversalSolverStudio').then((m) => ({ default: m.UniversalSolverStudio }))),
+const UniversalSolverStudio = withLazyStudio(
+  () => import('./features/solver-studio/UniversalSolverStudio').then((m) => ({ default: m.UniversalSolverStudio })),
   { studioName: 'Universal Logic Solver' }
 );
-const ProductCompanyMasterBankView = withStudioBoundary(
-  lazy(() => import('./components/interview/ProductCompanyMasterBankView').then((m) => ({ default: m.ProductCompanyMasterBankView }))),
+const ProductCompanyMasterBankView = withLazyStudio(
+  () => import('./components/interview/ProductCompanyMasterBankView').then((m) => ({ default: m.ProductCompanyMasterBankView })),
   { studioName: 'Product Company Master Bank' }
 );
-const Patterns28RoadmapView = withStudioBoundary(
-  lazy(() => import('./components/Patterns28RoadmapView').then((m) => ({ default: m.Patterns28RoadmapView }))),
+const Patterns28RoadmapView = withLazyStudio(
+  () => import('./components/Patterns28RoadmapView').then((m) => ({ default: m.Patterns28RoadmapView })),
   { studioName: '28-Pattern DSA Roadmap' }
 );
-const IntelligentEngineStudio = withStudioBoundary(
-  lazy(() => import('./features/intelligent-engine/components/IntelligentEngineStudio').then((m) => ({ default: m.IntelligentEngineStudio }))),
+const IntelligentEngineStudio = withLazyStudio(
+  () => import('./features/intelligent-engine/components/IntelligentEngineStudio').then((m) => ({ default: m.IntelligentEngineStudio })),
   { studioName: 'Concept Knowledge Engine' }
 );
-const ProfileStatsView = withStudioBoundary(
-  lazy(() => import('./components/ProfileStatsView').then((m) => ({ default: m.ProfileStatsView }))),
+const ProfileStatsView = withLazyStudio(
+  () => import('./components/ProfileStatsView').then((m) => ({ default: m.ProfileStatsView })),
   { studioName: 'Profile & Statistics' }
 );
-const CommunityHubView = withStudioBoundary(
-  lazy(() => import('./components/CommunityHubView').then((m) => ({ default: m.CommunityHubView }))),
+const CommunityHubView = withLazyStudio(
+  () => import('./components/CommunityHubView').then((m) => ({ default: m.CommunityHubView })),
   { studioName: 'Community Hub' }
 );
-const OodPrinciplesStudio = withStudioBoundary(
-  lazy(() => import('./components/OodPrinciplesStudio').then((m) => ({ default: m.OodPrinciplesStudio }))),
+const OodPrinciplesStudio = withLazyStudio(
+  () => import('./components/OodPrinciplesStudio').then((m) => ({ default: m.OodPrinciplesStudio })),
   { studioName: 'OOPs & OOD Studio' }
 );
-const AiEngineeringStudio = withStudioBoundary(
-  lazy(() => import('./components/AiEngineeringStudio').then((m) => ({ default: m.AiEngineeringStudio }))),
+const AiEngineeringStudio = withLazyStudio(
+  () => import('./components/AiEngineeringStudio').then((m) => ({ default: m.AiEngineeringStudio })),
   { studioName: 'AI Engineering Studio' }
 );
-const AIEngineeringAcademy = withStudioBoundary(
-  lazy(() => import('./features/ai-academy/components/AIEngineeringAcademy').then((m) => ({ default: m.AIEngineeringAcademy }))),
+const AIEngineeringAcademy = withLazyStudio(
+  () => import('./features/ai-academy/components/AIEngineeringAcademy').then((m) => ({ default: m.AIEngineeringAcademy })),
   { studioName: 'AI Engineering Academy' }
 );
-const PublishedLessonView = withStudioBoundary(
-  lazy(() => import('./features/intelligent-engine/components/PublishedLessonView').then((m) => ({ default: m.PublishedLessonView }))),
+const PublishedLessonView = withLazyStudio(
+  () => import('./features/intelligent-engine/components/PublishedLessonView').then((m) => ({ default: m.PublishedLessonView })),
   { studioName: 'Published Lesson' }
 );
 
@@ -160,6 +165,17 @@ export default function App() {
   const [scratchpadOpen, setScratchpadOpen] = useState(false);
   const [srtbotOpen, setSrtbotOpen] = useState(false);
   const [matcherOpen, setMatcherOpen] = useState(false);
+  const [addCustomProblemOpen, setAddCustomProblemOpen] = useState(false);
+  const [addCustomDefaultPatternId, setAddCustomDefaultPatternId] = useState<string | undefined>(
+    undefined
+  );
+  const [focusPatternId, setFocusPatternId] = useState<string | null>(null);
+  const [customAddedNotice, setCustomAddedNotice] = useState<string | null>(null);
+  const [customProblems, setCustomProblems] = useAccountState<CustomPattern28Problem[]>(
+    'dsa-28-custom-problems',
+    [],
+    'patternforge_dsa28_custom_v1'
+  );
   const [solverExternalProblem, setSolverExternalProblem] = useState<{
     id: string;
     title: string;
@@ -471,6 +487,18 @@ export default function App() {
             </button>
             <button
               type="button"
+              onClick={() => {
+                setAddCustomDefaultPatternId(undefined);
+                setAddCustomProblemOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-semibold hover:border-sky-500 dark:hover:border-sky-400 transition-colors whitespace-nowrap shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+              <span className="hidden lg:inline">Add Custom Problem</span>
+              <span className="lg:hidden">Add</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setDrillModalOpen(true)}
               className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
             >
@@ -693,25 +721,22 @@ export default function App() {
 
           {activeView === 'sprint' && (
             <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
-                <button
-                  type="button"
-                  onClick={() => setActiveView('sprint')}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 whitespace-nowrap"
-                >
-                  14-Day War Room
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
+              <SegmentedTabBar
+                ariaLabel="Sprint workspace navigation"
+                activeTab="sprint"
+                onChange={(id) => {
+                  if (id === 'revision') {
                     setHubSubTab('notes');
                     setActiveView('revision');
-                  }}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 whitespace-nowrap"
-                >
-                  System Design & Notes
-                </button>
-              </div>
+                  } else {
+                    setActiveView('sprint');
+                  }
+                }}
+                tabs={[
+                  { id: 'sprint', label: '14-Day War Room' },
+                  { id: 'revision', label: 'System Design & Notes' },
+                ]}
+              />
               <SprintWarRoomDashboard />
             </div>
           )}
@@ -742,31 +767,39 @@ export default function App() {
                 )
               ) : (
                 <>
-                  <div className="flex items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full w-fit overflow-x-auto no-scrollbar">
-                    {[
-                      { id: 'patterns28' as const, label: '28-Pattern Roadmap' },
-                      { id: 'product-master' as const, label: 'Product Co. 75 & Master 95' },
-                      { id: 'bigtech48' as const, label: 'Topic & Company Bank (48)' },
-                      { id: 'highroi45' as const, label: '45 High-ROI Sheet' },
-                      { id: 'skilltree' as const, label: 'Noob-to-Pro Skill Tree' },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setBankSubTab(tab.id)}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                          bankSubTab === tab.id
-                            ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
+                  <SegmentedTabBar
+                    ariaLabel="Topic Bank sheets"
+                    activeTab={bankSubTab}
+                    onChange={setBankSubTab}
+                    tabs={[
+                      { id: 'patterns28', label: '28-Pattern Roadmap' },
+                      { id: 'product-master', label: 'Product Co. 75 & Master 95' },
+                      { id: 'bigtech48', label: 'Topic & Company Bank (48)' },
+                      { id: 'highroi45', label: '45 High-ROI Sheet' },
+                      { id: 'skilltree', label: 'Noob-to-Pro Skill Tree' },
+                    ]}
+                  />
 
                   {bankSubTab === 'patterns28' && (
                     <Patterns28RoadmapView
+                      customProblems={customProblems}
+                      onOpenAddCustomProblem={(patternId) => {
+                        setAddCustomDefaultPatternId(patternId);
+                        setAddCustomProblemOpen(true);
+                      }}
+                      onRemoveCustomProblem={(id) => {
+                        const target = customProblems.find((item) => item.id === id);
+                        setCustomProblems((prev) => prev.filter((item) => item.id !== id));
+                        if (target?.savedRecordId) {
+                          void apiFetch(
+                            `/api/solver/saved-problems/${encodeURIComponent(target.savedRecordId)}`,
+                            { method: 'DELETE' }
+                          ).catch(() => {});
+                        }
+                      }}
+                      focusPatternId={focusPatternId}
+                      lastAddedNotice={customAddedNotice}
+                      onDismissNotice={() => setCustomAddedNotice(null)}
                       onAnalyzeInSolver={(prob) => {
                         setSolverExternalProblem(prob);
                         setActiveView('solver');
@@ -796,32 +829,26 @@ export default function App() {
 
           {isHubView && (
             <div className="space-y-5">
-              <div className="flex items-center gap-1.5 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 max-w-full w-fit overflow-x-auto no-scrollbar">
-                {(
-                  [
-                    { id: 'system-design', label: 'System Design Studio', view: 'system-design' },
-                    { id: 'notes', label: 'Quick Revision Notes', view: 'revision' },
-                    { id: 'skill-tree', label: 'Noob-to-Pro Skill Tree', view: 'skill-tree' },
-                    { id: 'schemas', label: 'DB & API Schemas', view: 'schemas' },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setHubSubTab(tab.id);
-                      setActiveView(tab.view);
-                    }}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                      currentHubTab === tab.id
-                        ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedTabBar
+                ariaLabel="System Design and Revision Hub"
+                activeTab={currentHubTab}
+                onChange={(id) => {
+                  setHubSubTab(id);
+                  const viewMap: Record<HubSubTab, TopView> = {
+                    'system-design': 'system-design',
+                    notes: 'revision',
+                    'skill-tree': 'skill-tree',
+                    schemas: 'schemas',
+                  };
+                  setActiveView(viewMap[id]);
+                }}
+                tabs={[
+                  { id: 'system-design', label: 'System Design Studio' },
+                  { id: 'notes', label: 'Quick Revision Notes' },
+                  { id: 'skill-tree', label: 'Noob-to-Pro Skill Tree' },
+                  { id: 'schemas', label: 'DB & API Schemas' },
+                ]}
+              />
 
               {currentHubTab === 'system-design' && <SystemDesignStudio />}
               {currentHubTab === 'notes' && <QuickRevisionHub />}
@@ -857,6 +884,37 @@ export default function App() {
           setJumpTopicId(topicId);
           setWorkspaceMode('curriculum');
           setActiveView('workspace');
+        }}
+      />
+      <AddCustomProblemModal
+        open={addCustomProblemOpen}
+        onClose={() => setAddCustomProblemOpen(false)}
+        existingProblems={customProblems}
+        defaultPatternId={addCustomDefaultPatternId}
+        onProblemAdded={(problem, { openInSolver }) => {
+          setCustomProblems((prev) => [problem, ...prev]);
+          const matchedPattern = DSA28_PATTERNS.find((p) => p.id === problem.patternId);
+          setCustomAddedNotice(
+            `Added "${problem.title}" to #${matchedPattern?.number ?? ''} ${matchedPattern?.shortTitle ?? 'Custom Problems'}.`
+          );
+          if (openInSolver) {
+            setSolverExternalProblem({
+              id: problem.id,
+              title: problem.title,
+              statement: problem.statement || problem.keyIdea,
+              sourcePlatform: problem.sourcePlatform,
+              sourceUrl: problem.url,
+              difficulty: problem.difficulty,
+              examples: problem.examples,
+              constraints: problem.constraints,
+              topics: problem.topics,
+            });
+            setActiveView('solver');
+          } else {
+            setFocusPatternId(problem.patternId);
+            setBankSubTab('patterns28');
+            setActiveView('roadmap');
+          }
         }}
       />
     </div>

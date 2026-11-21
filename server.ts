@@ -95,8 +95,45 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
+    const assetsPath = path.join(distPath, 'assets');
+
+    // Hashed Vite chunks are immutable; missing old hashes must return 404 (never index.html)
+    app.use(
+      '/assets',
+      express.static(assetsPath, {
+        maxAge: '1y',
+        immutable: true,
+        fallthrough: false,
+      }),
+      (
+        _err: unknown,
+        _req: express.Request,
+        res: express.Response,
+        _next: express.NextFunction
+      ) => {
+        res.status(404).type('text/plain').send('Asset chunk not found');
+      }
+    );
+
+    // Other static files (prevent browser caching index.html across redeploys)
+    app.use(
+      express.static(distPath, {
+        index: false,
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+          }
+        },
+      })
+    );
+
+    app.get('*', (req, res) => {
+      // Never serve HTML fallback for missing API or static asset extensions
+      if (req.path.startsWith('/api/') || /\.[a-z0-9]{2,6}$/i.test(req.path)) {
+        res.status(404).type('text/plain').send('Not found');
+        return;
+      }
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

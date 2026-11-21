@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
-import { SystemDesignLearningAcademy } from './SystemDesignLearningAcademy';
-import { SystemDesignMasterRoadmap } from './SystemDesignMasterRoadmap';
-import { SystemPlayground } from './system-playground/SystemPlayground';
+import { SystemDesignLearningAcademy as SystemDesignLearningAcademyBase } from './SystemDesignLearningAcademy';
+import { SystemDesignMasterRoadmap as SystemDesignMasterRoadmapBase } from './SystemDesignMasterRoadmap';
+import { SystemPlayground as SystemPlaygroundBase } from './system-playground/SystemPlayground';
+import { withStudioBoundary } from './hoc';
+import { SegmentedTabBar } from './ui';
+
+const SystemDesignLearningAcademy = withStudioBoundary(SystemDesignLearningAcademyBase, {
+  studioName: 'System Design Deep Academy',
+});
+const SystemDesignMasterRoadmap = withStudioBoundary(SystemDesignMasterRoadmapBase, {
+  studioName: 'System Design Master Roadmap',
+});
+const SystemPlayground = withStudioBoundary(SystemPlaygroundBase, {
+  studioName: 'Live Traffic Playground',
+});
 import {
   DndContext,
   DragEndEvent,
@@ -626,31 +638,19 @@ export function SystemDesignStudio() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg max-w-full overflow-x-auto no-scrollbar">
-          {(
-            [
-              { id: 'playground', label: 'Live Traffic Playground' },
-              { id: 'roadmap', label: 'Master Roadmap & Algos' },
-              { id: 'builder', label: 'Tier Estimator' },
-              { id: 'animations', label: 'System Animations' },
-              { id: 'probabilistic', label: 'Probabilistic Lab' },
-              { id: 'academy', label: 'Deep Academy' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setSubTab(tab.id)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                subTab === tab.id
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabBar
+          ariaLabel="System Design Studio modes"
+          activeTab={subTab}
+          onChange={setSubTab}
+          tabs={[
+            { id: 'playground', label: 'Live Traffic Playground' },
+            { id: 'roadmap', label: 'Master Roadmap & Algos' },
+            { id: 'builder', label: 'Tier Estimator' },
+            { id: 'animations', label: 'System Animations' },
+            { id: 'probabilistic', label: 'Probabilistic Lab' },
+            { id: 'academy', label: 'Deep Academy' },
+          ]}
+        />
       </div>
 
       {/* Mode 0: Full Interactive React Flow System Design Playground & Live Traffic Simulator */}

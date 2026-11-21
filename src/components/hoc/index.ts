@@ -1,4 +1,11 @@
-export { withStudioBoundary, StudioLoadingSkeleton, type StudioBoundaryOptions } from './withStudioBoundary';
+export {
+  withStudioBoundary,
+  withLazyStudio,
+  StudioLoadingSkeleton,
+  isDynamicImportError,
+  triggerOneShotChunkReload,
+  type StudioBoundaryOptions,
+} from './withStudioBoundary';
 export { withAsyncCatalog, type InjectedCatalogProps } from './withAsyncCatalog';
 export {
   withAccountSyncedState,

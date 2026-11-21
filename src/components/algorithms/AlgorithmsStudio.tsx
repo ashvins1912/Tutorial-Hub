@@ -36,10 +36,10 @@ import { useSprintStore } from '../../store/useSprintStore';
 import { AlgorithmVisualStage } from './AlgorithmVisualStage';
 import {
   ArchitectureDiagramId,
-  ArchitectureVisualizer,
+  ArchitectureVisualizer as ArchitectureVisualizerBase,
 } from './ArchitectureVisualizer';
-import { SortingAlgorithmLab } from './SortingAlgorithmLab';
-import { RecursionBacktrackingLab } from '../../features/recursion-lab/components/RecursionBacktrackingLab';
+import { SortingAlgorithmLab as SortingAlgorithmLabBase } from './SortingAlgorithmLab';
+import { RecursionBacktrackingLab as RecursionBacktrackingLabBase } from '../../features/recursion-lab/components/RecursionBacktrackingLab';
 import { ComplexityDepthToggle } from '../../features/visualizer/components/ComplexityDepthToggle';
 import { useAccountState } from '../../hooks/useAccountState';
 import { getAlgorithmComplexityProfile } from '../../features/visualizer/data/complexityComparisonData';
@@ -49,13 +49,31 @@ import {
   getAlgorithmCombinations,
   getAlgorithmFlowStages,
 } from '../../data/algorithmCombinationsAndRoadmap';
-import { PatternRecognitionDrill } from './PatternRecognitionDrill';
-import { Master73RoadmapView } from './Master73RoadmapView';
+import { PatternRecognitionDrill as PatternRecognitionDrillBase } from './PatternRecognitionDrill';
+import { Master73RoadmapView as Master73RoadmapViewBase } from './Master73RoadmapView';
 import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
 import { CategoryMasteryHeatmap } from './CategoryMasteryHeatmap';
 import { getAlgorithmLogicBoard } from '../../data/algorithmLogicBoards';
 import { LogicBoardMathCard } from '../shared/LogicBoardMathCard';
 import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
+import { withStudioBoundary } from '../hoc';
+import { SegmentedTabBar } from '../ui';
+
+const ArchitectureVisualizer = withStudioBoundary(ArchitectureVisualizerBase, {
+  studioName: 'Interactive Architecture Visualizer',
+});
+const SortingAlgorithmLab = withStudioBoundary(SortingAlgorithmLabBase, {
+  studioName: 'Sorting Algorithm Lab',
+});
+const RecursionBacktrackingLab = withStudioBoundary(RecursionBacktrackingLabBase, {
+  studioName: 'Recursion & Backtracking Lab',
+});
+const PatternRecognitionDrill = withStudioBoundary(PatternRecognitionDrillBase, {
+  studioName: 'Pattern Recognition Drill',
+});
+const Master73RoadmapView = withStudioBoundary(Master73RoadmapViewBase, {
+  studioName: '73-Algorithm Master Blueprint',
+});
 
 type TierFilter = 'all' | 'core' | 'advanced' | 'systems';
 type DetailTab = 'mental' | 'upgrade-trace' | 'triggers' | 'code' | 'practice';
@@ -441,29 +459,19 @@ export function AlgorithmsStudio({
     <div className="space-y-6">
       {/* Mode Switcher: 94-Algorithm Studio, 73-Algorithm Master Blueprint, Pattern Drill, Sorting Lab, Recursion Lab, Architecture */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit">
-          {[
-            { id: 'studio' as const, label: `${ALGORITHMS_CATALOG.length}-Algorithm Animated & Practice Studio` },
-            { id: 'master-73' as const, label: '73-Algorithm Master Blueprint (#01–#73)' },
-            { id: 'pattern-drill' as const, label: 'Pattern Recognition Drill (20 Traps)' },
-            { id: 'sorting-lab' as const, label: 'Sorting Algorithm Lab (Race Mode)' },
-            { id: 'recursion-lab' as const, label: 'Recursion & Backtracking Visualizer' },
-            { id: 'architecture' as const, label: 'Interactive Architecture Visualizer (SVG)' },
-          ].map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setStudioMode(m.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                studioMode === m.id
-                  ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabBar
+          ariaLabel="Algorithms Studio modes"
+          activeTab={studioMode}
+          onChange={setStudioMode}
+          tabs={[
+            { id: 'studio', label: `${ALGORITHMS_CATALOG.length}-Algorithm Animated & Practice Studio` },
+            { id: 'master-73', label: '73-Algorithm Master Blueprint (#01–#73)' },
+            { id: 'pattern-drill', label: 'Pattern Recognition Drill (20 Traps)' },
+            { id: 'sorting-lab', label: 'Sorting Algorithm Lab (Race Mode)' },
+            { id: 'recursion-lab', label: 'Recursion & Backtracking Visualizer' },
+            { id: 'architecture', label: 'Interactive Architecture Visualizer (SVG)' },
+          ]}
+        />
 
         {studioMode === 'studio' && (
           <button

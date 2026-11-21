@@ -22,7 +22,13 @@ import {
 } from '../data/aiEngineeringData';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
-import { AiDfdVisualizer } from './AiDfdVisualizer';
+import { AiDfdVisualizer as AiDfdVisualizerBase } from './AiDfdVisualizer';
+import { withStudioBoundary } from './hoc';
+import { SegmentedTabBar } from './ui';
+
+const AiDfdVisualizer = withStudioBoundary(AiDfdVisualizerBase, {
+  studioName: 'AI Architecture DFD Visualizer',
+});
 
 interface AiEngineeringProgress {
   completedPhases: string[];
@@ -431,17 +437,17 @@ export function AiEngineeringStudio() {
         </div>
 
         {/* 4 Progressive Workspace Tabs */}
-        <div
-          role="tablist"
-          aria-label="Phase learning sections"
-          className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-200 dark:border-slate-800"
-        >
-          {(
-            [
+        <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+          <SegmentedTabBar
+            ariaLabel="Phase learning sections"
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            tabs={[
               { id: 'ontology-dfd', label: 'Ontology & Interactive DFD', icon: Layers },
               {
                 id: 'patterns',
-                label: `Algorithm Pattern Matrix (${activePhase.patterns.length})`,
+                label: 'Algorithm Pattern Matrix',
+                count: activePhase.patterns.length,
                 icon: BookOpen,
               },
               { id: 'lab', label: 'Free Lab & Starter Code', icon: FlaskConical },
@@ -450,28 +456,8 @@ export function AiEngineeringStudio() {
                 label: `Reasoning Quiz (${activePhase.quizzes.filter((q) => solvedQuizSet.has(q.id)).length}/${activePhase.quizzes.length})`,
                 icon: HelpCircle,
               },
-            ] as const
-          ).map((tab) => {
-            const Icon = tab.icon;
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                  active
-                    ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                {tab.label}
-              </button>
-            );
-          })}
+            ]}
+          />
         </div>
       </section>
 

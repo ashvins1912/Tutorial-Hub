@@ -72,6 +72,9 @@ export interface CustomPattern28Problem {
   topics: string[];
   keyIdea: string;
   statement?: string;
+  examples?: string[];
+  constraints?: string[];
+  savedRecordId?: string;
   addedAt: string;
   confidence?: number;
 }

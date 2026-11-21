@@ -2,23 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
   Code2,
-  Download,
   ExternalLink,
+  FileText,
   Layers,
   ListChecks,
-  Loader2,
-  Sparkles,
+  Plus,
   Trash2,
 } from 'lucide-react';
-import {
-  classifyQuestionToPattern28,
-  type CustomPattern28Problem,
-  type Dsa28Difficulty,
-  type Dsa28TopicGroupId,
+import type {
+  CustomPattern28Problem,
+  Dsa28Difficulty,
+  Dsa28TopicGroupId,
 } from '../data/dsa28Patterns';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
-import { useAccountState } from '../hooks/useAccountState';
 import {
   useProblemStatusTracker,
   type ProblemDifficulty,
@@ -29,13 +28,8 @@ import {
   StatusCycleButton,
   toggleFilterValue,
 } from './shared/ProblemFilterBar';
-import {
-  CatalogSearchInput,
-  CopyButton,
-  OverlayDialog,
-  OverlayHeader,
-} from './ui';
-import { apiFetch } from '../lib/apiFetch';
+import { CatalogSearchInput, CopyButton, SegmentedTabBar } from './ui';
+import { AddCustomProblemModal } from './AddCustomProblemModal';
 
 interface SolverHandoffProblem {
   id: string;
@@ -50,10 +44,20 @@ interface SolverHandoffProblem {
 }
 
 export interface Patterns28RoadmapViewProps {
+  customProblems: CustomPattern28Problem[];
+  onOpenAddCustomProblem: (defaultPatternId?: string) => void;
+  onRemoveCustomProblem: (id: string) => void;
+  onProblemAddedFallback?: (
+    problem: CustomPattern28Problem,
+    options: { openInSolver: boolean }
+  ) => void;
+  focusPatternId?: string | null;
+  lastAddedNotice?: string | null;
+  onDismissNotice?: () => void;
   onAnalyzeInSolver?: (problem: SolverHandoffProblem) => void;
 }
 
-type RoadmapSubView = 'roadmap' | 'compact28' | 'templates';
+type RoadmapSubView = 'roadmap' | 'compact28' | 'custom' | 'templates';
 type TemplateLanguage = 'python' | 'typescript' | 'java';
 
 const DIFFICULTY_TEXT_CLASS: Record<Dsa28Difficulty, string> = {
@@ -62,29 +66,19 @@ const DIFFICULTY_TEXT_CLASS: Record<Dsa28Difficulty, string> = {
   Hard: 'text-rose-600 dark:text-rose-400',
 };
 
-interface PulledDraft {
-  sourcePlatform: 'LeetCode' | 'GeeksforGeeks' | 'Custom';
-  sourceUrl: string;
-  slug: string;
-  title: string;
-  difficulty: Dsa28Difficulty;
-  statement: string;
-  topics: string[];
-  constraints: string[];
-}
-
 export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
+  customProblems,
+  onOpenAddCustomProblem,
+  onRemoveCustomProblem,
+  onProblemAddedFallback,
+  focusPatternId,
+  lastAddedNotice,
+  onDismissNotice,
   onAnalyzeInSolver,
 }) => {
   const {
     data: { groups, patterns, crossCutting, templates },
   } = useAsyncCatalog('dsa-28-patterns');
-
-  const [customProblems, setCustomProblems] = useAccountState<CustomPattern28Problem[]>(
-    'dsa-28-custom-problems',
-    [],
-    'patternforge_dsa28_custom_v1'
-  );
 
   const { getStatus, cycleStatus } = useProblemStatusTracker();
 
@@ -96,35 +90,29 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
     templates[0]?.patternId ?? 'binary-search-on-answer'
   );
   const [templateLang, setTemplateLang] = useState<TemplateLanguage>('python');
+  const [expandedStatementId, setExpandedStatementId] = useState<string | null>(null);
+  const [standaloneModalOpen, setStandaloneModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<'all' | Dsa28TopicGroupId>('all');
   const [selectedDifficulties, setSelectedDifficulties] = useState<ProblemDifficulty[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<ProblemStatus[]>([]);
 
-  // Pull from LeetCode / GeeksforGeeks modal state
-  const [pullOpen, setPullOpen] = useState(false);
-  const [pullMode, setPullMode] = useState<'url' | 'manual'>('url');
-  const [urlInput, setUrlInput] = useState('');
-  const [platformHint, setPlatformHint] = useState<'LeetCode' | 'GeeksforGeeks'>('LeetCode');
-  const [pullLoading, setPullLoading] = useState(false);
-  const [pullError, setPullError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<PulledDraft | null>(null);
-  const [chosenPatternId, setChosenPatternId] = useState<string>('hashmap-hashset-lookup');
-  const [customKeyIdea, setCustomKeyIdea] = useState('');
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
-
-  // Manual form fields
-  const [manualTitle, setManualTitle] = useState('');
-  const [manualPlatform, setManualPlatform] = useState<'LeetCode' | 'GeeksforGeeks'>('LeetCode');
-  const [manualUrl, setManualUrl] = useState('');
-  const [manualDifficulty, setManualDifficulty] = useState<Dsa28Difficulty>('Medium');
-  const [manualTags, setManualTags] = useState('');
-  const [manualNotes, setManualNotes] = useState('');
+  useEffect(() => {
+    if (focusPatternId) {
+      setSelectedPatternId(focusPatternId);
+      setSubView('roadmap');
+    }
+  }, [focusPatternId]);
 
   const groupMap = useMemo(
     () => new Map(groups.map((g) => [g.id, g])),
     [groups]
+  );
+
+  const patternMap = useMemo(
+    () => new Map(patterns.map((p) => [p.id, p])),
+    [patterns]
   );
 
   const templateByPatternId = useMemo(
@@ -172,8 +160,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
     for (const pat of patterns) {
       for (const prob of pat.problems) {
         totalCanonical++;
-        const st = getStatus(prob.slug);
-        if (st === 'solved') {
+        if (getStatus(prob.slug) === 'solved') {
           solvedTotal++;
           if (prob.isCanonical28) solvedCompact28++;
         }
@@ -239,7 +226,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
     const custom = (customByPatternId.get(activePattern.id) ?? []).filter((cp) =>
       matchesFilters(
         cp.title,
-        `${cp.sourcePlatform} ${cp.topics.join(' ')} ${cp.keyIdea}`,
+        `${cp.sourcePlatform} ${cp.topics.join(' ')} ${cp.keyIdea} ${cp.statement ?? ''}`,
         cp.difficulty,
         cp.slug
       )
@@ -247,180 +234,24 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
     return { canonical, custom };
   }, [activePattern, customByPatternId, selectedDifficulties, selectedStatuses, normalizedQuery, getStatus]);
 
-  // Live classification for either pulled draft or manual entry
-  const activeClassification = useMemo(() => {
-    if (pullMode === 'url' && draft) {
-      return classifyQuestionToPattern28({
-        title: draft.title,
-        statement: draft.statement,
-        topics: draft.topics,
-        constraints: draft.constraints,
-      });
-    }
-    if (pullMode === 'manual' && (manualTitle.trim() || manualTags.trim() || manualNotes.trim())) {
-      return classifyQuestionToPattern28({
-        title: manualTitle,
-        statement: manualNotes,
-        topics: manualTags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
-      });
-    }
-    return null;
-  }, [pullMode, draft, manualTitle, manualTags, manualNotes]);
-
-  useEffect(() => {
-    if (pullMode === 'manual' && activeClassification) {
-      setChosenPatternId(activeClassification.best.patternId);
-    }
-  }, [pullMode, activeClassification]);
-
-  const openPullDialog = () => {
-    setPullError(null);
-    setSaveNotice(null);
-    setPullOpen(true);
-  };
-
-  const handlePullFromUrl = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleaned = urlInput.trim();
-    if (!cleaned) {
-      setPullError('Paste a LeetCode or GeeksforGeeks problem URL (or slug).');
-      return;
-    }
-
-    setPullLoading(true);
-    setPullError(null);
-    setSaveNotice(null);
-    try {
-      const response = await apiFetch('/api/solver/fetch-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: cleaned, platform: platformHint }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.problem) {
-        throw new Error(data?.error || 'Could not fetch this problem. Switch to Manual Entry to add it directly.');
-      }
-      const fetched = data.problem as PulledDraft;
-      const classification = classifyQuestionToPattern28({
-        title: fetched.title,
-        statement: fetched.statement,
-        topics: fetched.topics,
-        constraints: fetched.constraints,
-      });
-      setDraft(fetched);
-      setChosenPatternId(classification.best.patternId);
-      setCustomKeyIdea(
-        fetched.statement
-          ? fetched.statement.split('\n')[0].slice(0, 150)
-          : `Pulled from ${fetched.sourcePlatform}`
+  const filteredCustomProblems = useMemo(() => {
+    return customProblems.filter((cp) => {
+      const pat = patternMap.get(cp.patternId);
+      return matchesFilters(
+        cp.title,
+        `${cp.sourcePlatform} ${pat?.title ?? ''} ${cp.topics.join(' ')} ${cp.keyIdea} ${cp.statement ?? ''}`,
+        cp.difficulty,
+        cp.slug
       );
-    } catch (err) {
-      setPullError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to pull question right now. You can add it via Manual Entry.'
-      );
-    } finally {
-      setPullLoading(false);
-    }
-  };
+    });
+  }, [customProblems, patternMap, selectedDifficulties, selectedStatuses, normalizedQuery, getStatus]);
 
-  const handleAddToEligiblePattern = () => {
-    setPullError(null);
-
-    let nextItem: CustomPattern28Problem | null = null;
-
-    if (pullMode === 'url') {
-      if (!draft) {
-        setPullError('Pull a LeetCode or GeeksforGeeks question first.');
-        return;
-      }
-      const slugKey = `${draft.sourcePlatform.toLowerCase()}-${draft.slug}`;
-      nextItem = {
-        id: `custom-${slugKey}`,
-        patternId: chosenPatternId,
-        sourcePlatform: draft.sourcePlatform,
-        title: draft.title,
-        slug: slugKey,
-        url: draft.sourceUrl,
-        difficulty: draft.difficulty,
-        topics: draft.topics.slice(0, 6),
-        keyIdea: customKeyIdea.trim() || `Pulled from ${draft.sourcePlatform}`,
-        statement: draft.statement?.slice(0, 1600),
-        addedAt: new Date().toISOString(),
-        confidence: activeClassification?.best.confidence,
-      };
+  const triggerAddModal = (patternId?: string) => {
+    if (onOpenAddCustomProblem) {
+      onOpenAddCustomProblem(patternId);
     } else {
-      const titleClean = manualTitle.trim();
-      if (!titleClean) {
-        setPullError('Enter a problem title before adding.');
-        return;
-      }
-      const slugRaw = titleClean
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-      const slugKey = `${manualPlatform.toLowerCase()}-${slugRaw || Date.now()}`;
-      const fallbackUrl =
-        manualUrl.trim() ||
-        (manualPlatform === 'LeetCode'
-          ? `https://leetcode.com/problems/${slugRaw}/`
-          : `https://www.geeksforgeeks.org/problems/${slugRaw}/1`);
-      const targetPatternId =
-        chosenPatternId || activeClassification?.best.patternId || patterns[0].id;
-      nextItem = {
-        id: `custom-${slugKey}`,
-        patternId: targetPatternId,
-        sourcePlatform: manualPlatform,
-        title: titleClean,
-        slug: slugKey,
-        url: fallbackUrl,
-        difficulty: manualDifficulty,
-        topics: manualTags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean)
-          .slice(0, 6),
-        keyIdea: manualNotes.trim() || `Added from ${manualPlatform}`,
-        statement: manualNotes.trim() || undefined,
-        addedAt: new Date().toISOString(),
-        confidence: activeClassification?.best.confidence,
-      };
+      setStandaloneModalOpen(true);
     }
-
-    if (!nextItem) return;
-
-    const alreadyExists = customProblems.some(
-      (item) => item.slug === nextItem!.slug || item.url === nextItem!.url
-    );
-    if (alreadyExists) {
-      setPullError('This question is already in your 28-Pattern Roadmap.');
-      return;
-    }
-
-    setCustomProblems((prev) => [nextItem!, ...prev]);
-    setSelectedPatternId(nextItem.patternId);
-    setSubView('roadmap');
-    const matchedPattern = patterns.find((pat) => pat.id === nextItem!.patternId);
-    setSaveNotice(
-      `Added "${nextItem.title}" to #${matchedPattern?.number ?? ''} ${matchedPattern?.shortTitle ?? ''}.`
-    );
-
-    // Reset draft & close after short beat
-    setDraft(null);
-    setUrlInput('');
-    setManualTitle('');
-    setManualUrl('');
-    setManualTags('');
-    setManualNotes('');
-    setPullOpen(false);
-  };
-
-  const handleRemoveCustomProblem = (id: string) => {
-    setCustomProblems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const openTemplateForPattern = (patternId: string) => {
@@ -443,7 +274,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-mono text-sky-600 dark:text-sky-400">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-mono text-sky-600 dark:text-sky-400">
               <span>28-PATTERN DSA ROADMAP</span>
               <span className="text-slate-300 dark:text-slate-700">·</span>
               <span>5 TOPIC GROUPS</span>
@@ -454,23 +285,23 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
               28-Pattern Interview Mastery &amp; Compact Revision List
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-3xl">
-              Master all 28 recurring coding patterns, drill the 1-per-pattern Compact 28 Revision List, reference battle-tested templates for the trickiest patterns, or pull any LeetCode / GeeksforGeeks question directly into its eligible category.
+              Master all 28 recurring coding patterns, drill the 1-per-pattern Compact 28 Revision List, reference battle-tested templates for the trickiest patterns, or parse any LeetCode / GeeksforGeeks URL directly into your problem bank.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={openPullDialog}
+              onClick={() => triggerAddModal(activePattern?.id)}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap shrink-0"
             >
-              <Download className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Pull from LeetCode / GFG</span>
+              <Plus className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Add Custom Problem</span>
             </button>
           </div>
         </div>
 
-        {/* Metrics Row (single-elevation hairline dividers, tabular-nums) */}
+        {/* Metrics Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-slate-200 dark:border-slate-800">
           <div>
             <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -498,57 +329,43 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
           </div>
           <div>
             <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              Custom Pulled Questions
+              My Custom Problems
             </p>
             <p className="text-lg font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
-              {stats.customCount} synced
+              {stats.customCount} added
             </p>
           </div>
         </div>
 
-        {saveNotice && (
+        {lastAddedNotice && (
           <div className="mt-4 px-3.5 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/40 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-3">
-            <span>{saveNotice}</span>
-            <button
-              type="button"
-              onClick={() => setSaveNotice(null)}
-              className="text-[11px] font-semibold underline shrink-0"
-            >
-              Dismiss
-            </button>
+            <span>{lastAddedNotice}</span>
+            {onDismissNotice && (
+              <button
+                type="button"
+                onClick={onDismissNotice}
+                className="text-[11px] font-semibold underline shrink-0"
+              >
+                Dismiss
+              </button>
+            )}
           </div>
         )}
       </section>
 
-      {/* Sub-view Segmented Control & Filters */}
+      {/* Sub-view Segmented Control & Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 w-fit max-w-full overflow-x-auto no-scrollbar">
-          {(
-            [
-              { id: 'roadmap', label: '28-Pattern Explorer', icon: Layers },
-              { id: 'compact28', label: 'Compact 28 Revision List', icon: ListChecks },
-              { id: 'templates', label: `Trickiest Templates (${templates.length})`, icon: Code2 },
-            ] as const
-          ).map((tab) => {
-            const Icon = tab.icon;
-            const active = subView === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setSubView(tab.id)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                  active
-                    ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabBar
+          ariaLabel="28-Pattern Roadmap sections"
+          activeTab={subView}
+          onChange={setSubView}
+          tabs={[
+            { id: 'roadmap', label: '28-Pattern Explorer', icon: Layers },
+            { id: 'compact28', label: 'Compact 28 Revision List', icon: ListChecks },
+            { id: 'custom', label: 'My Custom Problems', count: customProblems.length, icon: FileText },
+            { id: 'templates', label: 'Trickiest Templates', count: templates.length, icon: Code2 },
+          ]}
+        />
 
         {subView !== 'templates' && (
           <div className="flex flex-wrap items-center gap-2.5">
@@ -562,7 +379,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
         )}
       </div>
 
-      {/* Filter Bar for Roadmap & Compact 28 views */}
+      {/* Filter Bar */}
       {subView !== 'templates' && (
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <ProblemFilterBar
@@ -609,13 +426,11 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
         </div>
       )}
 
-      {/* ===================================================================== */}
-      {/* VIEW 1: 28-PATTERN ROADMAP EXPLORER                                   */}
-      {/* ===================================================================== */}
+      {/* VIEW 1: 28-PATTERN ROADMAP EXPLORER */}
       {subView === 'roadmap' && activePattern && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left Rail: All 28 Patterns Grouped by the 5 Topics */}
-          <aside className="lg:col-span-4 xl:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+          {/* Left Rail */}
+          <aside className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                 All 28 Patterns
@@ -706,7 +521,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
           </aside>
 
           {/* Main Pattern Detail Workspace */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+          <div className="lg:col-span-8 space-y-4">
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -761,7 +576,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
               </div>
             </div>
 
-            {/* Problem List Table for Selected Pattern */}
+            {/* Problem List Table */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs">
@@ -772,16 +587,16 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                   <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
                     {activePatternProblems.canonical.length} canonical
                     {activePatternProblems.custom.length > 0
-                      ? ` + ${activePatternProblems.custom.length} pulled`
+                      ? ` + ${activePatternProblems.custom.length} custom`
                       : ''}
                   </span>
                 </div>
                 <button
                   type="button"
-                  onClick={openPullDialog}
+                  onClick={() => triggerAddModal(activePattern.id)}
                   className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
                 >
-                  + Add LeetCode / GFG question
+                  + Add Custom Problem
                 </button>
               </div>
 
@@ -888,7 +703,6 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                         );
                       })}
 
-                      {/* User-pulled LeetCode / GFG questions assigned to this pattern */}
                       {activePatternProblems.custom.map((cp) => {
                         const status = getStatus(cp.slug);
                         return (
@@ -906,7 +720,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                             <td className="py-3 px-2 align-top">
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                                 <span className="font-mono text-[11px] text-sky-600 dark:text-sky-400 font-semibold">
-                                  {cp.sourcePlatform} · Pulled
+                                  {cp.sourcePlatform} · Custom
                                 </span>
                                 <a
                                   href={cp.url}
@@ -948,6 +762,8 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                                         sourcePlatform: cp.sourcePlatform,
                                         sourceUrl: cp.url,
                                         difficulty: cp.difficulty,
+                                        examples: cp.examples,
+                                        constraints: cp.constraints,
                                         topics: cp.topics,
                                       })
                                     }
@@ -959,7 +775,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => handleRemoveCustomProblem(cp.id)}
+                                  onClick={() => onRemoveCustomProblem(cp.id)}
                                   aria-label={`Remove ${cp.title}`}
                                   className="text-slate-400 hover:text-rose-500 transition-colors"
                                 >
@@ -976,7 +792,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
               )}
             </div>
 
-            {/* Cross-Cutting Techniques Note (Greedy & Bit Manipulation) */}
+            {/* Cross-Cutting Techniques Note */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100">
                 <BookOpen className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
@@ -1019,9 +835,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
         </div>
       )}
 
-      {/* ===================================================================== */}
-      {/* VIEW 2: COMPACT 28-QUESTION REVISION LIST (1 CANONICAL PER PATTERN)   */}
-      {/* ===================================================================== */}
+      {/* VIEW 2: COMPACT 28-QUESTION REVISION LIST */}
       {subView === 'compact28' && (
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
@@ -1170,9 +984,204 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
         </div>
       )}
 
-      {/* ===================================================================== */}
-      {/* VIEW 3: TRICKIEST PATTERN CODE TEMPLATES                              */}
-      {/* ===================================================================== */}
+      {/* VIEW 3: MY CUSTOM PROBLEMS */}
+      {subView === 'custom' && (
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                My Custom Problems
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                LeetCode and GeeksforGeeks problems parsed via the server API, categorized under your 28-pattern roadmap, and synced to your account.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => triggerAddModal()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-sky-400 whitespace-nowrap shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Add Custom Problem</span>
+            </button>
+          </div>
+
+          {customProblems.length === 0 ? (
+            <div className="p-12 text-center space-y-3">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                No custom problems added yet
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                Paste any LeetCode or GeeksforGeeks URL to automatically parse its problem statement, examples, and constraints and save it into your synced practice sheet.
+              </p>
+              <button
+                type="button"
+                onClick={() => triggerAddModal()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-sky-400"
+              >
+                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Add Your First Custom Problem</span>
+              </button>
+            </div>
+          ) : filteredCustomProblems.length === 0 ? (
+            <div className="p-10 text-center">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                No custom problems match your current filters.
+              </p>
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200 dark:divide-slate-800">
+              {filteredCustomProblems.map((cp) => {
+                const status = getStatus(cp.slug);
+                const assignedPattern = patternMap.get(cp.patternId);
+                const isExpanded = expandedStatementId === cp.id;
+                return (
+                  <div key={cp.id} className="p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="pt-0.5">
+                          <StatusCycleButton
+                            status={status}
+                            onClick={() => cycleStatus(cp.slug)}
+                            title={cp.title}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                            <span className="font-mono text-[11px] font-semibold text-sky-600 dark:text-sky-400">
+                              {cp.sourcePlatform}
+                            </span>
+                            <span className="text-slate-300 dark:text-slate-700">·</span>
+                            <span className={`font-semibold ${DIFFICULTY_TEXT_CLASS[cp.difficulty]}`}>
+                              {cp.difficulty}
+                            </span>
+                            {assignedPattern && (
+                              <>
+                                <span className="text-slate-300 dark:text-slate-700">·</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedPatternId(assignedPattern.id);
+                                    setSubView('roadmap');
+                                  }}
+                                  className="text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400"
+                                >
+                                  #{String(assignedPattern.number).padStart(2, '0')}{' '}
+                                  {assignedPattern.shortTitle}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                          <a
+                            href={cp.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-sky-600 dark:hover:text-sky-400 inline-flex items-center gap-1 mt-0.5"
+                          >
+                            <span>{cp.title}</span>
+                            <ExternalLink className="w-3.5 h-3.5 opacity-60 shrink-0" aria-hidden="true" />
+                          </a>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            {cp.keyIdea}
+                          </p>
+                          {cp.topics.length > 0 && (
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                              {cp.topics.join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0 self-end sm:self-start">
+                        {cp.statement && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedStatementId(isExpanded ? null : cp.id)
+                            }
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 whitespace-nowrap"
+                          >
+                            <span>{isExpanded ? 'Hide Statement' : 'Statement'}</span>
+                            {isExpanded ? (
+                              <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                            )}
+                          </button>
+                        )}
+                        {onAnalyzeInSolver && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onAnalyzeInSolver({
+                                id: cp.id,
+                                title: cp.title,
+                                statement: cp.statement || cp.keyIdea,
+                                sourcePlatform: cp.sourcePlatform,
+                                sourceUrl: cp.url,
+                                difficulty: cp.difficulty,
+                                examples: cp.examples,
+                                constraints: cp.constraints,
+                                topics: cp.topics,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap"
+                          >
+                            <span>Open in Solver</span>
+                            <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onRemoveCustomProblem(cp.id)}
+                          aria-label={`Remove ${cp.title}`}
+                          className="text-slate-400 hover:text-rose-500 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isExpanded && cp.statement && (
+                      <div className="ml-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3.5 space-y-3">
+                        <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                          {cp.statement}
+                        </p>
+                        {cp.examples && cp.examples.length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {cp.examples.map((ex, idx) => (
+                              <pre
+                                key={idx}
+                                className="p-2.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px] font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap overflow-x-auto"
+                              >
+                                {ex}
+                              </pre>
+                            ))}
+                          </div>
+                        )}
+                        {cp.constraints && cp.constraints.length > 0 && (
+                          <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                            Constraints: {cp.constraints.join(' · ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* VIEW 4: TRICKIEST PATTERN CODE TEMPLATES */}
       {subView === 'templates' && activeTemplate && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           <aside className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
@@ -1256,7 +1265,6 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                 </p>
               </div>
 
-              {/* Code Surface */}
               <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
@@ -1294,7 +1302,6 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                 </pre>
               </div>
 
-              {/* Common Pitfalls */}
               <div className="pt-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-600 dark:text-rose-400">
                   Common Interview Pitfalls to Avoid
@@ -1313,319 +1320,15 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
         </div>
       )}
 
-      {/* ===================================================================== */}
-      {/* PULL FROM LEETCODE / GEEKSFORGEEKS & AUTO-CATEGORIZE DIALOG           */}
-      {/* ===================================================================== */}
-      <OverlayDialog
-        open={pullOpen}
-        onClose={() => setPullOpen(false)}
-        ariaLabel="Pull question from LeetCode or GeeksforGeeks"
-        maxWidthClass="max-w-2xl"
-      >
-        <OverlayHeader
-          kicker="AUTO-CLASSIFY INTO ELIGIBLE PATTERN"
-          title="Pull Question from LeetCode or GeeksforGeeks"
-          subtitle="Fetch problem metadata directly from leetcode.com or geeksforgeeks.org, review the matched pattern among the 28 categories, and save it to your synced roadmap."
-          onClose={() => setPullOpen(false)}
+      {onProblemAddedFallback && (
+        <AddCustomProblemModal
+          open={standaloneModalOpen}
+          onClose={() => setStandaloneModalOpen(false)}
+          existingProblems={customProblems}
+          defaultPatternId={activePattern?.id}
+          onProblemAdded={onProblemAddedFallback}
         />
-
-        <div className="p-6 overflow-y-auto space-y-5">
-          {/* Mode Switcher */}
-          <div className="flex items-center gap-1.5 p-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 w-fit">
-            <button
-              type="button"
-              onClick={() => {
-                setPullMode('url');
-                setPullError(null);
-              }}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-                pullMode === 'url'
-                  ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                  : 'text-slate-600 dark:text-slate-400'
-              }`}
-            >
-              Pull by URL / Slug
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPullMode('manual');
-                setPullError(null);
-              }}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-                pullMode === 'manual'
-                  ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                  : 'text-slate-600 dark:text-slate-400'
-              }`}
-            >
-              Quick Manual Entry
-            </button>
-          </div>
-
-          {pullMode === 'url' ? (
-            <form onSubmit={handlePullFromUrl} className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <select
-                  aria-label="Platform hint for bare slugs"
-                  value={platformHint}
-                  onChange={(e) =>
-                    setPlatformHint(e.target.value as 'LeetCode' | 'GeeksforGeeks')
-                  }
-                  className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-medium text-slate-800 dark:text-slate-200 shrink-0"
-                >
-                  <option value="LeetCode">LeetCode</option>
-                  <option value="GeeksforGeeks">GeeksforGeeks</option>
-                </select>
-                <input
-                  type="text"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="https://leetcode.com/problems/koko-eating-bananas/ or GFG URL"
-                  className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                />
-                <button
-                  type="submit"
-                  disabled={pullLoading}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-sky-400 disabled:opacity-50 whitespace-nowrap shrink-0"
-                >
-                  {pullLoading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                      <span>Pulling...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Pull Question</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Supports full URLs from <span className="font-mono">leetcode.com/problems/...</span> and{' '}
-                <span className="font-mono">geeksforgeeks.org/problems/...</span> or a bare problem slug.
-              </p>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Problem Title
-                </label>
-                <input
-                  type="text"
-                  value={manualTitle}
-                  onChange={(e) => setManualTitle(e.target.value)}
-                  placeholder="e.g., Allocate Minimum Number of Pages"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Platform
-                </label>
-                <select
-                  value={manualPlatform}
-                  onChange={(e) =>
-                    setManualPlatform(e.target.value as 'LeetCode' | 'GeeksforGeeks')
-                  }
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
-                >
-                  <option value="LeetCode">LeetCode</option>
-                  <option value="GeeksforGeeks">GeeksforGeeks</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Difficulty
-                </label>
-                <select
-                  value={manualDifficulty}
-                  onChange={(e) => setManualDifficulty(e.target.value as Dsa28Difficulty)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
-                >
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Problem URL (optional)
-                </label>
-                <input
-                  type="text"
-                  value={manualUrl}
-                  onChange={(e) => setManualUrl(e.target.value)}
-                  placeholder="https://www.geeksforgeeks.org/problems/..."
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Topic Tags (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={manualTags}
-                  onChange={(e) => setManualTags(e.target.value)}
-                  placeholder="Binary Search, Greedy, Array"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Key Insight / Statement Clues
-                </label>
-                <input
-                  type="text"
-                  value={manualNotes}
-                  onChange={(e) => setManualNotes(e.target.value)}
-                  placeholder="Minimize the maximum pages assigned..."
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100"
-                />
-              </div>
-            </div>
-          )}
-
-          {pullError && (
-            <div className="px-3.5 py-2.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50/70 dark:bg-rose-950/40 text-xs text-rose-700 dark:text-rose-300">
-              {pullError}
-            </div>
-          )}
-
-          {/* Pulled Draft Preview */}
-          {pullMode === 'url' && draft && (
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 space-y-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                  {draft.sourcePlatform} ·{' '}
-                  <span className={`font-semibold ${DIFFICULTY_TEXT_CLASS[draft.difficulty]}`}>
-                    {draft.difficulty}
-                  </span>
-                </div>
-                <a
-                  href={draft.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] font-semibold text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 hover:underline"
-                >
-                  <span>Open Original</span>
-                  <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                </a>
-              </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {draft.title}
-              </h3>
-              {draft.topics.length > 0 && (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Tags: {draft.topics.join(' · ')}
-                </p>
-              )}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Revision Note / Key Idea
-                </label>
-                <input
-                  type="text"
-                  value={customKeyIdea}
-                  onChange={(e) => setCustomKeyIdea(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Auto-Classified Eligible Pattern Selection */}
-          {activeClassification && (
-            <div className="p-4 rounded-xl border border-sky-200 dark:border-sky-900/70 bg-sky-50/50 dark:bg-sky-950/25 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-sky-700 dark:text-sky-400">
-                    <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Recommended Eligible Pattern</span>
-                  </div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-                    #{String(activeClassification.best.patternNumber).padStart(2, '0')}{' '}
-                    {activeClassification.best.patternTitle}
-                  </p>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                    {activeClassification.best.matchedReasons.join(' · ')}
-                  </p>
-                </div>
-                <span className="font-mono tabular-nums text-xs font-bold text-sky-700 dark:text-sky-400 shrink-0">
-                  {activeClassification.best.confidence}% match
-                </span>
-              </div>
-
-              {/* Quick clickable alternatives */}
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400 mr-1">Alternatives:</span>
-                {[activeClassification.best, ...activeClassification.alternatives].map((cand) => {
-                  const active = chosenPatternId === cand.patternId;
-                  return (
-                    <button
-                      key={cand.patternId}
-                      type="button"
-                      onClick={() => setChosenPatternId(cand.patternId)}
-                      className={`px-2 py-1 rounded-md font-medium border transition-colors ${
-                        active
-                          ? 'border-sky-600 bg-sky-600 text-white'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-sky-400'
-                      }`}
-                    >
-                      #{cand.patternNumber} {cand.patternTitle}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Full 28-pattern override selector */}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Target Eligible Category (Override Any of 28)
-                </label>
-                <select
-                  value={chosenPatternId}
-                  onChange={(e) => setChosenPatternId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-slate-100"
-                >
-                  {groups.map((grp) => (
-                    <optgroup key={grp.id} label={grp.title}>
-                      {patterns
-                        .filter((pat) => pat.groupId === grp.id)
-                        .map((pat) => (
-                          <option key={pat.id} value={pat.id}>
-                            #{String(pat.number).padStart(2, '0')} {pat.title}
-                          </option>
-                        ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Dialog Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setPullOpen(false)}
-            className="px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleAddToEligiblePattern}
-            disabled={pullMode === 'url' ? !draft : !manualTitle.trim()}
-            className="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-sky-400 disabled:opacity-40 transition-colors"
-          >
-            Add to Eligible Category
-          </button>
-        </div>
-      </OverlayDialog>
+      )}
     </div>
   );
 };

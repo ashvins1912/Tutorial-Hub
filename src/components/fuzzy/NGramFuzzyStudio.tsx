@@ -6,11 +6,22 @@ import {
 import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { computeAllSimilarityMetrics } from '../../utils/ngramEngine';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
-import { PlaybackControlBar } from '../ui';
+import { PlaybackControlBar, SegmentedTabBar } from '../ui';
+import { withStudioBoundary } from '../hoc';
 import { NGramVisualStage } from './NGramVisualStage';
-import { ProductSearchCaseStudy } from './ProductSearchCaseStudy';
-import { PruningLogicSimulator } from './PruningLogicSimulator';
-import { FuzzyCurriculumTrack } from './FuzzyCurriculumTrack';
+import { ProductSearchCaseStudy as ProductSearchCaseStudyBase } from './ProductSearchCaseStudy';
+import { PruningLogicSimulator as PruningLogicSimulatorBase } from './PruningLogicSimulator';
+import { FuzzyCurriculumTrack as FuzzyCurriculumTrackBase } from './FuzzyCurriculumTrack';
+
+const ProductSearchCaseStudy = withStudioBoundary(ProductSearchCaseStudyBase, {
+  studioName: '10M Product Search Case Study',
+});
+const PruningLogicSimulator = withStudioBoundary(PruningLogicSimulatorBase, {
+  studioName: 'Pruning Logic Simulator',
+});
+const FuzzyCurriculumTrack = withStudioBoundary(FuzzyCurriculumTrackBase, {
+  studioName: 'N-Gram Mastery Curriculum',
+});
 
 const SPEEDS = [
   { label: '0.5×', ms: 2200 },
@@ -154,27 +165,17 @@ export function NGramFuzzyStudio() {
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 w-fit">
-            {[
-              { id: 'curriculum' as const, label: '5-Module Mastery Track' },
-              { id: 'taxonomy' as const, label: '33-Algorithm Taxonomy Lab' },
-              { id: 'pruning-sim' as const, label: 'Pruning Logic Simulator' },
-              { id: 'case-study' as const, label: '10M Product Search Case Study' },
-            ].map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setStudioMode(m.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-                  studioMode === m.id
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabBar
+            ariaLabel="N-Gram Fuzzy Studio modes"
+            activeTab={studioMode}
+            onChange={setStudioMode}
+            tabs={[
+              { id: 'curriculum', label: '5-Module Mastery Track' },
+              { id: 'taxonomy', label: '33-Algorithm Taxonomy Lab' },
+              { id: 'pruning-sim', label: 'Pruning Logic Simulator' },
+              { id: 'case-study', label: '10M Product Search Case Study' },
+            ]}
+          />
         </div>
 
         {studioMode === 'taxonomy' && (

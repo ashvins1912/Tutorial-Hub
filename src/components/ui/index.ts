@@ -25,3 +25,8 @@ export {
   type ConceptQuizQuestion,
   type QuizOptionItem,
 } from './ConceptQuizPanel';
+export {
+  SegmentedTabBar,
+  type SegmentedTabBarProps,
+  type SegmentedTabItem,
+} from './SegmentedTabBar';

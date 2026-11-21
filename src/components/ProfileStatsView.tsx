@@ -14,6 +14,7 @@ import { usePatternForgeStore, TopView } from '../store/usePatternForgeStore';
 import type { CodeLanguage, RankTier } from '../types/dsa';
 import { MonthlyLearningResetCard } from './profile/MonthlyLearningResetCard';
 import { DbSyncInspectorCard } from './profile/DbSyncInspectorCard';
+import { SegmentedTabBar } from './ui';
 
 interface UserPreferences {
   targetRole: string;
@@ -733,34 +734,16 @@ export function ProfileStatsView() {
 
       {/* Progressive Disclosure Tab Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="tablist"
-          aria-label="Profile analytics sections"
-          className="inline-flex max-w-full overflow-x-auto no-scrollbar items-center gap-1 p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
-        >
-          {(
-            [
-              { id: 'overview', label: 'Overview & Cognitive Telemetry' },
-              { id: 'readiness', label: 'Topics, Difficulty & Company Readiness' },
-              { id: 'modules', label: 'All Modules, Spaced Rep & DB Ledger' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabBar<ProfileTab>
+          ariaLabel="Profile analytics sections"
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { id: 'overview', label: 'Overview & Cognitive Telemetry', shortLabel: 'Overview' },
+            { id: 'readiness', label: 'Topics, Difficulty & Company Readiness', shortLabel: 'Readiness' },
+            { id: 'modules', label: 'All Modules, Spaced Rep & DB Ledger', shortLabel: 'Modules & DB' },
+          ]}
+        />
 
         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
           <Database className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />

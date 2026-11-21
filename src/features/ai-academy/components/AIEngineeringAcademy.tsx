@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, Code2, Compass, GraduationCap, Lightbulb, ListChecks, Play, RotateCcw, Search, Target } from 'lucide-react';
 import { AI_ENGINEERING_CURRICULUM, getAcademyCounts, type AcademyLesson } from '../data/aiEngineeringCurriculum';
 import { apiFetch } from '../../../lib/apiFetch';
+import { SegmentedTabBar } from '../../../components/ui';
 
 type Tab = 'learn' | 'visual' | 'code' | 'quiz' | 'project';
 type ProgressState = { completed: string[]; quizCorrect: string[] };
@@ -167,8 +168,13 @@ export function AIEngineeringAcademy() {
                 <div className="min-w-0"><div className="flex flex-wrap gap-2 items-center text-[11px] text-slate-500"><span>{phase.title}</span><span>·</span><span>{lesson.level}</span><span>·</span><span className="inline-flex items-center gap-1"><Clock3 className="w-3 h-3"/>{lesson.duration}</span></div><h2 className="text-xl sm:text-2xl font-bold mt-2">{lesson.title}</h2></div>
                 <button type="button" onClick={markComplete} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${progress.completed.includes(lesson.id) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950'}`}><CheckCircle2 className="w-4 h-4"/>{progress.completed.includes(lesson.id) ? 'Completed' : 'Mark complete'}</button>
               </div>
-              <div className="mt-4 flex gap-1 overflow-x-auto rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
-                {tabs.map(({id,label,icon:Icon}) => <button key={id} type="button" onClick={() => setTab(id)} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold whitespace-nowrap ${tab === id ? 'bg-white dark:bg-slate-700 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}><Icon className="w-3.5 h-3.5"/>{label}</button>)}
+              <div className="mt-4">
+                <SegmentedTabBar<Tab>
+                  ariaLabel="AI Engineering Academy lesson views"
+                  activeTab={tab}
+                  onChange={setTab}
+                  tabs={tabs}
+                />
               </div>
 
               {tab === 'learn' && <div className="mt-5 space-y-4">
