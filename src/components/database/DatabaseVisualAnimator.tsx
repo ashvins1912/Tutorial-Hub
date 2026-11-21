@@ -15,6 +15,8 @@ import {
   type DfdEdge,
   type DfdNode,
 } from '../../data/databaseVisualData';
+import { STANDARD_DFD_BLUEPRINTS } from '../../data/databaseTaxonomyAndSqlData';
+import { CopyButton, SegmentedTabBar } from '../ui';
 
 interface DatabaseVisualAnimatorProps {
   selectedFlowId: string;
@@ -101,6 +103,9 @@ export function DatabaseVisualAnimator({
   const [isPlaying, setIsPlaying] = useState(true);
   const [speedMs, setSpeedMs] = useState(2800);
   const [packetProgress, setPacketProgress] = useState(0);
+  const [diagramMode, setDiagramMode] = useState<'animated' | 'dfd-blueprint'>('animated');
+
+  const blueprint = STANDARD_DFD_BLUEPRINTS[flow.id];
 
   // Reset to step 0 when flow changes
   useEffect(() => {
@@ -169,7 +174,7 @@ export function DatabaseVisualAnimator({
   return (
     <div className="space-y-6">
       {/* Flow Selector Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
         {VISUAL_FLOW_SCENARIOS.map((item) => {
           const active = item.id === flow.id;
           return (
@@ -206,72 +211,112 @@ export function DatabaseVisualAnimator({
             </p>
           </div>
 
-          {/* Playback Controls */}
+          {/* Playback & DFD View Controls */}
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setIsPlaying(false);
-                setStepIdx((prev) => (prev - 1 + flow.steps.length) % flow.steps.length);
-              }}
-              aria-label="Previous step"
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500"
-            >
-              <SkipBack className="w-4 h-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPlaying((p) => !p)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 whitespace-nowrap"
-            >
-              {isPlaying ? (
-                <>
-                  <Pause className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Pause</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Play Animation</span>
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsPlaying(false);
-                setStepIdx((prev) => (prev + 1) % flow.steps.length);
-              }}
-              aria-label="Next step"
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500"
-            >
-              <SkipForward className="w-4 h-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setStepIdx(0);
-                setIsPlaying(true);
-              }}
-              aria-label="Restart animation"
-              className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500"
-            >
-              <RotateCcw className="w-4 h-4" aria-hidden="true" />
-            </button>
-            <select
-              aria-label="Animation speed"
-              value={speedMs}
-              onChange={(e) => setSpeedMs(Number(e.target.value))}
-              className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs font-mono text-slate-700 dark:text-slate-200"
-            >
-              <option value={4000}>0.75x</option>
-              <option value={2800}>1.0x</option>
-              <option value={1700}>1.5x</option>
-            </select>
+            <SegmentedTabBar<'animated' | 'dfd-blueprint'>
+              ariaLabel="Visual mode"
+              activeTab={diagramMode}
+              onChange={setDiagramMode}
+              size="xs"
+              tabs={[
+                { id: 'animated', label: 'Animated SVG' },
+                { id: 'dfd-blueprint', label: 'Level-0 & Level-1 DFD' },
+              ]}
+            />
+            {diagramMode === 'animated' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setStepIdx((prev) => (prev - 1 + flow.steps.length) % flow.steps.length);
+                  }}
+                  aria-label="Previous step"
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500"
+                >
+                  <SkipBack className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPlaying((p) => !p)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 whitespace-nowrap"
+                >
+                  {isPlaying ? (
+                    <>
+                      <Pause className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Pause</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Play Animation</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setStepIdx((prev) => (prev + 1) % flow.steps.length);
+                  }}
+                  aria-label="Next step"
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500"
+                >
+                  <SkipForward className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStepIdx(0);
+                    setIsPlaying(true);
+                  }}
+                  aria-label="Restart animation"
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500"
+                >
+                  <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <select
+                  aria-label="Animation speed"
+                  value={speedMs}
+                  onChange={(e) => setSpeedMs(Number(e.target.value))}
+                  className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs font-mono text-slate-700 dark:text-slate-200"
+                >
+                  <option value={4000}>0.75x</option>
+                  <option value={2800}>1.0x</option>
+                  <option value={1700}>1.5x</option>
+                </select>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Interactive SVG Data Flow Diagram Canvas */}
+        {/* Standard Level-0 & Level-1 DFD Blueprint View OR Interactive Animated SVG */}
+        {diagramMode === 'dfd-blueprint' && blueprint ? (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  {blueprint.level0Title}
+                </span>
+                <CopyButton text={blueprint.level0Ascii} label="Copy Level-0" copiedLabel="Copied" size="xs" />
+              </div>
+              <pre className="p-4 rounded-xl bg-slate-950 text-sky-300 font-mono text-xs leading-6 overflow-x-auto border border-slate-800">
+                {blueprint.level0Ascii}
+              </pre>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                  {blueprint.level1Title}
+                </span>
+                <CopyButton text={blueprint.level1Ascii} label="Copy Level-1" copiedLabel="Copied" size="xs" />
+              </div>
+              <pre className="p-4 rounded-xl bg-slate-950 text-emerald-300 font-mono text-xs leading-6 overflow-x-auto border border-slate-800">
+                {blueprint.level1Ascii}
+              </pre>
+            </div>
+          </div>
+        ) : (
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70 p-3 sm:p-4 overflow-x-auto">
           <svg
             viewBox="0 0 800 315"
@@ -417,6 +462,7 @@ export function DatabaseVisualAnimator({
             )}
           </svg>
         </div>
+        )}
 
         {/* Clickable Step Timeline Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">

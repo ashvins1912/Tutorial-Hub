@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   BookOpen,
   Code2,
+  Compass,
   Cpu,
   Database,
   PlayCircle,
@@ -25,12 +26,14 @@ import { SegmentedTabBar } from '../ui';
 import { DatabaseVisualAnimator } from './DatabaseVisualAnimator';
 import { DatabaseConceptGuide } from './DatabaseConceptGuide';
 import { DatabasePracticeWorkbench } from './DatabasePracticeWorkbench';
+import { TaxonomyAndSqlMasteryLab } from './TaxonomyAndSqlMasteryLab';
 import { QueryPipelinePlayground } from './QueryPipelinePlayground';
 import { ExplainAndNoSqlLab } from './ExplainAndNoSqlLab';
 import { ProductionOpsAndCapacityLab } from './ProductionOpsAndCapacityLab';
 import { ChaosDrillAndQuizLab } from './ChaosDrillAndQuizLab';
 
 type DbStudioTab =
+  | 'taxonomy-sql'
   | 'visual-dfd'
   | 'concepts'
   | 'practice'
@@ -55,6 +58,9 @@ const DEFAULT_DB_PROGRESS: DatabaseInternalsProgress = {
   completedPracticeIds: [],
 };
 
+const BoundedTaxonomyAndSqlMasteryLab = withStudioBoundary(TaxonomyAndSqlMasteryLab, {
+  studioName: 'Database Taxonomy, SQL Mastery & Sharding Lab',
+});
 const BoundedDatabaseVisualAnimator = withStudioBoundary(DatabaseVisualAnimator, {
   studioName: 'Visual DFD & Algorithm Animation Lab',
 });
@@ -259,6 +265,12 @@ export function DatabaseInternalsStudio() {
             onChange={setActiveTab}
             tabs={[
               {
+                id: 'taxonomy-sql',
+                label: 'Taxonomy, SQL & Sharding',
+                shortLabel: 'SQL & Tax.',
+                icon: Compass,
+              },
+              {
                 id: 'visual-dfd',
                 label: 'Visual DFD & Animations',
                 shortLabel: 'Visual DFD',
@@ -309,6 +321,7 @@ export function DatabaseInternalsStudio() {
       </section>
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'taxonomy-sql' && <BoundedTaxonomyAndSqlMasteryLab />}
       {activeTab === 'visual-dfd' && (
         <BoundedDatabaseVisualAnimator
           selectedFlowId={selectedFlowId}

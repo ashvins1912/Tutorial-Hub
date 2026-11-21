@@ -1324,4 +1324,60 @@ CREATE INDEX CONCURRENTLY idx_orders_promo ON orders (promo_code);`,
       },
     ],
   },
+  {
+    id: 'practice-keyset-window',
+    number: 6,
+    difficulty: 'Production',
+    topic: 'DQL Analytics & Keyset Pagination',
+    title: 'Replace Slow OFFSET 200000 with Keyset Seek & Rank Top Orders',
+    scenario:
+      'Your customer timeline API suffers 640 ms latency on deep pages using OFFSET 200000, and needs a single-pass Window Function ranking each customer’s latest orders.',
+    goal:
+      'Write (1) a Keyset cursor query filtering (created_at, order_id) < ($1, $2) with LIMIT 20 (zero OFFSET), and (2) a ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC) ranking expression.',
+    starterCode: `-- 1. Fix deep pagination (remove OFFSET!):
+SELECT order_id, created_at FROM orders
+ORDER BY created_at DESC, order_id DESC
+LIMIT 20 OFFSET 200000;
+
+-- 2. Add single-pass customer ranking window function:`,
+    quickTokens: [
+      { label: '+ Keyset Cursor', snippet: 'WHERE (created_at, order_id) < ($1, $2)' },
+      { label: '+ ROW_NUMBER() Window', snippet: 'ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC) AS rn' },
+    ],
+    hints: [
+      'Delete OFFSET 200000 completely so PostgreSQL never scans and discards 200,000 rows.',
+      'Add a tuple seek predicate: WHERE (created_at, order_id) < ($1, $2).',
+      'Use ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC) to rank each customer’s orders in one pass.',
+    ],
+    referenceSolution: `SELECT order_id, customer_id, created_at,
+       ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC) AS rn
+FROM orders
+WHERE (created_at, order_id) < ($1, $2)
+ORDER BY created_at DESC, order_id DESC
+LIMIT 20;`,
+    whyItWorks:
+      'Tuple seek comparison jumps straight into the composite (created_at DESC, order_id DESC) B+ Tree leaf in O(log N) constant time regardless of page depth, while ROW_NUMBER() computes per-customer ranks in a single ordered pass.',
+    beforeMetric: '640 ms at page 10,000 (scans & discards 200,000 rows)',
+    afterMetric: '0.4 ms constant time at any depth · single-pass window rank',
+    rules: [
+      {
+        id: 'r-no-offset',
+        label: 'Eliminates slow OFFSET pagination',
+        explanation: 'Remove OFFSET completely so deep pages never scan and discard prior rows.',
+        test: (s) => !/\boffset\b/i.test(s),
+      },
+      {
+        id: 'r-keyset',
+        label: 'Uses Keyset tuple comparison (created_at, order_id) < (...)',
+        explanation: 'Seek directly past the last seen cursor tuple with a unique tie-breaker.',
+        test: (s) => /\(\s*created_at\s*,\s*order_id\s*\)\s*<\s*\(/i.test(s),
+      },
+      {
+        id: 'r-window',
+        label: 'Uses ROW_NUMBER() OVER (PARTITION BY customer_id ...)',
+        explanation: 'Apply a window function partitioned by customer_id to rank in a single pass.',
+        test: (s) => /row_number\s*\(\s*\)\s+over\s*\([\s\S]*partition\s+by\s+customer_id/i.test(s),
+      },
+    ],
+  },
 ];
