@@ -4,8 +4,10 @@ import { SystemDesignMasterRoadmap as SystemDesignMasterRoadmapBase } from './Sy
 import { SystemPlayground as SystemPlaygroundBase } from './system-playground/SystemPlayground';
 import { DatabaseVisualAnimator as DatabaseVisualAnimatorBase } from './database/DatabaseVisualAnimator';
 import { SystemDfdSimulator as SystemDfdSimulatorBase } from './system-design/SystemDfdSimulator';
+import { RealWorldArchitecturesAndInterviewLab as RealWorldArchitecturesAndInterviewLabBase } from './system-design/RealWorldArchitecturesAndInterviewLab';
 import { VISUAL_FLOW_SCENARIOS } from '../data/databaseVisualData';
 import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
+import { REAL_WORLD_SYSTEM_BLUEPRINTS } from '../data/realWorldSystemBlueprintsData';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
@@ -26,6 +28,12 @@ const DatabaseVisualAnimator = withStudioBoundary(DatabaseVisualAnimatorBase, {
 const SystemDfdSimulator = withStudioBoundary(SystemDfdSimulatorBase, {
   studioName: 'Interactive System Design DFD Simulator',
 });
+const RealWorldArchitecturesAndInterviewLab = withStudioBoundary(
+  RealWorldArchitecturesAndInterviewLabBase,
+  {
+    studioName: 'Real-World Blueprints, Protocols & Mock Interview Lab',
+  }
+);
 import {
   DndContext,
   DragEndEvent,
@@ -578,8 +586,16 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     },
   } = useAsyncCatalog('system-design-scenarios');
   const [subTab, setSubTab] = useState<
-    'playground' | 'dfd-simulator' | 'db-dfd' | 'roadmap' | 'builder' | 'animations' | 'probabilistic' | 'academy'
-  >('dfd-simulator');
+    | 'real-world-interview'
+    | 'playground'
+    | 'dfd-simulator'
+    | 'db-dfd'
+    | 'roadmap'
+    | 'builder'
+    | 'animations'
+    | 'probabilistic'
+    | 'academy'
+  >('real-world-interview');
   const [selectedDfdPatternId, setSelectedDfdPatternId] = useState<string>(SYSTEM_DFD_PATTERNS[0].id);
   const [selectedDbFlowId, setSelectedDbFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
   const [roadmapExternalModuleId, setRoadmapExternalModuleId] = useState<string | null>(null);
@@ -713,6 +729,11 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
           onChange={setSubTab}
           wrap
           tabs={[
+            {
+              id: 'real-world-interview',
+              label: 'Real-World Blueprints & Mock Interview',
+              count: REAL_WORLD_SYSTEM_BLUEPRINTS.length,
+            },
             { id: 'dfd-simulator', label: 'System DFD Simulator', count: SYSTEM_DFD_PATTERNS.length },
             { id: 'playground', label: 'Live Traffic Playground' },
             { id: 'db-dfd', label: 'DB DFD & Animations', count: VISUAL_FLOW_SCENARIOS.length },
@@ -724,6 +745,9 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
           ]}
         />
       </div>
+
+      {/* Mode 00: 16 Real-World Production Blueprints (DB Design + Animated DFD), Webhooks/WebSockets/Enqueue Lab & 45-Min Mock Interview */}
+      {subTab === 'real-world-interview' && <RealWorldArchitecturesAndInterviewLab />}
 
       {/* Mode 0A: Interactive System Design DFD Simulator with SVG Animation Engine & Bidirectional Links */}
       {subTab === 'dfd-simulator' && (
@@ -748,7 +772,8 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
         />
       )}
 
-      {subTab !== 'dfd-simulator' &&
+      {subTab !== 'real-world-interview' &&
+        subTab !== 'dfd-simulator' &&
         subTab !== 'playground' &&
         subTab !== 'db-dfd' &&
         subTab !== 'probabilistic' &&

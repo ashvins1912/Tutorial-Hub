@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   BookOpen,
+  Brain,
   Code2,
   Compass,
   Cpu,
@@ -27,9 +28,11 @@ import {
   DB_SCHEMA_DESIGN_TECHNIQUES,
   SQL_PROGRESSIVE_SCENARIOS,
 } from '../../data/dbCompleteObjectsAndSchemaData';
+import { DATA_ENG_AI_DB_TOPICS } from '../../data/dataEngAndAiDbData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { DataEngAndAiDatabasesLab } from './DataEngAndAiDatabasesLab';
 import { DbObjectsAndSchemaAcademy } from './DbObjectsAndSchemaAcademy';
 import { DatabaseVisualAnimator } from './DatabaseVisualAnimator';
 import { DatabaseConceptGuide } from './DatabaseConceptGuide';
@@ -45,6 +48,7 @@ import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
+  | 'data-eng-ai-db'
   | 'db-complete-academy'
   | 'sql-basics'
   | 'sql-intelligence'
@@ -74,6 +78,9 @@ const DEFAULT_DB_PROGRESS: DatabaseInternalsProgress = {
   completedPracticeIds: [],
 };
 
+const BoundedDataEngAndAiDatabasesLab = withStudioBoundary(DataEngAndAiDatabasesLab, {
+  studioName: 'Data Engineering, Cursors, Chunk Fetch & AI Databases Lab',
+});
 const BoundedDbObjectsAndSchemaAcademy = withStudioBoundary(DbObjectsAndSchemaAcademy, {
   studioName: 'Views, Triggers, Windows, NoSQL & Schema Design Academy',
 });
@@ -115,7 +122,7 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('db-complete-academy');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('data-eng-ai-db');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
@@ -297,6 +304,13 @@ export function DatabaseInternalsStudio() {
             wrap
             tabs={[
               {
+                id: 'data-eng-ai-db',
+                label: 'Cursors, Data Eng & AI DBs',
+                shortLabel: 'DE & AI DBs',
+                count: DATA_ENG_AI_DB_TOPICS.length,
+                icon: Brain,
+              },
+              {
                 id: 'db-complete-academy',
                 label: 'Views, Triggers, NoSQL & Schema Design',
                 shortLabel: 'DB & Schema',
@@ -382,6 +396,7 @@ export function DatabaseInternalsStudio() {
       </section>
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'data-eng-ai-db' && <BoundedDataEngAndAiDatabasesLab />}
       {activeTab === 'db-complete-academy' && <BoundedDbObjectsAndSchemaAcademy />}
       {activeTab === 'sql-basics' && <BoundedSqlBasicsPlayground />}
       {activeTab === 'sql-intelligence' && <BoundedSqlQueryIntelligenceLab />}
