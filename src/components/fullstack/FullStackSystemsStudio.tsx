@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
+  Boxes,
   Code2,
   Cpu,
   Database,
@@ -12,9 +13,11 @@ import {
   FAILURE_MODE_RUNBOOKS,
   STORYBOARD_FRAMES,
 } from '../../data/fullStackArchitectureData';
+import { SYSTEM_INTERNAL_BLUEPRINTS } from '../../data/runtimeAndInfraInternalsData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { RuntimeAndInfraInternalsLab } from './RuntimeAndInfraInternalsLab';
 import { FullStackStoryboardAnimator } from './FullStackStoryboardAnimator';
 import { FrameworkRuntimeMatrixLab } from './FrameworkRuntimeMatrixLab';
 import { AiInferenceHardwareLab } from './AiInferenceHardwareLab';
@@ -22,7 +25,7 @@ import { PolyglotStackCodeLab } from './PolyglotStackCodeLab';
 import { StorageAndDiagnosticsLab } from './StorageAndDiagnosticsLab';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
-type FullStackTab = 'storyboard' | 'frameworks' | 'ai-gpu' | 'polyglot' | 'storage-ops';
+type FullStackTab = 'internals-sim' | 'storyboard' | 'frameworks' | 'ai-gpu' | 'polyglot' | 'storage-ops';
 
 interface FullStackStudioProgress {
   verifiedRunbookIds: string[];
@@ -32,6 +35,9 @@ const DEFAULT_PROGRESS: FullStackStudioProgress = {
   verifiedRunbookIds: [],
 };
 
+const BoundedRuntimeAndInfraInternalsLab = withStudioBoundary(RuntimeAndInfraInternalsLab, {
+  studioName: 'Compilers, VMs & Infrastructure Internals Simulator',
+});
 const BoundedFullStackStoryboardAnimator = withStudioBoundary(FullStackStoryboardAnimator, {
   studioName: 'Full-Stack Synchronized Storyboard & DFD Lab',
 });
@@ -49,7 +55,7 @@ const BoundedStorageAndDiagnosticsLab = withStudioBoundary(StorageAndDiagnostics
 });
 
 export function FullStackSystemsStudio() {
-  const [activeTab, setActiveTab] = useState<FullStackTab>('storyboard');
+  const [activeTab, setActiveTab] = useState<FullStackTab>('internals-sim');
   const [progress, setProgress] = useAccountState<FullStackStudioProgress>(
     'fullstack-studio-progress',
     DEFAULT_PROGRESS,
@@ -132,6 +138,13 @@ export function FullStackSystemsStudio() {
             wrap
             tabs={[
               {
+                id: 'internals-sim',
+                label: 'Compilers, VMs & Infra Sim',
+                shortLabel: 'Internals Sim',
+                count: SYSTEM_INTERNAL_BLUEPRINTS.length,
+                icon: Boxes,
+              },
+              {
                 id: 'storyboard',
                 label: 'Storyboard & DFDs',
                 shortLabel: 'Storyboard',
@@ -169,6 +182,7 @@ export function FullStackSystemsStudio() {
       </section>
 
       {/* Active Workspace */}
+      {activeTab === 'internals-sim' && <BoundedRuntimeAndInfraInternalsLab />}
       {activeTab === 'storyboard' && <BoundedFullStackStoryboardAnimator />}
       {activeTab === 'frameworks' && <BoundedFrameworkRuntimeMatrixLab />}
       {activeTab === 'ai-gpu' && <BoundedAiInferenceHardwareLab />}

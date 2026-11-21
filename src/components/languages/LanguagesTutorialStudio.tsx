@@ -3,6 +3,7 @@ import {
   BookOpen,
   Code2,
   Cpu,
+  GitBranch,
   Languages,
   Layers,
   PlayCircle,
@@ -19,11 +20,13 @@ import {
   CUSTOM_DS_BLUEPRINTS,
   OOP_CODING_MODULES,
 } from '../../data/langOopCustomDsData';
+import { LANG_CONCURRENCY_EXCEPTIONS_MODULES } from '../../data/langConcurrencyExceptionsData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
 import { LanguageVisualAnimator } from './LanguageVisualAnimator';
 import { OopCustomDsAcademy } from './OopCustomDsAcademy';
+import { ConcurrencyExceptionsDeepDive } from './ConcurrencyExceptionsDeepDive';
 import { CollectionsConcurrencyPlayground } from './CollectionsConcurrencyPlayground';
 import { LanguageConceptGuide } from './LanguageConceptGuide';
 import { LanguagePracticeWorkbench } from './LanguagePracticeWorkbench';
@@ -32,6 +35,7 @@ import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type LangStudioTab =
   | 'oop-custom-ds'
+  | 'concurrency-exceptions'
   | 'visual-dfd'
   | 'collections-concurrency'
   | 'concepts'
@@ -53,6 +57,12 @@ const DEFAULT_LANG_PROGRESS: LanguagesStudioProgress = {
 const BoundedOopCustomDsAcademy = withStudioBoundary(OopCustomDsAcademy, {
   studioName: 'Zero-to-Pro OOP Internals & Custom Data Structures Academy',
 });
+const BoundedConcurrencyExceptionsDeepDive = withStudioBoundary(
+  ConcurrencyExceptionsDeepDive,
+  {
+    studioName: 'OOP Dispatch, Exceptions, Collections & CompletableFuture Mastery',
+  }
+);
 const BoundedLanguageVisualAnimator = withStudioBoundary(LanguageVisualAnimator, {
   studioName: 'Python 3.13+ & Java 21+ Runtime Animations',
 });
@@ -229,6 +239,13 @@ export function LanguagesTutorialStudio() {
                 icon: Layers,
               },
               {
+                id: 'concurrency-exceptions',
+                label: 'Exceptions, Futures & Concurrency',
+                shortLabel: 'Futures & Sync',
+                count: LANG_CONCURRENCY_EXCEPTIONS_MODULES.length,
+                icon: GitBranch,
+              },
+              {
                 id: 'visual-dfd',
                 label: 'Visual DFD & Lifecycles',
                 shortLabel: 'Animations',
@@ -282,6 +299,9 @@ export function LanguagesTutorialStudio() {
       {/* Active Workspace (Each Isolated by withStudioBoundary HOC) */}
       {activeTab === 'oop-custom-ds' && (
         <BoundedOopCustomDsAcademy languageFilter={languageFilter} />
+      )}
+      {activeTab === 'concurrency-exceptions' && (
+        <BoundedConcurrencyExceptionsDeepDive languageFilter={languageFilter} />
       )}
       {activeTab === 'visual-dfd' && (
         <BoundedLanguageVisualAnimator
