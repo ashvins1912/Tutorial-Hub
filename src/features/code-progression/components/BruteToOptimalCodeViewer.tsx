@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Check, Copy } from 'lucide-react';
 import type {
   CurriculumTopic,
   SolutionTierKey,
   SupportedLanguage,
 } from '../../topics/types';
+import { CopyButton } from '../../../components/ui';
 
 interface BruteToOptimalCodeViewerProps {
   topic: CurriculumTopic;
@@ -30,7 +30,6 @@ export function BruteToOptimalCodeViewer({
   const [tier, setTier] = useState<SolutionTierKey>(initialTier);
   const [language, setLanguage] = useState<SupportedLanguage>('python');
   const [selectedLineIdx, setSelectedLineIdx] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setTier(initialTier);
@@ -40,16 +39,6 @@ export function BruteToOptimalCodeViewer({
   const spec = topic.solutions[tier];
   const lines = spec.code[language];
   const activeLine = lines[Math.min(selectedLineIdx, Math.max(0, lines.length - 1))];
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(lines.map((l) => l.code).join('\n'));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // Clipboard API unavailable in restricted frames
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -96,19 +85,13 @@ export function BruteToOptimalCodeViewer({
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={handleCopy}
-            aria-label="Copy code"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap"
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" aria-hidden="true" />
-            )}
-            {copied ? 'Copied' : 'Copy'}
-          </button>
+          <CopyButton
+            text={() => lines.map((l) => l.code).join('\n')}
+            label="Copy"
+            copiedLabel="Copied"
+            ariaLabel="Copy code"
+            size="sm"
+          />
         </div>
       </div>
 

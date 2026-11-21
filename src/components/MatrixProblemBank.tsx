@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2, Search } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Code2 } from 'lucide-react';
 import { type MatrixGroup, type MatrixLevel } from '../data/matrixProblems';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
+import { CatalogSearchInput } from './ui';
 
 const groups: Array<'All' | MatrixGroup> = ['All', 'Traversal', 'Transformation', 'Search', 'Prefix Sum', 'Grid BFS/DFS', 'Backtracking', 'Dynamic Programming', 'Optimization'];
 const levels: Array<'All' | MatrixLevel> = ['All', 'Beginner', 'Intermediate', 'Advanced'];
@@ -32,7 +33,7 @@ export function MatrixProblemBank() {
       <div className="rounded-xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-800"><div className="text-xs text-slate-500">Marked solved</div><div className="text-2xl font-bold tabular-nums">{done}<span className="text-sm text-slate-400"> / 42</span></div></div>
     </div>
     <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_200px_160px]">
-      <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search matrix problems..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-950" /></div>
+      <CatalogSearchInput value={query} onChange={setQuery} placeholder="Search matrix problems..." />
       <select value={group} onChange={(event) => setGroup(event.target.value as (typeof groups)[number])} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950">{groups.map((item) => <option key={item} value={item}>{item === 'All' ? 'All patterns' : item}</option>)}</select>
       <select value={level} onChange={(event) => setLevel(event.target.value as (typeof levels)[number])} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950">{levels.map((item) => <option key={item} value={item}>{item === 'All' ? 'All levels' : item}</option>)}</select>
     </div>

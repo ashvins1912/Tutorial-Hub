@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   BookOpen,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Copy,
   Download,
   Lightbulb,
   NotebookPen,
@@ -13,6 +11,7 @@ import {
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { apiFetch } from '../lib/apiFetch';
+import { CopyButton } from './ui';
 
 export function QuickRevisionHub() {
   const {
@@ -29,7 +28,6 @@ export function QuickRevisionHub() {
   const [notesByProblem, setNotesByProblem] = useState<Record<string, string>>({});
   const [notesLoaded, setNotesLoaded] = useState(false);
   const [noteDirty, setNoteDirty] = useState(false);
-  const [copiedAll, setCopiedAll] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -77,16 +75,6 @@ export function QuickRevisionHub() {
       const saved = notesByProblem[p.id] ?? '';
       return `## #${p.number} ${p.title} (${p.difficulty} · ${p.patternName})\n- Optimal: ${p.targetBigO} time / ${p.spaceOptimal} space\n- Key Signal: ${p.signals.map((s) => s.phrase).join(', ')}\n- Personal Notes: ${saved || 'No notes recorded yet.'}\n`;
     }).join('\n');
-  };
-
-  const handleCopyMarkdown = async () => {
-    try {
-      await navigator.clipboard.writeText(buildMarkdownBundle());
-      setCopiedAll(true);
-      window.setTimeout(() => setCopiedAll(false), 1800);
-    } catch {
-      // ignore
-    }
   };
 
   const handleDownloadMarkdown = () => {
@@ -256,14 +244,12 @@ export function QuickRevisionHub() {
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCopyMarkdown}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium"
-              >
-                {copiedAll ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                {copiedAll ? 'Copied MD' : 'Copy All MD'}
-              </button>
+              <CopyButton
+                text={buildMarkdownBundle}
+                label="Copy All MD"
+                copiedLabel="Copied MD"
+                size="sm"
+              />
               <button
                 type="button"
                 onClick={handleDownloadMarkdown}

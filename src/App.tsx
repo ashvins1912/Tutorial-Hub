@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -20,6 +20,7 @@ import { useAuth } from './auth/AuthContext';
 import { apiFetch } from './lib/apiFetch';
 import { useAsyncCatalog } from './hooks/useAsyncCatalog';
 import { BIG_TECH_36_PROBLEMS } from '../server/seed/bigTechTopicSeed';
+import { withStudioBoundary } from './components/hoc';
 import { MasteryStepper } from './components/MasteryStepper';
 import { PolyaWorkflowBar } from './components/cognitive/PolyaWorkflowBar';
 import { ProblemXRayReader } from './components/ProblemXRayReader';
@@ -28,37 +29,96 @@ import { LogicBlockBuilder } from './components/LogicBlockBuilder';
 import { RaceModeVisualizer } from './components/RaceModeVisualizer';
 import { DPLadderVisualizer } from './components/cognitive/DPLadderVisualizer';
 import { DpLearningLab } from './components/DpLearningLab';
-import { AlgorithmsStudio } from './components/algorithms/AlgorithmsStudio';
-import { NGramFuzzyStudio } from './components/fuzzy/NGramFuzzyStudio';
-import { NoobToProSkillTree } from './components/cognitive/NoobToProSkillTree';
-import { ProblemBank45View } from './components/ProblemBank45View';
-import { SchemasReferenceView } from './components/SchemasReferenceView';
-import { SystemDesignStudio } from './components/SystemDesignStudio';
-import { QuickRevisionHub } from './components/QuickRevisionHub';
 import { InterviewContextDrawer } from './components/InterviewContextDrawer';
 import { ConceptAcademyDrawer } from './components/cognitive/ConceptAcademyDrawer';
 import { PatternTemplateModal } from './components/cognitive/PatternTemplateModal';
 import { ScratchpadDrawer } from './components/cognitive/ScratchpadDrawer';
 import { SrtbotWorksheetModal } from './components/cognitive/SrtbotWorksheetModal';
 import { TopicPatternQuizModal } from './components/cognitive/TopicPatternQuizModal';
-import { TopicPatternExplorer } from './components/interview/TopicPatternExplorer';
 import { HowToIdentifyTrainer } from './components/interview/HowToIdentifyTrainer';
 import { BigTechRubricScorecard } from './components/interview/BigTechRubricScorecard';
-import { SprintWarRoomDashboard } from './components/sprint/SprintWarRoomDashboard';
 import { SprintConfiguratorModal } from './components/sprint/SprintConfiguratorModal';
 import { Mock45SimulatorModal } from './components/sprint/Mock45SimulatorModal';
 import { AlgorithmMatcherModal } from './components/AlgorithmMatcherModal';
-import { CurriculumWorkbench } from './features/topics/components/CurriculumWorkbench';
 import { PatternRecognitionQuizModal } from './features/quiz/components/PatternRecognitionQuizModal';
-import { UniversalSolverStudio } from './features/solver-studio/UniversalSolverStudio';
-import { ProductCompanyMasterBankView } from './components/interview/ProductCompanyMasterBankView';
-import { IntelligentEngineStudio } from './features/intelligent-engine/components/IntelligentEngineStudio';
-import { ProfileStatsView } from './components/ProfileStatsView';
-import { CommunityHubView } from './components/CommunityHubView';
-import { OodPrinciplesStudio } from './components/OodPrinciplesStudio';
-import { AiEngineeringStudio } from './components/AiEngineeringStudio';
-const AIEngineeringAcademy = lazy(() => import('./features/ai-academy/components/AIEngineeringAcademy').then((module) => ({ default: module.AIEngineeringAcademy })));
-import { PublishedLessonView } from './features/intelligent-engine/components/PublishedLessonView';
+
+// Code-split heavy studios isolated in scoped ErrorBoundary + Suspense via withStudioBoundary HOC
+const AlgorithmsStudio = withStudioBoundary(
+  lazy(() => import('./components/algorithms/AlgorithmsStudio').then((m) => ({ default: m.AlgorithmsStudio }))),
+  { studioName: 'Algorithms Studio' }
+);
+const NGramFuzzyStudio = withStudioBoundary(
+  lazy(() => import('./components/fuzzy/NGramFuzzyStudio').then((m) => ({ default: m.NGramFuzzyStudio }))),
+  { studioName: 'N-Gram Fuzzy Search Lab' }
+);
+const NoobToProSkillTree = withStudioBoundary(
+  lazy(() => import('./components/cognitive/NoobToProSkillTree').then((m) => ({ default: m.NoobToProSkillTree }))),
+  { studioName: 'Noob-to-Pro Skill Tree' }
+);
+const ProblemBank45View = withStudioBoundary(
+  lazy(() => import('./components/ProblemBank45View').then((m) => ({ default: m.ProblemBank45View }))),
+  { studioName: '45 High-ROI Problem Bank' }
+);
+const SchemasReferenceView = withStudioBoundary(
+  lazy(() => import('./components/SchemasReferenceView').then((m) => ({ default: m.SchemasReferenceView }))),
+  { studioName: 'DB & API Schemas Reference' }
+);
+const SystemDesignStudio = withStudioBoundary(
+  lazy(() => import('./components/SystemDesignStudio').then((m) => ({ default: m.SystemDesignStudio }))),
+  { studioName: 'System Design Studio' }
+);
+const QuickRevisionHub = withStudioBoundary(
+  lazy(() => import('./components/QuickRevisionHub').then((m) => ({ default: m.QuickRevisionHub }))),
+  { studioName: 'Quick Revision Hub' }
+);
+const TopicPatternExplorer = withStudioBoundary(
+  lazy(() => import('./components/interview/TopicPatternExplorer').then((m) => ({ default: m.TopicPatternExplorer }))),
+  { studioName: 'Topic & Company Pattern Bank' }
+);
+const SprintWarRoomDashboard = withStudioBoundary(
+  lazy(() => import('./components/sprint/SprintWarRoomDashboard').then((m) => ({ default: m.SprintWarRoomDashboard }))),
+  { studioName: '14-Day Sprint War Room' }
+);
+const CurriculumWorkbench = withStudioBoundary(
+  lazy(() => import('./features/topics/components/CurriculumWorkbench').then((m) => ({ default: m.CurriculumWorkbench }))),
+  { studioName: 'DSA Curriculum Workbench' }
+);
+const UniversalSolverStudio = withStudioBoundary(
+  lazy(() => import('./features/solver-studio/UniversalSolverStudio').then((m) => ({ default: m.UniversalSolverStudio }))),
+  { studioName: 'Universal Logic Solver' }
+);
+const ProductCompanyMasterBankView = withStudioBoundary(
+  lazy(() => import('./components/interview/ProductCompanyMasterBankView').then((m) => ({ default: m.ProductCompanyMasterBankView }))),
+  { studioName: 'Product Company Master Bank' }
+);
+const IntelligentEngineStudio = withStudioBoundary(
+  lazy(() => import('./features/intelligent-engine/components/IntelligentEngineStudio').then((m) => ({ default: m.IntelligentEngineStudio }))),
+  { studioName: 'Concept Knowledge Engine' }
+);
+const ProfileStatsView = withStudioBoundary(
+  lazy(() => import('./components/ProfileStatsView').then((m) => ({ default: m.ProfileStatsView }))),
+  { studioName: 'Profile & Statistics' }
+);
+const CommunityHubView = withStudioBoundary(
+  lazy(() => import('./components/CommunityHubView').then((m) => ({ default: m.CommunityHubView }))),
+  { studioName: 'Community Hub' }
+);
+const OodPrinciplesStudio = withStudioBoundary(
+  lazy(() => import('./components/OodPrinciplesStudio').then((m) => ({ default: m.OodPrinciplesStudio }))),
+  { studioName: 'OOPs & OOD Studio' }
+);
+const AiEngineeringStudio = withStudioBoundary(
+  lazy(() => import('./components/AiEngineeringStudio').then((m) => ({ default: m.AiEngineeringStudio }))),
+  { studioName: 'AI Engineering Studio' }
+);
+const AIEngineeringAcademy = withStudioBoundary(
+  lazy(() => import('./features/ai-academy/components/AIEngineeringAcademy').then((m) => ({ default: m.AIEngineeringAcademy }))),
+  { studioName: 'AI Engineering Academy' }
+);
+const PublishedLessonView = withStudioBoundary(
+  lazy(() => import('./features/intelligent-engine/components/PublishedLessonView').then((m) => ({ default: m.PublishedLessonView }))),
+  { studioName: 'Published Lesson' }
+);
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -608,7 +668,7 @@ export default function App() {
           )}
 
           {activeView === 'knowledge-engine' && <IntelligentEngineStudio />}
-          {activeView === 'ai-academy' && <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading AI Engineering Academy…</div>}><AIEngineeringAcademy /></Suspense>}
+          {activeView === 'ai-academy' && <AIEngineeringAcademy />}
 
           {activeView === 'fuzzy-search' && <NGramFuzzyStudio />}
 

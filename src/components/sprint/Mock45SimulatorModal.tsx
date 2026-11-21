@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Clock, Eye, EyeOff, ShieldAlert, Trophy, X } from 'lucide-react';
+import { CheckCircle2, Clock, Eye, EyeOff, ShieldAlert, Trophy } from 'lucide-react';
 import { BIG_TECH_36_PROBLEMS } from '../../../server/seed/bigTechTopicSeed';
 import { CodeLanguage, SprintTask } from '../../types/dsa';
 import { useSprintStore } from '../../store/useSprintStore';
+import { OverlayDialog, OverlayHeader } from '../ui';
 
 export function Mock45SimulatorModal() {
   const open = useSprintStore((s) => s.mock45Open);
@@ -81,42 +82,38 @@ export function Mock45SimulatorModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="mock45-title"
+    <OverlayDialog
+      open={open}
+      onClose={closeMock45}
+      ariaLabel={`Question ${activeIdx + 1} of ${simTasks.length}: ${problem.title}`}
+      maxWidthClass="max-w-4xl"
+      backdropClassName="bg-slate-950/75 backdrop-blur-xs"
     >
-      <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-5">
-        {/* Top Arena Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div>
-            <p className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <Trophy className="w-4 h-4" aria-hidden="true" />
-              {daySchedule.dayNumber === 14
-                ? `${activeSprint?.targetCompany.toUpperCase()} DAY 14 · 45-MIN SIMULATED INTERVIEW`
-                : `DAY ${daySchedule.dayNumber} · ZERO-HINT BLIND ARENA`}
-            </p>
-            <h2 id="mock45-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+      <OverlayHeader
+        kicker={
+          daySchedule.dayNumber === 14
+            ? `${activeSprint?.targetCompany.toUpperCase()} DAY 14 · 45-MIN SIMULATED INTERVIEW`
+            : `DAY ${daySchedule.dayNumber} · ZERO-HINT BLIND ARENA`
+        }
+        title={
+          <>
+            <Trophy className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+            <span>
               Question {activeIdx + 1} of {simTasks.length}: #{problem.number} {problem.title}
-            </h2>
+            </span>
+          </>
+        }
+        onClose={closeMock45}
+        closeAriaLabel="Exit simulated interview"
+        extraActions={
+          <div className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 tabular-nums">
+            <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+            {mins}:{secs}
           </div>
+        }
+      />
 
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 tabular-nums">
-              <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-              {mins}:{secs}
-            </div>
-            <button
-              type="button"
-              onClick={closeMock45}
-              aria-label="Exit simulated interview"
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
+      <div className="p-6 overflow-y-auto flex-1 space-y-5">
 
         {/* Question Switcher when Day 14 has 2 problems */}
         {simTasks.length > 1 && (
@@ -270,25 +267,26 @@ export function Mock45SimulatorModal() {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Submitting logs this problem to your {activeSprint?.targetCompany} Readiness Gauge.
-          </span>
-          <button
-            type="button"
-            onClick={handleSubmitTask}
-            className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
-          >
-            {isAlreadyDone
-              ? activeIdx + 1 < simTasks.length
-                ? 'Next Interview Question'
-                : 'Finish Simulation'
-              : activeIdx + 1 < simTasks.length
-                ? 'Submit Q1 & Advance'
-                : 'Submit & Complete Simulation'}
-          </button>
-        </div>
       </div>
-    </div>
+
+      <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <span className="text-xs text-slate-500 dark:text-slate-400">
+          Submitting logs this problem to your {activeSprint?.targetCompany} Readiness Gauge.
+        </span>
+        <button
+          type="button"
+          onClick={handleSubmitTask}
+          className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
+        >
+          {isAlreadyDone
+            ? activeIdx + 1 < simTasks.length
+              ? 'Next Interview Question'
+              : 'Finish Simulation'
+            : activeIdx + 1 < simTasks.length
+              ? 'Submit Q1 & Advance'
+              : 'Submit & Complete Simulation'}
+        </button>
+      </div>
+    </OverlayDialog>
   );
 }

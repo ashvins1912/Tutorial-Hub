@@ -1,17 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  FastForward,
-  Pause,
-  Play,
-  RotateCcw,
-  SkipBack,
-  SkipForward,
-  Sparkles,
-} from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import {
   type ArrayTracePresetId,
   generateArrayPointerTrace,
 } from '../../core/step-generators/workspaceGenerators';
+import { PlaybackControlBar } from '../../components/ui';
+import { withMemoizedVisualizer } from '../../components/hoc';
 
 interface ArrayPointerVisualizerProps {
   initialPreset?: ArrayTracePresetId;
@@ -25,16 +19,21 @@ const PRESET_OPTIONS: { id: ArrayTracePresetId; label: string }[] = [
   { id: 'binary-search', label: 'Binary Search' },
 ];
 
-const SPEEDS = [0.5, 1, 1.5, 2] as const;
+const SPEED_OPTIONS = [
+  { label: '0.5×', ms: 2300 },
+  { label: '1×', ms: 1150 },
+  { label: '1.5×', ms: 767 },
+  { label: '2×', ms: 575 },
+] as const;
 
-export const ArrayPointerVisualizer: React.FC<ArrayPointerVisualizerProps> = ({
+const ArrayPointerVisualizerBase: React.FC<ArrayPointerVisualizerProps> = ({
   initialPreset = 'sliding-window',
   strategyName,
 }) => {
   const [preset, setPreset] = useState<ArrayTracePresetId>(initialPreset);
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
+  const [speedMs, setSpeedMs] = useState<number>(1150);
 
   useEffect(() => {
     setPreset(initialPreset);
@@ -53,12 +52,11 @@ export const ArrayPointerVisualizer: React.FC<ArrayPointerVisualizerProps> = ({
       setIsPlaying(false);
       return;
     }
-    const delayMs = Math.round(1150 / speed);
     const timer = window.setTimeout(() => {
       setStepIndex((prev) => Math.min(totalSteps - 1, prev + 1));
-    }, delayMs);
+    }, speedMs);
     return () => window.clearTimeout(timer);
-  }, [isPlaying, safeIdx, totalSteps, speed]);
+  }, [isPlaying, safeIdx, totalSteps, speedMs]);
 
   const handlePresetChange = (next: ArrayTracePresetId) => {
     setPreset(next);
@@ -106,78 +104,33 @@ export const ArrayPointerVisualizer: React.FC<ArrayPointerVisualizerProps> = ({
       </div>
 
       {/* Playback Controls */}
-      <div className="px-4 py-2.5 bg-slate-50/80 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setStepIndex(0);
-            }}
-            aria-label="Reset visualization"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setStepIndex((p) => Math.max(0, p - 1));
-            }}
-            disabled={safeIdx === 0}
-            aria-label="Step back"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40"
-          >
-            <SkipBack className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (safeIdx >= totalSteps - 1) setStepIndex(0);
-              setIsPlaying((p) => !p);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
-          >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span>{isPlaying ? 'Pause' : safeIdx >= totalSteps - 1 ? 'Replay' : 'Play'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setStepIndex((p) => Math.min(totalSteps - 1, p + 1));
-            }}
-            disabled={safeIdx >= totalSteps - 1}
-            aria-label="Step forward"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40"
-          >
-            <SkipForward className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-            <FastForward className="w-3.5 h-3.5" />
-            {SPEEDS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSpeed(s)}
-                className={`px-1.5 py-0.5 rounded font-mono tabular-nums text-[11px] font-medium ${
-                  speed === s
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                }`}
-              >
-                {s}x
-              </button>
-            ))}
-          </div>
-          <span className="font-mono tabular-nums text-slate-700 dark:text-slate-300 font-medium">
-            Step {safeIdx + 1} / {totalSteps}
-          </span>
-        </div>
+      <div className="px-4 py-2.5 bg-slate-50/80 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800">
+        <PlaybackControlBar
+          isPlaying={isPlaying}
+          onTogglePlay={() => {
+            if (safeIdx >= totalSteps - 1) setStepIndex(0);
+            setIsPlaying((p) => !p);
+          }}
+          onStepBack={() => {
+            setIsPlaying(false);
+            setStepIndex((p) => Math.max(0, p - 1));
+          }}
+          onStepForward={() => {
+            setIsPlaying(false);
+            setStepIndex((p) => Math.min(totalSteps - 1, p + 1));
+          }}
+          onReset={() => {
+            setIsPlaying(false);
+            setStepIndex(0);
+          }}
+          currentStep={safeIdx}
+          totalSteps={totalSteps}
+          speedMs={speedMs}
+          onChangeSpeedMs={setSpeedMs}
+          speeds={SPEED_OPTIONS}
+          playLabel={safeIdx >= totalSteps - 1 ? 'Replay' : 'Play'}
+          compact
+        />
       </div>
 
       {/* Main Stage */}
@@ -332,3 +285,5 @@ export const ArrayPointerVisualizer: React.FC<ArrayPointerVisualizerProps> = ({
     </div>
   );
 };
+
+export const ArrayPointerVisualizer = withMemoizedVisualizer(ArrayPointerVisualizerBase);

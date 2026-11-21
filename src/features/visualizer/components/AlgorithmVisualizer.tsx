@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pause, Play, RotateCcw, SkipBack, SkipForward } from 'lucide-react';
 import type { CurriculumTopic, VisualizerFrame } from '../../topics/types';
 import { generateVisualizerFrames } from '../engine/stepGenerator';
 import { ComplexityDepthToggle } from './ComplexityDepthToggle';
 import { getTopicComplexityProfile } from '../data/complexityComparisonData';
+import { PlaybackControlBar } from '../../../components/ui';
+import { withMemoizedVisualizer } from '../../../components/hoc';
 
 interface AlgorithmVisualizerProps {
   topic: CurriculumTopic;
@@ -15,7 +16,7 @@ const SPEED_OPTIONS = [
   { label: '2×', ms: 600 },
 ] as const;
 
-export function AlgorithmVisualizer({ topic }: AlgorithmVisualizerProps) {
+function AlgorithmVisualizerBase({ topic }: AlgorithmVisualizerProps) {
   const frames = useMemo(() => generateVisualizerFrames(topic), [topic]);
   const [stepIdx, setStepIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -321,76 +322,34 @@ export function AlgorithmVisualizer({ topic }: AlgorithmVisualizerProps) {
       </div>
 
       {/* Playback Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              if (!isPlaying && safeIdx >= totalSteps - 1) setStepIdx(0);
-              setIsPlaying((p) => !p);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 transition-colors whitespace-nowrap"
-          >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" aria-hidden="true" /> : <Play className="w-3.5 h-3.5" aria-hidden="true" />}
-            {isPlaying ? 'Pause' : safeIdx >= totalSteps - 1 ? 'Replay' : 'Play'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setStepIdx((i) => Math.max(0, i - 1));
-            }}
-            disabled={safeIdx === 0}
-            aria-label="Step backward"
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-35"
-          >
-            <SkipBack className="w-4 h-4" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setStepIdx((i) => Math.min(totalSteps - 1, i + 1));
-            }}
-            disabled={safeIdx >= totalSteps - 1}
-            aria-label="Step forward"
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-35"
-          >
-            <SkipForward className="w-4 h-4" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsPlaying(false);
-              setStepIdx(0);
-            }}
-            aria-label="Reset visualizer"
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <RotateCcw className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950">
-          {SPEED_OPTIONS.map((sp) => (
-            <button
-              key={sp.label}
-              type="button"
-              onClick={() => setSpeedMs(sp.ms)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono transition-colors ${
-                speedMs === sp.ms
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              {sp.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PlaybackControlBar
+        isPlaying={isPlaying}
+        onTogglePlay={() => {
+          if (!isPlaying && safeIdx >= totalSteps - 1) setStepIdx(0);
+          setIsPlaying((p) => !p);
+        }}
+        onStepBack={() => {
+          setIsPlaying(false);
+          setStepIdx((i) => Math.max(0, i - 1));
+        }}
+        onStepForward={() => {
+          setIsPlaying(false);
+          setStepIdx((i) => Math.min(totalSteps - 1, i + 1));
+        }}
+        onReset={() => {
+          setIsPlaying(false);
+          setStepIdx(0);
+        }}
+        currentStep={safeIdx}
+        totalSteps={totalSteps}
+        speedMs={speedMs}
+        onChangeSpeedMs={setSpeedMs}
+        speeds={SPEED_OPTIONS}
+        playLabel={safeIdx >= totalSteps - 1 ? 'Replay' : 'Play'}
+        className="pt-1"
+      />
     </div>
   );
 }
+
+export const AlgorithmVisualizer = withMemoizedVisualizer(AlgorithmVisualizerBase);

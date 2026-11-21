@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import {
   AlertTriangle,
   Award,
   Check,
   CheckSquare,
   Compass,
-  Copy,
   MessageSquareQuote,
   Square,
   Wrench,
@@ -13,6 +11,7 @@ import {
 import type { CurriculumTopic } from '../types';
 import { getTopicExpertiseGuide } from '../data/topicExpertisePlaybooks';
 import { useAccountState } from '../../../hooks/useAccountState';
+import { CopyButton } from '../../../components/ui';
 
 const STORAGE_KEY = 'patternforge_topic_checkpoints_v1';
 
@@ -33,7 +32,6 @@ export function TopicExpertisePlaybook({
     {},
     STORAGE_KEY
   );
-  const [copiedScript, setCopiedScript] = useState(false);
 
   const topicChecks = checkedMap[topic.id] ?? guide.masteryCheckpoints.map(() => false);
   const normalizedChecks = guide.masteryCheckpoints.map((_, i) => Boolean(topicChecks[i]));
@@ -49,16 +47,6 @@ export function TopicExpertisePlaybook({
       );
       return { ...prev, [topic.id]: next };
     });
-  };
-
-  const handleCopyScript = async () => {
-    try {
-      await navigator.clipboard.writeText(guide.verbalizationScript);
-      setCopiedScript(true);
-      window.setTimeout(() => setCopiedScript(false), 1800);
-    } catch {
-      // clipboard unavailable in restricted iframe
-    }
   };
 
   return (
@@ -115,18 +103,12 @@ export function TopicExpertisePlaybook({
             <MessageSquareQuote className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
             <span>45-Second Interview Verbalization Script</span>
           </div>
-          <button
-            type="button"
-            onClick={handleCopyScript}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors"
-          >
-            {copiedScript ? (
-              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-            ) : (
-              <Copy className="w-3 h-3" aria-hidden="true" />
-            )}
-            <span>{copiedScript ? 'Copied' : 'Copy Script'}</span>
-          </button>
+          <CopyButton
+            text={guide.verbalizationScript}
+            label="Copy Script"
+            copiedLabel="Copied"
+            size="xs"
+          />
         </div>
         <blockquote className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">
           {guide.verbalizationScript}

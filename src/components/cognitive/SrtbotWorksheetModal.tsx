@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CheckCircle2, ClipboardCheck, X } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { COIN_CHANGE_SRTBOT } from '../../data/academyResources';
+import { OverlayDialog, OverlayHeader } from '../ui';
 
 export function SrtbotWorksheetModal({
   open,
@@ -11,8 +12,6 @@ export function SrtbotWorksheetModal({
 }) {
   const [selected, setSelected] = useState<Record<string, string>>({});
 
-  if (!open) return null;
-
   const steps = COIN_CHANGE_SRTBOT.steps;
   const correctCount = steps.filter((step) => {
     const pick = selected[step.key];
@@ -20,33 +19,25 @@ export function SrtbotWorksheetModal({
   }).length;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs"
-      role="dialog"
-      aria-modal="true"
-      aria-label="MIT SRTBOT Dynamic Programming Worksheet"
+    <OverlayDialog
+      open={open}
+      onClose={onClose}
+      ariaLabel="MIT SRTBOT Dynamic Programming Worksheet"
+      maxWidthClass="max-w-4xl"
     >
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-5">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div>
-            <p className="text-xs font-mono text-sky-600 dark:text-sky-400">
-              MIT 6.006 FRAMEWORK · COIN CHANGE DP
-            </p>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5 flex items-center gap-2">
-              <ClipboardCheck className="w-5 h-5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-              SRTBOT 6-Step Recurrence Worksheet
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close SRTBOT worksheet"
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-          >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
+      <OverlayHeader
+        kicker="MIT 6.006 FRAMEWORK · COIN CHANGE DP"
+        title={
+          <>
+            <ClipboardCheck className="w-5 h-5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+            SRTBOT 6-Step Recurrence Worksheet
+          </>
+        }
+        onClose={onClose}
+        closeAriaLabel="Close SRTBOT worksheet"
+      />
 
+      <div className="p-6 overflow-y-auto flex-1 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {steps.map((step) => {
             const pick = selected[step.key];
@@ -100,20 +91,20 @@ export function SrtbotWorksheetModal({
             );
           })}
         </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
-          <span className="text-xs font-mono text-slate-600 dark:text-slate-400 tabular-nums">
-            Verified: {correctCount} / {steps.length} SRTBOT steps
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400"
-          >
-            {correctCount === steps.length ? 'Done — Optimal DP Ready' : 'Return to Problem'}
-          </button>
-        </div>
       </div>
-    </div>
+
+      <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <span className="text-xs font-mono text-slate-600 dark:text-slate-400 tabular-nums">
+          Verified: {correctCount} / {steps.length} SRTBOT steps
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400"
+        >
+          {correctCount === steps.length ? 'Done — Optimal DP Ready' : 'Return to Problem'}
+        </button>
+      </div>
+    </OverlayDialog>
   );
 }

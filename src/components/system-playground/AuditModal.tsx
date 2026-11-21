@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from '../../store/useSystemStore';
 import { formatRps } from './iconMap';
+import { OverlayDialog } from '../ui';
 
 interface AuditModalProps {
   onFocusNodes: (nodeIds: string[]) => void;
@@ -43,13 +44,14 @@ export const AuditModal: React.FC<AuditModalProps> = ({ onFocusNodes }) => {
   ];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="audit-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4"
+    <OverlayDialog
+      open={isOpen}
+      onClose={closeAuditModal}
+      ariaLabel="Smart Architecture Judge Report"
+      maxWidthClass="max-w-3xl"
+      backdropClassName="bg-slate-950/80 backdrop-blur-xs"
+      panelClassName="rounded-2xl border border-slate-700 bg-slate-900 text-slate-100"
     >
-      <div className="w-full max-w-3xl max-h-[88vh] flex flex-col rounded-2xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
@@ -236,7 +238,6 @@ export const AuditModal: React.FC<AuditModalProps> = ({ onFocusNodes }) => {
             Done
           </button>
         </div>
-      </div>
-    </div>
+    </OverlayDialog>
   );
 };

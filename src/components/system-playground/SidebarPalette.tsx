@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, GripVertical, Plus, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, GripVertical, Plus, X } from 'lucide-react';
 import { CATEGORY_META, CATEGORY_ORDER } from '../../data/componentCatalog';
 import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import type { ComponentCategory, ComponentType } from '../../types/system';
 import { getComponentIcon } from './iconMap';
+import { CatalogSearchInput } from '../ui';
 
 interface SidebarPaletteProps {
   onQuickAdd: (type: ComponentType) => void;
@@ -73,30 +74,14 @@ export const SidebarPalette: React.FC<SidebarPaletteProps> = ({
           </button>
         </div>
 
-        <div className="relative">
-          <Search
-            className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            aria-hidden="true"
-          />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search Redis, Kafka, LB..."
-            aria-label="Search components"
-            className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+        <CatalogSearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search Redis, Kafka, LB..."
+          ariaLabel="Search components"
+          variant="dark-surface"
+          size="sm"
+        />
       </div>
 
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2">

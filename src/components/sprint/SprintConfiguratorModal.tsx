@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Calendar, CheckCircle2, Clock, Target, X } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Target } from 'lucide-react';
 import { BigTechCompany } from '../../types/dsa';
 import { COMPANY_SPRINT_META } from '../../../server/services/sprintGeneratorService';
 import { useSprintStore } from '../../store/useSprintStore';
+import { OverlayDialog, OverlayHeader } from '../ui';
 
 const COMPANIES: BigTechCompany[] = ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'];
 
@@ -18,8 +19,6 @@ export function SprintConfiguratorModal() {
   );
   const [pace, setPace] = useState<60 | 120>(activeSprint?.dailyMinutesBudget ?? 60);
 
-  if (!open) return null;
-
   const selectedMeta = COMPANY_SPRINT_META[selectedCompany];
 
   const handleLockIn = async () => {
@@ -27,38 +26,21 @@ export function SprintConfiguratorModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="sprint-config-title"
+    <OverlayDialog
+      open={open}
+      onClose={() => setOpen(false)}
+      ariaLabel="Launch 14-Day Company Sprint"
+      maxWidthClass="max-w-3xl"
     >
-      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 space-y-6">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div>
-            <p className="text-xs font-mono font-semibold text-sky-600 dark:text-sky-400">
-              ADAPTIVE 14-DAY INTERVIEW ENGINE
-            </p>
-            <h2
-              id="sprint-config-title"
-              className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5"
-            >
-              Launch 14-Day Company Sprint
-            </h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Dynamically weights high-frequency patterns, injects 1-3-7-21 spaced recall twists, and unlocks a Day 14 45-min simulated interview.
-            </p>
-          </div>
+      <OverlayHeader
+        kicker="ADAPTIVE 14-DAY INTERVIEW ENGINE"
+        title="Launch 14-Day Company Sprint"
+        subtitle="Dynamically weights high-frequency patterns, injects 1-3-7-21 spaced recall twists, and unlocks a Day 14 45-min simulated interview."
+        onClose={() => setOpen(false)}
+        closeAriaLabel="Close sprint configurator"
+      />
 
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Close sprint configurator"
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-          >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
+      <div className="p-6 overflow-y-auto flex-1 space-y-6">
 
         {/* Company Selector Cards */}
         <div className="space-y-2.5">
@@ -207,24 +189,25 @@ export function SprintConfiguratorModal() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={isCreating}
-            onClick={handleLockIn}
-            className="px-5 py-2.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 disabled:opacity-50"
-          >
-            {isCreating ? 'Generating 14-Day Plan...' : 'Lock In 14-Day Sprint'}
-          </button>
-        </div>
       </div>
-    </div>
+
+      <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 shrink-0">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={isCreating}
+          onClick={handleLockIn}
+          className="px-5 py-2.5 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-sky-400 disabled:opacity-50"
+        >
+          {isCreating ? 'Generating 14-Day Plan...' : 'Lock In 14-Day Sprint'}
+        </button>
+      </div>
+    </OverlayDialog>
   );
 }

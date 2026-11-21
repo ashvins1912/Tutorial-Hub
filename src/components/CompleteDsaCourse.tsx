@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, GraduationCap, Search } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, GraduationCap } from 'lucide-react';
 import { type DsaLesson } from '../data/dsaCompleteLessons';
 import { MatrixProblemBank } from './MatrixProblemBank';
 import { DpLearningLab } from './DpLearningLab';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
+import { CatalogSearchInput } from './ui';
 
 type SectionKey = 'concepts' | 'recognition' | 'method' | 'workedExample' | 'complexity' | 'pitfalls' | 'practice' | 'interviewChecks';
 
@@ -86,7 +87,7 @@ export function CompleteDsaCourse() {
 
     <div className="grid items-start gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
       <aside className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 xl:sticky xl:top-24">
-        <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a module or concept..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-950" /></div>
+        <CatalogSearchInput value={search} onChange={setSearch} placeholder="Find a module or concept..." />
         <div className="mt-3 flex items-center justify-between px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400"><span>Learning path</span><span>{filtered.length} / {DSA_COMPLETE_LESSONS.length}</span></div>
         <div className="mt-2 max-h-[65vh] space-y-1 overflow-y-auto">
           {filtered.map((lesson) => {

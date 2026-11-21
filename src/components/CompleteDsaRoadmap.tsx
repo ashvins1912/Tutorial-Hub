@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { CompleteDsaCourse } from './CompleteDsaCourse';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
-import { Search, CheckCircle2, Circle, BookOpen, Target, Brain, Filter } from 'lucide-react';
+import { CheckCircle2, Circle, BookOpen, Target, Brain, Filter } from 'lucide-react';
 import { type DsaLevel, type DsaRoadmapTopic } from '../data/completeDsaRoadmap';
+import { CatalogSearchInput } from './ui';
 
 const levelStyles: Record<DsaLevel, string> = {
   Foundation: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
@@ -74,7 +75,7 @@ export function CompleteDsaRoadmap() {
     <section className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 space-y-3">
-          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search topics, subtopics or problem clues..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:ring-2 focus:ring-sky-500" /></div>
+          <CatalogSearchInput value={query} onChange={setQuery} placeholder="Search topics, subtopics or problem clues..." />
           <div className="flex items-center gap-2 flex-wrap"><Filter className="w-4 h-4 text-slate-400" /><button type="button" onClick={() => setLevelFilter('All')} className={`px-3 py-1.5 rounded-full text-xs font-semibold ${levelFilter === 'All' ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>All levels</button>{DSA_LEVELS.map((level) => <button key={level} type="button" onClick={() => setLevelFilter(level)} className={`px-3 py-1.5 rounded-full text-xs font-semibold ${levelFilter === level ? 'bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>{level}</button>)}</div>
           <p className="text-xs text-slate-500">{filtered.length} topics · grouped by learning area</p>
         </div>

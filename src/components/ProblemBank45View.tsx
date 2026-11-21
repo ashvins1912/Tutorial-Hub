@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ArrowUpRight, Search } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { type HighRoiProblemEntry } from '../data/highRoi45';
+import { CatalogSearchInput } from './ui';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import {
@@ -97,16 +98,13 @@ export function ProblemBank45View() {
             </h2>
           </div>
 
-          <div className="relative w-full lg:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search problem, signal, structure..."
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
+          <CatalogSearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search problem, signal, structure..."
+            size="sm"
+            className="w-full lg:w-72"
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

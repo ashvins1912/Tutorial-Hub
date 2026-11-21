@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Pause,
-  Play,
-  RotateCcw,
-  SkipBack,
-  SkipForward,
-} from 'lucide-react';
-import {
   type NGramAlgorithmEntry,
   type NGramStageId,
 } from '../../data/ngramTaxonomy';
 import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { computeAllSimilarityMetrics } from '../../utils/ngramEngine';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
+import { PlaybackControlBar } from '../ui';
 import { NGramVisualStage } from './NGramVisualStage';
 import { ProductSearchCaseStudy } from './ProductSearchCaseStudy';
 import { PruningLogicSimulator } from './PruningLogicSimulator';
@@ -381,75 +375,33 @@ export function NGramFuzzyStudio() {
               />
 
               {/* Playback Bar */}
-              <div className="border-t border-slate-200 dark:border-slate-800 pt-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!isPlaying && safeStepIndex >= totalSteps - 1) setStepIndex(0);
-                      setIsPlaying((p) => !p);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 text-xs font-semibold whitespace-nowrap"
-                  >
-                    {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                    {isPlaying ? 'Pause' : safeStepIndex >= totalSteps - 1 ? 'Replay' : 'Play Step Trace'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPlaying(false);
-                      setStepIndex((i) => Math.max(0, i - 1));
-                    }}
-                    disabled={safeStepIndex === 0}
-                    aria-label="Previous trace step"
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 disabled:opacity-35"
-                  >
-                    <SkipBack className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPlaying(false);
-                      setStepIndex((i) => Math.min(totalSteps - 1, i + 1));
-                    }}
-                    disabled={safeStepIndex >= totalSteps - 1}
-                    aria-label="Next trace step"
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 disabled:opacity-35"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPlaying(false);
-                      setStepIndex(0);
-                    }}
-                    aria-label="Reset trace"
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400 mr-1 tabular-nums">
-                    Step {safeStepIndex + 1}/{totalSteps}
-                  </span>
-                  {SPEEDS.map((sp) => (
-                    <button
-                      key={sp.label}
-                      type="button"
-                      onClick={() => setSpeedMs(sp.ms)}
-                      className={`px-2 py-1 rounded text-xs font-mono border ${
-                        speedMs === sp.ms
-                          ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 font-semibold'
-                          : 'border-slate-200 dark:border-slate-800 text-slate-500'
-                      }`}
-                    >
-                      {sp.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
+                <PlaybackControlBar
+                  isPlaying={isPlaying}
+                  onTogglePlay={() => {
+                    if (!isPlaying && safeStepIndex >= totalSteps - 1) setStepIndex(0);
+                    setIsPlaying((p) => !p);
+                  }}
+                  onStepBack={() => {
+                    setIsPlaying(false);
+                    setStepIndex((i) => Math.max(0, i - 1));
+                  }}
+                  onStepForward={() => {
+                    setIsPlaying(false);
+                    setStepIndex((i) => Math.min(totalSteps - 1, i + 1));
+                  }}
+                  onReset={() => {
+                    setIsPlaying(false);
+                    setStepIndex(0);
+                  }}
+                  currentStep={safeStepIndex}
+                  totalSteps={totalSteps}
+                  speedMs={speedMs}
+                  onChangeSpeedMs={setSpeedMs}
+                  speeds={SPEEDS}
+                  playLabel={safeStepIndex >= totalSteps - 1 ? 'Replay' : 'Play Step Trace'}
+                  compact
+                />
               </div>
             </div>
 

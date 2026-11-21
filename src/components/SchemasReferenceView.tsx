@@ -1,20 +1,8 @@
-import { useState } from 'react';
-import { Check, Copy, Database, Server } from 'lucide-react';
+import { Database, Server } from 'lucide-react';
 import { MONGOOSE_SCHEMAS_SOURCE } from '../data/mongooseSchemas';
+import { CopyButton } from './ui';
 
 export function SchemasReferenceView() {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(MONGOOSE_SCHEMAS_SOURCE);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // ignore clipboard errors
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-4">
@@ -28,14 +16,12 @@ export function SchemasReferenceView() {
               MongoDB Mongoose Schemas & Cognitive API
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copied Schemas' : 'Copy Mongoose Schemas'}
-          </button>
+          <CopyButton
+            text={MONGOOSE_SCHEMAS_SOURCE}
+            label="Copy Mongoose Schemas"
+            copiedLabel="Copied Schemas"
+            size="sm"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
