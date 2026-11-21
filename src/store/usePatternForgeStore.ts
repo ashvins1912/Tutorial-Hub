@@ -22,6 +22,7 @@ export type TopView =
   | 'roadmap'
   | 'system-design'
   | 'db-internals'
+  | 'languages'
   | 'ood'
   | 'ai-engineering'
   | 'revision'

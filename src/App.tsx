@@ -132,6 +132,10 @@ const DatabaseInternalsStudio = withLazyStudio(
   () => import('./components/database/DatabaseInternalsStudio').then((m) => ({ default: m.DatabaseInternalsStudio })),
   { studioName: 'Database Internals Studio' }
 );
+const LanguagesTutorialStudio = withLazyStudio(
+  () => import('./components/languages/LanguagesTutorialStudio').then((m) => ({ default: m.LanguagesTutorialStudio })),
+  { studioName: 'Python 3.13+ & Java 21+ Languages Studio' }
+);
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -395,6 +399,7 @@ export default function App() {
     { id: 'ai-engineering', label: 'AI Engineer', isActive: activeView === 'ai-engineering' },
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'db-internals', label: 'DB Internals', isActive: activeView === 'db-internals' },
+    { id: 'languages', label: 'Languages', isActive: activeView === 'languages' },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
     { id: 'sprint', label: 'Sprint', isActive: activeView === 'sprint' },
     { id: 'community', label: 'Community', isActive: activeView === 'community' },
@@ -714,6 +719,8 @@ export default function App() {
           {activeView === 'ai-engineering' && <AiEngineeringStudio />}
 
           {activeView === 'db-internals' && <DatabaseInternalsStudio />}
+
+          {activeView === 'languages' && <LanguagesTutorialStudio />}
 
           {activeView === 'profile' && <ProfileStatsView />}
 
