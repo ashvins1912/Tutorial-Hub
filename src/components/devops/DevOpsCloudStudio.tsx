@@ -29,6 +29,9 @@ import { withStudioBoundary } from '../hoc';
 import { CopyButton, SegmentedTabBar } from '../ui';
 import { DevOpsInteractiveSimulators } from './DevOpsInteractiveSimulators';
 import { DevOpsVisualPlayground } from './DevOpsVisualPlayground';
+import { FramerCicdPacketAnimator } from './FramerCicdPacketAnimator';
+import { InteractiveAwsVsInHousePlayground } from './InteractiveAwsVsInHousePlayground';
+import { MermaidLevel1DfdViewer } from './MermaidLevel1DfdViewer';
 
 type StudioTab =
   | 'playground'
@@ -37,6 +40,8 @@ type StudioTab =
   | 'rollouts-envs'
   | 'cloud-vs-onprem'
   | 'master-dfds';
+
+type PlaygroundSubView = 'packet-flow' | 'aws-vs-inhouse' | 'mermaid-dfd' | 'rollout-topology';
 
 const ZONE_ACCENT: Record<
   DevOpsDfdNode['zone'],
@@ -514,6 +519,7 @@ const FivePartSpecPanel: React.FC<{
 /* -------------------------------------------------------------------------- */
 const DevOpsCloudStudioInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>('playground');
+  const [playgroundSubView, setPlaygroundSubView] = useState<PlaygroundSubView>('packet-flow');
   const [selectedSdlcId, setSelectedSdlcId] = useState<string>(SDLC_PIPELINE_MODULES[0].id);
   const [selectedEnvSpecId, setSelectedEnvSpecId] = useState<string>(SECTION2_ENV_FIVE_PART[0].id);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>('canary');
@@ -620,7 +626,30 @@ const DevOpsCloudStudioInner: React.FC = () => {
 
       {/* TAB 0: Interactive Virtual DevOps Automation & Deployment Playground */}
       {activeTab === 'playground' && (
-        <DevOpsVisualPlayground onNavigateRelated={handleNavigateRelated} />
+        <div className="space-y-5">
+          <SegmentedTabBar
+            ariaLabel="Interactive DevOps Playground Views"
+            activeTab={playgroundSubView}
+            onChange={setPlaygroundSubView}
+            tabs={[
+              { id: 'packet-flow', label: 'CI/CD Packet Flow (Framer Motion)' },
+              { id: 'aws-vs-inhouse', label: 'AWS vs In-House Chaos Lab' },
+              { id: 'mermaid-dfd', label: 'Mermaid.js Level 1 DFD' },
+              { id: 'rollout-topology', label: '6-Strategy Rollout Topology' },
+            ]}
+          />
+
+          {playgroundSubView === 'packet-flow' && <FramerCicdPacketAnimator />}
+          {playgroundSubView === 'aws-vs-inhouse' && <InteractiveAwsVsInHousePlayground />}
+          {playgroundSubView === 'mermaid-dfd' && (
+            <MermaidLevel1DfdViewer
+              onOpenSdlcModule={(moduleId) => handleNavigateRelated('sdlc-pipeline', moduleId)}
+            />
+          )}
+          {playgroundSubView === 'rollout-topology' && (
+            <DevOpsVisualPlayground onNavigateRelated={handleNavigateRelated} />
+          )}
+        </div>
       )}
 
       {/* TAB 1: 5 Interactive Simulators */}
@@ -1101,10 +1130,14 @@ const DevOpsCloudStudioInner: React.FC = () => {
       {/* TAB 5: Section 5 (Master DFDs + Mermaid.js) & Section 6 (Simulator Engine Design & FSM Pseudocode) */}
       {activeTab === 'master-dfds' && (
         <div className="space-y-8">
+          <MermaidLevel1DfdViewer
+            onOpenSdlcModule={(moduleId) => handleNavigateRelated('sdlc-pipeline', moduleId)}
+          />
+
           <div className="space-y-4">
             <div className="space-y-1">
               <h2 className="text-lg font-display font-bold text-slate-900 dark:text-slate-100">
-                Section 5: Master Data Flow Diagrams (Animated SVG + Mermaid.js)
+                Section 5: Animated Master Data Flow Diagrams (All 4 Views + Mermaid Export)
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Inspect all 4 core system architecture diagrams interactively or toggle Mermaid DFD inside the viewer to copy syntax-checked Mermaid.js code.
