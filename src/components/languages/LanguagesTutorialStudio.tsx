@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 import {
   BookOpen,
+  Cloud,
   Code2,
   Cpu,
   GitBranch,
+  GraduationCap,
   Languages,
   Layers,
   PlayCircle,
@@ -24,6 +26,10 @@ import { LANG_CONCURRENCY_EXCEPTIONS_MODULES } from '../../data/langConcurrencyE
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { JAVA_PYTHON_MASTERY_LESSONS } from '../../data/javaPythonCodingMasteryData';
+import { CLOUD_DEV_CHAPTERS } from '../../data/dockerK8sCloudDevTutorialData';
+import { JavaPythonCodingMasteryTrack } from './JavaPythonCodingMasteryTrack';
+import { CloudDevCompleteTutorial } from '../devops/CloudDevCompleteTutorial';
 import { LanguageVisualAnimator } from './LanguageVisualAnimator';
 import { OopCustomDsAcademy } from './OopCustomDsAcademy';
 import { ConcurrencyExceptionsDeepDive } from './ConcurrencyExceptionsDeepDive';
@@ -34,6 +40,8 @@ import { LanguageMasteryQuiz } from './LanguageMasteryQuiz';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type LangStudioTab =
+  | 'coding-mastery'
+  | 'docker-k8s-cloud'
   | 'oop-custom-ds'
   | 'concurrency-exceptions'
   | 'visual-dfd'
@@ -43,17 +51,31 @@ type LangStudioTab =
   | 'quiz';
 
 interface LanguagesStudioProgress {
+  completedCodingIds?: string[];
   understoodConceptIds: string[];
   completedPracticeIds: string[];
   solvedQuizIds: string[];
 }
 
 const DEFAULT_LANG_PROGRESS: LanguagesStudioProgress = {
+  completedCodingIds: [],
   understoodConceptIds: [],
   completedPracticeIds: [],
   solvedQuizIds: [],
 };
 
+const BoundedJavaPythonCodingMasteryTrack = withStudioBoundary(
+  JavaPythonCodingMasteryTrack,
+  {
+    studioName: 'Java 21+ & Python 3.13+ Basics-to-Advanced Coding Mastery',
+  }
+);
+const BoundedCloudDevCompleteTutorial = withStudioBoundary(
+  CloudDevCompleteTutorial,
+  {
+    studioName: 'Docker, Kubernetes, AWS & GCP Developer Tutorial',
+  }
+);
 const BoundedOopCustomDsAcademy = withStudioBoundary(OopCustomDsAcademy, {
   studioName: 'Zero-to-Pro OOP Internals & Custom Data Structures Academy',
 });
@@ -83,7 +105,7 @@ const BoundedLanguageMasteryQuiz = withStudioBoundary(LanguageMasteryQuiz, {
 });
 
 export function LanguagesTutorialStudio() {
-  const [activeTab, setActiveTab] = useState<LangStudioTab>('oop-custom-ds');
+  const [activeTab, setActiveTab] = useState<LangStudioTab>('coding-mastery');
   const [languageFilter, setLanguageFilter] = useState<'all' | LangTrack>('all');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(LANGUAGE_VISUAL_FLOWS[0].id);
 
@@ -93,6 +115,9 @@ export function LanguagesTutorialStudio() {
     'patternforge_languages_studio_progress_v1'
   );
 
+  const completedCodingIds = Array.isArray(progress?.completedCodingIds)
+    ? progress.completedCodingIds
+    : [];
   const understoodConceptIds = Array.isArray(progress?.understoodConceptIds)
     ? progress.understoodConceptIds
     : [];
@@ -102,17 +127,24 @@ export function LanguagesTutorialStudio() {
   const solvedQuizIds = Array.isArray(progress?.solvedQuizIds) ? progress.solvedQuizIds : [];
 
   const totalMilestones =
+    JAVA_PYTHON_MASTERY_LESSONS.length +
     LANGUAGE_CONCEPTS.length +
     LANGUAGE_PRACTICE_CHALLENGES.length +
     LANGUAGE_MASTERY_QUIZ.length;
   const completedMilestones =
-    understoodConceptIds.length + completedPracticeIds.length + solvedQuizIds.length;
+    completedCodingIds.length +
+    understoodConceptIds.length +
+    completedPracticeIds.length +
+    solvedQuizIds.length;
   const masteryPct = Math.round((completedMilestones / Math.max(1, totalMilestones)) * 100);
 
   const patchProgress = useCallback(
     (updater: (curr: LanguagesStudioProgress) => LanguagesStudioProgress) => {
       setProgress((prev) =>
         updater({
+          completedCodingIds: Array.isArray(prev?.completedCodingIds)
+            ? prev.completedCodingIds
+            : [],
           understoodConceptIds: Array.isArray(prev?.understoodConceptIds)
             ? prev.understoodConceptIds
             : [],
@@ -124,6 +156,21 @@ export function LanguagesTutorialStudio() {
       );
     },
     [setProgress]
+  );
+
+  const handleToggleCodingComplete = useCallback(
+    (id: string) => {
+      patchProgress((curr) => {
+        const list = curr.completedCodingIds ?? [];
+        return {
+          ...curr,
+          completedCodingIds: list.includes(id)
+            ? list.filter((c) => c !== id)
+            : [...list, id],
+        };
+      });
+    },
+    [patchProgress]
   );
 
   const handleToggleConceptUnderstood = useCallback(
@@ -232,6 +279,20 @@ export function LanguagesTutorialStudio() {
             wrap
             tabs={[
               {
+                id: 'coding-mastery',
+                label: 'Basics to Advanced Coding',
+                shortLabel: 'Coding Track',
+                count: JAVA_PYTHON_MASTERY_LESSONS.length,
+                icon: GraduationCap,
+              },
+              {
+                id: 'docker-k8s-cloud',
+                label: 'Docker · K8s · AWS · GCP',
+                shortLabel: 'Cloud & K8s',
+                count: CLOUD_DEV_CHAPTERS.length,
+                icon: Cloud,
+              },
+              {
                 id: 'oop-custom-ds',
                 label: 'Zero-to-Pro OOP & Custom DS',
                 shortLabel: 'OOP & Custom DS',
@@ -297,6 +358,14 @@ export function LanguagesTutorialStudio() {
       </section>
 
       {/* Active Workspace (Each Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'coding-mastery' && (
+        <BoundedJavaPythonCodingMasteryTrack
+          languageFilter={languageFilter}
+          completedIds={completedCodingIds}
+          onToggleComplete={handleToggleCodingComplete}
+        />
+      )}
+      {activeTab === 'docker-k8s-cloud' && <BoundedCloudDevCompleteTutorial />}
       {activeTab === 'oop-custom-ds' && (
         <BoundedOopCustomDsAcademy languageFilter={languageFilter} />
       )}

@@ -32,8 +32,10 @@ import { DevOpsVisualPlayground } from './DevOpsVisualPlayground';
 import { FramerCicdPacketAnimator } from './FramerCicdPacketAnimator';
 import { InteractiveAwsVsInHousePlayground } from './InteractiveAwsVsInHousePlayground';
 import { MermaidLevel1DfdViewer } from './MermaidLevel1DfdViewer';
+import { CloudDevCompleteTutorial } from './CloudDevCompleteTutorial';
 
 type StudioTab =
+  | 'dev-tutorials'
   | 'playground'
   | 'simulators'
   | 'sdlc-pipeline'
@@ -615,6 +617,7 @@ const DevOpsCloudStudioInner: React.FC = () => {
         activeTab={activeTab}
         onChange={setActiveTab}
         tabs={[
+          { id: 'dev-tutorials', label: 'Docker · K8s · AWS · GCP' },
           { id: 'playground', label: 'Virtual Playground' },
           { id: 'simulators', label: '5 Live Simulators & CLI' },
           { id: 'sdlc-pipeline', label: 'Sec 1: SDLC Pipeline (6)' },
@@ -623,6 +626,9 @@ const DevOpsCloudStudioInner: React.FC = () => {
           { id: 'master-dfds', label: 'Sec 5-6: DFDs & Engine' },
         ]}
       />
+
+      {/* Complete Developer Tutorial: Docker, Kubernetes, AWS & GCP */}
+      {activeTab === 'dev-tutorials' && <CloudDevCompleteTutorial />}
 
       {/* TAB 0: Interactive Virtual DevOps Automation & Deployment Playground */}
       {activeTab === 'playground' && (
