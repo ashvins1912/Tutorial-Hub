@@ -1000,3 +1000,160 @@ export function generateFeatureSequenceMermaid(
 
   return lines.join('\n');
 }
+
+export function generateDbInternalsMermaid(
+  nodes: FlightNodeData[],
+  focusedDbNode?: FlightNodeData | null
+): string {
+  const target =
+    focusedDbNode && INFRA_NODE_CATALOG[focusedDbNode.type].category === 'data'
+      ? focusedDbNode
+      : nodes.find((n) => n.type === 'postgresql') ??
+        nodes.find((n) => INFRA_NODE_CATALOG[n.type].category === 'data') ??
+        null;
+
+  if (!target) {
+    return [
+      'flowchart LR',
+      '  App["Application Services"] --> Pool["PgBouncer Connection Pool"]',
+      '  Pool --> Opt["System R Cost Optimizer"]',
+      '  Opt --> MVCC["MVCC Snapshot & Buffer Pool (Clock-Sweep)"]',
+      '  MVCC --> BTree[("B+Tree Indexes + Heap Pages")]',
+      '  MVCC --> WAL[("WAL Sequential Log -> ARIES Recovery")]',
+    ].join('\n');
+  }
+
+  const stateTag = target.killed
+    ? ' [KILLED - FAILOVER REQUIRED]'
+    : target.latencyInjectedMs
+      ? ` [+${target.latencyInjectedMs}ms DEGRADED]`
+      : ` [x${target.replicas} HEALTHY]`;
+
+  switch (target.type) {
+    case 'postgresql':
+      return [
+        'flowchart LR',
+        `  subgraph PG["${target.label} (${target.techStack})${stateTag}"]`,
+        '    Conn["Connection Pool (PgBouncer)"] --> Parse["SQL Parser + System R Cost Optimizer"]',
+        '    Parse --> MVCC["MVCC Snapshot (xmin/xmax) + SSI"]',
+        '    MVCC --> Buf["Buffer Pool (Clock-Sweep RAM)"]',
+        '    Buf --> BTree[("B+Tree Index & 8KB Heap Pages")]',
+        '    MVCC --> WAL[("WAL Append Log (ARIES Redo/Undo)")]',
+        '    WAL -->|"Streaming Replication"| Rep[("Read Replica / Standby")]',
+        '    WAL -->|"Logical CDC Outbox"| CDC["Debezium -> Kafka"]',
+        '  end',
+      ].join('\n');
+
+    case 'nosql-db':
+      return [
+        'flowchart LR',
+        `  subgraph NoSQL["${target.label} (${target.techStack})${stateTag}"]`,
+        '    Coord["Consistent Hashing Ring + VNodes"] --> Quorum{"Quorum R + W > N"}',
+        '    Quorum --> WAL[("Commit Log WAL")]',
+        '    Quorum --> Mem["MemTable (RAM SkipList)"]',
+        '    Mem -->|"Flush"| L0["L0 Immutable SSTables"]',
+        '    L0 -->|"Leveled Compaction"| L1[("L1/L2 Sorted SSTables")]',
+        '    Read["Point Read"] --> BF{"Per-SSTable Bloom Filter"}',
+        '    BF -->|"99% Skip"| Miss["Zero Disk I/O"]',
+        '    BF -->|"Verify"| L1',
+        '  end',
+      ].join('\n');
+
+    case 'redis-cache':
+      return [
+        'flowchart LR',
+        `  subgraph Redis["${target.label} (${target.techStack})${stateTag}"]`,
+        '    IO["RESP3 Single-Threaded Event Loop"] --> Slot["CRC16(key) mod 16384 Hash Slot"]',
+        '    Slot --> DS["In-Memory Dict / SkipList / Streams"]',
+        '    DS --> Evict["Approximate LRU / LFU Eviction"]',
+        '    DS --> Persist[("AOF Append Log + RDB Snapshot")]',
+        '    DS -->|"Hit < 1.5ms"| Fast["Fast-Path Return (Skips Primary DB)"]',
+        '  end',
+      ].join('\n');
+
+    case 'elasticsearch':
+      return [
+        'flowchart LR',
+        `  subgraph ES["${target.label} (${target.techStack})${stateTag}"]`,
+        '    Ingest["Analyzer & Tokenizer"] --> Inv["Inverted Index (BM25 Scoring)"]',
+        '    Ingest --> Vec["HNSW Vector Graph (Semantic ANN)"]',
+        '    Inv & Vec --> Seg["Immutable Lucene Segments + FST"]',
+        '    Seg --> Merge["Background Segment Merge"]',
+        '    Seg --> Shard[("Primary + Replica Shards")]',
+        '  end',
+      ].join('\n');
+
+    case 'kafka-broker':
+      return [
+        'flowchart LR',
+        `  subgraph Kafka["${target.label} (${target.techStack})${stateTag}"]`,
+        '    Prod["Producer (Key Hash Partitioner)"] --> Log[("Append-Only Partition Commit Log")]',
+        '    Log --> ISR["In-Sync Replicas (Raft KRaft Quorum)"]',
+        '    Log -->|"Zero-Copy sendfile()"| CG1["Consumer Group A (Offset #4120)"]',
+        '    Log -->|"Independent Replay"| CG2["Consumer Group B (Analytics)"]',
+        '  end',
+      ].join('\n');
+
+    default:
+      return [
+        'flowchart LR',
+        `  subgraph Store["${target.label} (${target.techStack})${stateTag}"]`,
+        '    URL["Signed / Presigned Upload URL"] --> Multi["Multipart Chunk Ingest"]',
+        '    Multi --> EC["Reed-Solomon Erasure Coding (11-9s Durability)"]',
+        '    EC --> Tier[("Hot Standard -> Glacier Lifecycle")]',
+        '    Tier --> CDN["Edge CDN Origin Pull"]',
+        '  end',
+      ].join('\n');
+  }
+}
+
+export function generateNodeFocusMermaid(
+  node: FlightNodeData,
+  allNodes: FlightNodeData[],
+  edges: FlightEdgeData[]
+): string {
+  const spec = INFRA_NODE_CATALOG[node.type];
+  if (spec.category === 'data') {
+    return generateDbInternalsMermaid(allNodes, node);
+  }
+
+  const incoming = edges
+    .filter((e) => e.target === node.id)
+    .map((e) => ({ edge: e, src: allNodes.find((n) => n.id === e.source) }))
+    .filter((x): x is { edge: FlightEdgeData; src: FlightNodeData } => Boolean(x.src));
+
+  const outgoing = edges
+    .filter((e) => e.source === node.id)
+    .map((e) => ({ edge: e, dst: allNodes.find((n) => n.id === e.target) }))
+    .filter((x): x is { edge: FlightEdgeData; dst: FlightNodeData } => Boolean(x.dst));
+
+  const mid = sanitizeMermaidId(node.id);
+  const algoShort = spec.algorithm.name.replace(/"/g, "'").slice(0, 42);
+  const status = node.killed ? 'DOWN' : `x${node.replicas}`;
+  const lines: string[] = [
+    'flowchart LR',
+    `  ${mid}["${node.label.replace(/"/g, "'")}<br/>${node.techStack} (${status})<br/>Algo: ${algoShort}"]`,
+  ];
+
+  incoming.forEach(({ edge, src }) => {
+    const sid = sanitizeMermaidId(src.id);
+    lines.push(
+      `  ${sid}["${src.label.replace(/"/g, "'")}"] -->|"${edge.label.replace(/"/g, "'")}"| ${mid}`
+    );
+  });
+
+  outgoing.forEach(({ edge, dst }) => {
+    const did = sanitizeMermaidId(dst.id);
+    const dstIsData = INFRA_NODE_CATALOG[dst.type].category === 'data';
+    const shape = dstIsData
+      ? `${did}[("${dst.label.replace(/"/g, "'")}")]`
+      : `${did}["${dst.label.replace(/"/g, "'")}"]`;
+    lines.push(`  ${mid} -->|"${edge.label.replace(/"/g, "'")}"| ${shape}`);
+  });
+
+  if (incoming.length === 0 && outgoing.length === 0) {
+    lines.push(`  Client["Upstream Caller"] --> ${mid} --> Next["Downstream Target"]`);
+  }
+
+  return lines.join('\n');
+}

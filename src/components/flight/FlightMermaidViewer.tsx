@@ -11,6 +11,7 @@ export interface FlightMermaidViewerProps {
   nodes?: FlightNodeData[];
   selectedNodeId?: string | null;
   onSelectNodeId?: (nodeId: string) => void;
+  compact?: boolean;
 }
 
 export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
@@ -20,6 +21,7 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
   nodes = [],
   selectedNodeId,
   onSelectNodeId,
+  compact = false,
 }) => {
   const uniqueId = useId().replace(/:/g, '');
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +68,7 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
         }
         svgEl.style.width = '100%';
         svgEl.style.height = 'auto';
-        svgEl.style.maxHeight = '420px';
+        svgEl.style.maxHeight = compact ? '270px' : '420px';
 
         const imported = document.importNode(svgEl, true);
         containerRef.current.replaceChildren(imported);
@@ -157,11 +159,14 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
         </div>
       </div>
 
-      <div className="p-4 bg-slate-50/50 dark:bg-slate-950/70 overflow-x-auto">
+      <div className={compact ? 'p-2.5 bg-slate-50/50 dark:bg-slate-950/70 overflow-x-auto' : 'p-4 bg-slate-50/50 dark:bg-slate-950/70 overflow-x-auto'}>
         {error ? (
           <div className="text-xs font-mono text-rose-600 dark:text-rose-400 p-3">{error}</div>
         ) : (
-          <div ref={containerRef} className="min-w-[680px] flex items-center justify-center" />
+          <div
+            ref={containerRef}
+            className={compact ? 'min-w-0 flex items-center justify-center' : 'min-w-[680px] flex items-center justify-center'}
+          />
         )}
       </div>
 

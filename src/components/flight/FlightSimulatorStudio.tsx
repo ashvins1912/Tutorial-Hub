@@ -42,7 +42,9 @@ import {
   FEATURE_MODULES,
   INFRA_NODE_CATALOG,
   buildPresetTopology,
+  generateDbInternalsMermaid,
   generateFeatureSequenceMermaid,
+  generateNodeFocusMermaid,
   generateTopologyMermaid,
   validateTopology,
   type ArchitectureParadigm,
@@ -201,6 +203,22 @@ const FlightSimulatorStudioInner: React.FC = () => {
   const validationIssues = useMemo(
     () => validateTopology(nodes, edges, dau, targetLatencyMs, enabledFeatures),
     [nodes, edges, dau, targetLatencyMs, enabledFeatures]
+  );
+
+  // Live System-Level & DB Mermaid Dock State (Expanded on Open)
+  const [showLiveMermaidDock, setShowLiveMermaidDock] = useState<boolean>(true);
+  const [dockMermaidTab, setDockMermaidTab] = useState<'topology' | 'sequence' | 'db-internals'>('topology');
+
+  const handleSelectFlightNode = useCallback(
+    (nodeId: string) => {
+      setSelectedNodeId(nodeId);
+      const clicked = nodes.find((n) => n.id === nodeId);
+      if (clicked && INFRA_NODE_CATALOG[clicked.type].category === 'data') {
+        setInspectorTab('live-dfd');
+        setDockMermaidTab('db-internals');
+      }
+    },
+    [nodes]
   );
 
   // Live Mermaid.js Generators
@@ -498,6 +516,17 @@ const FlightSimulatorStudioInner: React.FC = () => {
     [nodes, selectedNodeId]
   );
   const selectedSpec = selectedNode ? INFRA_NODE_CATALOG[selectedNode.type] : null;
+  const isSelectedDbNode = Boolean(selectedSpec && selectedSpec.category === 'data');
+
+  const liveDbMermaid = useMemo(
+    () => generateDbInternalsMermaid(nodes, selectedNode),
+    [nodes, selectedNode]
+  );
+
+  const selectedNodeFocusMermaid = useMemo(
+    () => (selectedNode ? generateNodeFocusMermaid(selectedNode, nodes, edges) : ''),
+    [selectedNode, nodes, edges]
+  );
 
   const srsContractJson = useMemo(
     () =>
@@ -580,6 +609,74 @@ const FlightSimulatorStudioInner: React.FC = () => {
           );
         })}
       </nav>
+
+      {/* Always-On-Open Live System-Level Design & Database Mermaid Flows Dock (Stages 1–5) */}
+      {stage !== 6 && (
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-semibold text-sky-700 dark:text-sky-400">
+                  Live System-Level &amp; Database Mermaid Flows
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>Synced Live With Canvas · Click Any Node to Inspect System &amp; DB Internals</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {showLiveMermaidDock && (
+                <SegmentedTabBar<'topology' | 'sequence' | 'db-internals'>
+                  ariaLabel="Live Flight Mode Mermaid flow view"
+                  activeTab={dockMermaidTab}
+                  onChange={setDockMermaidTab}
+                  size="xs"
+                  tabs={[
+                    { id: 'topology', label: 'System Topology Flow' },
+                    { id: 'sequence', label: 'Request Sequence' },
+                    { id: 'db-internals', label: 'DB Internals Flow', icon: Database },
+                  ]}
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => setShowLiveMermaidDock((v) => !v)}
+                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-sky-500 whitespace-nowrap"
+              >
+                {showLiveMermaidDock ? 'Collapse Flow Dock' : 'Open System & DB Mermaid Flows'}
+              </button>
+            </div>
+          </div>
+
+          {showLiveMermaidDock && (
+            <div>
+              {dockMermaidTab === 'topology' && (
+                <FlightMermaidViewer
+                  title={`System-Level Design Architecture Flow (${activeDomain.name} · ${paradigm})`}
+                  subtitle="Click any node inside the Mermaid diagram to open the 4-Tab Inspector (clicking a DB node automatically opens its Database Internals Mermaid flow)."
+                  mermaidCode={liveTopologyMermaid}
+                  nodes={nodes}
+                  selectedNodeId={selectedNodeId}
+                  onSelectNodeId={handleSelectFlightNode}
+                />
+              )}
+              {dockMermaidTab === 'sequence' && (
+                <FlightMermaidViewer
+                  title="End-to-End Request, Cache Hit/Miss & Async Outbox Sequence (Mermaid.js)"
+                  subtitle={`Live sequence for ${activeDomain.name} (${paradigm}) with ${rolloutStrategy} rollout.`}
+                  mermaidCode={liveSequenceMermaid}
+                />
+              )}
+              {dockMermaidTab === 'db-internals' && (
+                <FlightMermaidViewer
+                  title={`Database Internals & Storage Flow${isSelectedDbNode && selectedNode ? ` — ${selectedNode.label}` : ' — Primary Data Layer'}`}
+                  subtitle="Click any database or data-layer node (PostgreSQL, Redis, NoSQL, Elasticsearch, Kafka, Object Storage) on the canvas to inspect its engine-specific Mermaid kernel flow."
+                  mermaidCode={liveDbMermaid}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Two-Zone Pilot Layout: Left Active Stage (8 cols) + Right Click-to-Inspect Drawer (4 cols) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
@@ -866,7 +963,7 @@ const FlightSimulatorStudioInner: React.FC = () => {
                   nodeTypes={NODE_TYPES}
                   onNodesChange={handleNodesChange}
                   onConnect={handleConnect}
-                  onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+                  onNodeClick={(_, node) => handleSelectFlightNode(node.id)}
                   fitView
                   fitViewOptions={{ padding: 0.16 }}
                   proOptions={{ hideAttribution: true }}
@@ -1408,13 +1505,13 @@ const FlightSimulatorStudioInner: React.FC = () => {
                       <g
                         key={node.id}
                         transform={`translate(${node.x}, ${node.y})`}
-                        onClick={() => setSelectedNodeId(node.id)}
+                        onClick={() => handleSelectFlightNode(node.id)}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            setSelectedNodeId(node.id);
+                            handleSelectFlightNode(node.id);
                           }
                         }}
                         className="cursor-pointer"
@@ -1473,7 +1570,13 @@ const FlightSimulatorStudioInner: React.FC = () => {
                 mermaidCode={liveTopologyMermaid}
                 nodes={nodes}
                 selectedNodeId={selectedNodeId}
-                onSelectNodeId={(nid) => setSelectedNodeId(nid)}
+                onSelectNodeId={handleSelectFlightNode}
+              />
+
+              <FlightMermaidViewer
+                title={`Database Internals & Storage Engine Flow (Mermaid.js)${isSelectedDbNode && selectedNode ? ` — ${selectedNode.label}` : ''}`}
+                subtitle="Engine-level WAL, MVCC, B+Tree / LSM-Tree, Buffer Pool, Bloom Filter, and Replication flow for your database layer."
+                mermaidCode={liveDbMermaid}
               />
 
               <FlightMermaidViewer
@@ -1616,7 +1719,23 @@ const FlightSimulatorStudioInner: React.FC = () => {
                 )}
 
                 {inspectorTab === 'live-dfd' && (
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
+                    {selectedNodeFocusMermaid && (
+                      <FlightMermaidViewer
+                        compact
+                        title={
+                          isSelectedDbNode
+                            ? `${selectedNode.label} — DB Internals Mermaid Flow`
+                            : `${selectedNode.label} — System Design Flow`
+                        }
+                        subtitle={
+                          isSelectedDbNode
+                            ? 'Live engine-level storage, indexing, concurrency & durability Mermaid flow.'
+                            : 'Live upstream callers, core algorithm, and downstream targets.'
+                        }
+                        mermaidCode={selectedNodeFocusMermaid}
+                      />
+                    )}
                     <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 dark:text-slate-400">
                       <span>Wire Protocol: {selectedSpec.liveDataDfd.protocol}</span>
                       <span>Base: {selectedSpec.baseLatencyMs}ms</span>

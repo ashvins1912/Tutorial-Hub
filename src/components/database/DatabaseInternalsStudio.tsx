@@ -32,9 +32,11 @@ import {
   SQL_PROGRESSIVE_SCENARIOS,
 } from '../../data/dbCompleteObjectsAndSchemaData';
 import { DATA_ENG_AI_DB_TOPICS } from '../../data/dataEngAndAiDbData';
+import { DB_NAMED_ALGORITHMS } from '../../data/dbNamedAlgorithmsArchitectureData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { DbNamedAlgorithmsMermaidLab } from './DbNamedAlgorithmsMermaidLab';
 import { DataEngAndAiDatabasesLab } from './DataEngAndAiDatabasesLab';
 import { VectorSimilaritySearchLab } from './VectorSimilaritySearchLab';
 import { OptimisticVsPessimisticLockLab } from './OptimisticVsPessimisticLockLab';
@@ -54,6 +56,7 @@ import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
+  | 'db-algorithms-mermaid'
   | 'vector-search'
   | 'locking-sim'
   | 'arch-comparison'
@@ -87,6 +90,12 @@ const DEFAULT_DB_PROGRESS: DatabaseInternalsProgress = {
   completedPracticeIds: [],
 };
 
+const BoundedDbNamedAlgorithmsMermaidLab = withStudioBoundary(
+  DbNamedAlgorithmsMermaidLab,
+  {
+    studioName: 'Named Database Algorithms & Mermaid Flow Encyclopedia',
+  }
+);
 const BoundedVectorSimilaritySearchLab = withStudioBoundary(VectorSimilaritySearchLab, {
   studioName: 'Vector Similarity Search (HNSW & IVF) Lab',
 });
@@ -140,7 +149,7 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('vector-search');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('db-algorithms-mermaid');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
@@ -322,6 +331,13 @@ export function DatabaseInternalsStudio() {
             wrap
             tabs={[
               {
+                id: 'db-algorithms-mermaid',
+                label: 'Named Algorithms & Mermaid Flows',
+                shortLabel: 'DB Algos & Mermaid',
+                count: DB_NAMED_ALGORITHMS.length,
+                icon: GitBranch,
+              },
+              {
                 id: 'vector-search',
                 label: 'Vector Search (HNSW & IVF)',
                 shortLabel: 'HNSW / IVF',
@@ -432,6 +448,7 @@ export function DatabaseInternalsStudio() {
       </section>
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'db-algorithms-mermaid' && <BoundedDbNamedAlgorithmsMermaidLab />}
       {activeTab === 'vector-search' && <BoundedVectorSimilaritySearchLab />}
       {activeTab === 'locking-sim' && <BoundedOptimisticVsPessimisticLockLab />}
       {activeTab === 'arch-comparison' && <BoundedOltpVsOlapArchitectureLab />}
