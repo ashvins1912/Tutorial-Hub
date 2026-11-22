@@ -28,8 +28,10 @@ import {
 import { withStudioBoundary } from '../hoc';
 import { CopyButton, SegmentedTabBar } from '../ui';
 import { DevOpsInteractiveSimulators } from './DevOpsInteractiveSimulators';
+import { DevOpsVisualPlayground } from './DevOpsVisualPlayground';
 
 type StudioTab =
+  | 'playground'
   | 'simulators'
   | 'sdlc-pipeline'
   | 'rollouts-envs'
@@ -511,7 +513,7 @@ const FivePartSpecPanel: React.FC<{
 /* Main DevOps & Cloud Engineering Studio                                     */
 /* -------------------------------------------------------------------------- */
 const DevOpsCloudStudioInner: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<StudioTab>('simulators');
+  const [activeTab, setActiveTab] = useState<StudioTab>('playground');
   const [selectedSdlcId, setSelectedSdlcId] = useState<string>(SDLC_PIPELINE_MODULES[0].id);
   const [selectedEnvSpecId, setSelectedEnvSpecId] = useState<string>(SECTION2_ENV_FIVE_PART[0].id);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>('canary');
@@ -519,6 +521,18 @@ const DevOpsCloudStudioInner: React.FC = () => {
   const [selectedMasterDfdId, setSelectedMasterDfdId] = useState<string>(MASTER_DEVOPS_DFDS[0].id);
   const [selectedEngineId, setSelectedEngineId] = useState<string>(SECTION6_SIMULATOR_ENGINE_BLUEPRINTS[0].id);
   const [matrixFilter, setMatrixFilter] = useState<string>('');
+
+  const handleNavigateRelated = (
+    tab: 'simulators' | 'sdlc-pipeline' | 'rollouts-envs' | 'cloud-vs-onprem' | 'master-dfds',
+    itemId?: string
+  ) => {
+    if (tab === 'sdlc-pipeline' && itemId) {
+      setSelectedSdlcId(itemId);
+    } else if (tab === 'rollouts-envs' && itemId) {
+      setSelectedStrategyId(itemId);
+    }
+    setActiveTab(tab);
+  };
 
   const activeSdlc = useMemo(
     () => SDLC_PIPELINE_MODULES.find((m) => m.id === selectedSdlcId) ?? SDLC_PIPELINE_MODULES[0],
@@ -595,13 +609,19 @@ const DevOpsCloudStudioInner: React.FC = () => {
         activeTab={activeTab}
         onChange={setActiveTab}
         tabs={[
-          { id: 'simulators', label: 'Live Simulators & CLI Lab (5)' },
+          { id: 'playground', label: 'Virtual Playground' },
+          { id: 'simulators', label: '5 Live Simulators & CLI' },
           { id: 'sdlc-pipeline', label: 'Sec 1: SDLC Pipeline (6)' },
           { id: 'rollouts-envs', label: 'Sec 2-3: Envs & Rollouts' },
           { id: 'cloud-vs-onprem', label: 'Sec 4: Cloud vs In-House' },
-          { id: 'master-dfds', label: 'Sec 5-6: DFDs & Engine Spec' },
+          { id: 'master-dfds', label: 'Sec 5-6: DFDs & Engine' },
         ]}
       />
+
+      {/* TAB 0: Interactive Virtual DevOps Automation & Deployment Playground */}
+      {activeTab === 'playground' && (
+        <DevOpsVisualPlayground onNavigateRelated={handleNavigateRelated} />
+      )}
 
       {/* TAB 1: 5 Interactive Simulators */}
       {activeTab === 'simulators' && <DevOpsInteractiveSimulators />}
