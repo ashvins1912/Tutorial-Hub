@@ -8,9 +8,12 @@ import {
   Database,
   GitBranch,
   Layers,
+  Lock,
   PlayCircle,
+  Scale,
   ShieldAlert,
   Sliders,
+  Target,
   Terminal,
 } from 'lucide-react';
 import {
@@ -33,6 +36,9 @@ import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
 import { DataEngAndAiDatabasesLab } from './DataEngAndAiDatabasesLab';
+import { VectorSimilaritySearchLab } from './VectorSimilaritySearchLab';
+import { OptimisticVsPessimisticLockLab } from './OptimisticVsPessimisticLockLab';
+import { OltpVsOlapArchitectureLab } from './OltpVsOlapArchitectureLab';
 import { DbObjectsAndSchemaAcademy } from './DbObjectsAndSchemaAcademy';
 import { DatabaseVisualAnimator } from './DatabaseVisualAnimator';
 import { DatabaseConceptGuide } from './DatabaseConceptGuide';
@@ -48,6 +54,9 @@ import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
+  | 'vector-search'
+  | 'locking-sim'
+  | 'arch-comparison'
   | 'data-eng-ai-db'
   | 'db-complete-academy'
   | 'sql-basics'
@@ -78,6 +87,15 @@ const DEFAULT_DB_PROGRESS: DatabaseInternalsProgress = {
   completedPracticeIds: [],
 };
 
+const BoundedVectorSimilaritySearchLab = withStudioBoundary(VectorSimilaritySearchLab, {
+  studioName: 'Vector Similarity Search (HNSW & IVF) Lab',
+});
+const BoundedOptimisticVsPessimisticLockLab = withStudioBoundary(OptimisticVsPessimisticLockLab, {
+  studioName: 'Optimistic vs Pessimistic Locking Simulator',
+});
+const BoundedOltpVsOlapArchitectureLab = withStudioBoundary(OltpVsOlapArchitectureLab, {
+  studioName: 'OLTP vs OLAP Architecture Comparison',
+});
 const BoundedDataEngAndAiDatabasesLab = withStudioBoundary(DataEngAndAiDatabasesLab, {
   studioName: 'Data Engineering, Cursors, Chunk Fetch & AI Databases Lab',
 });
@@ -122,7 +140,7 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 });
 
 export function DatabaseInternalsStudio() {
-  const [activeTab, setActiveTab] = useState<DbStudioTab>('data-eng-ai-db');
+  const [activeTab, setActiveTab] = useState<DbStudioTab>('vector-search');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
@@ -304,6 +322,24 @@ export function DatabaseInternalsStudio() {
             wrap
             tabs={[
               {
+                id: 'vector-search',
+                label: 'Vector Search (HNSW & IVF)',
+                shortLabel: 'HNSW / IVF',
+                icon: Target,
+              },
+              {
+                id: 'locking-sim',
+                label: 'Optimistic vs Pessimistic Locks',
+                shortLabel: 'Locking Sim',
+                icon: Lock,
+              },
+              {
+                id: 'arch-comparison',
+                label: 'Architecture Comparison',
+                shortLabel: 'OLTP vs OLAP',
+                icon: Scale,
+              },
+              {
                 id: 'data-eng-ai-db',
                 label: 'Cursors, Data Eng & AI DBs',
                 shortLabel: 'DE & AI DBs',
@@ -396,6 +432,9 @@ export function DatabaseInternalsStudio() {
       </section>
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
+      {activeTab === 'vector-search' && <BoundedVectorSimilaritySearchLab />}
+      {activeTab === 'locking-sim' && <BoundedOptimisticVsPessimisticLockLab />}
+      {activeTab === 'arch-comparison' && <BoundedOltpVsOlapArchitectureLab />}
       {activeTab === 'data-eng-ai-db' && <BoundedDataEngAndAiDatabasesLab />}
       {activeTab === 'db-complete-academy' && <BoundedDbObjectsAndSchemaAcademy />}
       {activeTab === 'sql-basics' && <BoundedSqlBasicsPlayground />}

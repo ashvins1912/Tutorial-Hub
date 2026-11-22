@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { GitBranch, HardDrive, Lock } from 'lucide-react';
+import { GitBranch, HardDrive, Lock, LockOpen } from 'lucide-react';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
+import { OptimisticVsPessimisticLockLab } from './OptimisticVsPessimisticLockLab';
 import { DeadlockWaitForVisualizer } from './DeadlockWaitForVisualizer';
 import { PitrRecoveryPlayground } from './PitrRecoveryPlayground';
 import { RowLevelSecurityVisualizer } from './RowLevelSecurityVisualizer';
 
-type LiveLabTab = 'deadlock' | 'pitr' | 'rls';
+type LiveLabTab = 'locking' | 'deadlock' | 'pitr' | 'rls';
 
+const BoundedOptimisticVsPessimisticLockLab = withStudioBoundary(OptimisticVsPessimisticLockLab, {
+  studioName: 'Optimistic vs Pessimistic Locking Simulator',
+});
 const BoundedDeadlockWaitForVisualizer = withStudioBoundary(DeadlockWaitForVisualizer, {
   studioName: 'Deadlock Wait-For Graph Visualizer',
 });
@@ -19,7 +23,7 @@ const BoundedRowLevelSecurityVisualizer = withStudioBoundary(RowLevelSecurityVis
 });
 
 export function ConcurrencyRecoverySecurityLab() {
-  const [activeSubTab, setActiveSubTab] = useState<LiveLabTab>('deadlock');
+  const [activeSubTab, setActiveSubTab] = useState<LiveLabTab>('locking');
 
   return (
     <div className="space-y-6">
@@ -38,6 +42,12 @@ export function ConcurrencyRecoverySecurityLab() {
           activeTab={activeSubTab}
           onChange={setActiveSubTab}
           tabs={[
+            {
+              id: 'locking',
+              label: 'Optimistic vs Pessimistic Locks',
+              shortLabel: 'Opt vs Pess',
+              icon: LockOpen,
+            },
             {
               id: 'deadlock',
               label: 'Deadlock Wait-For Graph',
@@ -60,6 +70,7 @@ export function ConcurrencyRecoverySecurityLab() {
         />
       </div>
 
+      {activeSubTab === 'locking' && <BoundedOptimisticVsPessimisticLockLab />}
       {activeSubTab === 'deadlock' && <BoundedDeadlockWaitForVisualizer />}
       {activeSubTab === 'pitr' && <BoundedPitrRecoveryPlayground />}
       {activeSubTab === 'rls' && <BoundedRowLevelSecurityVisualizer />}
