@@ -33,6 +33,241 @@ export interface MockInterviewQuestion {
 
 export const SYSTEM_DESIGN_MOCK_INTERVIEWS: MockInterviewQuestion[] = [
   {
+    id: 'mock-zepto-blinkit-instamart',
+    title: 'Design Zepto / Blinkit / Instamart 10-Minute Quick-Commerce Delivery',
+    shortTitle: 'Zepto / Blinkit / Instamart',
+    companyStyle: 'Hyper-Local Quick Commerce · 10-Minute SLA Systems',
+    difficulty: 'Staff / Principal (L6+)',
+    durationMinutes: 45,
+    relatedBlueprintId: 'zepto-blinkit-instamart',
+    openingPrompt:
+      'Design a 10-minute quick-commerce platform like Zepto, Blinkit, or Swiggy Instamart operating 1,000+ hyper-local Dark Stores across major cities, each stocking ~10,000 SKUs. We need live store-specific inventory with zero overselling, <90-second warehouse pick-and-pack, Just-In-Time rider dispatch, and graceful resilience during sudden monsoon rainstorms and IPL match spikes.',
+    whiteboardHints: [
+      'Discovery: H3 Hex Polygon -> Primary Dark Store + Load-Aware Fallback + Dynamic ETA (Pick + Road + Supply).',
+      'Inventory: Sharded strictly by `dark_store_id` (10K SKUs/store) with sorted atomic multi-SKU locks (`available_qty >= req_qty`).',
+      'Fulfillment: Transactional Outbox -> WMS 90s bin-sorted picking -> Just-In-Time rider arrival sync + order clubbing.',
+    ],
+    phases: [
+      {
+        phaseNumber: 1,
+        phaseName: 'Hyper-Local Dark-Store Discovery & Honest ETA',
+        timeBudget: '0–7 min',
+        interviewerQuestion:
+          'When a user opens the app, how do you instantly determine which Dark Store serves them, show accurate in-stock items, and promise an honest "9 mins" ETA instead of lying?',
+        contextClue: 'Think H3 spatial lookup + live operational signals (picker backlog, rider supply, rain), NOT just straight-line distance!',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Map GPS `(lat, lng)` via an in-memory H3 Hex / Geo-Polygon Serviceability Cache to the primary Dark Store + nearby backup store, then compute Dynamic ETA = `predicted_pick_time(active_picker_queue) + handover + OSRM_road_eta + rain_factor`—auto-failing over to the backup store if the primary is overloaded!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Spot on! Quick-commerce serviceability is NEVER static distance alone—factoring real-time picker backlog, rider availability, and rain into dynamic store routing & ETA prevents broken 10-minute promises.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Show one single global catalog across the entire city and figure out which warehouse has the items after the user pays.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Catastrophic in 10-minute delivery! If Store A has milk and Store B 6km away has bread, you cannot deliver in 10 minutes—inventory MUST be scoped to the serving dark store BEFORE browsing!',
+          },
+          {
+            id: 'opt-c',
+            label: 'Run a PostGIS polygon scan against the primary PostgreSQL database on every home-screen scroll.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'H3 Resolution-9 hex -> dark_store_id fits in a few MB of RAM (<1ms lookup)! Never burn primary DB CPU on static polygon checks.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Hardcode a static "10 mins" banner on every user’s app regardless of store load or traffic.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Promising 10 mins during a 35-minute monsoon backlog causes massive cancellations and support tickets. Always compute dynamic honest ETAs.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 2,
+        phaseName: 'Last-Unit Inventory Race & Zero Overselling',
+        timeBudget: '7–16 min',
+        interviewerQuestion:
+          'At 8:00 PM, Store #14 has ONLY 1 carton of milk left. Two neighbors click "Pay" at the exact same millisecond—and a third person added it to their cart 15 minutes ago and walked away. How do you reserve stock cleanly?',
+        contextClue: 'Compare Add-to-Cart lock vs Checkout atomic reservation + sorted multi-SKU locking + TTL release.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Do NOT lock stock on Add-to-Cart (abandoned carts would freeze the store!). Serve fast availability from Redis Hash `store:{id}:qty`, and at Checkout run an atomic All-or-Nothing reservation inside Store #14’s DB shard (`UPDATE dark_store_inventory SET available_qty = available_qty - req WHERE available_qty >= req` sorted by `sku_id`) with a 5-min payment TTL + fencing token!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Textbook quick-commerce concurrency! Skipping Add-to-Cart locks stops cart-hoarding, sorted multi-SKU atomic updates eliminate deadlocks & partial reservations, and a 5-min payment TTL releases abandoned checkouts cleanly.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Lock every item for 60 minutes the second any user taps "Add to Cart".',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Window shoppers and bots will lock out 100% of your milk, eggs, and iPhones without buying anything!',
+          },
+          {
+            id: 'opt-c',
+            label: 'Let both neighbors pay against the stale Redis cache and just cancel one order 4 minutes later.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Late stock-out cancellations destroy customer trust in quick commerce. Authoritative atomic check at checkout prevents double-selling.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Lock the entire `dark_store_inventory` table across all 1,000 stores during every checkout.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Serializing all 1,000 cities/stores behind one global lock collapses throughput instantly! Shard by `dark_store_id` and lock only the specific `(dark_store_id, sku_id)` rows.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 3,
+        phaseName: '90-Second Picker WMS & Just-In-Time (JIT) Rider Dispatch',
+        timeBudget: '16–26 min',
+        interviewerQuestion:
+          'You only have 10 minutes total: ~90 seconds to pick & pack 7 items inside the dark store and ~7 minutes to ride 1.8 km. How do you coordinate Warehouse Picking with Rider Dispatch so neither the rider sits idle nor the ice cream melts?',
+        contextClue: 'Think Transactional Outbox -> Bin-Sorted Batch Picking -> Just-In-Time Dispatch + Multi-Order Clubbing.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Commit payment + enqueue `wms.pick_task.created` via Transactional Outbox -> Picker handheld routes items in S-shape rack/zone order (`Ambient -> Chilled -> Frozen`, barcode-scanned in <90s). Simultaneously, JIT Dispatcher predicts `pack_ready_ts` and assigns a rider whose arrival ETA aligns with handover—clubbing 2 nearby orders along the same road vector to cut delivery cost 35%!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Principal-level operational architecture! Picking Frozen items last prevents melting, barcode scanning keeps physical-vs-digital inventory accurate, and JIT Rider Dispatch + directional clubbing makes 10-minute unit economics profitable!',
+          },
+          {
+            id: 'opt-b',
+            label: 'Wait until the bag is completely packed, sealed, and sitting on the counter for 3 minutes before searching for a rider.',
+            points: 10,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Sequential wait wastes 3–4 precious minutes out of a 10-minute SLA! Overlapping rider approach with the 90-second pick phase (Just-In-Time dispatch) is how Zepto/Blinkit hit 8–9 min deliveries.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Have each delivery rider walk inside the warehouse aisles themselves to hunt for groceries.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Specialized store pickers know exact rack/bin coordinates and pick in 60–90 seconds; letting riders roam aisles creates chaos and triples fulfillment time.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Batch 15 orders onto a single bike so the last customer receives melted ice cream 45 minutes later.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Violates the core 10-minute SLA and cold-chain quality! Clubbing must strictly cap at 2–3 orders with tight detour/ETA constraints.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 4,
+        phaseName: 'Database Sharding & High-Churn Store Inventory Sync',
+        timeBudget: '26–35 min',
+        interviewerQuestion:
+          'With 1,000 dark stores x 10,000 SKUs = 10M inventory rows plus millions of daily orders, picker scans, and inward vendor restocks, how do you shard the database and keep the user-facing search/catalog cache fresh?',
+        contextClue: 'Think co-locating `dark_store_inventory`, `qcom_orders`, and `wms_pick_tasks` on `dark_store_id` + CDC -> Redis/Search.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Shard `dark_store_inventory`, `qcom_orders`, and `wms_pick_tasks` together by `dark_store_id` so every cart checkout + pick-task enqueue stays single-shard ACID! Stream committed inventory deltas via Debezium CDC / Outbox into Redis Hashes (`store:{id}:inv`) and OpenSearch/Typesense for <20ms store-scoped catalog browsing, while rider GPS streams to an in-memory H3 Geo store.',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Superb DB design! Co-locating store inventory, orders, and WMS tasks on `dark_store_id` eliminates distributed 2PC completely, and CDC-driven cache updates keep store search accurate within <500ms.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Shard inventory by `sku_id` so Milk is on Shard 1, Bread is on Shard 2, and Eggs are on Shard 3.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Every 5-item grocery basket turns into a slow 5-shard distributed 2-Phase Commit transaction! Always co-locate all SKUs of a single dark store on the same `dark_store_id` shard.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Run full-table SQL `LIKE` searches across PostgreSQL whenever users type "milk" in the search bar.',
+            points: 2,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Burns OLTP primary CPU; serve fuzzy autocomplete & store-filtered catalog search from Elasticsearch/Typesense + Redis.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Update catalog stock availability only once per night via a 2:00 AM batch cron job.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Fast-moving items sell out within 20 minutes! Real-time event-driven stock sync is mandatory.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 5,
+        phaseName: 'Staff Curveball: Monsoon Surge + Physical Shelf Mismatch Mid-Pick',
+        timeBudget: '35–45 min',
+        interviewerQuestion:
+          'Curveball: A sudden monsoon hits during an IPL final! 1) Store #14’s picker queue spikes to 180 pending orders and riders go offline. 2) Worse: our DB said `available_qty = 1` for Avocado, a user paid, and the picker walks to Bin B4 and finds the last avocado is bruised/missing! Handle BOTH gracefully.',
+        contextClue: 'Think Dynamic Load-Shedding / Store Failover + Physical-Digital Inventory Drift Reconciliation & Instant Substitute/Partial Refund.',
+        options: [
+          {
+            id: 'opt-a',
+            label: '1) Surge Defense: Auto-trigger Dynamic ETA Padding, temporarily shrink delivery radius / shed heavy bulk SKUs, or route new orders to adjacent Dark Store #15 via H3 failover. 2) Physical Shelf Drift: Picker taps "Damaged/Missing" on handheld -> immediately sets DB `available_qty = 0` + triggers cycle-count audit, offers instant 1-tap Substitute or automatic idempotent Partial Refund for Avocado while STILL delivering the rest of the bag on time!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Battle-tested quick-commerce Staff mastery! Closing the physical-to-digital inventory loop the instant a picker flags a missing bin stops the next 5 customers from ordering a ghost item, and partial-refund/substitute saves the order without cancelling the whole basket.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Cancel the entire 10-item grocery order automatically just because 1 avocado was bruised.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Cancelling the whole dinner basket ruins UX and wastes picker work! Partial refund or 1-tap substitution delivers 90% of the basket cleanly.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Have the picker ship the bruised avocado anyway and ignore the inventory discrepancy.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Destroys brand trust and leaves ghost inventory in the DB causing repeated failures.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Keep accepting unlimited 10-minute promises at Store #14 even though the picker queue is 45 minutes deep.',
+            points: 2,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Unbounded queue admission turns a manageable surge into a 90-minute collapse with mass refunds. Dynamic ETA padding + store throttling/failover protects SLA.',
+          },
+        ],
+      },
+    ],
+    modelStaffChecklist: [
+      'H3 Hex Polygon -> Primary/Fallback Dark-Store routing driven by live picker backlog, rider supply & rain-adjusted Dynamic ETA.',
+      'Co-locate `dark_store_inventory`, `qcom_orders`, and `wms_pick_tasks` on `dark_store_id` for single-shard ACID multi-SKU locks (sorted by `sku_id`).',
+      'Skip Add-to-Cart locks; reserve stock atomically at Checkout with short 5-min TTL + fencing token + signed payment webhook.',
+      'Transactional Outbox -> <90s S-shape bin-sorted WMS picking (Frozen last) synchronized with Just-In-Time Rider Dispatch & directional order clubbing.',
+      'Graceful surge shedding (radius shrink/store failover) + real-time physical-digital inventory reconciliation with instant partial refund/substitution.',
+    ],
+  },
+  {
     id: 'mock-irctc-tatkal',
     title: 'Design IRCTC Tatkal & High-Contention Train Booking',
     shortTitle: 'IRCTC Tatkal Booking',

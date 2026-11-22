@@ -42,6 +42,7 @@ import {
   type MockSignalLevel,
 } from '../../data/systemDesignMockInterviewData';
 import { CopyButton, SegmentedTabBar } from '../ui';
+import { QuickCommerceLiveSimulator } from './QuickCommerceLiveSimulator';
 
 type LabTrack = 'blueprints' | 'comm-lab' | 'mock-interview';
 
@@ -820,8 +821,8 @@ export function RealWorldArchitecturesAndInterviewLab() {
             Real-World Systems, Database Design & Staff Interview Simulator
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-            IRCTC, BookMyShow, Flights/GDS, NASDAQ/NSE/BSE, Zerodha, ChatGPT/Gemini, Instagram,
-            WhatsApp, Uber, Teams/Slack, 5G Telecom, Google Search & Internet `www.com` — with DB DDL & live Webhooks/WebSockets/Enqueue labs.
+            Zepto/Blinkit/Instamart, IRCTC, BookMyShow, Flights/GDS, NASDAQ/NSE/BSE, Zerodha,
+            ChatGPT/Gemini, Instagram, WhatsApp, Uber, Teams/Slack, 5G Telecom, Google Search &amp; Internet `www.com` — with DB DDL &amp; live Webhooks/WebSockets/Enqueue labs.
           </p>
         </div>
 
@@ -833,7 +834,7 @@ export function RealWorldArchitecturesAndInterviewLab() {
           tabs={[
             {
               id: 'blueprints',
-              label: '16 Real-World Blueprints + DB',
+              label: `${REAL_WORLD_SYSTEM_BLUEPRINTS.length} Real-World Blueprints + DB`,
               count: REAL_WORLD_SYSTEM_BLUEPRINTS.length,
             },
             {
@@ -983,6 +984,9 @@ export function RealWorldArchitecturesAndInterviewLab() {
 
           {/* Animated 5-Node SVG DFD */}
           <BlueprintAnimatedDfd blueprint={activeBlueprint} />
+
+          {/* Interactive 10-Minute Dark-Store SLA Simulator when Zepto/Blinkit/Instamart is selected */}
+          {activeBlueprint.id === 'zepto-blinkit-instamart' && <QuickCommerceLiveSimulator />}
 
           {/* Core Algorithms + Hardest Bottleneck & Fix */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

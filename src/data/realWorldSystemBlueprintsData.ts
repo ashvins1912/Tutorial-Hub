@@ -223,18 +223,171 @@ COMMIT;
 ];
 
 /* ============================================================================
-   PART 2: 16 REAL-WORLD SYSTEM DESIGN BLUEPRINTS + COMPLETE DB-LEVEL DESIGNS
+   PART 2: 17 REAL-WORLD SYSTEM DESIGN BLUEPRINTS + COMPLETE DB-LEVEL DESIGNS
    ============================================================================ */
 
 export const REAL_WORLD_DOMAIN_META: { id: 'all' | RealWorldDomain; label: string }[] = [
-  { id: 'all', label: 'All 16 Systems' },
-  { id: 'booking-travel', label: 'IRCTC, BookMyShow, Flights & GDS' },
+  { id: 'all', label: 'All 17 Systems' },
+  { id: 'booking-travel', label: 'Zepto/Blinkit, IRCTC, BookMyShow & Flights/GDS' },
   { id: 'fintech-exchanges', label: 'NASDAQ/NSE/BSE, Zerodha & Payments' },
   { id: 'ai-search-web', label: 'ChatGPT/Gemini, Google Search, Internet & Video' },
   { id: 'realtime-social-telecom', label: 'Instagram, WhatsApp, Uber, Teams/Slack & Telecom' },
 ];
 
 export const REAL_WORLD_SYSTEM_BLUEPRINTS: RealWorldSystemBlueprint[] = [
+  {
+    id: 'zepto-blinkit-instamart',
+    shortTitle: 'Zepto / Blinkit / Instamart',
+    title: 'Quick-Commerce 10-Minute Delivery Platform (Zepto, Blinkit & Swiggy Instamart)',
+    domain: 'booking-travel',
+    commPatterns: ['WebSocket', 'Enqueue', 'Webhook'],
+    scaleBadge: '10-Min SLA · 1,000+ Dark Stores · 90s Pick-Pack',
+    simpleEnglish:
+      'Delivering groceries in 10 minutes is NOT a normal e-commerce app with faster bikes — it is a hyper-local micro-warehouse symphony! The instant you open the app, your GPS maps via H3 hexagons to ONE nearby Dark Store (1.5–2.5 km away), showing ONLY that store’s exact live shelf count. On checkout, inventory locks atomically so the last milk carton is never oversold, a handheld scanner routes a picker through aisles in <90 seconds, and a rider is dispatched Just-In-Time to meet the sealed bag at the gate!',
+    architectureSummary:
+      'GPS -> H3 Polygon Serviceability & Dynamic ETA Engine (Picker Queue + Rain + Rider Supply) -> Dark-Store-Sharded Catalog & Redis Inventory Cache -> Atomic Multi-SKU Stock Reservation & Payment Webhook -> Transactional Outbox -> 90s Dark-Store WMS Picker Routing -> Just-In-Time Rider Clubbing & Dispatch -> Live WebSocket Order + Rider GPS Stream.',
+    capacityNumbers: [
+      { metric: 'Doorstep Delivery SLA', value: '8–12 min (p90)' },
+      { metric: 'Dark-Store Pick & Pack', value: '< 90 sec target' },
+      { metric: 'SKUs per Dark Store', value: '8,000–15,000 SKUs' },
+      { metric: 'Inventory Sync Lag', value: '< 500 ms (Zero Oversell)' },
+    ],
+    coreAlgorithms: [
+      'H3 Hexagonal Polygon -> Dark-Store Routing with Dynamic Load Failover: maps user `(lat, lng)` to primary store + fallback neighbor if primary picker queue exceeds 120s.',
+      'Atomic Multi-SKU All-or-Nothing Reservation (`available_qty >= req_qty` sorted by `sku_id`) prevents overselling the last 1 unit of milk/bread during 8 PM dinner rushes without deadlocks.',
+      'Dark-Store WMS S-Shape Aisle Batch Picking: groups 2–3 small orders per picker handheld scanner sorted by physical rack/zone (`Ambient -> Chilled -> Frozen`) to hit <90s pack time.',
+      'Just-In-Time (JIT) Rider Dispatch + Multi-Order Clubbing: predicts exact `pack_ready_ts` and assigns a rider whose arrival ETA matches handover, clubbing 2 nearby drop-offs along the same bearing!',
+    ],
+    bottleneckAndFix:
+      'IPL Match / Monsoon Rain Surge: 20,000 customers in one neighborhood flood a single Dark Store while riders drop offline in rain -> Dynamic ETA Padding + Store Admission Throttling (temporarily hide slow/bulky SKUs or failover to adjacent dark store), short 5-min payment reservation TTLs, and real-time Mid-Pick Item Substitution / Instant Partial Refund if a bin is physically damaged!',
+    dbDesignSummary:
+      'PostgreSQL sharded strictly by `dark_store_id` so every multi-SKU cart reservation, pick task creation, and order state transition runs inside ONE single-shard ACID transaction! Hot catalog reads (`store:{id}:sku_qty`) are served from Redis Hashes updated via CDC/Outbox, while live rider GPS streams into an in-memory H3 geospatial index.',
+    dbTables: [
+      {
+        tableName: 'dark_store_inventory',
+        engine: 'PostgreSQL (Sharded by dark_store_id) + Redis Cache',
+        partitionOrShardKey: 'dark_store_id',
+        columns: [
+          { name: 'dark_store_id', type: 'INT', key: 'SHARD' },
+          { name: 'sku_id', type: 'BIGINT', key: 'PK' },
+          { name: 'available_qty', type: 'INT' },
+          { name: 'reserved_qty', type: 'INT' },
+          { name: 'bin_location', type: 'VARCHAR(16)', key: 'IDX' },
+          { name: 'version', type: 'INT' },
+        ],
+      },
+      {
+        tableName: 'qcom_orders',
+        engine: 'PostgreSQL ACID (Co-located by dark_store_id)',
+        partitionOrShardKey: 'dark_store_id',
+        columns: [
+          { name: 'order_id', type: 'UUID', key: 'PK' },
+          { name: 'dark_store_id', type: 'INT', key: 'SHARD' },
+          { name: 'user_id', type: 'BIGINT', key: 'IDX' },
+          { name: 'state', type: 'VARCHAR(24)', key: 'IDX' },
+          { name: 'promised_eta_sec', type: 'INT' },
+          { name: 'payment_lock_token', type: 'UUID', key: 'UK' },
+        ],
+      },
+      {
+        tableName: 'wms_pick_tasks',
+        engine: 'PostgreSQL ACID + Outbox Queue',
+        partitionOrShardKey: 'dark_store_id',
+        columns: [
+          { name: 'task_id', type: 'UUID', key: 'PK' },
+          { name: 'dark_store_id', type: 'INT', key: 'SHARD' },
+          { name: 'order_id', type: 'UUID', key: 'FK' },
+          { name: 'picker_id', type: 'BIGINT', key: 'IDX' },
+          { name: 'bin_sequence_json', type: 'JSONB' },
+          { name: 'packed_at', type: 'TIMESTAMPTZ' },
+        ],
+      },
+      {
+        tableName: 'rider_dispatch_leases',
+        engine: 'Redis H3 Geo + PostgreSQL Assignment Log',
+        partitionOrShardKey: 'city_id',
+        columns: [
+          { name: 'rider_id', type: 'BIGINT', key: 'PK' },
+          { name: 'city_id', type: 'INT', key: 'SHARD' },
+          { name: 'h3_cell', type: 'BIGINT', key: 'IDX' },
+          { name: 'clubbed_order_ids', type: 'UUID[]' },
+          { name: 'lease_expires_at', type: 'TIMESTAMPTZ' },
+        ],
+      },
+    ],
+    dbDdlSnippet: `-- Atomic Multi-SKU Reservation inside ONE dark_store_id Shard (Zero Oversell, Zero Deadlock!)
+BEGIN;
+-- 1. Lock requested SKUs in ascending sku_id order to prevent circular deadlocks!
+WITH req(sku_id, qty) AS (
+  VALUES (1001, 2), (2045, 1), (3088, 1)
+),
+reserved AS (
+  UPDATE dark_store_inventory inv
+  SET available_qty = inv.available_qty - req.qty,
+      reserved_qty  = inv.reserved_qty + req.qty,
+      version       = inv.version + 1
+  FROM req
+  WHERE inv.dark_store_id = $store_id
+    AND inv.sku_id = req.sku_id
+    AND inv.available_qty >= req.qty
+  RETURNING inv.sku_id, inv.bin_location
+)
+SELECT COUNT(*) AS matched_skus FROM reserved;
+-- App verifies matched_skus == 3 (All-or-Nothing!), else ROLLBACK & show exact OOS SKU!
+
+-- 2. Enqueue WMS 90-second Pick Task atomically via Transactional Outbox!
+INSERT INTO outbox_events (id, aggregate_id, topic, payload)
+VALUES (gen_random_uuid(), $order_id, 'wms.pick_task.created', $bin_route_json);
+COMMIT;`,
+    dfdNodes: [
+      { id: 'geo', label: 'H3 Store Router', sublabel: 'Polygon + ETA', x: 74, y: 112 },
+      { id: 'inv', label: 'Dark-Store Inv', sublabel: 'Redis + Shard DB', x: 212, y: 62 },
+      { id: 'chk', label: 'Atomic Checkout', sublabel: 'Multi-SKU Lock', x: 356, y: 162 },
+      { id: 'wms', label: '90s Picker WMS', sublabel: 'Bin Scan Route', x: 494, y: 62 },
+      { id: 'rdr', label: 'JIT Rider Match', sublabel: 'Club + Live WS', x: 606, y: 146 },
+    ],
+    dfdEdges: [
+      { id: 'e1', from: 'geo', to: 'inv', label: 'Resolve Store' },
+      { id: 'e2', from: 'inv', to: 'chk', label: 'Reserve SKUs' },
+      { id: 'e3', from: 'chk', to: 'wms', label: 'Outbox Pick' },
+      { id: 'e4', from: 'wms', to: 'rdr', label: 'JIT Dispatch' },
+    ],
+    dfdSteps: [
+      {
+        step: 1,
+        title: 'H3 Geo-Resolution Picks Best Dark Store & Live ETA',
+        plainEnglish:
+          'Your GPS coordinates map in <3ms to the nearest serving Dark Store (e.g., Koramangala Store #14), factoring in live picker backlog, rain, and idle riders to display an honest "9 mins" ETA.',
+        technicalDetail:
+          'In-memory H3 Resolution-9 lookup returns primary + fallback dark store IDs; dynamic ETA = `predict_pick(backlog) + handover + OSRM_road_eta(store, user)`.',
+        activeNodeIds: ['geo', 'inv'],
+        activeEdgeIds: ['e1'],
+        packetLabel: 'STORE #14',
+      },
+      {
+        step: 2,
+        title: 'Atomic Multi-SKU Stock Reservation & Payment Capture',
+        plainEnglish:
+          'On checkout, every cart item is locked together inside Store #14’s shard so two neighbors can never both buy the last carton of milk — and a signed UPI/Card webhook confirms payment cleanly.',
+        technicalDetail:
+          'Single-shard ACID `UPDATE ... WHERE available_qty >= req_qty` sorted by `sku_id` + `outbox_events` insert in the same commit.',
+        activeNodeIds: ['inv', 'chk'],
+        activeEdgeIds: ['e2'],
+        packetLabel: 'LOCK SKUs',
+      },
+      {
+        step: 3,
+        title: '90-Second Picker Handheld Routing & Just-In-Time Rider Handover',
+        plainEnglish:
+          'A store picker’s handheld lights up with the shortest bin sequence (`A1 -> B4 -> Fridge C2`). Meanwhile, Dispatch assigns a nearby rider to arrive right as the bag seals, streaming live GPS via WebSocket!',
+        technicalDetail:
+          'Barcode scan verifies physical item; JIT bipartite dispatcher clubs compatible orders going in the same direction to cut cost per delivery 35%.',
+        activeNodeIds: ['chk', 'wms', 'rdr'],
+        activeEdgeIds: ['e3', 'e4'],
+        packetLabel: '9 MIN ETA',
+      },
+    ],
+  },
   {
     id: 'irctc-tatkal',
     shortTitle: 'IRCTC (Tatkal)',
