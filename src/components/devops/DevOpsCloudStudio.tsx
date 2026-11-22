@@ -18,6 +18,13 @@ import {
   type DevOpsDfdGraph,
   type DevOpsDfdNode,
 } from '../../data/devopsCloudCurriculumData';
+import {
+  SECTION2_ENV_FIVE_PART,
+  SECTION3_ROLLOUT_FIVE_PART,
+  SECTION4_CLOUD_VS_INHOUSE_FIVE_PART,
+  SECTION6_SIMULATOR_ENGINE_BLUEPRINTS,
+  type FivePartMasterclassSpec,
+} from '../../data/devopsMasterclassBlueprints';
 import { withStudioBoundary } from '../hoc';
 import { CopyButton, SegmentedTabBar } from '../ui';
 import { DevOpsInteractiveSimulators } from './DevOpsInteractiveSimulators';
@@ -351,13 +358,166 @@ const DevOpsAnimatedDfd: React.FC<{ graph: DevOpsDfdGraph }> = ({ graph }) => {
 };
 
 /* -------------------------------------------------------------------------- */
+/* Reusable 5-Part Masterclass Specification Card (Sections 2, 3 & 4)         */
+/* -------------------------------------------------------------------------- */
+const FivePartSpecPanel: React.FC<{
+  spec: FivePartMasterclassSpec;
+  onLaunchSimulators: () => void;
+}> = ({ spec, onLaunchSimulators }) => (
+  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-5 sm:p-6 space-y-6">
+    <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+      <div className="text-xs font-mono text-sky-700 dark:text-sky-400 font-semibold">
+        Module {spec.code} · Strict 5-Part Masterclass Specification
+      </div>
+      <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-slate-100 mt-1">
+        {spec.title}
+      </h3>
+      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{spec.subtitle}</p>
+    </div>
+
+    {/* Part 1: Plain-English Definition */}
+    <div className="space-y-3">
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        1. Plain-English Definition (Beginner)
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs leading-relaxed">
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-3.5 space-y-1">
+          <div className="font-semibold text-slate-900 dark:text-slate-100">What It Is</div>
+          <p className="text-slate-600 dark:text-slate-400">{spec.plainEnglish.whatItIs}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-3.5 space-y-1">
+          <div className="font-semibold text-slate-900 dark:text-slate-100">Problem Solved</div>
+          <p className="text-slate-600 dark:text-slate-400">{spec.plainEnglish.problemSolved}</p>
+        </div>
+        <div className="rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 p-3.5 space-y-1">
+          <div className="font-semibold text-rose-900 dark:text-rose-300">What Breaks If Skipped</div>
+          <p className="text-slate-700 dark:text-slate-300">{spec.plainEnglish.whatBreaksIfSkipped}</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Part 2: Action Components & Production Config */}
+    <div className="space-y-3 border-t border-slate-200 dark:border-slate-800 pt-5">
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        2. Action Components &amp; Execution Mechanics (Intermediate)
+      </h4>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div className="space-y-1.5">
+          <div className="font-semibold text-slate-800 dark:text-slate-200">Inputs</div>
+          <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+            {spec.actionMechanics.inputs.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="space-y-1.5">
+          <div className="font-semibold text-slate-800 dark:text-slate-200">Automated Triggers</div>
+          <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+            {spec.actionMechanics.automatedTriggers.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="space-y-1.5">
+          <div className="font-semibold text-slate-800 dark:text-slate-200">Verified Outputs</div>
+          <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+            {spec.actionMechanics.outputs.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800">
+          <span className="text-xs font-mono text-slate-300">{spec.actionMechanics.configTitle}</span>
+          <CopyButton text={spec.actionMechanics.configSnippet} label="Copy Config" />
+        </div>
+        <pre className="p-3.5 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed">
+          {spec.actionMechanics.configSnippet}
+        </pre>
+      </div>
+    </div>
+
+    {/* Part 3: Cloud (AWS / GCP / Azure) vs In-House */}
+    <div className="space-y-3 border-t border-slate-200 dark:border-slate-800 pt-5">
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        3. Cloud (AWS / GCP / Azure) vs. In-House Implementation (Advanced)
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 text-xs leading-relaxed">
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 space-y-1">
+          <div className="font-semibold text-amber-700 dark:text-amber-400">AWS</div>
+          <p className="text-slate-600 dark:text-slate-400">{spec.cloudVsInHouse.aws}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 space-y-1">
+          <div className="font-semibold text-sky-700 dark:text-sky-400">GCP</div>
+          <p className="text-slate-600 dark:text-slate-400">{spec.cloudVsInHouse.gcp}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 space-y-1">
+          <div className="font-semibold text-indigo-700 dark:text-indigo-400">Azure</div>
+          <p className="text-slate-600 dark:text-slate-400">{spec.cloudVsInHouse.azure}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3.5 space-y-1">
+          <div className="font-semibold text-emerald-700 dark:text-emerald-400">In-House / On-Premise</div>
+          <p className="text-slate-600 dark:text-slate-400">{spec.cloudVsInHouse.inHouse}</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Part 4: Animated DFD + Mermaid.js */}
+    <div className="space-y-3 border-t border-slate-200 dark:border-slate-800 pt-5">
+      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        4. Data Flow Diagram (Animated SVG + Mermaid.js)
+      </h4>
+      <DevOpsAnimatedDfd graph={spec.dfd} />
+    </div>
+
+    {/* Part 5: Interactive Simulator Storyboard */}
+    <div className="space-y-2.5 border-t border-slate-200 dark:border-slate-800 pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          5. Interactive Simulator &amp; Animation Storyboard
+        </h4>
+        <button
+          type="button"
+          onClick={onLaunchSimulators}
+          className="text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline"
+        >
+          Open Live Sandbox -&gt;
+        </button>
+      </div>
+      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-3.5 text-xs space-y-1.5 text-slate-600 dark:text-slate-400">
+        <p>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">UI Controls:</span>{' '}
+          {spec.simulatorStoryboard.controls.join(' · ')}
+        </p>
+        <p>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">State Transitions:</span>{' '}
+          <span className="font-mono">{spec.simulatorStoryboard.stateTransitions.join(' · ')}</span>
+        </p>
+        <p>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">Failure Injections:</span>{' '}
+          {spec.simulatorStoryboard.failureInjections.join(' · ')}
+        </p>
+        <p>
+          <span className="font-semibold text-slate-900 dark:text-slate-200">Visual Animation:</span>{' '}
+          {spec.simulatorStoryboard.visualAnimations}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
 /* Main DevOps & Cloud Engineering Studio                                     */
 /* -------------------------------------------------------------------------- */
 const DevOpsCloudStudioInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<StudioTab>('simulators');
   const [selectedSdlcId, setSelectedSdlcId] = useState<string>(SDLC_PIPELINE_MODULES[0].id);
+  const [selectedEnvSpecId, setSelectedEnvSpecId] = useState<string>(SECTION2_ENV_FIVE_PART[0].id);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>('canary');
+  const [selectedArchSpecId, setSelectedArchSpecId] = useState<string>(SECTION4_CLOUD_VS_INHOUSE_FIVE_PART[0].id);
   const [selectedMasterDfdId, setSelectedMasterDfdId] = useState<string>(MASTER_DEVOPS_DFDS[0].id);
+  const [selectedEngineId, setSelectedEngineId] = useState<string>(SECTION6_SIMULATOR_ENGINE_BLUEPRINTS[0].id);
   const [matrixFilter, setMatrixFilter] = useState<string>('');
 
   const activeSdlc = useMemo(
@@ -365,14 +525,34 @@ const DevOpsCloudStudioInner: React.FC = () => {
     [selectedSdlcId]
   );
 
+  const activeEnvSpec = useMemo(
+    () => SECTION2_ENV_FIVE_PART.find((e) => e.id === selectedEnvSpecId) ?? SECTION2_ENV_FIVE_PART[0],
+    [selectedEnvSpecId]
+  );
+
   const activeStrategy = useMemo(
     () => DEPLOYMENT_STRATEGIES.find((s) => s.id === selectedStrategyId) ?? DEPLOYMENT_STRATEGIES[0],
     [selectedStrategyId]
   );
 
+  const activeRolloutSpec = useMemo(
+    () => SECTION3_ROLLOUT_FIVE_PART.find((r) => r.id === selectedStrategyId) ?? SECTION3_ROLLOUT_FIVE_PART[0],
+    [selectedStrategyId]
+  );
+
+  const activeArchSpec = useMemo(
+    () => SECTION4_CLOUD_VS_INHOUSE_FIVE_PART.find((a) => a.id === selectedArchSpecId) ?? SECTION4_CLOUD_VS_INHOUSE_FIVE_PART[0],
+    [selectedArchSpecId]
+  );
+
   const activeMasterDfd = useMemo(
     () => MASTER_DEVOPS_DFDS.find((d) => d.id === selectedMasterDfdId) ?? MASTER_DEVOPS_DFDS[0],
     [selectedMasterDfdId]
+  );
+
+  const activeEngineSpec = useMemo(
+    () => SECTION6_SIMULATOR_ENGINE_BLUEPRINTS.find((e) => e.id === selectedEngineId) ?? SECTION6_SIMULATOR_ENGINE_BLUEPRINTS[0],
+    [selectedEngineId]
   );
 
   const filteredMatrix = useMemo(() => {
@@ -416,10 +596,10 @@ const DevOpsCloudStudioInner: React.FC = () => {
         onChange={setActiveTab}
         tabs={[
           { id: 'simulators', label: 'Live Simulators & CLI Lab (5)' },
-          { id: 'sdlc-pipeline', label: 'SDLC Pipeline & DevSecOps (6)' },
-          { id: 'rollouts-envs', label: 'Rollout Strategies & Envs' },
-          { id: 'cloud-vs-onprem', label: 'AWS vs GCP vs In-House' },
-          { id: 'master-dfds', label: 'Master Animated DFDs (4)' },
+          { id: 'sdlc-pipeline', label: 'Sec 1: SDLC Pipeline (6)' },
+          { id: 'rollouts-envs', label: 'Sec 2-3: Envs & Rollouts' },
+          { id: 'cloud-vs-onprem', label: 'Sec 4: Cloud vs In-House' },
+          { id: 'master-dfds', label: 'Sec 5-6: DFDs & Engine Spec' },
         ]}
       />
 
@@ -641,6 +821,30 @@ const DevOpsCloudStudioInner: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Section 2: 5-Part Masterclass Deep Dive */}
+            <div className="space-y-3 pt-2">
+              <div className="flex flex-wrap gap-2">
+                {SECTION2_ENV_FIVE_PART.map((spec) => {
+                  const active = spec.id === activeEnvSpec.id;
+                  return (
+                    <button
+                      key={spec.id}
+                      type="button"
+                      onClick={() => setSelectedEnvSpecId(spec.id)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                        active
+                          ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 font-semibold'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {spec.code} · {spec.title}
+                    </button>
+                  );
+                })}
+              </div>
+              <FivePartSpecPanel spec={activeEnvSpec} onLaunchSimulators={() => setActiveTab('simulators')} />
+            </div>
           </div>
 
           {/* Section 3: 6 Deployment & Rollout Strategies Matrix + Config Inspector */}
@@ -733,6 +937,9 @@ const DevOpsCloudStudioInner: React.FC = () => {
                 </pre>
               </div>
             </div>
+
+            {/* Full 5-Part Masterclass Spec for Selected Rollout Strategy */}
+            <FivePartSpecPanel spec={activeRolloutSpec} onLaunchSimulators={() => setActiveTab('simulators')} />
           </div>
         </div>
       )}
@@ -836,41 +1043,183 @@ const DevOpsCloudStudioInner: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Section 4: 5-Part Masterclass Architecture Deep-Dive */}
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <h2 className="text-lg font-display font-bold text-slate-900 dark:text-slate-100">
+                Section 4: Cloud vs. In-House 5-Part Architectural Specifications
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Select an infrastructure track below to inspect its complete 5-part blueprint, Terraform/MetalLB/Skopeo manifests, animated DFD, and Mermaid.js code.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SECTION4_CLOUD_VS_INHOUSE_FIVE_PART.map((spec) => {
+                const active = spec.id === activeArchSpec.id;
+                return (
+                  <button
+                    key={spec.id}
+                    type="button"
+                    onClick={() => setSelectedArchSpecId(spec.id)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                      active
+                        ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 font-semibold'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                    }`}
+                  >
+                    {spec.code} · {spec.title}
+                  </button>
+                );
+              })}
+            </div>
+            <FivePartSpecPanel spec={activeArchSpec} onLaunchSimulators={() => setActiveTab('simulators')} />
+          </div>
         </div>
       )}
 
-      {/* TAB 5: 4 Master Animated DFDs + Mermaid Source */}
+      {/* TAB 5: Section 5 (Master DFDs + Mermaid.js) & Section 6 (Simulator Engine Design & FSM Pseudocode) */}
       {activeTab === 'master-dfds' && (
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {MASTER_DEVOPS_DFDS.map((dfd) => {
-              const active = dfd.id === activeMasterDfd.id;
-              return (
-                <button
-                  key={dfd.id}
-                  type="button"
-                  onClick={() => setSelectedMasterDfdId(dfd.id)}
-                  className={`text-left rounded-lg border p-3.5 transition-colors ${
-                    active
-                      ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/35'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
-                  }`}
-                >
-                  <div className="text-[11px] font-mono text-sky-700 dark:text-sky-400 font-semibold">
-                    {dfd.level}
-                  </div>
-                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">
-                    {dfd.title}
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                    {dfd.subtitle}
-                  </p>
-                </button>
-              );
-            })}
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-lg font-display font-bold text-slate-900 dark:text-slate-100">
+                Section 5: Master Data Flow Diagrams (Animated SVG + Mermaid.js)
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Inspect all 4 core system architecture diagrams interactively or toggle Mermaid DFD inside the viewer to copy syntax-checked Mermaid.js code.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {MASTER_DEVOPS_DFDS.map((dfd) => {
+                const active = dfd.id === activeMasterDfd.id;
+                return (
+                  <button
+                    key={dfd.id}
+                    type="button"
+                    onClick={() => setSelectedMasterDfdId(dfd.id)}
+                    className={`text-left rounded-lg border p-3.5 transition-colors ${
+                      active
+                        ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/35'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="text-[11px] font-mono text-sky-700 dark:text-sky-400 font-semibold">
+                      {dfd.level}
+                    </div>
+                    <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">
+                      {dfd.title}
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                      {dfd.subtitle}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <DevOpsAnimatedDfd graph={activeMasterDfd} />
           </div>
 
-          <DevOpsAnimatedDfd graph={activeMasterDfd} />
+          {/* Section 6: Interactive Simulator Engine Design & State Machine Pseudocode */}
+          <div className="space-y-4 border-t border-slate-200 dark:border-slate-800 pt-6">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-lg font-display font-bold text-slate-900 dark:text-slate-100">
+                  Section 6: Interactive Simulator Engine Design &amp; State Machine Pseudocode
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Frontend engineering blueprint detailing UI controls, finite states, chaos fault injections, and reducer pseudocode powering each sandbox simulator.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('simulators')}
+                className="text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline whitespace-nowrap"
+              >
+                Test Live Simulators -&gt;
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {SECTION6_SIMULATOR_ENGINE_BLUEPRINTS.map((eng) => {
+                const active = eng.id === activeEngineSpec.id;
+                return (
+                  <button
+                    key={eng.id}
+                    type="button"
+                    onClick={() => setSelectedEngineId(eng.id)}
+                    className={`text-left rounded-lg border p-3.5 transition-colors ${
+                      active
+                        ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/35'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="text-[11px] font-mono text-sky-700 dark:text-sky-400 font-semibold">
+                      Engine {eng.code}
+                    </div>
+                    <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">
+                      {eng.title}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-5">
+              <div className="lg:col-span-5 space-y-4 text-xs leading-relaxed">
+                <div>
+                  <span className="font-mono text-sky-700 dark:text-sky-400 font-semibold">
+                    Blueprint {activeEngineSpec.code}
+                  </span>
+                  <h3 className="text-base font-display font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                    {activeEngineSpec.title}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 mt-1">{activeEngineSpec.purpose}</p>
+                </div>
+
+                <div className="space-y-1.5 border-t border-slate-200 dark:border-slate-800 pt-3">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">UI Controls</div>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-600 dark:text-slate-400">
+                    {activeEngineSpec.uiControls.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="space-y-1.5 border-t border-slate-200 dark:border-slate-800 pt-3">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">FSM States &amp; Events</div>
+                  <p className="font-mono text-[11px] text-sky-800 dark:text-sky-300">
+                    States: {activeEngineSpec.states.join(' -> ')}
+                  </p>
+                  <p className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                    Events: {activeEngineSpec.events.join(' · ')}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 border-t border-slate-200 dark:border-slate-800 pt-3">
+                  <div className="font-semibold text-rose-800 dark:text-rose-300">Chaos / Failure Injections</div>
+                  <ul className="list-disc pl-4 space-y-1 text-slate-600 dark:text-slate-400">
+                    {activeEngineSpec.failureInjections.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="lg:col-span-7 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800">
+                  <span className="text-xs font-mono text-slate-300">
+                    {activeEngineSpec.id}-fsm.ts (State Machine Pseudocode)
+                  </span>
+                  <CopyButton text={activeEngineSpec.stateMachinePseudocode} label="Copy Pseudocode" />
+                </div>
+                <pre className="p-4 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed flex-1">
+                  {activeEngineSpec.stateMachinePseudocode}
+                </pre>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </section>
