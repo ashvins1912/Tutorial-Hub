@@ -469,7 +469,13 @@ function BlueprintAnimatedDfd({ blueprint }: { blueprint: RealWorldSystemBluepri
    MAIN COMPONENT: REAL-WORLD ARCHITECTURES, COMM PRIMITIVES & MOCK INTERVIEW
    ============================================================================ */
 
-export function RealWorldArchitecturesAndInterviewLab() {
+interface RealWorldArchitecturesAndInterviewLabProps {
+  onActiveBlueprintChange?: (blueprintId: string) => void;
+}
+
+export function RealWorldArchitecturesAndInterviewLab(
+  props: RealWorldArchitecturesAndInterviewLabProps
+) {
   const [track, setTrack] = useState<LabTrack>('blueprints');
 
   // Track 1: Real-World Blueprints state
@@ -477,6 +483,10 @@ export function RealWorldArchitecturesAndInterviewLab() {
   const [selectedBlueprintId, setSelectedBlueprintId] = useState<string>(
     REAL_WORLD_SYSTEM_BLUEPRINTS[0].id
   );
+
+  useEffect(() => {
+    props.onActiveBlueprintChange?.(selectedBlueprintId);
+  }, [selectedBlueprintId, props]);
 
   // Track 2: Comm Primitives (Webhook / WebSocket / Enqueue) state
   const [selectedCommId, setSelectedCommId] = useState<CommPrimitiveId>('webhook');

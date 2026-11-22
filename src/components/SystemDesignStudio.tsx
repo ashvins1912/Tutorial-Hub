@@ -1,14 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SystemDesignLearningAcademy as SystemDesignLearningAcademyBase } from './SystemDesignLearningAcademy';
 import { SystemDesignMasterRoadmap as SystemDesignMasterRoadmapBase } from './SystemDesignMasterRoadmap';
 import { SystemPlayground as SystemPlaygroundBase } from './system-playground/SystemPlayground';
 import { DatabaseVisualAnimator as DatabaseVisualAnimatorBase } from './database/DatabaseVisualAnimator';
 import { SystemDfdSimulator as SystemDfdSimulatorBase } from './system-design/SystemDfdSimulator';
 import { RealWorldArchitecturesAndInterviewLab as RealWorldArchitecturesAndInterviewLabBase } from './system-design/RealWorldArchitecturesAndInterviewLab';
+import { InteractiveSystemMermaidFlows as InteractiveSystemMermaidFlowsBase } from './system-design/InteractiveSystemMermaidFlows';
+import {
+  ArchitectureExplainerSidebar,
+  type ActiveArchitecturePayload,
+} from './system-design/ArchitectureExplainerSidebar';
 import { VISUAL_FLOW_SCENARIOS } from '../data/databaseVisualData';
 import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
 import { REAL_WORLD_SYSTEM_BLUEPRINTS } from '../data/realWorldSystemBlueprintsData';
+import { SYSTEM_DESIGN_MERMAID_BLUEPRINTS } from '../data/systemDesignMermaidFlowsData';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
+import { useSystemStore } from '../store/useSystemStore';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
 import { TopicBridgeBar } from './shared/TopicBridgeBar';
@@ -34,6 +41,9 @@ const RealWorldArchitecturesAndInterviewLab = withStudioBoundary(
     studioName: 'Real-World Blueprints, Protocols & Mock Interview Lab',
   }
 );
+const InteractiveSystemMermaidFlows = withStudioBoundary(InteractiveSystemMermaidFlowsBase, {
+  studioName: 'Interactive System Design Mermaid Flows',
+});
 import {
   DndContext,
   DragEndEvent,
@@ -586,6 +596,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     },
   } = useAsyncCatalog('system-design-scenarios');
   const [subTab, setSubTab] = useState<
+    | 'mermaid-flows'
     | 'real-world-interview'
     | 'playground'
     | 'dfd-simulator'
@@ -595,9 +606,22 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     | 'animations'
     | 'probabilistic'
     | 'academy'
-  >('real-world-interview');
+  >('mermaid-flows');
   const [selectedDfdPatternId, setSelectedDfdPatternId] = useState<string>(SYSTEM_DFD_PATTERNS[0].id);
   const [selectedDbFlowId, setSelectedDbFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
+  const [selectedMermaidArchId, setSelectedMermaidArchId] = useState<string>(
+    SYSTEM_DESIGN_MERMAID_BLUEPRINTS[0].id
+  );
+  const [selectedRealWorldId, setSelectedRealWorldId] = useState<string>(
+    REAL_WORLD_SYSTEM_BLUEPRINTS[0].id
+  );
+  const [explainerOpen, setExplainerOpen] = useState<boolean>(false);
+  const [explainTriggerCount, setExplainTriggerCount] = useState<number>(0);
+
+  const playgroundNodes = useSystemStore((s) => s.nodes);
+  const playgroundEdges = useSystemStore((s) => s.edges);
+  const playgroundBlueprintId = useSystemStore((s) => s.activeBlueprintId);
+
   const [roadmapExternalModuleId, setRoadmapExternalModuleId] = useState<string | null>(null);
   const [academyExternalTarget, setAcademyExternalTarget] = useState<{
     categoryId: string;
@@ -710,17 +734,174 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
 
   const currentAnimFrame = scenario.animationSteps[animStep] ?? scenario.animationSteps[0];
 
+  const activeArchitecture = useMemo<ActiveArchitecturePayload>(() => {
+    if (subTab === 'mermaid-flows') {
+      const arch =
+        SYSTEM_DESIGN_MERMAID_BLUEPRINTS.find((b) => b.id === selectedMermaidArchId) ??
+        SYSTEM_DESIGN_MERMAID_BLUEPRINTS[0];
+      return {
+        id: `mermaid:${arch.id}`,
+        architectureTitle: arch.name,
+        sourceWorkspace: 'Interactive Mermaid Flows',
+        domain: arch.domain,
+        scaleContext: arch.scaleTarget,
+        summary: arch.summary,
+        components: arch.nodes.map(
+          (n) => `${n.label} [${n.layer}] (${n.tech}) — ${n.role} (Algorithms: ${n.keyAlgorithms.join(', ')})`
+        ),
+        connections: arch.nodes.flatMap((n) =>
+          n.connections.map((c) => `${n.label} (${c.direction} -> ${c.peer}, ${c.protocol}): ${c.detail}`)
+        ),
+        mermaidDiagram: arch.expandedFullMermaid,
+      };
+    }
+
+    if (subTab === 'real-world-interview') {
+      const bp =
+        REAL_WORLD_SYSTEM_BLUEPRINTS.find((b) => b.id === selectedRealWorldId) ??
+        REAL_WORLD_SYSTEM_BLUEPRINTS[0];
+      return {
+        id: `realworld:${bp.id}`,
+        architectureTitle: bp.title,
+        sourceWorkspace: 'Real-World Blueprints & Mock Interview',
+        domain: bp.domain,
+        scaleContext: bp.scaleBadge,
+        summary: `${bp.simpleEnglish} ${bp.architectureSummary}`,
+        components: [
+          ...bp.dfdNodes.map((n) => `${n.label}: ${n.sublabel}`),
+          ...bp.dbTables.map((t) => `DB Table ${t.tableName} (${t.engine}, shard/partition: ${t.partitionOrShardKey})`),
+        ],
+        connections: bp.dfdSteps.map(
+          (st) => `Step ${st.step} [${st.packetLabel}] — ${st.title}: ${st.technicalDetail}`
+        ),
+      };
+    }
+
+    if (subTab === 'dfd-simulator') {
+      const pat =
+        SYSTEM_DFD_PATTERNS.find((p) => p.id === selectedDfdPatternId) ?? SYSTEM_DFD_PATTERNS[0];
+      return {
+        id: `dfd:${pat.id}`,
+        architectureTitle: pat.title,
+        sourceWorkspace: 'System DFD Simulator',
+        domain: pat.category,
+        scaleContext: `${pat.difficulty} · ${pat.fastPathLabel} vs. ${pat.deepPathLabel}`,
+        summary: `${pat.plainEnglishSummary} ${pat.standardDefinition}`,
+        components: pat.nodes.map((n) => `${n.label} [${n.tier}]: ${n.sublabel}`),
+        connections: [...pat.fastPathSteps, ...pat.deepPathSteps].map(
+          (st) => `Step ${st.step} [${st.packetLabel}] ${st.title}: ${st.plainEnglish}`
+        ),
+      };
+    }
+
+    if (subTab === 'playground') {
+      const nodeLabelById = new Map(
+        playgroundNodes.map((n) => [n.id, `${n.data.label} (${n.data.componentType})`])
+      );
+      return {
+        id: `playground:${playgroundBlueprintId ?? 'custom'}:${playgroundNodes.length}:${playgroundEdges.length}`,
+        architectureTitle: playgroundBlueprintId
+          ? `Live Playground — ${playgroundBlueprintId.replace(/-/g, ' ')}`
+          : 'Live Traffic Playground Custom Topology',
+        sourceWorkspace: 'Live Traffic Playground',
+        scaleContext: `${playgroundNodes.length} nodes · ${playgroundEdges.length} edges`,
+        summary:
+          'Interactive user-wired distributed system topology running live traffic and bottleneck simulation.',
+        components: playgroundNodes.map(
+          (n) => `${n.data.label} (${n.data.componentType}, ${n.data.replicas} replicas)`
+        ),
+        connections: playgroundEdges.map((e) => {
+          const src = nodeLabelById.get(e.source) ?? e.source;
+          const dst = nodeLabelById.get(e.target) ?? e.target;
+          return `${src} -> ${dst}`;
+        }),
+      };
+    }
+
+    if (subTab === 'db-dfd') {
+      const dbFlow =
+        VISUAL_FLOW_SCENARIOS.find((f) => f.id === selectedDbFlowId) ?? VISUAL_FLOW_SCENARIOS[0];
+      return {
+        id: `db-dfd:${dbFlow.id}`,
+        architectureTitle: dbFlow.title,
+        sourceWorkspace: 'DB DFD & Animations',
+        domain: dbFlow.category,
+        scaleContext: `${dbFlow.algorithmName} (${dbFlow.complexity})`,
+        summary: `${dbFlow.simpleSummary} ${dbFlow.standardDefinition}`,
+        components: dbFlow.nodes.map((n) => `${n.label} [${n.kind}]: ${n.sublabel}`),
+        connections: dbFlow.steps.map(
+          (st) => `Step ${st.stepNumber} [${st.metricTag}] ${st.title}: ${st.algorithmDetail}`
+        ),
+      };
+    }
+
+    const placedBlocks = placedIds
+      .map((id) => SYSTEM_COMPONENTS.find((c) => c.id === id))
+      .filter((c): c is SystemComponentBlock => Boolean(c));
+
+    return {
+      id: `scenario:${scenario.id}:${placedIds.join(',')}`,
+      architectureTitle: scenario.title,
+      sourceWorkspace:
+        subTab === 'animations'
+          ? 'System Animations'
+          : subTab === 'builder'
+            ? 'Tier Estimator & Builder'
+            : 'System Design Studio',
+      domain: scenario.companyFrequency,
+      scaleContext: `${dauMillions}M DAU · ${readWriteRatio}:1 R/W · ${latencyBudgetMs}ms SLA (${consistencyMode})`,
+      summary: scenario.summary,
+      components: placedBlocks.map((b) => `${b.name} [${b.layer}]: ${b.role}`),
+      connections: scenario.animationSteps.map(
+        (st) => `Step ${st.step} (${st.latencyMs}ms) ${st.title} [${st.activeNodes.join(' -> ')}]: ${st.packetNote}`
+      ),
+    };
+  }, [
+    subTab,
+    selectedMermaidArchId,
+    selectedRealWorldId,
+    selectedDfdPatternId,
+    selectedDbFlowId,
+    playgroundNodes,
+    playgroundEdges,
+    playgroundBlueprintId,
+    scenario,
+    placedIds,
+    SYSTEM_COMPONENTS,
+    dauMillions,
+    readWriteRatio,
+    latencyBudgetMs,
+    consistencyMode,
+  ]);
+
+  const handleOpenExplainArchitecture = () => {
+    setExplainerOpen(true);
+    setExplainTriggerCount((prev) => prev + 1);
+  };
+
   return (
     <div className="space-y-6">
       {/* Studio Mode Switcher */}
-      <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <p className="text-xs font-mono text-sky-600 dark:text-sky-400">
-            SYSTEM DESIGN & PROBABILISTIC STRUCTURES LAB
-          </p>
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
-            Build, Stress-Test & Animate Production Architectures
-          </h2>
+      <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <p className="text-xs font-mono text-sky-600 dark:text-sky-400">
+              SYSTEM DESIGN &amp; PROBABILISTIC STRUCTURES LAB
+            </p>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+              Build, Stress-Test &amp; Animate Production Architectures
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenExplainArchitecture}
+            aria-expanded={explainerOpen}
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 transition-colors shrink-0 self-start"
+          >
+            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+            Explain Architecture
+          </button>
         </div>
 
         <SegmentedTabBar
@@ -729,6 +910,11 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
           onChange={setSubTab}
           wrap
           tabs={[
+            {
+              id: 'mermaid-flows',
+              label: 'Interactive Mermaid Flows',
+              count: SYSTEM_DESIGN_MERMAID_BLUEPRINTS.length,
+            },
             {
               id: 'real-world-interview',
               label: 'Real-World Blueprints & Mock Interview',
@@ -746,8 +932,15 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
         />
       </div>
 
+      {/* Mode 00A: Interactive Expandable & Clickable Mermaid.js Architecture Flows */}
+      {subTab === 'mermaid-flows' && (
+        <InteractiveSystemMermaidFlows onActiveBlueprintChange={setSelectedMermaidArchId} />
+      )}
+
       {/* Mode 00: 16 Real-World Production Blueprints (DB Design + Animated DFD), Webhooks/WebSockets/Enqueue Lab & 45-Min Mock Interview */}
-      {subTab === 'real-world-interview' && <RealWorldArchitecturesAndInterviewLab />}
+      {subTab === 'real-world-interview' && (
+        <RealWorldArchitecturesAndInterviewLab onActiveBlueprintChange={setSelectedRealWorldId} />
+      )}
 
       {/* Mode 0A: Interactive System Design DFD Simulator with SVG Animation Engine & Bidirectional Links */}
       {subTab === 'dfd-simulator' && (
@@ -772,7 +965,8 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
         />
       )}
 
-      {subTab !== 'real-world-interview' &&
+      {subTab !== 'mermaid-flows' &&
+        subTab !== 'real-world-interview' &&
         subTab !== 'dfd-simulator' &&
         subTab !== 'playground' &&
         subTab !== 'db-dfd' &&
@@ -1504,6 +1698,13 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
       )}
 
       <TopicBridgeBar studioId="system-design" />
+
+      <ArchitectureExplainerSidebar
+        isOpen={explainerOpen}
+        onClose={() => setExplainerOpen(false)}
+        architecture={activeArchitecture}
+        requestTriggerCount={explainTriggerCount}
+      />
     </div>
   );
 }

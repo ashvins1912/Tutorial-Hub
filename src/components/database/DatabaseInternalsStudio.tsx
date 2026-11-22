@@ -53,6 +53,7 @@ import { ChaosDrillAndQuizLab } from './ChaosDrillAndQuizLab';
 import { ConcurrencyRecoverySecurityLab } from './ConcurrencyRecoverySecurityLab';
 import { SqlBasicsPlayground } from './SqlBasicsPlayground';
 import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
+import { DbQueryDataFlowOverlay } from './DbQueryDataFlowOverlay';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
@@ -151,6 +152,7 @@ const BoundedChaosDrillAndQuizLab = withStudioBoundary(ChaosDrillAndQuizLab, {
 export function DatabaseInternalsStudio() {
   const [activeTab, setActiveTab] = useState<DbStudioTab>('db-algorithms-mermaid');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
+  const [dataFlowOverlayOpen, setDataFlowOverlayOpen] = useState<boolean>(false);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
     'db-internals-progress',
@@ -292,6 +294,19 @@ export function DatabaseInternalsStudio() {
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-6">
               Learn database internals visually through animated Data Flow Diagrams, plain-English explanations paired with standard technical definitions and exact algorithms, live hands-on SQL practice labs, and SEV-1 outage simulations.
             </p>
+            <div className="pt-2 flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDataFlowOverlayOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 transition-colors"
+              >
+                <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
+                Open Data Flow Overlay (Mermaid)
+              </button>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Trace live SQL, NoSQL, Vector &amp; WAL queries across every architectural layer
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2.5 shrink-0 min-w-[260px]">
@@ -496,6 +511,11 @@ export function DatabaseInternalsStudio() {
       )}
 
       <TopicBridgeBar studioId="db-internals" />
+
+      <DbQueryDataFlowOverlay
+        isOpen={dataFlowOverlayOpen}
+        onClose={() => setDataFlowOverlayOpen(false)}
+      />
     </div>
   );
 }

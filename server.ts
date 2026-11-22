@@ -25,6 +25,7 @@ import { AIAcademyRateLimit } from './server/models/AIAcademyRateLimit';
 import codeExecutionRoutes from './server/routes/codeExecutionRoutes';
 import contentBootstrapRoutes from './server/routes/contentBootstrapRoutes';
 import universalSolverRoutes from './server/routes/universalSolverRoutes';
+import systemDesignAiRoutes from './server/routes/systemDesignAiRoutes';
 import { seedPlatformContentOnStartup } from './server/db/seedPlatformContent';
 import { attachPairWebSocketServer } from './server/ws/pairRoomServer';
 
@@ -70,6 +71,9 @@ async function startServer() {
 
   // Universal Problem Solver URL Fetcher (LeetCode & GFG) + Optional AI Logic Coach
   app.use('/api/solver', universalSolverRoutes);
+
+  // System Design Studio — Server-Side Gemini Architecture Walkthrough SSE API
+  app.use('/api/system-design', systemDesignAiRoutes);
 
   // 14-Day Company-Specific Sprint Generator & War-Room API
   app.use('/api/sprints', sprintRoutes);
