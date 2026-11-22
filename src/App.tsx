@@ -144,6 +144,10 @@ const DevOpsCloudStudio = withLazyStudio(
   () => import('./components/devops/DevOpsCloudStudio').then((m) => ({ default: m.DevOpsCloudStudio })),
   { studioName: 'DevOps & Cloud Engineering Studio' }
 );
+const FlightSimulatorStudio = withLazyStudio(
+  () => import('./components/flight/FlightSimulatorStudio').then((m) => ({ default: m.FlightSimulatorStudio })),
+  { studioName: 'SDLC & System Architecture Flight Simulator' }
+);
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -408,6 +412,7 @@ export default function App() {
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'db-internals', label: 'DB Internals', isActive: activeView === 'db-internals' },
     { id: 'devops-cloud', label: 'DevOps & Cloud', isActive: activeView === 'devops-cloud' },
+    { id: 'flight-simulator', label: 'Flight Sim', isActive: activeView === 'flight-simulator' },
     { id: 'languages', label: 'Languages', isActive: activeView === 'languages' },
     { id: 'full-stack', label: 'Full-Stack Lab', isActive: activeView === 'full-stack' },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
@@ -731,6 +736,8 @@ export default function App() {
           {activeView === 'db-internals' && <DatabaseInternalsStudio />}
 
           {activeView === 'devops-cloud' && <DevOpsCloudStudio />}
+
+          {activeView === 'flight-simulator' && <FlightSimulatorStudio />}
 
           {activeView === 'languages' && <LanguagesTutorialStudio />}
 

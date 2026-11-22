@@ -23,6 +23,7 @@ export type TopView =
   | 'system-design'
   | 'db-internals'
   | 'devops-cloud'
+  | 'flight-simulator'
   | 'languages'
   | 'full-stack'
   | 'ood'
