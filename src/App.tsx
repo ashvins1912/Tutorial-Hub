@@ -140,6 +140,10 @@ const FullStackSystemsStudio = withLazyStudio(
   () => import('./components/fullstack/FullStackSystemsStudio').then((m) => ({ default: m.FullStackSystemsStudio })),
   { studioName: 'Full-Stack Systems & AI Architecture Lab' }
 );
+const DevOpsCloudStudio = withLazyStudio(
+  () => import('./components/devops/DevOpsCloudStudio').then((m) => ({ default: m.DevOpsCloudStudio })),
+  { studioName: 'DevOps & Cloud Engineering Studio' }
+);
 
 type HubSubTab = 'notes' | 'system-design' | 'skill-tree' | 'schemas';
 
@@ -403,6 +407,7 @@ export default function App() {
     { id: 'ai-engineering', label: 'AI Engineer', isActive: activeView === 'ai-engineering' },
     { id: 'system-design', label: 'System Design', isActive: isHubView },
     { id: 'db-internals', label: 'DB Internals', isActive: activeView === 'db-internals' },
+    { id: 'devops-cloud', label: 'DevOps & Cloud', isActive: activeView === 'devops-cloud' },
     { id: 'languages', label: 'Languages', isActive: activeView === 'languages' },
     { id: 'full-stack', label: 'Full-Stack Lab', isActive: activeView === 'full-stack' },
     { id: 'roadmap', label: 'Topic Bank', isActive: activeView === 'roadmap' },
@@ -724,6 +729,8 @@ export default function App() {
           {activeView === 'ai-engineering' && <AiEngineeringStudio />}
 
           {activeView === 'db-internals' && <DatabaseInternalsStudio />}
+
+          {activeView === 'devops-cloud' && <DevOpsCloudStudio />}
 
           {activeView === 'languages' && <LanguagesTutorialStudio />}
 
