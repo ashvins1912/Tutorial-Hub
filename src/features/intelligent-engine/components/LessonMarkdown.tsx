@@ -76,7 +76,7 @@ function renderBlocks(source: string): ReactNode[] {
     if (heading) {
       const level = heading[1].length;
       const className = level === 1 ? 'text-xl font-bold' : level === 2 ? 'text-lg font-bold' : level === 3 ? 'text-base font-semibold' : 'text-sm font-semibold';
-      const Tag = (level === 1 ? 'h2' : level === 2 ? 'h3' : level === 3 ? 'h4' : 'h5') as keyof JSX.IntrinsicElements;
+      const Tag: 'h2' | 'h3' | 'h4' | 'h5' = level === 1 ? 'h2' : level === 2 ? 'h3' : level === 3 ? 'h4' : 'h5';
       blocks.push(<Tag key={blocks.length} className={className}><InlineMarkdown source={heading[2]}/></Tag>);
       index += 1;
       continue;
