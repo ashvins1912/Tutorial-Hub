@@ -15,37 +15,41 @@ type GraphEdge = { from: string; to: string; label?: string };
 type ChartData = { chartType: 'bar' | 'line' | 'scatter' | 'pie'; xKey: string; nameKey?: string; valueKey?: string; series: Array<{ dataKey: string; label?: string; valuePrefix?: string; valueSuffix?: string }>; data: Array<Record<string, string | number>>; xAxisLabel?: string; axisLabel?: string; valueSuffix?: string };
 
 export function parseGraph(source: string) {
-  const lines = source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  // Keep parsing bounded: this is a deliberately small Mermaid subset, not a full Mermaid runtime.
+  const boundedSource = source.slice(0, 12_000);
+  const lines = boundedSource.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   if (/^(sequenceDiagram|erDiagram)/i.test(lines[0] || '')) return { direction: 'TD' as const, nodes: [], edges: [] };
   const direction = /^(flowchart|graph)\s+LR/i.test(lines[0] || '') ? 'LR' : 'TD';
   const nodes = new Map<string, GraphNode>();
   const edges: GraphEdge[] = [];
-  const token = /([A-Za-z][\w-]*)(?:\[\(([^)]+)\)\]|\[([^\]]+)\]|\{([^}]+)\}|\(\(([^)]+)\)\)|\(([^)]+)\))?/g;
+  const token = /^([A-Za-z][\w-]*)(?:\[\(([^)]+)\)\]|\[([^\]]+)\]|\{([^}]+)\}|\(\(([^)]+)\)\)|\(([^)]+)\))?/;
   const readToken = (value: string) => {
-    const match = token.exec(value);
-    token.lastIndex = 0;
+    const match = value.trim().match(token);
     if (!match) return null;
     const [, id, database, rect, diamond, round, pill] = match;
     const label = database || rect || diamond || round || pill || id;
     const shape: GraphNode['shape'] = database ? 'database' : diamond ? 'diamond' : round || pill ? 'round' : 'rect';
-    if (!nodes.has(id)) nodes.set(id, { id, label, shape });
-    return id;
+    if (!nodes.has(id) && nodes.size < 30) nodes.set(id, { id, label: label.slice(0, 120), shape });
+    return nodes.has(id) ? id : null;
   };
   for (const line of lines.slice(1)) {
     if (/^(subgraph|end|classDef|class |style |%%)/i.test(line)) continue;
-    const parts = line.split(/\s*(?:-->|---|==>|-.->|==>|--\s*[^-]+\s*-->)\s*/);
+    const parts = line.split(/\s*(?:-->|---|==>|-\.->|--\s*[^-]+\s*-->)\s*/);
     if (parts.length >= 2) {
-      const from = readToken(parts[0]);
-      const to = readToken(parts[1]);
-      if (from && to) {
-        const labelMatch = line.match(/--\s*([^>-]+?)\s*-->/);
-        edges.push({ from, to, label: labelMatch?.[1]?.trim() });
+      // Mermaid permits chains such as A --> B --> C. Preserve every adjacent edge.
+      for (let index = 0; index < parts.length - 1 && edges.length < 50; index += 1) {
+        const from = readToken(parts[index]);
+        const to = readToken(parts[index + 1]);
+        if (from && to) {
+          const labelMatch = line.match(/--\s*([^>-]+?)\s*-->/);
+          edges.push({ from, to, label: labelMatch?.[1]?.trim().slice(0, 120) });
+        }
       }
     } else {
       readToken(line);
     }
   }
-  return { direction, nodes: [...nodes.values()].slice(0, 30), edges: edges.slice(0, 50) };
+  return { direction, nodes: [...nodes.values()], edges };
 }
 
 function SequenceDiagram({ source }: { source: string }) {
