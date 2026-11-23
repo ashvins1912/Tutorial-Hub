@@ -61,6 +61,24 @@ export function aggregateObjectiveMastery(history: Array<{ attemptedAt: Date | s
   }).sort((a, b) => a.objectiveId.localeCompare(b.objectiveId));
 }
 
+export function buildObjectiveReviewPlan(history: Array<{ attemptedAt: Date | string; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy?: number }> }>, now = new Date()) {
+  const latest = new Map<string, { objectiveId: string; accuracy: number; lastReviewedAt: Date; intervalDays: number; dueAt: Date }>();
+  for (const attempt of history) {
+    const attemptedAt = new Date(attempt.attemptedAt);
+    if (!Number.isFinite(attemptedAt.getTime())) continue;
+    for (const result of attempt.objectiveResults || []) {
+      if (!result || typeof result.objectiveId !== 'string' || !Number.isInteger(result.correct) || !Number.isInteger(result.total) || result.total < 1 || result.correct < 0 || result.correct > result.total) continue;
+      const accuracy = Math.round((result.correct / result.total) * 100);
+      const previous = latest.get(result.objectiveId);
+      if (previous && previous.lastReviewedAt >= attemptedAt) continue;
+      const intervalDays = accuracy < 50 ? 1 : accuracy < 80 ? 3 : accuracy < 90 ? 7 : 14;
+      const dueAt = new Date(attemptedAt.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+      latest.set(result.objectiveId, { objectiveId: result.objectiveId, accuracy, lastReviewedAt: attemptedAt, intervalDays, dueAt });
+    }
+  }
+  return [...latest.values()].map((item) => ({ ...item, status: item.dueAt.getTime() <= now.getTime() ? 'due' as const : 'scheduled' as const })).sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
+}
+
 export function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
   if (Object.keys(answers).length !== quiz.length || quiz.some((_, index) => typeof answers[String(index)] !== 'string')) return null;
   return quiz.reduce((score, question, index) => score + (isQuizAnswerCorrect(question, answers[String(index)] || '') ? 1 : 0), 0);
@@ -139,7 +157,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     const bestAccuracy = Math.max(previous?.bestScore || 0, accuracy);
     quizAccuracy = accuracy;
     update.lastScore = accuracy;
-    update.quizTotal = quiz.length;
+    update.quizTotal = selectedQuiz.length;
     update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
     update.lastAnswers = normalizedAnswers;
     objectiveResults = calculateObjectiveResults(quiz, normalizedAnswers);
@@ -172,7 +190,7 @@ router.get('/', async (req: Request, res: Response) => {
   const totalLessons = records.length;
   const masteredLessons = records.filter((item) => item.masteryLevel === 'advanced').length;
   const averageScore = totalLessons ? Math.round(records.reduce((sum, item) => sum + (item.bestScore || 0), 0) / totalLessons) : 0;
-  return res.json({ progress: records, summary: { totalLessons, masteredLessons, averageScore } });
+  const objectiveReviewQueue = records.flatMap((record) => buildObjectiveReviewPlan(record.quizHistory || []).map((item) => ({ ...item, lessonId: record.lessonId })));\n  const dueReviews = objectiveReviewQueue.filter((item) => item.status === 'due');\n  return res.json({ progress: records, objectiveReviewQueue, summary: { totalLessons, masteredLessons, averageScore, dueReviews: dueReviews.length, scheduledReviews: objectiveReviewQueue.length - dueReviews.length } });
 });
 
 export default router;
