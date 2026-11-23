@@ -1400,6 +1400,116 @@ static int countOccurrences(int[] values, int target) {
       'Why is the answer returned by first-true different from the final midpoint?',
       'What is the cost of one feasibility check and the total complexity?',
       'Which intermediate values need 64-bit arithmetic?'
+    ],
+    learningOutcomes: [
+      'Recognize optimization problems that can be expressed as a monotonic feasibility predicate.',
+      'Distinguish first-true minimization from last-true maximization.',
+      'Derive safe lower and upper bounds from input constraints.',
+      'Implement a pure feasibility check and prove its correctness separately from the binary search.',
+      'State the O(C log R) total complexity, including sorting/preprocessing and each check cost.',
+      'Use overflow-safe arithmetic and correct ceiling division.'
+    ],
+    prerequisites: [
+      'Understand lower/upper-bound binary search on sorted data.',
+      'Know greedy scans and how to count groups, days or resource usage.',
+      'Be comfortable with integer division, ceiling division and 64-bit sums.',
+      'Understand that monotonic means one-way transition, not merely “usually increasing”.'
+    ],
+    deepDive: [
+      'The unknown is a candidate answer such as capacity, speed, time or minimum distance. The algorithm asks a yes/no question about that candidate rather than searching the original array.',
+      'For a minimization problem, feasible candidates often form false...false,true...true. The answer is the first true candidate. For maximization, candidates often form true...true,false...false and the answer is the last true.',
+      'Monotonicity must be proved from the problem semantics. For shipping, increasing capacity cannot require more days under the same greedy packing order. For minimum speed, increasing speed cannot increase the hours required.',
+      'Bounds must be safe and justified. Shipping capacity cannot be below the heaviest package and never needs to exceed the sum of all weights if at least one day is available.',
+      'The feasibility function should be deterministic and side-effect free. It should not sort or mutate shared input during each binary-search iteration.',
+      'For shipping capacity, scan weights in original order, start a new day only when adding the next package exceeds capacity, and reject if days used exceed D.',
+      'The binary-search invariant for first true is that all values below low are false and all values at or above high are true; with a closed search over a proven feasible high, maintain low as infeasible and high as feasible.',
+      'A safe midpoint is low+(high-low)/2. For first true, use mid and move high=mid when feasible, otherwise low=mid+1. The loop ends at the first feasible value.',
+      'Ceiling division for positive a and b can be written a/b + (a%b==0 ? 0 : 1), avoiding a+b-1 overflow. Define behavior for zero and negative values separately.',
+      'Total time is preprocessing plus O(log R) feasibility calls. If each call is O(n), total is O(n log R); if sorting is required once, add O(n log n).',
+      'A feasibility function can itself use greedy reasoning. Its proof is separate: first prove the greedy check answers feasibility correctly, then prove binary search finds the boundary.',
+      'If all candidates are feasible or none are feasible, boundary templates still need a documented contract. Ensure the derived high is feasible or return an explicit no-solution result.'
+    ],
+    correctness: [
+      'Shipping feasibility invariant: after processing each prefix of packages, daysUsed and currentLoad describe the greedy earliest packing of that prefix under capacity C; starting a new day exactly when the next package would overflow minimizes the number of days.',
+      'Monotonicity proof: any packing valid at capacity C remains valid at every capacity C2>=C, so feasible answers form a suffix.',
+      'First-true invariant: every candidate below low is known infeasible and every candidate at or above high is known feasible; choosing mid and retaining the appropriate half preserves the boundary.',
+      'Termination: each iteration strictly decreases high-low; when low==high, the unique remaining boundary is the minimum feasible capacity.',
+      'Bounds correctness: max(weights) is necessary because no package can be split; sum(weights) is sufficient because all packages fit in one day at that capacity.',
+      'Complexity correctness: at most ceil(log2(R)) boundary reductions occur and each feasibility scan visits n weights once, giving O(n log R) time after bounds are computed.'
+    ],
+    implementationSteps: [
+      'Name the candidate answer and write the feasibility question in one sentence.',
+      'Decide first true or last true and draw the false/true transition.',
+      'Prove monotonicity from the constraints before writing binary search.',
+      'Derive low and high mathematically; verify high is feasible when using first-true.',
+      'Implement can(candidate) independently and test it on hand-worked candidates.',
+      'Use long for totals and midpoint arithmetic when bounds may exceed int.',
+      'Keep preprocessing outside the feasibility function.',
+      'After search, validate the returned answer and its adjacent candidate when the domain permits.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Minimum ship capacity within D days', code: `static long minimumCapacity(int[] weights, int days) {
+    if (weights.length == 0 || days <= 0) {
+        throw new IllegalArgumentException("non-empty weights and positive days required");
+    }
+    long low = 0L, high = 0L;
+    for (int weight : weights) {
+        if (weight <= 0) throw new IllegalArgumentException("weights must be positive");
+        low = Math.max(low, weight);
+        high += weight;
+    }
+
+    while (low < high) {
+        long capacity = low + (high - low) / 2;
+        if (canShip(weights, days, capacity)) high = capacity;
+        else low = capacity + 1;
+    }
+    return low;
+}
+
+static boolean canShip(int[] weights, int days, long capacity) {
+    int usedDays = 1;
+    long load = 0L;
+    for (int weight : weights) {
+        if (load + weight > capacity) {
+            usedDays++;
+            load = 0L;
+        }
+        load += weight;
+        if (usedDays > days) return false;
+    }
+    return true;
+}`, explanation: 'The search is first-true over [max(weight), sum(weight)]. The feasibility scan preserves package order and counts required days. O(n log(sum-max+1)) time and O(1) auxiliary space.' }
+    ],
+    traceExercises: [
+      'For weights [1,2,3,4,5] and D=3, trace feasibility at capacities 5, 6, 9 and 15.',
+      'Draw the false/true predicate over integer capacities 5 through 15 and identify the first true.',
+      'For a minimization problem, show why setting high=mid on feasible and low=mid+1 on infeasible cannot skip the answer.',
+      'Create an all-feasible and an all-infeasible predicate and explain which bound assumptions or no-solution checks are required.'
+    ],
+    realWorldApplications: [
+      'Capacity planning: minimum machine or shipment capacity to meet a deadline.',
+      'Rate limiting and throughput: minimum processing speed to complete a workload within a time budget.',
+      'Manufacturing: minimum production rate or maximum allowed defect threshold.',
+      'Network planning: maximize minimum separation or bandwidth allocation under constraints.',
+      'Resource scheduling: find the smallest budget or time threshold that makes a plan feasible.'
+    ],
+    assessment: [
+      'Explain the difference between searching an input array and searching a numeric answer domain.',
+      'Prove monotonicity for shipping capacity and derive its safe bounds.',
+      'Implement first-true binary search and state its invariant.',
+      'Implement the shipping feasibility check and justify why greedy packing minimizes days for a fixed capacity.',
+      'Derive total complexity when each feasibility check is O(n) and answer range width is R.',
+      'Explain why sorting inside every feasibility call is wasteful when one pre-sort suffices.',
+      'Test boundary candidates, one package, days=1, days>=n and sums near 32-bit limits.'
+    ],
+    revisionPrompts: [
+      'Write first-true and last-true templates from memory and label their invariants.',
+      'For a new optimization problem, write the feasibility predicate before writing any loop.',
+      'Re-derive shipping lower and upper bounds and prove monotonicity.',
+      'After two days, solve Koko Eating Bananas and compare its feasibility function with shipping.',
+      'After one week, solve a maximize-minimum-distance problem and explain why its predicate direction is reversed.',
+      'State the total complexity as preprocessing + number of checks × cost per check.'
     ]
   },
   {
