@@ -54,7 +54,9 @@ export function LanguageConceptGuide({
         }
         if (
           topicFilter === 'foundations' &&
-          !/(foundation|oop|control|exception|optional|resilient|idiomatic|pattern|data-oriented)/.test(hay)
+          !/(foundation|core|string|primitive|package|file|slicing|object|equality|pass-by-value|alias|mutable|module|venv|oop|control|exception|optional|resilient|idiomatic|pattern|data-oriented)/.test(
+            hay
+          )
         ) {
           return false;
         }
@@ -103,7 +105,7 @@ export function LanguageConceptGuide({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search HashMap, deque, Lock, GIL, Virtual..."
+              placeholder="Search StringBuilder, == vs equals, enumerate, HashMap, GIL, Virtual..."
               aria-label="Search Python and Java concepts"
               className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
@@ -257,7 +259,7 @@ export function LanguageConceptGuide({
                   <div className="lg:col-span-5 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Modern {concept.versionTag} Code Pattern
+                        {concept.versionTag} Code Pattern
                       </span>
                       <CopyButton text={concept.codeExample} label="Copy" copiedLabel="Copied" size="xs" />
                     </div>

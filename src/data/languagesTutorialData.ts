@@ -1,3 +1,10 @@
+import {
+  CORE_FOUNDATION_CONCEPTS,
+  CORE_LANGUAGE_VISUAL_FLOWS,
+  CORE_PRACTICE_CHALLENGES,
+  CORE_QUIZ_QUESTIONS,
+} from './javaToPythonThinkingData';
+
 export type LangTrack = 'python' | 'java';
 export type SkillLevel = 'Basic' | 'Intermediate' | 'Advanced';
 
@@ -112,6 +119,7 @@ export interface LanguageQuizQuestion {
 }
 
 export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
+  ...CORE_LANGUAGE_VISUAL_FLOWS,
   {
     id: 'py-execution-jit',
     language: 'python',
@@ -1034,6 +1042,7 @@ export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
 ];
 
 export const LANGUAGE_CONCEPTS: LanguageConcept[] = [
+  ...CORE_FOUNDATION_CONCEPTS,
   // PYTHON 3.13+ (BASIC -> ADVANCED)
   {
     id: 'py-basics-collections',
@@ -2494,6 +2503,7 @@ try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
     whyItWorks:
       'Passing an explicit executor avoids starving `ForkJoinPool.commonPool()`, `thenCombine` runs non-blockingly once both futures complete, and `orTimeout` + `exceptionally` guarantees SLA resilience.',
   },
+  ...CORE_PRACTICE_CHALLENGES,
 ];
 
 export const LANGUAGE_MASTERY_QUIZ: LanguageQuizQuestion[] = [
@@ -2707,4 +2717,5 @@ export const LANGUAGE_MASTERY_QUIZ: LanguageQuizQuestion[] = [
     simpleExplanation: 'Even though `containsKey` and `put` are individually thread-safe, combining two separate calls leaves a gap between them where another thread can sneak in.',
     technicalNote: 'Always prefer atomic compound methods: `computeIfAbsent`, `compute`, `merge`, and `putIfAbsent`.',
   },
+  ...CORE_QUIZ_QUESTIONS,
 ];

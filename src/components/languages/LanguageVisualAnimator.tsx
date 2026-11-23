@@ -150,7 +150,13 @@ export function LanguageVisualAnimator({
                       : 'font-semibold text-amber-700 dark:text-amber-400'
                   }
                 >
-                  {item.language === 'python' ? 'Python 3.13+' : 'Java 21+'}
+                  {item.category.includes('Core')
+                    ? item.language === 'python'
+                      ? 'Python 0+ Core'
+                      : 'Java 1+ Core'
+                    : item.language === 'python'
+                      ? 'Python 3.x+'
+                      : 'Java 21+ LTS'}
                 </span>
                 <span className="text-slate-500 dark:text-slate-400">{item.level}</span>
               </div>

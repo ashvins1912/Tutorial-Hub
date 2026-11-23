@@ -12,13 +12,56 @@ import {
   RotateCcw,
   ShieldCheck,
   Terminal,
+  Workflow,
 } from 'lucide-react';
 import {
   JAVA_PYTHON_MASTERY_LESSONS,
   type CodingMasteryLevel,
+  type CodingMasteryLesson,
 } from '../../data/javaPythonCodingMasteryData';
 import type { LangTrack } from '../../data/languagesTutorialData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { CopyButton, SegmentedTabBar } from '../ui';
+
+function cleanMermaidLabel(input: string, maxLen = 44): string {
+  const cleaned = input.replace(/["`<>[\]{}|]/g, '').replace(/\s+/g, ' ').trim();
+  return cleaned.length > maxLen ? `${cleaned.slice(0, maxLen - 1)}…` : cleaned;
+}
+
+function buildLessonExecutionMermaid(lesson: CodingMasteryLesson, activeStepIdx?: number): string {
+  const lines: string[] = ['flowchart LR'];
+  lines.push(`  START["Input / Call: ${cleanMermaidLabel(lesson.title, 34)}"]`);
+
+  lesson.traceSteps.forEach((step, idx) => {
+    const nodeId = `S${idx + 1}`;
+    const firstVar = step.stackFrame[0]
+      ? `${step.stackFrame[0].name}=${step.stackFrame[0].value}`
+      : 'Frame';
+    const label = `Step ${idx + 1}: ${cleanMermaidLabel(step.action, 32)} | ${cleanMermaidLabel(firstVar, 24)}`;
+    lines.push(`  ${nodeId}["${label}"]`);
+    if (idx === 0) {
+      lines.push(`  START --> ${nodeId}`);
+    } else {
+      lines.push(`  S${idx} --> ${nodeId}`);
+    }
+  });
+
+  const lastIdx = lesson.traceSteps.length;
+  const lastOut = lesson.traceSteps[lastIdx - 1]?.consoleOut ?? 'Completed';
+  lines.push(`  OUT["Output: ${cleanMermaidLabel(lastOut, 38)}"]`);
+  if (lastIdx > 0) {
+    lines.push(`  S${lastIdx} --> OUT`);
+  } else {
+    lines.push('  START --> OUT');
+  }
+
+  if (typeof activeStepIdx === 'number' && activeStepIdx >= 0 && activeStepIdx < lastIdx) {
+    lines.push(`  style S${activeStepIdx + 1} fill:#0284c7,stroke:#0369a1,color:#ffffff`);
+  }
+
+  return lines.join('\n');
+}
 
 interface JavaPythonCodingMasteryTrackProps {
   languageFilter?: 'all' | LangTrack;
@@ -104,6 +147,7 @@ export const JavaPythonCodingMasteryTrack: React.FC<JavaPythonCodingMasteryTrack
   const [traceIdx, setTraceIdx] = useState<number>(0);
   const [isPlayingTrace, setIsPlayingTrace] = useState<boolean>(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
+  const [showLiveTraffic, setShowLiveTraffic] = useState<boolean>(false);
 
   useEffect(() => {
     if (languageFilter === 'python') setFocusPane('python');
@@ -168,7 +212,7 @@ export const JavaPythonCodingMasteryTrack: React.FC<JavaPythonCodingMasteryTrack
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-slate-100">
-              Java 21+ &amp; Python 3.13+ Complete Coding Mastery
+              Java (1+ to Modern LTS) &amp; Python (0+ to Modern 3.x) Complete Coding Mastery
             </h2>
           </div>
 
@@ -354,7 +398,7 @@ export const JavaPythonCodingMasteryTrack: React.FC<JavaPythonCodingMasteryTrack
                   <CodeBlockWithHighlight
                     title={
                       codeMode === 'idiomatic'
-                        ? 'Python 3.13+ Idiomatic'
+                        ? 'Python (0+ to 3.x) Idiomatic'
                         : 'Python Anti-Pattern (Avoid)'
                     }
                     languageLabel="Python"
@@ -380,10 +424,10 @@ export const JavaPythonCodingMasteryTrack: React.FC<JavaPythonCodingMasteryTrack
                   <CodeBlockWithHighlight
                     title={
                       codeMode === 'idiomatic'
-                        ? 'Java 21+ LTS Idiomatic'
+                        ? 'Java (1+ to Modern LTS) Idiomatic'
                         : 'Java Anti-Pattern (Avoid)'
                     }
-                    languageLabel="Java 21"
+                    languageLabel="Java"
                     code={
                       codeMode === 'idiomatic'
                         ? activeLesson.javaIdiomatic
@@ -535,18 +579,63 @@ export const JavaPythonCodingMasteryTrack: React.FC<JavaPythonCodingMasteryTrack
             )}
           </section>
 
+          {/* Execution & Memory Flow DFD (Mermaid.js) + Optional Live Traffic */}
+          {(() => {
+            const highlightedDfd = buildLessonExecutionMermaid(activeLesson, traceIdx);
+            const baseDfd = buildLessonExecutionMermaid(activeLesson);
+            return (
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <Workflow className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                    Execution &amp; Memory Flow DFD (Synced to Step {traceIdx + 1})
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowLiveTraffic((v) => !v)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                      showLiveTraffic
+                        ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-sky-500'
+                    }`}
+                  >
+                    {showLiveTraffic ? 'Hide Live Execution Traffic' : 'Simulate Live Execution Traffic'}
+                  </button>
+                </div>
+
+                <FlightMermaidViewer
+                  title={`${activeLesson.title} — Step-by-Step Execution DFD`}
+                  subtitle="Highlighted node follows your active stack/heap trace step."
+                  mermaidCode={highlightedDfd}
+                  trafficDomain="system-design"
+                  compact
+                />
+
+                {showLiveTraffic && (
+                  <LiveTrafficFlowSimulator
+                    mermaidCode={baseDfd}
+                    mermaidTitle={`${activeLesson.title} Runtime Pipeline`}
+                    domain="system-design"
+                    compact
+                    heading={`Live Execution Flow — ${activeLesson.title}`}
+                  />
+                )}
+              </section>
+            );
+          })()}
+
           {/* Language Trade-Offs Comparison Matrix */}
           <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 text-xs font-semibold text-slate-800 dark:text-slate-200">
-              Python 3.13+ vs. Java 21+ Key Engineering Differences
+              Python (0+ to Modern) vs. Java (1+ to Modern LTS) Key Engineering Differences
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                     <th className="py-2.5 px-4 font-semibold">Dimension</th>
-                    <th className="py-2.5 px-4 font-semibold">Python 3.13+</th>
-                    <th className="py-2.5 px-4 font-semibold">Java 21+ LTS</th>
+                    <th className="py-2.5 px-4 font-semibold">Python (0+ to 3.x)</th>
+                    <th className="py-2.5 px-4 font-semibold">Java (1+ to Modern LTS)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">

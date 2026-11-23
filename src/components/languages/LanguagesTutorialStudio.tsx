@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
 import {
+  Activity,
+  ArrowLeftRight,
   BookOpen,
   Cloud,
   Code2,
   Cpu,
   GitBranch,
   GraduationCap,
+  History,
   Languages,
   Layers,
   PlayCircle,
@@ -23,12 +26,18 @@ import {
   OOP_CODING_MODULES,
 } from '../../data/langOopCustomDsData';
 import { LANG_CONCURRENCY_EXCEPTIONS_MODULES } from '../../data/langConcurrencyExceptionsData';
+import { JAVA_TO_PYTHON_MODULES } from '../../data/javaToPythonThinkingData';
+import { VERSION_EVOLUTION_TOPICS } from '../../data/versionEvolutionData';
+import { MULTITHREADING_CONCURRENCY_SCENARIOS } from '../../data/multithreadingConcurrencyLabData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
 import { JAVA_PYTHON_MASTERY_LESSONS } from '../../data/javaPythonCodingMasteryData';
 import { CLOUD_DEV_CHAPTERS } from '../../data/dockerK8sCloudDevTutorialData';
 import { JavaPythonCodingMasteryTrack } from './JavaPythonCodingMasteryTrack';
+import { JavaToPythonThinkingLab } from './JavaToPythonThinkingLab';
+import { VersionEvolutionPlayground } from './VersionEvolutionPlayground';
+import { MultithreadingTelemetryLab } from './MultithreadingTelemetryLab';
 import { CloudDevCompleteTutorial } from '../devops/CloudDevCompleteTutorial';
 import { LanguageVisualAnimator } from './LanguageVisualAnimator';
 import { OopCustomDsAcademy } from './OopCustomDsAcademy';
@@ -41,6 +50,9 @@ import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type LangStudioTab =
   | 'coding-mastery'
+  | 'java-to-python'
+  | 'version-evolution'
+  | 'thread-telemetry'
   | 'docker-k8s-cloud'
   | 'oop-custom-ds'
   | 'concurrency-exceptions'
@@ -52,6 +64,8 @@ type LangStudioTab =
 
 interface LanguagesStudioProgress {
   completedCodingIds?: string[];
+  completedThinkingIds?: string[];
+  completedEvolutionGoalIds?: string[];
   understoodConceptIds: string[];
   completedPracticeIds: string[];
   solvedQuizIds: string[];
@@ -59,6 +73,8 @@ interface LanguagesStudioProgress {
 
 const DEFAULT_LANG_PROGRESS: LanguagesStudioProgress = {
   completedCodingIds: [],
+  completedThinkingIds: [],
+  completedEvolutionGoalIds: [],
   understoodConceptIds: [],
   completedPracticeIds: [],
   solvedQuizIds: [],
@@ -67,7 +83,25 @@ const DEFAULT_LANG_PROGRESS: LanguagesStudioProgress = {
 const BoundedJavaPythonCodingMasteryTrack = withStudioBoundary(
   JavaPythonCodingMasteryTrack,
   {
-    studioName: 'Java 21+ & Python 3.13+ Basics-to-Advanced Coding Mastery',
+    studioName: 'Java (1+ to Modern LTS) & Python (0+ to Modern 3.x) Zero-to-Expert Coding Track',
+  }
+);
+const BoundedJavaToPythonThinkingLab = withStudioBoundary(
+  JavaToPythonThinkingLab,
+  {
+    studioName: 'How to Think in Python from Java Mindset Lab',
+  }
+);
+const BoundedVersionEvolutionPlayground = withStudioBoundary(
+  VersionEvolutionPlayground,
+  {
+    studioName: 'Version-Level Evolution & Micro-Goal Playground',
+  }
+);
+const BoundedMultithreadingTelemetryLab = withStudioBoundary(
+  MultithreadingTelemetryLab,
+  {
+    studioName: 'Multithreading & Concurrency Live Telemetry Lab',
   }
 );
 const BoundedCloudDevCompleteTutorial = withStudioBoundary(
@@ -86,7 +120,7 @@ const BoundedConcurrencyExceptionsDeepDive = withStudioBoundary(
   }
 );
 const BoundedLanguageVisualAnimator = withStudioBoundary(LanguageVisualAnimator, {
-  studioName: 'Python 3.13+ & Java 21+ Runtime Animations',
+  studioName: 'Java (1+ to 21+) & Python (0+ to 3.13+) Runtime Animations',
 });
 const BoundedCollectionsConcurrencyPlayground = withStudioBoundary(
   CollectionsConcurrencyPlayground,
@@ -118,6 +152,12 @@ export function LanguagesTutorialStudio() {
   const completedCodingIds = Array.isArray(progress?.completedCodingIds)
     ? progress.completedCodingIds
     : [];
+  const completedThinkingIds = Array.isArray(progress?.completedThinkingIds)
+    ? progress.completedThinkingIds
+    : [];
+  const completedEvolutionGoalIds = Array.isArray(progress?.completedEvolutionGoalIds)
+    ? progress.completedEvolutionGoalIds
+    : [];
   const understoodConceptIds = Array.isArray(progress?.understoodConceptIds)
     ? progress.understoodConceptIds
     : [];
@@ -128,11 +168,15 @@ export function LanguagesTutorialStudio() {
 
   const totalMilestones =
     JAVA_PYTHON_MASTERY_LESSONS.length +
+    JAVA_TO_PYTHON_MODULES.length +
+    VERSION_EVOLUTION_TOPICS.length +
     LANGUAGE_CONCEPTS.length +
     LANGUAGE_PRACTICE_CHALLENGES.length +
     LANGUAGE_MASTERY_QUIZ.length;
   const completedMilestones =
     completedCodingIds.length +
+    completedThinkingIds.length +
+    completedEvolutionGoalIds.length +
     understoodConceptIds.length +
     completedPracticeIds.length +
     solvedQuizIds.length;
@@ -144,6 +188,12 @@ export function LanguagesTutorialStudio() {
         updater({
           completedCodingIds: Array.isArray(prev?.completedCodingIds)
             ? prev.completedCodingIds
+            : [],
+          completedThinkingIds: Array.isArray(prev?.completedThinkingIds)
+            ? prev.completedThinkingIds
+            : [],
+          completedEvolutionGoalIds: Array.isArray(prev?.completedEvolutionGoalIds)
+            ? prev.completedEvolutionGoalIds
             : [],
           understoodConceptIds: Array.isArray(prev?.understoodConceptIds)
             ? prev.understoodConceptIds
@@ -165,6 +215,36 @@ export function LanguagesTutorialStudio() {
         return {
           ...curr,
           completedCodingIds: list.includes(id)
+            ? list.filter((c) => c !== id)
+            : [...list, id],
+        };
+      });
+    },
+    [patchProgress]
+  );
+
+  const handleToggleThinkingComplete = useCallback(
+    (id: string) => {
+      patchProgress((curr) => {
+        const list = curr.completedThinkingIds ?? [];
+        return {
+          ...curr,
+          completedThinkingIds: list.includes(id)
+            ? list.filter((c) => c !== id)
+            : [...list, id],
+        };
+      });
+    },
+    [patchProgress]
+  );
+
+  const handleToggleEvolutionGoalComplete = useCallback(
+    (id: string) => {
+      patchProgress((curr) => {
+        const list = curr.completedEvolutionGoalIds ?? [];
+        return {
+          ...curr,
+          completedEvolutionGoalIds: list.includes(id)
             ? list.filter((c) => c !== id)
             : [...list, id],
         };
@@ -229,16 +309,16 @@ export function LanguagesTutorialStudio() {
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1.5 font-semibold text-sky-700 dark:text-sky-400">
                 <Languages className="w-3.5 h-3.5" aria-hidden="true" />
-                Modern Languages Visual Studio
+                Zero-to-Expert Languages Visual Studio
               </span>
               <span aria-hidden="true">·</span>
-              <span>Python 3.13+ (Latest) &amp; Java 21+ (LTS) · Basics, OOP, Collections, Multithreading &amp; Concurrency</span>
+              <span>Java (1+ to Modern LTS) &amp; Python (0+ to Modern 3.x) · Core Foundations, Mindset Bridge, Version Evolution &amp; Live Thread Telemetry</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
-              Python 3.13+ &amp; Java 21+ Visual Learning Studio
+              Java (1+ to Modern) &amp; Python (0+ to Modern) Mastery Studio
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-6">
-              Master modern Python and Java end-to-end—from core syntax, OOP, and Collections internals to Multithreading lifecycles, GIL/No-GIL, and Virtual Threads—through animated DFD diagrams, live interactive playgrounds, plain-English guides, and syntax-checked labs.
+              Build production confidence from version-agnostic fundamentals to modern LTS features: learn how to think in Python coming from Java, trace version-by-version syntax evolution with correlated quizzes and micro-goals, and inspect live CPU-core multithreading telemetry alongside Mermaid DFDs.
             </p>
           </div>
 
@@ -284,6 +364,27 @@ export function LanguagesTutorialStudio() {
                 shortLabel: 'Coding Track',
                 count: JAVA_PYTHON_MASTERY_LESSONS.length,
                 icon: GraduationCap,
+              },
+              {
+                id: 'java-to-python',
+                label: 'Think Python from Java',
+                shortLabel: 'Java -> Python',
+                count: JAVA_TO_PYTHON_MODULES.length,
+                icon: ArrowLeftRight,
+              },
+              {
+                id: 'version-evolution',
+                label: 'Version Evolution & Goals',
+                shortLabel: 'Version Diff',
+                count: VERSION_EVOLUTION_TOPICS.length,
+                icon: History,
+              },
+              {
+                id: 'thread-telemetry',
+                label: 'Live Thread Telemetry',
+                shortLabel: 'Threads Live',
+                count: MULTITHREADING_CONCURRENCY_SCENARIOS.length,
+                icon: Activity,
               },
               {
                 id: 'docker-k8s-cloud',
@@ -350,8 +451,8 @@ export function LanguagesTutorialStudio() {
             size="xs"
             tabs={[
               { id: 'all', label: 'Python + Java' },
-              { id: 'python', label: 'Python 3.13+' },
-              { id: 'java', label: 'Java 21+ LTS' },
+              { id: 'python', label: 'Python (0+ to 3.13+)' },
+              { id: 'java', label: 'Java (1+ to 21+ LTS)' },
             ]}
           />
         </div>
@@ -364,6 +465,21 @@ export function LanguagesTutorialStudio() {
           completedIds={completedCodingIds}
           onToggleComplete={handleToggleCodingComplete}
         />
+      )}
+      {activeTab === 'java-to-python' && (
+        <BoundedJavaToPythonThinkingLab
+          completedIds={completedThinkingIds}
+          onToggleComplete={handleToggleThinkingComplete}
+        />
+      )}
+      {activeTab === 'version-evolution' && (
+        <BoundedVersionEvolutionPlayground
+          completedGoalIds={completedEvolutionGoalIds}
+          onToggleGoalComplete={handleToggleEvolutionGoalComplete}
+        />
+      )}
+      {activeTab === 'thread-telemetry' && (
+        <BoundedMultithreadingTelemetryLab languageFilter={languageFilter} />
       )}
       {activeTab === 'docker-k8s-cloud' && <BoundedCloudDevCompleteTutorial />}
       {activeTab === 'oop-custom-ds' && (

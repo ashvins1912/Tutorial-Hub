@@ -3,6 +3,9 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle2,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
   Cpu,
   Database,
   Flame,
@@ -31,6 +34,10 @@ import {
   type TrafficNodeRole,
   type TrafficTopology,
 } from '../../utils/liveTrafficTopology';
+import {
+  getRealWorldExplanationForTopology,
+  REAL_WORLD_TRAFFIC_TOPOLOGIES,
+} from '../../utils/realWorldTrafficBlueprints';
 
 export interface LiveTrafficFlowSimulatorProps {
   /** Direct topology to animate (e.g. from Playground or active architecture) */
@@ -233,25 +240,27 @@ export const LiveTrafficFlowSimulator: React.FC<LiveTrafficFlowSimulatorProps> =
   const externalTopology = topology ?? parsedMermaidTopology;
 
   const availablePresets = useMemo(() => {
-    if (domain === 'devops') {
-      return [
-        ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'devops'),
-        ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain !== 'devops'),
-      ];
-    }
-    if (domain === 'database') {
-      return [
-        ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'database'),
-        ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain !== 'database'),
-      ];
-    }
-    return LIVE_TRAFFIC_PRESETS;
+    const core =
+      domain === 'devops'
+        ? [
+            ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'devops'),
+            ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain !== 'devops'),
+          ]
+        : domain === 'database'
+          ? [
+              ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'database'),
+              ...LIVE_TRAFFIC_PRESETS.filter((p) => p.domain !== 'database'),
+            ]
+          : LIVE_TRAFFIC_PRESETS;
+    return [...core, ...REAL_WORLD_TRAFFIC_TOPOLOGIES];
   }, [domain]);
 
   const [selectedModeId, setSelectedModeId] = useState<string>(() => {
     if (externalTopology) return '__synced__';
     return initialPresetId ?? availablePresets[0].id;
   });
+  const [showRealWorldDirectory, setShowRealWorldDirectory] = useState<boolean>(false);
+  const [showBlueprintExplanation, setShowBlueprintExplanation] = useState<boolean>(() => !compact);
 
   // If external topology changes identity (e.g. user switches pattern), stay synced when in synced mode
   const prevExternalIdRef = useRef<string | null>(externalTopology?.id ?? null);
@@ -272,6 +281,11 @@ export const LiveTrafficFlowSimulator: React.FC<LiveTrafficFlowSimulatorProps> =
       availablePresets[0]
     );
   }, [selectedModeId, externalTopology, availablePresets]);
+
+  const activeRealWorldExplanation = useMemo(
+    () => getRealWorldExplanationForTopology(activeTopology),
+    [activeTopology]
+  );
 
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [entryRps, setEntryRps] = useState<number>(activeTopology.defaultRps);
@@ -454,37 +468,65 @@ export const LiveTrafficFlowSimulator: React.FC<LiveTrafficFlowSimulatorProps> =
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           {allowPresetSwitcher && (
-            <select
-              aria-label="Select architectural traffic pattern"
-              value={selectedModeId}
-              onChange={(e) => setSelectedModeId(e.target.value)}
-              className="max-w-[260px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500"
-            >
-              {externalTopology && (
-                <option value="__synced__">Active Pattern: {externalTopology.title.slice(0, 38)}</option>
-              )}
-              <optgroup label="System Design Patterns">
-                {LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'system-design').map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="DevOps & Cloud Patterns">
-                {LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'devops').map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Database Internals Patterns">
-                {LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'database').map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
+            <>
+              <select
+                aria-label="Select architectural or real-world traffic blueprint"
+                value={selectedModeId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setSelectedModeId(nextId);
+                  if (nextId.startsWith('rw-')) {
+                    setShowBlueprintExplanation(true);
+                  }
+                }}
+                className="max-w-[280px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-sky-500"
+              >
+                {externalTopology && (
+                  <option value="__synced__">Active Pattern: {externalTopology.title.slice(0, 38)}</option>
+                )}
+                <optgroup label={`Real-World System Blueprints (${REAL_WORLD_TRAFFIC_TOPOLOGIES.length})`}>
+                  {REAL_WORLD_TRAFFIC_TOPOLOGIES.map((bp) => (
+                    <option key={bp.id} value={bp.id}>
+                      {bp.title.slice(0, 56)}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Core System Design Patterns">
+                  {LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'system-design').map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="DevOps & Cloud Patterns">
+                  {LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'devops').map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Database Internals Patterns">
+                  {LIVE_TRAFFIC_PRESETS.filter((p) => p.domain === 'database').map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setShowRealWorldDirectory((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                  showRealWorldDirectory
+                    ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-sky-500'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" aria-hidden="true" />
+                Real-World Blueprints ({REAL_WORLD_TRAFFIC_TOPOLOGIES.length})
+              </button>
+            </>
           )}
 
           <button
@@ -520,6 +562,54 @@ export const LiveTrafficFlowSimulator: React.FC<LiveTrafficFlowSimulatorProps> =
           </button>
         </div>
       </div>
+
+      {/* Quick Real-World Blueprints Browser (All 17 Production System Designs) */}
+      {allowPresetSwitcher && showRealWorldDirectory && (
+        <div className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
+              All 17 Real-World System Blueprints — Click any system to animate its live traffic &amp; inspect full architecture
+            </span>
+            {externalTopology && (
+              <button
+                type="button"
+                onClick={() => setSelectedModeId('__synced__')}
+                className="text-sky-700 dark:text-sky-400 font-semibold hover:underline"
+              >
+                Back to Synced Pattern
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+            {REAL_WORLD_TRAFFIC_TOPOLOGIES.map((bp) => {
+              const expl = getRealWorldExplanationForTopology(bp);
+              const isSelected = activeTopology.id === bp.id;
+              return (
+                <button
+                  key={bp.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedModeId(bp.id);
+                    setShowBlueprintExplanation(true);
+                  }}
+                  className={`text-left rounded-lg border px-3 py-2 transition-colors ${
+                    isSelected
+                      ? 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/50 text-slate-900 dark:text-slate-100'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-400 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    {expl?.shortTitle ?? bp.title}
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                    {expl?.scaleBadge ?? bp.subtitle}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Interactive Controls & Chaos Scenarios Bar */}
       <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3">
@@ -1103,6 +1193,174 @@ export const LiveTrafficFlowSimulator: React.FC<LiveTrafficFlowSimulatorProps> =
             })}
           </div>
         </div>
+      </div>
+
+      {/* Complete Architecture & Real-World Blueprint Explanation Deck */}
+      <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+        <button
+          type="button"
+          onClick={() => setShowBlueprintExplanation((v) => !v)}
+          className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-slate-100/70 dark:hover:bg-slate-900/70 transition-colors"
+        >
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <BookOpen className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
+              {activeRealWorldExplanation
+                ? `Complete Real-World System Design Explanation — ${activeRealWorldExplanation.shortTitle}`
+                : 'Architecture Flow Explanation & Design Highlights'}
+            </span>
+            {activeRealWorldExplanation && (
+              <>
+                <span aria-hidden="true" className="text-slate-400">·</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  {activeRealWorldExplanation.domainLabel} · {activeRealWorldExplanation.scaleBadge}
+                </span>
+              </>
+            )}
+          </div>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-sky-700 dark:text-sky-400 shrink-0">
+            {showBlueprintExplanation ? 'Hide Details' : 'Read Full Explanation'}
+            {showBlueprintExplanation ? (
+              <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+            )}
+          </span>
+        </button>
+
+        {showBlueprintExplanation && (
+          <div className="px-4 pb-4 pt-1 space-y-4 text-xs leading-5">
+            {activeRealWorldExplanation ? (
+              <>
+                {/* Scale & Communication Profile */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {activeRealWorldExplanation.capacityNumbers.slice(0, 4).map((cap) => (
+                    <div
+                      key={cap.metric}
+                      className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5"
+                    >
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {cap.metric}
+                      </div>
+                      <div className="font-mono font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+                        {cap.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Simple English + Formal System Definition */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 space-y-1">
+                    <div className="font-semibold text-emerald-900 dark:text-emerald-300">
+                      How It Works in Simple English
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      {activeRealWorldExplanation.simpleEnglish}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-1">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                      Formal Architecture &amp; Protocols ({activeRealWorldExplanation.commPatterns.join(' · ')})
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300">
+                      {activeRealWorldExplanation.formalDefinition}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step-by-Step Request Lifecycle */}
+                {activeRealWorldExplanation.requestLifecycleSteps.length > 0 && (
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+                    <div className="px-3.5 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 font-semibold text-slate-900 dark:text-slate-100">
+                      End-to-End Request Lifecycle (Synced to Animated Topology Nodes)
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                      {activeRealWorldExplanation.requestLifecycleSteps.map((st) => (
+                        <div key={st.step} className="p-3 grid grid-cols-1 md:grid-cols-12 gap-2">
+                          <div className="md:col-span-4 space-y-0.5">
+                            <div className="font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-400">
+                              Step {st.step} · {st.packetLabel}
+                            </div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                              {st.title}
+                            </div>
+                          </div>
+                          <div className="md:col-span-4 text-slate-700 dark:text-slate-300">
+                            {st.plainEnglish}
+                          </div>
+                          <div className="md:col-span-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                            {st.technicalDetail}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Core Algorithms, Storage, Bottleneck & Multi-Region DR */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-1.5">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                      Core Algorithms &amp; Storage Design
+                    </div>
+                    <ul className="space-y-1 text-slate-600 dark:text-slate-300 list-disc pl-4">
+                      {activeRealWorldExplanation.coreAlgorithms.map((alg) => (
+                        <li key={alg}>{alg}</li>
+                      ))}
+                    </ul>
+                    <p className="pt-1 text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+                      <strong className="text-slate-800 dark:text-slate-200">DB Strategy:</strong>{' '}
+                      {activeRealWorldExplanation.dbDesignSummary}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/30 dark:bg-amber-950/20 p-3.5 space-y-1.5">
+                    <div className="font-semibold text-amber-900 dark:text-amber-300">
+                      Primary Bottleneck &amp; Production Fix
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      {activeRealWorldExplanation.bottleneckAndFix}
+                    </p>
+                    <p className="pt-1 text-slate-600 dark:text-slate-400 border-t border-amber-200/70 dark:border-amber-900/50">
+                      <strong className="text-slate-800 dark:text-slate-200">Caching:</strong>{' '}
+                      {activeRealWorldExplanation.cachingStrategy}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-sky-200 dark:border-sky-900/60 bg-sky-50/30 dark:bg-sky-950/20 p-3.5 space-y-1.5">
+                    <div className="font-semibold text-sky-900 dark:text-sky-300">
+                      Consistency, RPO/RTO &amp; Failover DR
+                    </div>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      <strong className="text-slate-900 dark:text-slate-100">Consistency:</strong>{' '}
+                      {activeRealWorldExplanation.consistencyModel}
+                    </p>
+                    <p className="text-slate-700 dark:text-slate-300">
+                      <strong className="text-slate-900 dark:text-slate-100">RPO / RTO:</strong>{' '}
+                      {activeRealWorldExplanation.rpoRto}
+                    </p>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      <strong className="text-slate-800 dark:text-slate-200">Multi-Region DR:</strong>{' '}
+                      {activeRealWorldExplanation.multiRegionDr}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2">
+                <p className="text-slate-700 dark:text-slate-300">{activeTopology.subtitle}</p>
+                {activeTopology.patternHighlights.length > 0 && (
+                  <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+                    {activeTopology.patternHighlights.map((hl) => (
+                      <li key={hl}>{hl}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
