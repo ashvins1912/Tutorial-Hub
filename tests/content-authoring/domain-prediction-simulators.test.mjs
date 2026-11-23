@@ -59,9 +59,9 @@ test('database assumptions change the selected access path and estimated row cou
 test('system capacity assumptions recalculate bottleneck and overload', () => {
   const frames = buildDomainScenario('system-capacity', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, system: { incomingRps: 500, gatewayCapacity: 900, orderCapacity: 800, inventoryCapacity: 600 } });
   assert.equal(frames[0].prediction.correctOption, 'Inventory Service');
-  assert.equal(frames[1].prediction.correctOption, 'No sustained queue growth from capacity mismatch alone');
+  assert.equal(frames[1].prediction.correctOption, 'All offered traffic is delivered by the modeled path');
   const overloaded = buildDomainScenario('system-capacity', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, system: { incomingRps: 1_500, gatewayCapacity: 900, orderCapacity: 800, inventoryCapacity: 600 } });
-  assert.equal(overloaded[1].metrics.find((metric) => metric.label === 'Excess load')?.value, '900 RPS');
+  assert.equal(overloaded[1].metrics.find((metric) => metric.label === 'Dropped RPS (engine)')?.value, '900 RPS');
 });
 
 test('concurrency assumptions recalculate the lost-update result', () => {
@@ -84,4 +84,10 @@ test('system design model identifies tied bottlenecks instead of choosing one ar
 test('covering-index assumption changes the remaining heap-fetch explanation', () => {
   const frames = buildDomainScenario('database-query-plan', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, database: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.database, coveringIndex: true } });
   assert.match(frames[1].detail, /avoid most heap visits/);
+});
+
+test('system design scenario delegates request propagation to the existing traffic engine', () => {
+  const overloaded = buildDomainScenario('system-capacity', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, system: { incomingRps: 1_500, gatewayCapacity: 900, orderCapacity: 800, inventoryCapacity: 600 } });
+  assert.equal(overloaded[1].metrics.find((metric) => metric.label === 'Dropped RPS (engine)')?.value, '900 RPS');
+  assert.equal(overloaded[1].metrics.find((metric) => metric.label === 'Overloaded services')?.value, '3');
 });
