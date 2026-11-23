@@ -14,7 +14,7 @@ Each scenario has four ordered states. The first three states require a domain-s
 ## Model boundaries
 
 - Database cost selection is illustrative. Actual plans depend on engine, statistics, page correlation, cache state, visibility checks and cost parameters; validate with the target database's EXPLAIN tooling.
-- System capacity uses a serial steady-state minimum-capacity model. It does not model queueing distributions, fan-out, retries, autoscaling delay or partial failures.
+- System capacity reuses the application's deterministic DAG traffic engine for per-node capacity, drop and latency propagation. The lesson adapter does not model queue-depth distributions, fan-out, retries, autoscaling delay or partial failures.
 - Concurrency is a deliberately controlled two-transaction read-modify-write interleaving. Real outcomes depend on the database isolation level, locking, retry policy and transaction boundaries.
 - The cloud pipeline models policy gates, not a real CI runner, scanner, signing service or cluster.
 - No SQL, thread scheduling, cloud API, shell command or learner-provided code is executed.
@@ -34,7 +34,7 @@ The runtime exposes bounded scenario controls for:
 - Concurrency initial balance and each transaction's withdrawal amount.
 - Cloud secret detection, test result, vulnerability policy result and artifact signature/provenance validity.
 
-Each change recalculates the scenario and resets the active prediction session so old answers cannot be applied to new assumptions. The system-capacity model handles tied bottlenecks. All results remain instructional approximations and must be checked against the target database, distributed architecture or CI/CD provider.
+Each change recalculates the scenario and resets the active prediction session so old answers cannot be applied to new assumptions. The system-capacity adapter reuses the existing `runSimulationTick` DAG traffic engine, exposes per-node processed RPS, dropped RPS, overload count and average latency, and handles tied bottlenecks. All results remain instructional approximations and must be checked against the target database, distributed architecture or CI/CD provider.
 
 Completed sessions are stored in a bounded, authenticated progress history separate from quiz attempts. The server checks the simulator ID, scenario and objective references against the published lesson and records only completion plus the number of answered checkpoints. It deliberately does not accept client-reported correctness and does not award mastery.
 
