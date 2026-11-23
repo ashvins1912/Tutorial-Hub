@@ -23,7 +23,9 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
   const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
   const [objectiveMastery, setObjectiveMastery] = useState<ObjectiveMastery[]>([]);
-  const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);\n  const [predictionChoice, setPredictionChoice] = useState('');\n  const [predictionFeedback, setPredictionFeedback] = useState<{ answer: string; correct: boolean; expected: string } | null>(null);
+  const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);
+  const [predictionChoice, setPredictionChoice] = useState('');
+  const [predictionFeedback, setPredictionFeedback] = useState<{ answer: string; correct: boolean; expected: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -80,7 +82,8 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const score = quizGrading?.score ?? localScore;
   const accuracy = quizGrading?.accuracy ?? (activeQuizItems.length ? Math.round((score / activeQuizItems.length) * 100) : 0);
   const nextLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
-  const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };\n  const prediction = buildTracePrediction(trace, traceIndex);
+  const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };
+  const prediction = buildTracePrediction(trace, traceIndex);
   useEffect(() => { if (trace.length && traceIndex >= trace.length) setTraceIndex(trace.length - 1); }, [trace.length, traceIndex]);
   useEffect(() => {
     if (!progressReady || !simulator) return;
