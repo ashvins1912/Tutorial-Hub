@@ -95,8 +95,10 @@ Every lesson/surface should expose independent states; never collapse them into 
 - Added a typed optional `LessonSimulatorConfig` for the currently implemented deterministic algorithm trace simulator. It identifies the algorithm, input, optional target and objective IDs.
 - Added generation validation for simulator shape and required objective binding. Unsupported simulator kinds/algorithms are rejected; missing simulator remains valid and means no simulator is displayed.
 - Published lesson sanitization preserves the simulator contract while continuing to remove quiz answer keys.
-- Runtime uses the published simulator config rather than exposing a generic algorithm selector. Existing persisted progress remains scoped to lesson ID; saved algorithm/input values are only restored when a matching simulator is present.
+- Runtime uses the published simulator config rather than exposing a generic algorithm selector. Client validation now also requires every simulator objective ID to exist in the published lesson objectives and rejects duplicate objective bindings. The simulator description is displayed to the learner.
+- Runtime configuration changes (algorithm, initial input, target or objective bindings) reset the local trace/session state. Non-simulator lessons no longer write irrelevant default algorithm/input/target values into progress records. Published-lesson navigation clears stale lesson/error state before loading a new lesson.
 - No claim is made that all domains now have simulators. The contract is intentionally extensible; system-design and database simulators remain separate implementations until their own typed adapters and deterministic tests are designed.
+- Regression coverage includes valid objective binding, unknown objectives, duplicate objective IDs, unsupported algorithms, malformed configuration and input bounds. These checks establish contract integrity, not semantic proof that the selected algorithm is pedagogically appropriate.
 
 ## 7. Prioritized follow-up register
 
