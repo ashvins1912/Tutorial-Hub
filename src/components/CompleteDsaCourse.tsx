@@ -104,7 +104,8 @@ export function CompleteDsaCourse() {
 
       <div className="min-w-0 space-y-4">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div className="max-w-3xl"><div className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Module {DSA_COMPLETE_LESSONS.findIndex((item) => item.id === active.id) + 1} of {DSA_COMPLETE_LESSONS.length}</div><h2 className="mt-2 text-2xl font-bold">{active.title}</h2><p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{active.promise}</p></div><BookOpen className="h-7 w-7 text-sky-500" /></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div className="max-w-3xl"><div className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Module {DSA_COMPLETE_LESSONS.findIndex((item) => item.id === active.id) + 1} of {DSA_COMPLETE_LESSONS.length}</div><h2 className="mt-2 text-2xl font-bold">{active.title}</h2><p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{active.promise}</p>
+              {active.sourcePages?.length ? <p className="mt-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">Source notes: PDF page{active.sourcePages.length > 1 ? "s" : ""} {active.sourcePages.join(", ")}</p> : null}</div><BookOpen className="h-7 w-7 text-sky-500" /></div>
           <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50/70 p-4 dark:border-sky-900 dark:bg-sky-950/30"><div className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Mental model</div><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{active.mentalModel}</p></div>
         </section>
 
