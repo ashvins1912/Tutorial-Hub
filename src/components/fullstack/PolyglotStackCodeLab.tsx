@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Code2, Cpu, Network } from 'lucide-react';
+import { BookOpen, Code2, Cpu, Network } from 'lucide-react';
 import { POLYGLOT_IMPLEMENTATIONS } from '../../data/fullStackArchitectureData';
+import { POLYGLOT_DEEP_SPECS } from '../../data/fullStackDeepEnrichmentData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { CopyButton } from '../ui';
 
 export function PolyglotStackCodeLab() {
@@ -10,6 +13,7 @@ export function PolyglotStackCodeLab() {
     () => POLYGLOT_IMPLEMENTATIONS.find((p) => p.id === selectedId) ?? POLYGLOT_IMPLEMENTATIONS[0],
     [selectedId]
   );
+  const deepSpec = POLYGLOT_DEEP_SPECS[active.id];
 
   return (
     <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-5">
@@ -91,8 +95,41 @@ export function PolyglotStackCodeLab() {
             </div>
             <p className="text-slate-700 dark:text-slate-300">{active.whyThisStack}</p>
           </div>
+
+          {deepSpec && (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-1.5">
+              <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                Complete Paradigm Definition &amp; Key Mechanism
+              </div>
+              <p className="text-slate-600 dark:text-slate-400">{deepSpec.formalDefinition}</p>
+              <div className="pt-1 font-mono text-[11px] text-sky-700 dark:text-sky-400">
+                Core Mechanism: {deepSpec.keyMechanism}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Rendered Mermaid Wire & Memory Handoff DFD + Live Traffic Simulator */}
+      {deepSpec && (
+        <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-800">
+          <FlightMermaidViewer
+            title={`${active.shortLabel} — Wire, Runtime & Memory Handoff DFD`}
+            subtitle="End-to-end streaming data flow across socket buffers, runtime scheduler, and SSE token emission."
+            mermaidCode={deepSpec.mermaidDfd}
+            trafficDomain="system-design"
+            compact
+          />
+          <LiveTrafficFlowSimulator
+            mermaidCode={deepSpec.mermaidDfd}
+            mermaidTitle={`${active.shortLabel} Streaming Pipeline`}
+            domain="system-design"
+            compact
+            heading={`Live Token & Request Traffic Simulation — ${active.shortLabel}`}
+          />
+        </div>
+      )}
     </section>
   );
 }

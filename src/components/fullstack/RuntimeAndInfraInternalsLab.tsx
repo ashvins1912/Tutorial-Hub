@@ -5,6 +5,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Code2,
   Cpu,
   Database,
   Layers,
@@ -27,7 +28,13 @@ import {
   type InfraSimKind,
   type SystemInternalBlueprint,
 } from '../../data/runtimeAndInfraInternalsData';
-import { SegmentedTabBar } from '../ui';
+import {
+  buildBlueprintMermaidDfd,
+  INFRA_ALGO_DEEP_SPECS,
+} from '../../data/fullStackDeepEnrichmentData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
+import { CopyButton, SegmentedTabBar } from '../ui';
 
 /* ============================================================================
    ANIMATED 5-STAGE ARCHITECTURE DFD ENGINE
@@ -1452,6 +1459,82 @@ export function RuntimeAndInfraInternalsLab() {
           ))}
         </div>
       </section>
+
+      {/* Deep Algorithm Formal Definition, Executable Code & Implementation Walkthrough */}
+      {(() => {
+        const algoSpec = INFRA_ALGO_DEEP_SPECS[activeBlueprint.id];
+        const blueprintMermaid = buildBlueprintMermaidDfd(activeBlueprint);
+        return (
+          <>
+            {algoSpec && (
+              <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-mono text-sky-700 dark:text-sky-400 font-semibold">
+                      Algorithm Formal Definition &amp; Production Implementation
+                    </div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5 flex items-center gap-2">
+                      <Code2 className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                      {algoSpec.algorithmName}
+                    </h4>
+                  </div>
+                  <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 shrink-0">
+                    {algoSpec.complexityNote}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-6">
+                  <strong className="text-slate-900 dark:text-slate-100">Formal Definition: </strong>
+                  {algoSpec.formalDefinition}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                  <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
+                    <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800 bg-slate-900">
+                      <span className="text-[11px] font-mono text-slate-300">
+                        Reference Implementation ({algoSpec.language})
+                      </span>
+                      <CopyButton text={algoSpec.code} label="Copy Code" copiedLabel="Copied" size="xs" />
+                    </div>
+                    <pre className="p-3.5 text-xs font-mono text-sky-200 leading-5 overflow-x-auto">
+                      {algoSpec.code}
+                    </pre>
+                  </div>
+
+                  <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-4 space-y-2.5">
+                    <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      Step-by-Step Deep Implementation Mechanics
+                    </div>
+                    <ol className="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-5 list-decimal list-inside">
+                      {algoSpec.implementationSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Rendered Mermaid.js Architecture & Data Flow Diagram */}
+            <FlightMermaidViewer
+              title={`${activeBlueprint.shortTitle} — Architecture & Data Flow Diagram (Mermaid.js)`}
+              subtitle="Live rendered architectural flow showing internal module handoffs, control paths, and data channels. Toggle Live Traffic Flow inside the viewer or use the interactive simulator below."
+              mermaidCode={blueprintMermaid}
+              trafficDomain="system-design"
+              compact
+            />
+
+            {/* Synchronized Live Traffic Packet Visualization for this Component */}
+            <LiveTrafficFlowSimulator
+              mermaidCode={blueprintMermaid}
+              mermaidTitle={`${activeBlueprint.shortTitle} Live Internal Data Flow`}
+              domain="system-design"
+              compact
+              heading={`Live Traffic & Packet Flow Simulation — ${activeBlueprint.shortTitle}`}
+            />
+          </>
+        );
+      })()}
     </div>
   );
 }

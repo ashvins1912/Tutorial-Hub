@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Cpu, Gauge, Server } from 'lucide-react';
+import { AlertTriangle, BookOpen, CheckCircle2, Code2, Cpu, Gauge, Server } from 'lucide-react';
 import {
   BACKEND_FRAMEWORKS,
   RUNTIME_VM_SPECS,
   type BackendFrameworkEntry,
 } from '../../data/fullStackArchitectureData';
-import { SegmentedTabBar } from '../ui';
+import { FRAMEWORK_DEEP_SPECS } from '../../data/fullStackDeepEnrichmentData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
+import { CopyButton, SegmentedTabBar } from '../ui';
 
 type WorkloadSim = 'sse-io' | 'cpu-heavy' | 'sync-bug-in-async';
 
@@ -251,6 +254,76 @@ export function FrameworkRuntimeMatrixLab() {
           </div>
         </div>
       </section>
+
+      {/* Selected Framework Formal Definition, Concurrency Algorithm Code, Mermaid DFD & Live Traffic */}
+      {(() => {
+        const fwSpec = FRAMEWORK_DEEP_SPECS[selected.id];
+        if (!fwSpec) return null;
+        return (
+          <div className="space-y-5">
+            <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4">
+              <div className="space-y-1">
+                <div className="text-xs font-mono text-sky-700 dark:text-sky-400 font-semibold">
+                  Framework Architecture Definition &amp; Concurrency Algorithm
+                </div>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <Code2 className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                  {selected.framework} — {fwSpec.algorithmName}
+                </h3>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-6 flex items-start gap-2">
+                <BookOpen className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-1" aria-hidden="true" />
+                <div>
+                  <strong className="text-slate-900 dark:text-slate-100">Formal Definition: </strong>
+                  {fwSpec.formalDefinition}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
+                  <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800 bg-slate-900">
+                    <span className="text-[11px] font-mono text-slate-300">
+                      Core Concurrency Implementation ({fwSpec.algorithmLanguage})
+                    </span>
+                    <CopyButton text={fwSpec.algorithmCode} label="Copy Code" copiedLabel="Copied" size="xs" />
+                  </div>
+                  <pre className="p-3.5 text-xs font-mono text-sky-200 leading-5 overflow-x-auto">
+                    {fwSpec.algorithmCode}
+                  </pre>
+                </div>
+
+                <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 p-4 space-y-2.5">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    Deep Implementation Walkthrough
+                  </div>
+                  <ol className="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-5 list-decimal list-inside">
+                    {fwSpec.implementationWalkthrough.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </section>
+
+            <FlightMermaidViewer
+              title={`${selected.framework} — Request Dispatch & Runtime DFD (Mermaid.js)`}
+              subtitle={`Visualizing how ${selected.server} (${selected.gatewayInterface}) routes sockets into ${selected.runtime}.`}
+              mermaidCode={fwSpec.mermaidDfd}
+              trafficDomain="system-design"
+              compact
+            />
+
+            <LiveTrafficFlowSimulator
+              mermaidCode={fwSpec.mermaidDfd}
+              mermaidTitle={`${selected.framework} Request Pipeline`}
+              domain="system-design"
+              compact
+              heading={`Live Request Traffic Simulation — ${selected.framework}`}
+            />
+          </div>
+        );
+      })()}
 
       {/* Host Virtual Machines & Runtimes Comparison Table */}
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4">

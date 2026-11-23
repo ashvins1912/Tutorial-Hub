@@ -21,6 +21,8 @@ import {
   STORYBOARD_FRAMES,
 } from '../../data/fullStackArchitectureData';
 import { CopyButton, SegmentedTabBar } from '../ui';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 
 const PIPELINE_STAGES = [
   { id: 'edge', label: 'Edge Proxy', sub: 'Nginx / Envoy', x: 58 },
@@ -400,10 +402,33 @@ export function FullStackStoryboardAnimator() {
           </div>
         </div>
 
-        <pre className="p-4 rounded-xl bg-slate-950 text-sky-300 font-mono text-xs leading-6 overflow-x-auto border border-slate-800">
-          {activeBlueprintText}
-        </pre>
+        {blueprintTab === 'ascii-memory' ? (
+          <pre className="p-4 rounded-xl bg-slate-950 text-sky-300 font-mono text-xs leading-6 overflow-x-auto border border-slate-800">
+            {ASCII_MEMORY_LAYOUT}
+          </pre>
+        ) : (
+          <FlightMermaidViewer
+            title={
+              blueprintTab === 'level1-mermaid'
+                ? 'Level-1 Full-Stack End-to-End Request & Token DFD'
+                : 'Level-0 Full-Stack System Context Architecture'
+            }
+            subtitle="Interactive Mermaid.js SVG diagram with 1-click source view and Live Traffic Flow simulation."
+            mermaidCode={blueprintTab === 'level1-mermaid' ? LEVEL1_MERMAID : LEVEL0_MERMAID}
+            trafficDomain="system-design"
+            compact
+          />
+        )}
       </section>
+
+      {/* Live End-to-End Traffic Packet Simulator synced to the Level-1 Full-Stack DFD */}
+      <LiveTrafficFlowSimulator
+        mermaidCode={LEVEL1_MERMAID}
+        mermaidTitle="Full-Stack Edge-to-GPU Request Pipeline"
+        domain="system-design"
+        compact
+        heading="Live Full-Stack Request & Token Traffic Simulator"
+      />
     </div>
   );
 }

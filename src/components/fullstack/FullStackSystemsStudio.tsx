@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
+  Activity,
   Boxes,
   Code2,
   Cpu,
@@ -23,6 +24,7 @@ import { FrameworkRuntimeMatrixLab } from './FrameworkRuntimeMatrixLab';
 import { AiInferenceHardwareLab } from './AiInferenceHardwareLab';
 import { PolyglotStackCodeLab } from './PolyglotStackCodeLab';
 import { StorageAndDiagnosticsLab } from './StorageAndDiagnosticsLab';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type FullStackTab = 'internals-sim' | 'storyboard' | 'frameworks' | 'ai-gpu' | 'polyglot' | 'storage-ops';
@@ -56,6 +58,7 @@ const BoundedStorageAndDiagnosticsLab = withStudioBoundary(StorageAndDiagnostics
 
 export function FullStackSystemsStudio() {
   const [activeTab, setActiveTab] = useState<FullStackTab>('internals-sim');
+  const [showStudioTraffic, setShowStudioTraffic] = useState(false);
   const [progress, setProgress] = useAccountState<FullStackStudioProgress>(
     'fullstack-studio-progress',
     DEFAULT_PROGRESS,
@@ -100,6 +103,20 @@ export function FullStackSystemsStudio() {
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-6">
               Trace requests end-to-end across edge proxies, all 10 major web frameworks (Spring Boot MVC/WebFlux, FastAPI, Django, Flask, NestJS/Express, Gin/Fiber, Axum/Actix, ASP.NET Core, Rails), GPU HBM3 inference engines, vector/relational databases, and live SRE diagnostics.
             </p>
+            <div className="pt-1.5 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowStudioTraffic((v) => !v)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                  showStudioTraffic
+                    ? 'border-sky-600 bg-sky-600 text-white'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 hover:border-sky-500'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+                {showStudioTraffic ? 'Hide Live Full-Stack Traffic' : 'Live Full-Stack Traffic Simulator'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2.5 shrink-0 min-w-[260px]">
@@ -180,6 +197,16 @@ export function FullStackSystemsStudio() {
           />
         </div>
       </section>
+
+      {showStudioTraffic && (
+        <LiveTrafficFlowSimulator
+          domain="system-design"
+          initialPresetId="lb-cache-sharded-db"
+          allowPresetSwitcher
+          compact
+          heading="Live Full-Stack Distributed Traffic Flow Simulator"
+        />
+      )}
 
       {/* Active Workspace */}
       {activeTab === 'internals-sim' && <BoundedRuntimeAndInfraInternalsLab />}

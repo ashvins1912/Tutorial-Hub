@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Calculator, Cpu, Layers, Zap } from 'lucide-react';
+import { Calculator, Code2, Cpu, Layers, Zap } from 'lucide-react';
 import { LLM_INFERENCE_ENGINES } from '../../data/fullStackArchitectureData';
-import { SegmentedTabBar } from '../ui';
+import {
+  AI_GPU_ARCHITECTURE_MERMAID,
+  AI_GPU_DEEP_ALGORITHMS,
+} from '../../data/fullStackDeepEnrichmentData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
+import { CopyButton, SegmentedTabBar } from '../ui';
 
 type QuantFormat = 'fp16' | 'fp8' | 'awq4';
 type GpuTarget = 'h100' | 'a100' | 'l40s';
@@ -293,6 +299,85 @@ export function AiInferenceHardwareLab() {
           <span>
             Orchestration layer: <strong>LangGraph</strong> (stateful agent graphs), <strong>LlamaIndex</strong> (RAG ingestion/retrieval), <strong>DSPy</strong> (programmatic prompt optimization), and <strong>Semantic Kernel</strong> (Enterprise JVM/.NET).
           </span>
+        </div>
+      </section>
+
+      {/* LLM Prefill / Decode + PagedAttention Mermaid Architecture DFD */}
+      <FlightMermaidViewer
+        title="LLM Inference Engine, PagedAttention & GPU HBM3 Architecture DFD"
+        subtitle="Trace prompt tokens through continuous batching, chunked prefill, FlashAttention SRAM tiling, and paged KV-cache decoding."
+        mermaidCode={AI_GPU_ARCHITECTURE_MERMAID}
+        trafficDomain="system-design"
+        compact
+      />
+
+      {/* Live Token Streaming Traffic Simulator */}
+      <LiveTrafficFlowSimulator
+        mermaidCode={AI_GPU_ARCHITECTURE_MERMAID}
+        mermaidTitle="LLM Inference & GPU Token Pipeline"
+        domain="system-design"
+        compact
+        heading="Live LLM Prefill & Token Streaming Traffic Simulator"
+      />
+
+      {/* Core GPU & Inference Engine Algorithms: Code + Deep Implementation Walkthrough */}
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-5">
+        <div>
+          <div className="text-xs font-mono text-sky-700 dark:text-sky-400 font-semibold">
+            Core GPU Silicon &amp; Inference Engine Algorithms
+          </div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5 flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+            FlashAttention-2 Online Softmax &amp; Continuous Batching Implementation
+          </h3>
+        </div>
+
+        <div className="space-y-5">
+          {AI_GPU_DEEP_ALGORITHMS.map((algo) => (
+            <div
+              key={algo.id}
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-4 sm:p-5 space-y-4"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+                  {algo.name}
+                </h4>
+                <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 shrink-0">
+                  {algo.complexity}
+                </span>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-6">
+                <strong className="text-slate-900 dark:text-slate-100">Formal Definition: </strong>
+                {algo.formalDefinition}
+              </p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
+                  <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800 bg-slate-900">
+                    <span className="text-[11px] font-mono text-slate-300">
+                      Reference Code ({algo.language})
+                    </span>
+                    <CopyButton text={algo.code} label="Copy Code" copiedLabel="Copied" size="xs" />
+                  </div>
+                  <pre className="p-3.5 text-xs font-mono text-sky-200 leading-5 overflow-x-auto">
+                    {algo.code}
+                  </pre>
+                </div>
+
+                <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-2">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    Deep Implementation Mechanics
+                  </div>
+                  <ol className="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-5 list-decimal list-inside">
+                    {algo.implementationWalkthrough.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>

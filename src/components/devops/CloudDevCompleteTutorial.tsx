@@ -1,15 +1,23 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
+  BookOpen,
   Box,
   CheckCircle2,
   Cloud,
+  Code2,
   Container,
   Layers,
+  Pause,
+  Play,
+  RotateCcw,
   Server,
   ShieldAlert,
   ShieldCheck,
+  SkipBack,
+  SkipForward,
   Terminal,
 } from 'lucide-react';
 import {
@@ -18,6 +26,13 @@ import {
   DOCKER_BUILD_PROFILES,
   type CloudDevTrackId,
 } from '../../data/dockerK8sCloudDevTutorialData';
+import {
+  AWS_VS_GCP_MERMAID,
+  CLOUD_CHAPTER_VISUAL_SPECS,
+  type CloudChapterVisualSpec,
+} from '../../data/cloudDevVisualAnimationsData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { CopyButton, SegmentedTabBar } from '../ui';
 
 type TutorialViewTab = CloudDevTrackId | 'aws-vs-gcp';
@@ -46,6 +61,261 @@ const TRACK_META: Record<
     subtitle: 'Workload Identity, Cloud Run revisions, GKE Autopilot, GCS Signed URLs, Cloud SQL, BigQuery, and Pub/Sub.',
     focus: 'Google Cloud Platform',
   },
+};
+
+/* -------------------------------------------------------------------------- */
+/* Animated Step-by-Step Mermaid & Live Traffic Visualizer for All 12 Chapters*/
+/* -------------------------------------------------------------------------- */
+const CloudChapterAnimatedVisualizer: React.FC<{
+  chapterTitle: string;
+  spec: CloudChapterVisualSpec;
+}> = ({ chapterTitle, spec }) => {
+  const [stageIdx, setStageIdx] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showTraffic, setShowTraffic] = useState(true);
+
+  useEffect(() => {
+    setStageIdx(0);
+    setIsPlaying(false);
+  }, [spec.chapterId]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const intervalMs = prefersReduced ? 3200 : 2200;
+    const id = window.setInterval(() => {
+      setStageIdx((prev) => {
+        if (prev + 1 >= spec.stages.length) {
+          setIsPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, intervalMs);
+    return () => window.clearInterval(id);
+  }, [isPlaying, spec.stages.length]);
+
+  const activeStage = spec.stages[stageIdx] ?? spec.stages[0];
+  const visitedNodeIds = useMemo(
+    () => spec.stages.slice(0, stageIdx).map((s) => s.activeNodeId),
+    [spec.stages, stageIdx]
+  );
+
+  const highlightedMermaid = useMemo(
+    () => spec.buildMermaid(activeStage?.activeNodeId ?? null, visitedNodeIds),
+    [spec, activeStage, visitedNodeIds]
+  );
+
+  const baseMermaid = useMemo(() => spec.buildMermaid(null, []), [spec]);
+
+  return (
+    <div className="space-y-4">
+      {/* Formal Definition */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
+          <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+          Complete Systems &amp; Architecture Definition
+        </div>
+        <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-6">
+          {spec.formalDefinition}
+        </p>
+      </div>
+
+      {/* Animated Step-by-Step Mermaid Architecture Flow */}
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-mono font-semibold text-sky-700 dark:text-sky-400">
+              Interactive Animated Architecture &amp; Control-Plane Walkthrough
+            </div>
+            <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              {chapterTitle} — Live Step-Highlighted Mermaid Flow
+            </h4>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                if (stageIdx >= spec.stages.length - 1) setStageIdx(0);
+                setIsPlaying((p) => !p);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-700 transition-colors whitespace-nowrap shrink-0"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="w-3.5 h-3.5" aria-hidden="true" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                  {stageIdx >= spec.stages.length - 1 ? 'Replay' : 'Animate Flow'}
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(false);
+                setStageIdx((i) => Math.max(0, i - 1));
+              }}
+              disabled={stageIdx === 0}
+              aria-label="Previous step"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40"
+            >
+              <SkipBack className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(false);
+                setStageIdx((i) => Math.min(spec.stages.length - 1, i + 1));
+              }}
+              disabled={stageIdx >= spec.stages.length - 1}
+              aria-label="Next step"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40"
+            >
+              <SkipForward className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(false);
+                setStageIdx(0);
+              }}
+              aria-label="Reset animation"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTraffic((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                showTraffic
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+              {showTraffic ? 'Live Traffic On' : 'Show Live Traffic'}
+            </button>
+          </div>
+        </div>
+
+        {/* 4-Stage Clickable Scrubber */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          {spec.stages.map((st, idx) => {
+            const isCurrent = idx === stageIdx;
+            const isDone = idx < stageIdx;
+            return (
+              <button
+                key={st.step}
+                type="button"
+                onClick={() => {
+                  setIsPlaying(false);
+                  setStageIdx(idx);
+                }}
+                className={`text-left rounded-lg border p-2.5 transition-colors ${
+                  isCurrent
+                    ? 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/40'
+                    : isDone
+                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 text-[10px] font-mono font-bold tabular-nums">
+                  <span className={isCurrent ? 'text-sky-700 dark:text-sky-400' : isDone ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}>
+                    STEP 0{st.step}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 truncate">
+                    {st.metricBadge}
+                  </span>
+                </div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1 line-clamp-1">
+                  {st.title}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Rendered Mermaid Flow with Active Node Highlighting */}
+        <FlightMermaidViewer
+          title={`Step 0${activeStage.step}: ${activeStage.title}`}
+          subtitle="Blue node = active stage · Green nodes = completed stages · Click 'Live Traffic Flow' or toggle below to simulate packets."
+          mermaidCode={highlightedMermaid}
+          trafficDomain="devops"
+          compact
+        />
+
+        {/* Active Stage Narration + Live Runtime State */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-xs">
+          <div className="lg:col-span-7 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3.5 space-y-1">
+            <div className="font-semibold text-slate-900 dark:text-slate-100">
+              What Happens at Step 0{activeStage.step}
+            </div>
+            <p className="text-slate-700 dark:text-slate-300 leading-5">
+              {activeStage.plainEnglish}
+            </p>
+          </div>
+          <div className="lg:col-span-5 rounded-lg border border-slate-800 bg-slate-950 text-sky-300 p-3.5 space-y-1 font-mono">
+            <div className="text-[11px] font-semibold text-emerald-400">
+              Live Control-Plane / Runtime State
+            </div>
+            <p className="text-xs leading-5 text-slate-100">{activeStage.runtimeState}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Cloud / Container Traffic Packet Simulator */}
+      {showTraffic && (
+        <LiveTrafficFlowSimulator
+          mermaidCode={baseMermaid}
+          mermaidTitle={`${chapterTitle} Live Traffic`}
+          domain="devops"
+          compact
+          heading={`Live Packet & Control-Plane Traffic Simulation — ${chapterTitle}`}
+        />
+      )}
+
+      {/* Core Underlying Algorithm / Kernel / Control-Plane Mechanism */}
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3.5">
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+          <Code2 className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+          <span>Core Underlying Algorithm &amp; Implementation: {spec.coreAlgorithmTitle}</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
+            <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800 bg-slate-900">
+              <span className="text-[11px] font-mono text-slate-300">
+                Internal Mechanics &amp; Algorithm Logic
+              </span>
+              <CopyButton text={spec.coreAlgorithmCode} label="Copy" copiedLabel="Copied" size="xs" />
+            </div>
+            <pre className="p-3.5 text-xs font-mono text-sky-200 leading-5 overflow-x-auto">
+              {spec.coreAlgorithmCode}
+            </pre>
+          </div>
+
+          <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-2">
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+              Deep Implementation Notes
+            </div>
+            <ol className="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-5 list-decimal list-inside">
+              {spec.deepImplementationNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 };
 
 /* -------------------------------------------------------------------------- */
@@ -495,6 +765,22 @@ export const CloudDevCompleteTutorial: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <FlightMermaidViewer
+              title="AWS vs. GCP Production Cloud Stack — Side-by-Side Architecture Flow"
+              subtitle="Compare equivalent edge CDN, serverless/container compute, relational/analytics storage, and event messaging paths across AWS and GCP."
+              mermaidCode={AWS_VS_GCP_MERMAID}
+              trafficDomain="devops"
+              compact
+            />
+
+            <LiveTrafficFlowSimulator
+              mermaidCode={AWS_VS_GCP_MERMAID}
+              mermaidTitle="AWS & GCP Multi-Cloud Request Flow"
+              domain="devops"
+              compact
+              heading="Live Multi-Cloud (AWS vs. GCP) Traffic Flow Simulator"
+            />
           </div>
         </div>
       ) : (
@@ -610,6 +896,14 @@ export const CloudDevCompleteTutorial: React.FC = () => {
                   </div>
                 </div>
               </section>
+
+              {/* Animated Mermaid Architecture Visualizer, Formal Definition, Core Algorithm & Live Traffic */}
+              {CLOUD_CHAPTER_VISUAL_SPECS[activeChapter.id] && (
+                <CloudChapterAnimatedVisualizer
+                  chapterTitle={activeChapter.title}
+                  spec={CLOUD_CHAPTER_VISUAL_SPECS[activeChapter.id]}
+                />
+              )}
 
               {/* Hands-On Production Config / SDK Code */}
               <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
