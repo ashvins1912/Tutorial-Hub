@@ -15,6 +15,9 @@ test('mastery levels and algorithm choices are constrained by the schema', () =>
 
 test('keeps a bounded quiz history collection', () => {
   assert.ok(LearningProgress.schema.path('quizHistory'));
+  const attemptSchema = LearningProgress.schema.path('quizHistory').schema;
+  assert.ok(attemptSchema.path('objectiveResults'));
+  assert.ok(attemptSchema.path('questionIndexes'));
 });
 
 test('progress fields have server-side bounds', () => {

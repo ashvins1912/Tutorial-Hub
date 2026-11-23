@@ -21,6 +21,13 @@ async function findAccessibleLesson(lessonId: string, userId: string) {
   return ContentAuthoringJob.findOne(buildAccessibleLessonFilter(lessonId, userId)).select('generatedLesson.quiz').lean();
 }
 
+export function selectQuizQuestions<T>(quiz: T[], requestedIndexes?: unknown): { questions: T[]; indexes: number[] } | null {
+  if (!Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40) return null;
+  const indexes = requestedIndexes === undefined ? quiz.map((_, index) => index) : requestedIndexes;
+  if (!Array.isArray(indexes) || indexes.length < 1 || indexes.length > quiz.length || indexes.some((index, position) => !Number.isInteger(index) || index < 0 || index >= quiz.length || (position > 0 && index <= indexes[position - 1])) || new Set(indexes).size !== indexes.length) return null;
+  return { indexes, questions: indexes.map((index) => quiz[index]) };
+}
+
 function isQuizAnswerCorrect(question: { correctAnswer: string | string[] }, answer: string) {
   const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
   const actual = answer.split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
@@ -61,6 +68,24 @@ export function aggregateObjectiveMastery(history: Array<{ attemptedAt: Date | s
   }).sort((a, b) => a.objectiveId.localeCompare(b.objectiveId));
 }
 
+export function buildObjectiveReviewPlan(history: Array<{ attemptedAt: Date | string; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy?: number }> }>, now = new Date()) {
+  const latest = new Map<string, { objectiveId: string; accuracy: number; lastReviewedAt: Date; intervalDays: number; dueAt: Date }>();
+  for (const attempt of history) {
+    const attemptedAt = new Date(attempt.attemptedAt);
+    if (!Number.isFinite(attemptedAt.getTime())) continue;
+    for (const result of attempt.objectiveResults || []) {
+      if (!result || typeof result.objectiveId !== 'string' || !Number.isInteger(result.correct) || !Number.isInteger(result.total) || result.total < 1 || result.correct < 0 || result.correct > result.total) continue;
+      const accuracy = Math.round((result.correct / result.total) * 100);
+      const previous = latest.get(result.objectiveId);
+      if (previous && previous.lastReviewedAt >= attemptedAt) continue;
+      const intervalDays = accuracy < 50 ? 1 : accuracy < 80 ? 3 : accuracy < 90 ? 7 : 14;
+      const dueAt = new Date(attemptedAt.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+      latest.set(result.objectiveId, { objectiveId: result.objectiveId, accuracy, lastReviewedAt: attemptedAt, intervalDays, dueAt });
+    }
+  }
+  return [...latest.values()].map((item) => ({ ...item, status: item.dueAt.getTime() <= now.getTime() ? 'due' as const : 'scheduled' as const })).sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
+}
+
 export function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
   if (Object.keys(answers).length !== quiz.length || quiz.some((_, index) => typeof answers[String(index)] !== 'string')) return null;
   return quiz.reduce((score, question, index) => score + (isQuizAnswerCorrect(question, answers[String(index)] || '') ? 1 : 0), 0);
@@ -85,11 +110,13 @@ router.get('/:lessonId', async (req: Request, res: Response) => {
   if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const progress = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).lean();
   const latestAttempt = progress?.quizHistory?.[progress.quizHistory.length - 1];
-  const grading = latestAttempt && Array.isArray(lesson.generatedLesson?.quiz) ? {
+  const latestIndexes = latestAttempt?.questionIndexes || [];
+  const isRestorableFullAttempt = !latestIndexes.length || latestIndexes.length === lesson.generatedLesson?.quiz?.length;
+  const grading = latestAttempt && isRestorableFullAttempt && Array.isArray(lesson.generatedLesson?.quiz) ? {
     score: latestAttempt.score,
     total: latestAttempt.total,
     accuracy: latestAttempt.accuracy,
-    correctAnswers: lesson.generatedLesson.quiz.map((question: any) => question.correctAnswer),
+    correctAnswers: latestIndexes.length ? latestIndexes.map((index: number) => lesson.generatedLesson.quiz[index]?.correctAnswer).filter((answer: unknown) => answer !== undefined) : lesson.generatedLesson.quiz.map((question: any) => question.correctAnswer),
   } : null;
   const objectiveMastery = aggregateObjectiveMastery(progress?.quizHistory || []);
   return res.json({ progress: progress || null, grading, objectiveMastery });
@@ -104,6 +131,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
   let quizAccuracy: number | null = null;
   let quizScore = 0;
+  let isFullQuizAttempt = false;
   let objectiveResults: ReturnType<typeof calculateObjectiveResults> = [];
   let quizGrading: { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults: ReturnType<typeof calculateObjectiveResults> } | null = null;
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
@@ -126,24 +154,29 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (body.quizAttempt !== undefined) {
     const attempt = body.quizAttempt;
     const quiz = lesson.generatedLesson?.quiz;
-    if (!attempt || !Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40 || attempt.total !== quiz.length) {
-      return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
-    }
+    if (!attempt || !Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
+    const selection = selectQuizQuestions(quiz, attempt.questionIndexes);
+    if (!selection || attempt.total !== selection.questions.length) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
+    const selectedIndexes = selection.indexes;
+    const selectedQuiz = selection.questions;
+    isFullQuizAttempt = selectedIndexes.length === quiz.length;
     const normalizedAnswers = normalizeAnswers(attempt.answers);
     if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
-    const calculatedScore = calculateQuizScore(quiz, normalizedAnswers);
+    const calculatedScore = calculateQuizScore(selectedQuiz, normalizedAnswers);
     if (calculatedScore === null) return res.status(400).json({ code: 'QUIZ_ANSWERS_INCOMPLETE' });
     quizScore = calculatedScore;
-    const accuracy = Math.round((quizScore / quiz.length) * 100);
+    const accuracy = Math.round((quizScore / selectedQuiz.length) * 100);
     const previous = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).select('bestScore').lean();
     const bestAccuracy = Math.max(previous?.bestScore || 0, accuracy);
     quizAccuracy = accuracy;
-    update.lastScore = accuracy;
-    update.quizTotal = quiz.length;
-    update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
-    update.lastAnswers = normalizedAnswers;
-    objectiveResults = calculateObjectiveResults(quiz, normalizedAnswers);
-    quizGrading = { score: quizScore, total: quiz.length, accuracy, correctAnswers: quiz.map((question: any) => question.correctAnswer), objectiveResults };
+    if (isFullQuizAttempt) {
+      update.lastScore = accuracy;
+      update.quizTotal = selectedQuiz.length;
+      update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
+      update.lastAnswers = normalizedAnswers;
+    }
+    objectiveResults = calculateObjectiveResults(selectedQuiz, normalizedAnswers);
+    quizGrading = { score: quizScore, total: selectedQuiz.length, accuracy, correctAnswers: selectedQuiz.map((question: any) => question.correctAnswer), objectiveResults };
   }
   if (body.completedPracticeIds !== undefined) {
     if (!Array.isArray(body.completedPracticeIds) || body.completedPracticeIds.length > 100 || body.completedPracticeIds.some((id: unknown) => typeof id !== 'string' || id.length > 100)) {
@@ -154,8 +187,8 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   const atomicUpdate: Record<string, unknown> = { $set: update, $setOnInsert: { userId: req.authUser!.id, lessonId: req.params.lessonId } };
   if (quizAccuracy !== null) {
     atomicUpdate.$inc = { attempts: 1 };
-    atomicUpdate.$max = { bestScore: quizAccuracy };
-    atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date(), objectiveResults }], $slice: -30 } };
+    if (isFullQuizAttempt) atomicUpdate.$max = { bestScore: quizAccuracy };
+    atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date(), objectiveResults, questionIndexes: body.quizAttempt.questionIndexes || lesson.generatedLesson!.quiz.map((_: unknown, index: number) => index) }], $slice: -30 } };
   }
   const progress = await LearningProgress.findOneAndUpdate(
     { userId: req.authUser!.id, lessonId: req.params.lessonId },
@@ -172,7 +205,9 @@ router.get('/', async (req: Request, res: Response) => {
   const totalLessons = records.length;
   const masteredLessons = records.filter((item) => item.masteryLevel === 'advanced').length;
   const averageScore = totalLessons ? Math.round(records.reduce((sum, item) => sum + (item.bestScore || 0), 0) / totalLessons) : 0;
-  return res.json({ progress: records, summary: { totalLessons, masteredLessons, averageScore } });
+  const objectiveReviewQueue = records.flatMap((record) => buildObjectiveReviewPlan(record.quizHistory || []).map((item) => ({ ...item, lessonId: record.lessonId }))); 
+  const dueReviews = objectiveReviewQueue.filter((item) => item.status === 'due');
+  return res.json({ progress: records, objectiveReviewQueue, summary: { totalLessons, masteredLessons, averageScore, dueReviews: dueReviews.length, scheduledReviews: objectiveReviewQueue.length - dueReviews.length } });
 });
 
 export default router;

@@ -455,7 +455,7 @@ For every published topic, validate all applicable items:
 - [ ] **Assessment:** Include questions or tasks that measure the stated outcomes. Provide useful explanations for correct and incorrect reasoning.
 - [ ] **Real-world application:** Show where the concept appears in a real application, codebase, system or engineering decision.
 - [ ] **Interview readiness:** Include relevant interview questions, follow-ups, communication prompts and evaluation criteria where the topic supports interview preparation.
-- [ ] **Revision:** Schedule retrieval practice and revisit weak concepts with fresh questions rather than repeating identical answers.
+- [x] **Revision foundation:** Track objective-level quiz evidence, recommend focused practice from existing objective-linked questions, and schedule spaced reviews using performance-based intervals. Fresh question generation remains gated on verified content rather than repeating unreviewed generated answers.
 - [ ] **Further learning:** Link to the next canonical topic, advanced extension, source references and related concepts.
 - [ ] **Review and maintenance:** Record content version, reviewer, review date, source/version assumptions and known limitations.
 
