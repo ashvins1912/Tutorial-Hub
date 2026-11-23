@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildDomainScenario } from '../../src/features/intelligent-engine/components/domainPredictionScenarios.ts';
 import { validateDomainLessonSimulator } from '../../src/features/intelligent-engine/components/domainSimulatorContract.ts';
+import { DEFAULT_DOMAIN_SCENARIO_INPUTS } from '../../src/features/intelligent-engine/components/domainPredictionScenarios.ts';
 
 const scenarios = ['database-query-plan', 'system-capacity', 'concurrency-lost-update', 'cloud-pipeline-gate'];
 
@@ -45,4 +46,31 @@ test('domain simulator contract rejects unknown scenarios and invalid objective 
   assert.equal(validateDomainLessonSimulator({ ...base, scenario: 'generic-animation' }), null);
   assert.equal(validateDomainLessonSimulator({ ...base, objectiveIds: [] }), null);
   assert.equal(validateDomainLessonSimulator(base, ['different-objective']), null);
+});
+
+test('database assumptions change the selected access path and estimated row count', () => {
+  const broad = buildDomainScenario('database-query-plan', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, database: { rowCount: 100_000, selectivityPct: 40, hasIndex: true, coveringIndex: false } });
+  assert.equal(broad[0].prediction.correctOption, 'Sequential scan');
+  assert.equal(broad[0].metrics.find((metric) => metric.label === 'Estimated matches')?.value, '40,000');
+  const noIndex = buildDomainScenario('database-query-plan', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, database: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.database, hasIndex: false } });
+  assert.equal(noIndex[0].prediction.correctOption, 'Sequential scan');
+});
+
+test('system capacity assumptions recalculate bottleneck and overload', () => {
+  const frames = buildDomainScenario('system-capacity', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, system: { incomingRps: 500, gatewayCapacity: 900, orderCapacity: 800, inventoryCapacity: 600 } });
+  assert.equal(frames[0].prediction.correctOption, 'Inventory Service');
+  assert.equal(frames[1].prediction.correctOption, 'No sustained queue growth from capacity mismatch alone');
+  const overloaded = buildDomainScenario('system-capacity', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, system: { incomingRps: 1_500, gatewayCapacity: 900, orderCapacity: 800, inventoryCapacity: 600 } });
+  assert.equal(overloaded[1].metrics.find((metric) => metric.label === 'Excess load')?.value, '900 RPS');
+});
+
+test('concurrency assumptions recalculate the lost-update result', () => {
+  const frames = buildDomainScenario('concurrency-lost-update', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, concurrency: { initialBalance: 250, firstWithdrawal: 40, secondWithdrawal: 60 } });
+  assert.equal(frames[2].metrics.find((metric) => metric.label === 'Interleaved final')?.value, '190');
+  assert.equal(frames[2].metrics.find((metric) => metric.label === 'Serial expected')?.value, '150');
+});
+
+test('cloud pipeline blocks when any required evidence gate fails', () => {
+  const frames = buildDomainScenario('cloud-pipeline-gate', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, cloud: { secretDetected: false, testsPass: true, vulnerabilityScanPass: false, signatureValid: true } });
+  assert.equal(frames[3].metrics.find((metric) => metric.label === 'Promotion decision')?.value, 'Blocked by fixture');
 });
