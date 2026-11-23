@@ -1,6 +1,6 @@
 import type { DomainSimulatorScenario } from './domainSimulatorContract';
-import { runSimulationTick } from '@/engine/simulationEngine';
-import type { ComponentCategory, ComponentType, SystemEdge, SystemNode } from '@/types/system';
+import { runSimulationTick } from '../../../engine/simulationEngine';
+import type { ComponentCategory, ComponentType, SystemEdge, SystemNode } from '../../../types/system';
 
 export type DomainScenarioInputs = {
   database: { rowCount: number; selectivityPct: number; hasIndex: boolean; coveringIndex: boolean };
