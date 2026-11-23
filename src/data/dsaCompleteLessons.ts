@@ -12,6 +12,16 @@ export interface DsaLesson {
   pitfalls: string[];
   practice: { level: 'Warm-up' | 'Core' | 'Challenge' | 'Transfer'; task: string; goal: string }[];
   interviewChecks: string[];
+  learningOutcomes?: string[];
+  prerequisites?: string[];
+  deepDive?: string[];
+  correctness?: string[];
+  implementationSteps?: string[];
+  codeExamples?: { language: string; title: string; code: string; explanation: string }[];
+  traceExercises?: string[];
+  realWorldApplications?: string[];
+  assessment?: string[];
+  revisionPrompts?: string[];
 }
 
 export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
@@ -59,7 +69,83 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       {level:'Challenge',task:'Count subarrays whose sum equals k.',goal:'Use prefix sums plus a frequency map; include prefix 0.'},
       {level:'Transfer',task:'Apply many range increments, then return the final array.',goal:'Use a difference array and reason about endpoint updates.'}
     ],
-    interviewChecks: ['Why is dynamic-array append amortized O(1)?', 'When is a prefix sum insufficient?', 'How do you preserve unread elements during compaction?', 'What changes when values can be negative?']
+    interviewChecks: ['Why is dynamic-array append amortized O(1)?', 'When is a prefix sum insufficient?', 'How do you preserve unread elements during compaction?', 'What changes when values can be negative?'],
+
+    learningOutcomes: [
+      'Explain contiguous indexed storage, array bounds, fixed arrays and dynamic-array resizing.',
+      'Choose between an array, dynamic array, prefix aggregate, difference array and hash-based approach from operation requirements.',
+      'Implement traversal, insertion, deletion, reversal, rotation and stable in-place compaction without losing unread values.',
+      'Derive prefix-sum and difference-array formulas and use endpoint conventions consistently.',
+      'Analyse time and auxiliary space, including preprocessing, recursion and output storage.',
+      'Test empty, singleton, duplicate-heavy, negative-value, overflow and boundary-index cases.'
+    ],
+    prerequisites: [
+      'Programming fundamentals: variables, loops, conditionals, functions and integer arithmetic.',
+      'Zero-based indexing, references and basic memory/address intuition.',
+      'Big-O time and auxiliary-space analysis; revisit Foundation if these are unfamiliar.'
+    ],
+    deepDive: [
+      'Memory model: an array stores a contiguous sequence of same-typed elements. The address of element i is base + i × elementSize; this explains constant-time random access and why an index must be within [0,n).',
+      'Fixed-size arrays cannot grow in place. Dynamic arrays maintain a logical size and a larger capacity; when capacity is exhausted, they allocate a larger backing array and copy elements. Geometric growth makes append O(1) amortized, although an individual resize costs O(n).',
+      'Operation costs depend on where work occurs: indexed read/write is O(1); traversal is O(n); insertion or deletion in the middle shifts up to O(n) elements; searching an unsorted array is O(n).',
+      'A subarray is contiguous, a subsequence preserves order but may skip positions, and a subset ignores order. These terms are not interchangeable.',
+      'For stable in-place compaction, use a read pointer to inspect original elements and a write pointer to place retained values. Maintain 0 <= write <= read+1; never overwrite an element that has not yet been read.',
+      'Prefix sums answer repeated static range-sum queries. Define prefix[0]=0 and prefix[i+1]=prefix[i]+a[i]; sum over half-open [l,r) is prefix[r]-prefix[l].',
+      'A difference array supports many range additions. For an inclusive update [l,r] by delta, add delta at diff[l] and subtract it at diff[r+1] using an n+1 sentinel array; one prefix scan reconstructs the values.',
+      'A prefix-sum frequency map counts subarrays even when values are negative. For each current prefix p, add the number of earlier prefixes equal to p-k, then record p. Seed frequency[0]=1 to count ranges beginning at index zero.',
+      'Two-dimensional arrays require explicit row and column bounds. Jagged arrays may have different row lengths; do not assume a rectangular shape unless the input contract guarantees it.',
+      'Integer range is part of correctness: use a wider accumulator when the sum of n values can exceed the element type, even if each value fits.'
+    ],
+    correctness: [
+      'Traversal invariant: before processing index i, every index smaller than i has been processed exactly once and no index greater than or equal to i has been skipped.',
+      'Stable compaction invariant: before reading index i, prefix [0,write) contains exactly the retained elements among [0,i), in their original relative order.',
+      'Prefix invariant: after processing the first i elements, prefix[i] equals the sum of a[0] through a[i-1]. Thus prefix[r]-prefix[l] leaves exactly a[l] through a[r-1].',
+      'Difference-array invariant: after applying boundary deltas and taking a prefix sum, each position contains the sum of every update whose interval covers that position.',
+      'Rotation invariant: each original element moves to its destination index modulo n; normalize k and handle n=0 before modulo or indexing.',
+      'For each implementation, state whether input is mutated, order is preserved and returned values alias original storage.'
+    ],
+    implementationSteps: [
+      'Use int[] in Java when size is known and fixed; use ArrayList<Integer> when growth is required. ArrayList<Integer> stores boxed references rather than primitive int values.',
+      'Use long[] for prefix sums if the maximum accumulated total can exceed the 32-bit integer range.',
+      'For in-place removal, use a write index and return the new logical length; do not repeatedly remove from the middle of an ArrayList inside a loop.',
+      'Expose range queries with explicit names such as sumRange(leftInclusive, rightExclusive) so endpoint conventions are visible.',
+      'For difference-array updates, allocate n+1 entries when an update may write at index n as a sentinel, then materialize only the first n values.',
+      'Normalize oversized rotation shifts and avoid modulo by zero for empty arrays.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Prefix sums and half-open range queries', code: 'long[] buildPrefix(int[] values) {\n    long[] prefix = new long[values.length + 1];\n    for (int i = 0; i < values.length; i++) {\n        prefix[i + 1] = prefix[i] + values[i];\n    }\n    return prefix;\n}\n\nlong sumRange(long[] prefix, int left, int rightExclusive) {\n    if (left < 0 || rightExclusive < left || rightExclusive >= prefix.length) {\n        throw new IndexOutOfBoundsException();\n    }\n    return prefix[rightExclusive] - prefix[left];\n}', explanation: 'prefix[i] is the sum of the first i values. A query [left,rightExclusive) subtracts the prefix before left from the prefix at the right boundary. rightExclusive == n is valid.' },
+      { language: 'Java 21', title: 'Stable in-place compaction', code: 'int removeValue(int[] values, int target) {\n    int write = 0;\n    for (int read = 0; read < values.length; read++) {\n        if (values[read] != target) {\n            values[write++] = values[read];\n        }\n    }\n    return write;\n}', explanation: 'The read pointer visits each original element once. The write pointer never moves ahead of read, so unread values are not overwritten. The retained prefix preserves original order.' },
+      { language: 'Python 3', title: 'Prefix sums and range queries', code: 'def build_prefix(values):\n    prefix = [0]\n    for value in values:\n        prefix.append(prefix[-1] + value)\n    return prefix\n\ndef sum_range(prefix, left, right_exclusive):\n    if left < 0 or right_exclusive < left or right_exclusive >= len(prefix):\n        raise IndexError(\"invalid range\")\n    return prefix[right_exclusive] - prefix[left]', explanation: 'Python integers grow as needed, but the invariant is the same. The right endpoint is exclusive, matching Python slicing.' }
+    ],
+    traceExercises: [
+      'Predict every prefix value for [3,-2,5,1]. Answer the sum over [1,4) and explain why negative values do not break the formula.',
+      'Trace stable compaction for [3,2,2,4,2,5] while removing 2. Record read and write before and after every iteration.',
+      'Apply +4 to inclusive range [1,3] and -2 to [2,4] using a difference array. Show boundary deltas and reconstructed values.',
+      'Rotate [10,20,30,40,50] right by 7. Normalize the shift, calculate each destination and verify by tracing the reverse operation.'
+    ],
+    realWorldApplications: [
+      'Image processing and matrix computation use indexed contiguous storage for predictable access and cache locality.',
+      'Analytics dashboards use prefix aggregates to answer many range totals over a fixed time series.',
+      'Batch updates to inventory, scores or capacity ranges can be represented with difference arrays and materialized in one scan.',
+      'Stable filtering removes unwanted records while preserving the order of the remaining records.',
+      'Circular buffers use array indexing with modular arithmetic for telemetry, streaming and bounded producer-consumer pipelines.'
+    ],
+    assessment: [
+      'Explain why an array read is O(1), while inserting at index zero is O(n). Include address calculation and shift work.',
+      'Remove duplicates from a sorted array in-place while preserving order. State the loop invariant and test empty and singleton inputs.',
+      'Given negative values and many range-sum queries, choose prefix sums and prove the query formula.',
+      'Given many range increments followed by one final read, derive a difference-array solution and handle an update ending at n-1.',
+      'Given n and maximum absolute value where the total can exceed 32-bit range, identify every accumulator that must use long.',
+      'Compare prefix sums, sliding windows and prefix-sum frequency maps for three different subarray tasks. State each method’s assumptions.'
+    ],
+    revisionPrompts: [
+      'Without looking, derive prefix[r]-prefix[l] for half-open interval [l,r).',
+      'Explain subarray, subsequence and subset with one example each.',
+      'Why is dynamic-array append amortized O(1) rather than worst-case O(1)?',
+      'Describe the read/write pointer invariant that makes stable compaction safe.',
+      'When do negative numbers invalidate a usual positive-sum sliding-window strategy but still allow prefix-sum methods?',
+      'Review after 1, 3, 7, 14 and 30 days using a fresh array example rather than memorizing the same trace.'
+    ]
   },
   {
     id: 'linked-list', sourcePages: [11], title: '3. Linked List', promise: 'Reason confidently about nodes, references, pointer rewiring, cycles and list transformations.',
