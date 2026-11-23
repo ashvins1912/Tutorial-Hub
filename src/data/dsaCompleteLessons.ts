@@ -181,7 +181,137 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       {level:'Challenge',task:'Find all anagram start indices and implement KMP.',goal:'Track counts and prefix-function fallback.'},
       {level:'Transfer',task:'Adapt a string algorithm to Unicode-aware input.',goal:'State normalization and indexing assumptions.'}
     ],
-    interviewChecks: ['When is a frequency array preferable to sorting?', 'What does KMP remember after a mismatch?', 'Why can string concatenation become quadratic?', 'What does “character” mean in the chosen language?']
+    interviewChecks: ['When is a frequency array preferable to sorting?', 'What does KMP remember after a mismatch?', 'Why can string concatenation become quadratic?', 'What does “character” mean in the chosen language?'],
+    learningOutcomes: [
+      'Choose the correct character model: ASCII, UTF-16 code unit, Unicode code point or grapheme cluster, and state any normalization assumptions.',
+      'Distinguish substring, subsequence, prefix and suffix and select an algorithm that matches the required relationship.',
+      'Solve anagram, frequency, palindrome and uniqueness tasks using arrays or maps with justified alphabet assumptions.',
+      'Use two pointers and sliding windows while maintaining a precise window invariant.',
+      'Explain why naive pattern matching can be O(nm) and derive KMP fallback using the longest proper prefix that is also a suffix.',
+      'Implement string processing without accidental quadratic copying and test empty, repeated and Unicode input.'
+    ],
+    prerequisites: [
+      'Array indexing and traversal; be able to trace left/right indices and half-open ranges.',
+      'Hash maps and frequency counting; review the Set/Map lesson when alphabet size is not fixed.',
+      'Two pointers and sliding-window fundamentals for substring constraints.',
+      'Basic modular reasoning and prefix/suffix vocabulary; no advanced string theory is assumed.'
+    ],
+    deepDive: [
+      'A string is an ordered sequence, but the unit exposed by an API is language-specific. Java String indices address UTF-16 code units; codePointAt/codePoints operate on Unicode code points. A user-perceived grapheme such as an emoji with a modifier may contain multiple code points. Never call an index a character index without stating the model.',
+      'Canonical equivalence matters: a visually identical accented character can be encoded as one precomposed code point or a base letter plus combining mark. Normalize both inputs (for example NFC) only when the problem defines canonical equivalence; normalization changes the comparison contract.',
+      'A substring is contiguous; a subsequence preserves order but may skip positions. “abc” is a subsequence of “axbyc” but not a substring. Prefixes start at index 0; suffixes end at the final index.',
+      'Frequency counting compares multisets. For a known small alphabet, an integer array gives O(1) indexed updates; for general code points, use a map. Sorting is simpler but costs O(n log n).',
+      'Palindrome checking compares symmetric positions. A two-pointer scan is O(n) time and O(1) auxiliary space when the comparison rule is already defined. Ignoring punctuation or case is a separate normalization/filtering step, not an implicit property.',
+      'A variable window represents a contiguous candidate range [left, right). Its invariant describes exactly what is valid inside the window. Expand right to include new input; move left only enough to restore validity. Each pointer advances at most n times.',
+      'Naive pattern matching tries every alignment and may compare m characters at each of n-m+1 starts, giving O(nm). KMP avoids rechecking text by retaining the longest prefix of the pattern that is also a suffix of the matched portion.',
+      'The KMP prefix-function value pi[i] is the length of the longest proper border of pattern[0..i]. On mismatch, set j = pi[j-1] repeatedly; do not move the text index backward. Each fallback strictly decreases j, yielding linear total work.',
+      'Repeated immutable concatenation can copy the accumulated prefix on every iteration, producing quadratic total copying. Use StringBuilder in Java or a list plus join in Python when building many pieces.',
+      'Hashing-based matching can be fast but rolling hashes may collide. Verify candidate matches when correctness must be deterministic, or prefer KMP/Z for exact linear-time matching.',
+      'Complexity must include preprocessing and output. KMP is O(n+m) time and O(m) auxiliary space; returning all matched positions additionally requires O(k) output space.'
+    ],
+    correctness: [
+      'Anagram frequency invariant: after processing the first i code points of each input, each map entry equals the difference between counts in the two processed prefixes. Equal lengths and all-zero final differences imply equal multisets.',
+      'Palindrome invariant: before each comparison, all positions outside [left, right] have already been verified as matching mirror pairs. Advancing both ends preserves the invariant.',
+      'Sliding-window invariant: after each left-boundary adjustment, the current half-open window satisfies the stated constraint; the algorithm records answers only for valid windows.',
+      'KMP invariant: before comparing pattern[j] with the current text code point, pattern[0..j) is the longest prefix that matches a suffix ending immediately before the current text position.',
+      'KMP prefix fallback is safe because any shorter valid continuation must be a border of the already matched prefix; pi[j-1] selects the longest such candidate without skipping a possible match.',
+      'Termination: text and pattern scan indices only advance, while each KMP fallback strictly reduces j. Therefore the scan terminates after O(n+m) aggregate transitions.'
+    ],
+    implementationSteps: [
+      'Write down whether comparison is case-sensitive, whitespace-sensitive, punctuation-sensitive and normalization-sensitive.',
+      'Choose a representation: char/code unit, code point, grapheme segment, fixed alphabet array or map. Keep index units consistent throughout.',
+      'Define empty-input behavior and whether the empty pattern matches at every boundary or only once.',
+      'State the invariant before coding: frequency difference, mirrored prefix, valid window or KMP matched-prefix length.',
+      'Prefer half-open ranges [left, right) for substring windows; document conversion when an API uses inclusive endpoints.',
+      'For KMP, build the prefix table independently, then scan text with the fallback loop. Test repeated-prefix patterns such as “aaaaab”.',
+      'Use StringBuilder or an equivalent mutable buffer for repeated output construction.',
+      'Test supplementary Unicode code points, combining marks and normalization only when the product/problem contract requires them.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Code-point-aware anagram check', code: `static boolean areAnagrams(String first, String second) {
+    int[] a = first.codePoints().toArray();
+    int[] b = second.codePoints().toArray();
+    if (a.length != b.length) return false;
+
+    Map<Integer, Integer> counts = new HashMap<>();
+    for (int cp : a) counts.merge(cp, 1, Integer::sum);
+    for (int cp : b) {
+        int remaining = counts.getOrDefault(cp, 0) - 1;
+        if (remaining < 0) return false;
+        if (remaining == 0) counts.remove(cp);
+        else counts.put(cp, remaining);
+    }
+    return counts.isEmpty();
+}`, explanation: 'Counts Unicode code points rather than UTF-16 code units. This compares exact code-point sequences as multisets; it intentionally does not perform case folding or Unicode normalization. Time O(n), auxiliary space O(u), where u is the number of distinct code points.' },
+      { language: 'Java 21', title: 'KMP exact pattern search', code: `static int[] prefixFunction(String pattern) {
+    int[] pi = new int[pattern.length()];
+    for (int i = 1, j = 0; i < pattern.length(); i++) {
+        while (j > 0 && pattern.charAt(i) != pattern.charAt(j)) {
+            j = pi[j - 1];
+        }
+        if (pattern.charAt(i) == pattern.charAt(j)) j++;
+        pi[i] = j;
+    }
+    return pi;
+}
+
+static List<Integer> kmpMatches(String text, String pattern) {
+    List<Integer> matches = new ArrayList<>();
+    if (pattern.isEmpty()) {
+        for (int i = 0; i <= text.length(); i++) matches.add(i);
+        return matches;
+    }
+    int[] pi = prefixFunction(pattern);
+    for (int i = 0, j = 0; i < text.length(); i++) {
+        while (j > 0 && text.charAt(i) != pattern.charAt(j)) j = pi[j - 1];
+        if (text.charAt(i) == pattern.charAt(j)) j++;
+        if (j == pattern.length()) {
+            matches.add(i - j + 1);
+            j = pi[j - 1];
+        }
+    }
+    return matches.stream().mapToInt(Integer::intValue).toArray();
+}`, explanation: 'This version searches UTF-16 code units and returns UTF-16 offsets, matching Java String indexing. It is exact and deterministic. Prefix construction is O(m); scanning is O(n); total O(n+m) time and O(m+k) space including returned match positions.' },
+      { language: 'Python 3', title: 'Palindrome under an explicit ASCII alphanumeric rule', code: `def is_ascii_alphanumeric_palindrome(value: str) -> bool:
+    filtered = [ch.lower() for ch in value if ch.isascii() and ch.isalnum()]
+    left, right = 0, len(filtered) - 1
+    while left < right:
+        if filtered[left] != filtered[right]:
+            return False
+        left += 1
+        right -= 1
+    return True`, explanation: 'The filtering rule is deliberately ASCII-only and ignores punctuation and case. It uses O(n) time and O(n) extra space for the filtered list. A streaming two-pointer implementation over a normalized buffer can reduce auxiliary space.' }
+    ],
+    traceExercises: [
+      'Anagram trace: first = “aab”, second = “aba”. Write the count map after each code point and explain why the final map is empty.',
+      'KMP trace: pattern = “ababaca”. Build pi one position at a time; show the fallback when the next symbol mismatches after matching “ababa”.',
+      'Window trace: text = “pwwkew”. Record [left, right), the current set of characters and the best length after every expansion and shrink.',
+      'Unicode trace: compare “é” as U+00E9 with “e” + U+0301. Explain why exact code-point comparison differs before NFC normalization.'
+    ],
+    realWorldApplications: [
+      'Search boxes and autocomplete: prefix matching, tokenization, case policy and Unicode normalization.',
+      'Log/event processing: parsing delimiters, extracting fields and detecting repeated identifiers.',
+      'Deduplication and identity matching: canonicalization must be explicit to avoid treating distinct identifiers as equal.',
+      'Text editors and diff tools: substring search, incremental scanning and efficient output buffers.',
+      'Security-sensitive validation: avoid ambiguous normalization rules and test visually confusable or differently encoded input.'
+    ],
+    assessment: [
+      'Explain with a concrete example why a subsequence need not be a substring; give the time complexity of checking a candidate subsequence.',
+      'Implement an anagram check for arbitrary Unicode code points and state whether normalization and case folding are included.',
+      'For pattern = “ababaca”, derive the prefix-function table and justify each fallback.',
+      'Compare naive matching, KMP and rolling hash on worst-case repeated-prefix input. Include preprocessing and auxiliary space.',
+      'Design a longest-substring-without-repeating-characters algorithm and state its window invariant.',
+      'Identify the indexing unit used by Java String and explain what offset a returned match index represents.',
+      'Create tests for empty pattern, empty text, repeated characters, overlapping matches, supplementary code points and combining marks.'
+    ],
+    revisionPrompts: [
+      'Without notes, distinguish substring, subsequence, prefix and suffix with one example each.',
+      'Re-derive the anagram frequency invariant and explain why a negative count can reject early.',
+      'Draw the KMP prefix table for “aaaaab” and explain why naive matching repeats work.',
+      'State the exact window invariant for the longest unique substring problem.',
+      'After two days, implement KMP from memory and test overlapping matches.',
+      'After one week, explain Java UTF-16 indexing versus Unicode code-point iteration without using the phrase “one char equals one character”.'
+    ]
   },
   {
     id: 'stacks-queues', sourcePages: [6, 7], title: '5. Stack and Queues', promise: 'Use LIFO/FIFO order, monotonic structures and deques to process sequences and frontiers.',
