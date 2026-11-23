@@ -546,3 +546,49 @@ test('greedy Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('fast and slow pointers satisfy the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'fast-slow-pointers');
+  assert.ok(lesson, 'fast-slow-pointers lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 1 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'fast-slow-pointers requires substantive ' + field);
+  }
+  assert.ok(lesson.correctness.some((item) => /modular/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /cycle/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('fast and slow Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'fast-slow-pointers');
+  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-fast-slow-'));
+  try {
+    const javaSource = [
+      'public class FastSlowLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'Node a = new Node(1), b = new Node(2), c = new Node(3), d = new Node(4);',
+      'a.next = b; b.next = c; c.next = d;',
+      'if (secondMiddle(a) != c) throw new AssertionError("even second middle");',
+      'Node e = new Node(5); d.next = e;',
+      'if (secondMiddle(a) != c) throw new AssertionError("odd middle");',
+      'e.next = c;',
+      'if (cycleEntry(a) != c) throw new AssertionError("cycle entry");',
+      'Node self = new Node(9); self.next = self;',
+      'if (cycleEntry(self) != self) throw new AssertionError("self cycle");',
+      'if (cycleEntry(null) != null) throw new AssertionError("empty list");',
+      '}',
+      '}'
+    ].join(String.fromCharCode(10));
+    writeFileSync(join(directory, 'FastSlowLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['FastSlowLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['FastSlowLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
