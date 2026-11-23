@@ -46,8 +46,8 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
           }
           setTraceIndex(typeof saved.currentStep === 'number' ? saved.currentStep : 0);
           setAttempts(saved.attempts || 0);
-          setAnswers(saved.lastAnswers || {});
-          setSubmitted(saved.lastScore !== null && saved.lastScore !== undefined);
+          setAnswers(payload.grading ? (saved.lastAnswers || {}) : {});
+          setSubmitted(Boolean(payload.grading));
           setCompletedPracticeIds(saved.completedPracticeIds || []);
           setMasterySummary({ bestScore: saved.bestScore || 0, masteryLevel: saved.masteryLevel || 'beginner' });
         }
