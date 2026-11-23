@@ -13,6 +13,25 @@ import { getAllUserLearningStates } from './userStateRoutes';
 import { computeUserProgressSummary } from '../services/userStatsService';
 import { parsePlatformUrl } from '../../src/utils/platformUrlParser';
 
+const LEADERBOARD_STATE_KEYS = [
+  'problem-progress',
+  'xray-decoded-constraints',
+  'active-recall-unlocked',
+  'product-company-solved',
+  'dp-practice-completed',
+  'matrix-problems-completed',
+  'algorithms-implemented',
+  'fuzzy-modules-completed',
+  'system-design-academy-progress',
+  'system-design-roadmap-progress',
+  'ood-mastery-progress',
+  'ai-engineering-progress',
+  'topic-expertise-checks',
+  'mutation-graph-solved',
+  'solver-adaptive-telemetry',
+  'engine-custom-concepts',
+] as const;
+
 const router = express.Router();
 router.use(requireAuth);
 router.use((_req: Request, res: Response, next: import('express').NextFunction) => {
@@ -167,17 +186,25 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
     const entries: RawEntry[] = [];
 
     if (isMongoConnected()) {
-      const [accounts, profiles, allStates, acceptedInvites, posts] = await Promise.all([
+      const [accounts, profiles, allStates, acceptedInvites, challengeCountRows] = await Promise.all([
         UserAccount.find().select('supabaseUserId email fullName avatarUrl createdAt').lean(),
-        UserBrainProfile.find().lean(),
-        UserLearningState.find().select('userId stateKey payload').lean(),
+        UserBrainProfile.find()
+          .select('userId currentTier cognitiveMetrics passedTopicQuizzes completedProblemIds completedWarmupDrills masteredProblemSlugs notes spacedRepetitionQueue activityLog')
+          .lean(),
+        UserLearningState.find({ stateKey: { $in: LEADERBOARD_STATE_KEYS } })
+          .select('userId stateKey payload')
+          .lean(),
         CommunityInvite.find({
           status: 'accepted',
           $or: [{ inviterUserId: currentUserId }, { acceptedByUserId: currentUserId }],
         })
           .select('inviterUserId acceptedByUserId')
           .lean(),
-        CommunityPost.find().select('completedBy').lean(),
+        CommunityPost.aggregate([
+          { $match: { completedBy: { $exists: true, $ne: [] } } },
+          { $unwind: '$completedBy' },
+          { $group: { _id: '$completedBy', count: { $sum: 1 } } },
+        ]),
       ]);
 
       for (const inv of acceptedInvites) {
@@ -198,12 +225,9 @@ router.get('/leaderboard', async (req: Request, res: Response) => {
         bucket[st.stateKey] = st.payload;
       }
 
-      const challengeCounts = new Map<string, number>();
-      for (const post of posts) {
-        for (const uid of post.completedBy ?? []) {
-          challengeCounts.set(uid, (challengeCounts.get(uid) ?? 0) + 1);
-        }
-      }
+      const challengeCounts = new Map<string, number>(
+        challengeCountRows.map((row: { _id: string; count: number }) => [row._id, row.count])
+      );
 
       for (const acc of accounts) {
         const uid = acc.supabaseUserId;
