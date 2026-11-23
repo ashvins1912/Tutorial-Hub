@@ -30,8 +30,8 @@ test('system design prediction identifies the lowest-capacity dependency', () =>
 
 test('concurrency scenario demonstrates a lost update and safe correction', () => {
   const frames = buildDomainScenario('concurrency-lost-update');
-  assert.equal(frames[2].metrics.find((metric) => metric.label === 'Actual final')?.value, '50');
-  assert.equal(frames[2].metrics.find((metric) => metric.label === 'Expected serial result')?.value, '20');
+  assert.equal(frames[2].metrics.find((metric) => metric.label === 'Interleaved final')?.value, '50');
+  assert.equal(frames[2].metrics.find((metric) => metric.label === 'Serial expected')?.value, '20');
   assert.equal(frames[2].prediction.correctOption, 'Atomic UPDATE or row-level locking');
 });
 
