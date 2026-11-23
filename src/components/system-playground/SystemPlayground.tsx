@@ -17,6 +17,8 @@ import { PLAYGROUND_ARCHITECTURE_EXPLANATIONS } from '../../data/realWorldPlaygr
 import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { useSystemStore } from '../../store/useSystemStore';
 import type { ComponentType, SystemNode } from '../../types/system';
+import { buildTrafficTopologyFromPlayground } from '../../utils/liveTrafficTopology';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { AnimatedTrafficEdge } from './AnimatedTrafficEdge';
 import { AuditModal } from './AuditModal';
 import { CustomSystemNode } from './CustomSystemNode';
@@ -43,6 +45,7 @@ function PlaygroundWorkspaceInner() {
   const edges = useSystemStore((s) => s.edges);
   const activeBlueprintId = useSystemStore((s) => s.activeBlueprintId);
   const isSimulating = useSystemStore((s) => s.isSimulating);
+  const baseEntryRps = useSystemStore((s) => s.baseEntryRps);
   const showWalkthrough = useSystemStore((s) => s.showWalkthrough);
   const activeWalkthroughStep = useSystemStore((s) => s.activeWalkthroughStep);
 
@@ -61,6 +64,7 @@ function PlaygroundWorkspaceInner() {
   const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showExplanation, setShowExplanation] = useState(true);
+  const [showTrafficWidget, setShowTrafficWidget] = useState(false);
 
   // 500ms high-frequency simulation tick loop
   useEffect(() => {
@@ -160,6 +164,17 @@ function PlaygroundWorkspaceInner() {
   const walkthroughSteps = activeBlueprint?.architecturalWalkthrough ?? [];
   const currentWalkthrough = walkthroughSteps[activeWalkthroughStep] ?? null;
 
+  const playgroundTrafficTopology = useMemo(
+    () =>
+      buildTrafficTopologyFromPlayground(
+        nodes,
+        edges,
+        activeBlueprint?.name ?? 'Custom Playground Architecture',
+        baseEntryRps
+      ),
+    [nodes, edges, activeBlueprint?.name, baseEntryRps]
+  );
+
   const miniMapNodeColor = useCallback((node: SystemNode) => {
     if (node.data.status === 'OFFLINE' || node.data.metrics.isOverloaded) return '#ef4444';
     if (node.data.status === 'DEGRADED') return '#f59e0b';
@@ -187,7 +202,21 @@ function PlaygroundWorkspaceInner() {
         }}
         showExplanation={showExplanation}
         onToggleExplanation={() => setShowExplanation((v) => !v)}
+        showTrafficWidget={showTrafficWidget}
+        onToggleTrafficWidget={() => setShowTrafficWidget((v) => !v)}
       />
+
+      {showTrafficWidget && (
+        <div className="border-b border-slate-800 bg-slate-950 p-3 max-h-[54vh] overflow-y-auto">
+          <LiveTrafficFlowSimulator
+            topology={playgroundTrafficTopology}
+            domain="playground"
+            compact
+            allowPresetSwitcher
+            heading="Playground Synchronized Packet Flow & Failover Simulator"
+          />
+        </div>
+      )}
 
       <div className="flex-1 flex min-h-0 relative overflow-hidden">
         {/* Left Palette */}

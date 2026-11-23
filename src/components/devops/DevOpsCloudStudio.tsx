@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Activity,
   ChevronLeft,
   ChevronRight,
   Code2,
@@ -35,6 +36,7 @@ import { MermaidLevel1DfdViewer } from './MermaidLevel1DfdViewer';
 import { CloudDevCompleteTutorial } from './CloudDevCompleteTutorial';
 import { DEVOPS_CLOUD_DEEP_TOPICS } from '../../data/devopsCloudDeepGapsData';
 import { DevOpsCloudDeepVisualLab } from './DevOpsCloudDeepVisualLab';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 
 const BoundedDevOpsCloudDeepVisualLab = withStudioBoundary(DevOpsCloudDeepVisualLab, {
   studioName: 'DevOps & Cloud Deep Visual Learning Lab',
@@ -536,6 +538,7 @@ const DevOpsCloudStudioInner: React.FC = () => {
   const [selectedMasterDfdId, setSelectedMasterDfdId] = useState<string>(MASTER_DEVOPS_DFDS[0].id);
   const [selectedEngineId, setSelectedEngineId] = useState<string>(SECTION6_SIMULATOR_ENGINE_BLUEPRINTS[0].id);
   const [matrixFilter, setMatrixFilter] = useState<string>('');
+  const [showLiveTraffic, setShowLiveTraffic] = useState<boolean>(false);
 
   const handleNavigateRelated = (
     tab: 'simulators' | 'sdlc-pipeline' | 'rollouts-envs' | 'cloud-vs-onprem' | 'master-dfds',
@@ -600,22 +603,52 @@ const DevOpsCloudStudioInner: React.FC = () => {
   return (
     <section className="space-y-6">
       {/* Studio Header */}
-      <div className="space-y-2 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <span>AWS · GCP · In-House Bare-Metal</span>
-          <span aria-hidden="true">·</span>
-          <span>6 SDLC Modules</span>
-          <span aria-hidden="true">·</span>
-          <span>6 Rollout Strategies</span>
-          <span aria-hidden="true">·</span>
-          <span>5 Live Simulators &amp; CLI Sandbox</span>
+      <div className="space-y-3 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+          <div className="space-y-2 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>AWS · GCP · In-House Bare-Metal</span>
+              <span aria-hidden="true">·</span>
+              <span>6 SDLC Modules</span>
+              <span aria-hidden="true">·</span>
+              <span>6 Rollout Strategies</span>
+              <span aria-hidden="true">·</span>
+              <span>5 Live Simulators &amp; CLI Sandbox</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
+              DevOps &amp; Cloud Engineering Studio
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Master end-to-end SDLC automation, DevSecOps quality gates, progressive rollout strategies, GitOps self-healing, and AWS vs. GCP vs. On-Premise architecture through live interactive simulators, animated Data Flow Diagrams, and hands-on outage drills.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowLiveTraffic((v) => !v)}
+            aria-pressed={showLiveTraffic}
+            className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+              showLiveTraffic
+                ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 hover:border-sky-500'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+            {showLiveTraffic ? 'Hide Live Cloud Traffic' : 'Live Cloud Traffic Flow'}
+          </button>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 text-balance">
-          DevOps &amp; Cloud Engineering Studio
-        </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
-          Master end-to-end SDLC automation, DevSecOps quality gates, progressive rollout strategies, GitOps self-healing, and AWS vs. GCP vs. On-Premise architecture through live interactive simulators, animated Data Flow Diagrams, and hands-on outage drills.
-        </p>
+
+        {showLiveTraffic && (
+          <div className="pt-2">
+            <LiveTrafficFlowSimulator
+              domain="devops"
+              initialPresetId="devops-k8s-mesh"
+              compact
+              allowPresetSwitcher
+              heading="DevOps & Cloud Live Traffic, mTLS Mesh & Canary Failover Simulator"
+            />
+          </div>
+        )}
       </div>
 
       {/* Primary Studio Navigation */}

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
+  Activity,
   BookOpen,
   Brain,
   Code2,
@@ -57,6 +58,7 @@ import { SqlBasicsPlayground } from './SqlBasicsPlayground';
 import { SqlQueryIntelligenceLab } from './SqlQueryIntelligenceLab';
 import { DbQueryDataFlowOverlay } from './DbQueryDataFlowOverlay';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 
 type DbStudioTab =
   | 'db-algorithms-mermaid'
@@ -159,6 +161,7 @@ export function DatabaseInternalsStudio() {
   const [activeTab, setActiveTab] = useState<DbStudioTab>('db-algorithms-mermaid');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
   const [dataFlowOverlayOpen, setDataFlowOverlayOpen] = useState<boolean>(false);
+  const [showLiveTraffic, setShowLiveTraffic] = useState<boolean>(false);
 
   const [progress, setProgress] = useAccountState<DatabaseInternalsProgress>(
     'db-internals-progress',
@@ -309,8 +312,21 @@ export function DatabaseInternalsStudio() {
                 <GitBranch className="w-3.5 h-3.5" aria-hidden="true" />
                 Open Data Flow Overlay (Mermaid)
               </button>
+              <button
+                type="button"
+                onClick={() => setShowLiveTraffic((v) => !v)}
+                aria-pressed={showLiveTraffic}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                  showLiveTraffic
+                    ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:border-sky-500'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+                {showLiveTraffic ? 'Hide DB Traffic Simulator' : 'Live DB Traffic & Shards'}
+              </button>
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Trace live SQL, NoSQL, Vector &amp; WAL queries across every architectural layer
+                Trace live SQL, NoSQL, Vector, Shard Failover &amp; WAL flows
               </span>
             </div>
           </div>
@@ -343,6 +359,18 @@ export function DatabaseInternalsStudio() {
             </div>
           </div>
         </div>
+
+        {showLiveTraffic && (
+          <div className="pt-1">
+            <LiveTrafficFlowSimulator
+              domain="database"
+              initialPresetId="db-pgbouncer-shards"
+              compact
+              allowPresetSwitcher
+              heading="Database Pooler, Cache, Hot-Shard & Replica Failover Simulator"
+            />
+          </div>
+        )}
 
         <div className="pt-1">
           <SegmentedTabBar<DbStudioTab>

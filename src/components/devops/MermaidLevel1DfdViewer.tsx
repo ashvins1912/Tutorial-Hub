@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
+  Activity,
   AlertTriangle,
   ArrowUpRight,
   Code2,
@@ -8,6 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { renderMermaidToSvgElement } from '../../utils/mermaidRenderer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { CopyButton } from '../ui';
 
 interface MermaidNodeDoc {
@@ -218,6 +220,7 @@ export const MermaidLevel1DfdViewer: React.FC<MermaidLevel1DfdViewerProps> = ({
   const [selectedId, setSelectedId] = useState<string>('SCAN');
   const [showSource, setShowSource] = useState<boolean>(false);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [showLiveTraffic, setShowLiveTraffic] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(() =>
     typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false
   );
@@ -340,19 +343,46 @@ export const MermaidLevel1DfdViewer: React.FC<MermaidLevel1DfdViewerProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowSource((v) => !v)}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
-            showSource
-              ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300'
-              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-sky-500'
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5" aria-hidden="true" />
-          {showSource ? 'Hide Mermaid Source' : 'View Mermaid Source'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowLiveTraffic((v) => !v)}
+            aria-pressed={showLiveTraffic}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+              showLiveTraffic
+                ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 hover:border-sky-500'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+            {showLiveTraffic ? 'Hide Live Traffic' : 'Live Traffic Flow'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowSource((v) => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+              showSource
+                ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-sky-500'
+            }`}
+          >
+            <Code2 className="w-3.5 h-3.5" aria-hidden="true" />
+            {showSource ? 'Hide Mermaid Source' : 'View Mermaid Source'}
+          </button>
+        </div>
       </div>
+
+      {showLiveTraffic && (
+        <LiveTrafficFlowSimulator
+          mermaidCode={LEVEL1_MERMAID_CODE}
+          mermaidTitle="Level 1 CI/CD & Production DevSecOps Pipeline"
+          domain="devops"
+          compact
+          allowPresetSwitcher={false}
+          heading="CI/CD & Production Mermaid Live Traffic Simulator"
+        />
+      )}
 
       {/* Live Mermaid.js Rendered Canvas */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 p-4 overflow-x-auto">

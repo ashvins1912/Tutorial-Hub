@@ -25,6 +25,13 @@ import { useSystemStore } from '../store/useSystemStore';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
 import { TopicBridgeBar } from './shared/TopicBridgeBar';
+import { LiveTrafficFlowSimulator } from './shared/LiveTrafficFlowSimulator';
+import {
+  buildTrafficTopologyFromPlayground,
+  LIVE_TRAFFIC_PRESETS,
+  parseMermaidToTrafficTopology,
+  type TrafficTopology,
+} from '../utils/liveTrafficTopology';
 
 const SystemDesignLearningAcademy = withStudioBoundary(SystemDesignLearningAcademyBase, {
   studioName: 'System Design Deep Academy',
@@ -630,6 +637,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
   );
   const [explainerOpen, setExplainerOpen] = useState<boolean>(false);
   const [explainTriggerCount, setExplainTriggerCount] = useState<number>(0);
+  const [showLiveTrafficWidget, setShowLiveTrafficWidget] = useState<boolean>(true);
   const [flowSimActive, setFlowSimActive] = useState<boolean>(false);
   const [flowSimSignal, setFlowSimSignal] = useState<number>(0);
   const [flowSimStepIdx, setFlowSimStepIdx] = useState<number>(0);
@@ -637,6 +645,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
   const playgroundNodes = useSystemStore((s) => s.nodes);
   const playgroundEdges = useSystemStore((s) => s.edges);
   const playgroundBlueprintId = useSystemStore((s) => s.activeBlueprintId);
+  const playgroundBaseRps = useSystemStore((s) => s.baseEntryRps);
   const playgroundIsSimulating = useSystemStore((s) => s.isSimulating);
   const togglePlaygroundSimulation = useSystemStore((s) => s.toggleSimulation);
   const highlightPlaygroundNodes = useSystemStore((s) => s.highlightNodes);
@@ -922,6 +931,70 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     consistencyMode,
   ]);
 
+  // Dynamically derive a Live Traffic Topology from whichever architectural pattern is currently selected
+  const syncedTrafficTopology = useMemo<TrafficTopology>(() => {
+    if (subTab === 'llm-internals') {
+      const llmPreset = LIVE_TRAFFIC_PRESETS.find((p) => p.id === 'llm-token-streaming');
+      if (activeArchitecture.mermaidDiagram) {
+        const parsed = parseMermaidToTrafficTopology(
+          activeArchitecture.mermaidDiagram,
+          activeArchitecture.architectureTitle,
+          'system-design',
+          activeArchitecture.scaleContext
+        );
+        if (parsed) return parsed;
+      }
+      return llmPreset ?? LIVE_TRAFFIC_PRESETS[0];
+    }
+
+    if (subTab === 'playground') {
+      const pg = buildTrafficTopologyFromPlayground(
+        playgroundNodes,
+        playgroundEdges,
+        activeArchitecture.architectureTitle,
+        playgroundBaseRps
+      );
+      if (pg) return pg;
+    }
+
+    if (subTab === 'db-dfd') {
+      return (
+        LIVE_TRAFFIC_PRESETS.find((p) => p.id === 'db-pgbouncer-shards') ??
+        LIVE_TRAFFIC_PRESETS[0]
+      );
+    }
+
+    if (activeArchitecture.mermaidDiagram) {
+      const parsed = parseMermaidToTrafficTopology(
+        activeArchitecture.mermaidDiagram,
+        activeArchitecture.architectureTitle,
+        'system-design',
+        activeArchitecture.scaleContext
+      );
+      if (parsed) return parsed;
+    }
+
+    if (subTab === 'dfd-simulator') {
+      const pat =
+        SYSTEM_DFD_PATTERNS.find((p) => p.id === selectedDfdPatternId) ?? SYSTEM_DFD_PATTERNS[0];
+      if (pat.category.toLowerCase().includes('event') || pat.id.includes('kafka') || pat.id.includes('saga')) {
+        return LIVE_TRAFFIC_PRESETS.find((p) => p.id === 'event-driven-kafka') ?? LIVE_TRAFFIC_PRESETS[0];
+      }
+      if (pat.id.includes('multi-region') || pat.id.includes('geo')) {
+        return LIVE_TRAFFIC_PRESETS.find((p) => p.id === 'multi-region-active-active') ?? LIVE_TRAFFIC_PRESETS[0];
+      }
+    }
+
+    return LIVE_TRAFFIC_PRESETS[0];
+  }, [
+    subTab,
+    activeArchitecture,
+    playgroundNodes,
+    playgroundEdges,
+    playgroundBaseRps,
+    selectedDfdPatternId,
+  ]);
+
   const flowSimHops = useMemo<
     { id: string; label: string; badge: string; detail: string }[]
   >(() => {
@@ -1076,6 +1149,20 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0 self-start">
+            <button
+              type="button"
+              onClick={() => setShowLiveTrafficWidget((v) => !v)}
+              aria-pressed={showLiveTrafficWidget}
+              className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                showLiveTrafficWidget
+                  ? 'border-sky-600 bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950'
+                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:border-sky-500'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+              {showLiveTrafficWidget ? 'Hide Traffic Visualizer' : 'Live Traffic Visualizer'}
+            </button>
+
             <button
               type="button"
               onClick={handleTriggerSimulateDataFlow}
@@ -1235,6 +1322,17 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
           </div>
         )}
       </div>
+
+      {/* Live Traffic Visualization & Failover Simulator Widget (Synced to Active Pattern) */}
+      {showLiveTrafficWidget && (
+        <LiveTrafficFlowSimulator
+          topology={syncedTrafficTopology}
+          domain="system-design"
+          compact
+          allowPresetSwitcher
+          heading="Live Traffic Visualization & Failover Simulator"
+        />
+      )}
 
       {/* Mode 00A: Interactive Expandable & Clickable Mermaid.js Architecture Flows */}
       {subTab === 'mermaid-flows' && (

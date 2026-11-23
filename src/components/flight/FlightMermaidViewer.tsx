@@ -1,7 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Code2 } from 'lucide-react';
+import { Activity, Code2 } from 'lucide-react';
 import type { FlightNodeData } from '../../data/flightSimulatorData';
+import type { TrafficDomain } from '../../utils/liveTrafficTopology';
 import { renderMermaidToSvgElement } from '../../utils/mermaidRenderer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { CopyButton } from '../ui';
 
 export interface FlightMermaidViewerProps {
@@ -12,6 +14,8 @@ export interface FlightMermaidViewerProps {
   selectedNodeId?: string | null;
   onSelectNodeId?: (nodeId: string) => void;
   compact?: boolean;
+  enableLiveTraffic?: boolean;
+  trafficDomain?: TrafficDomain;
 }
 
 export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
@@ -22,10 +26,13 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
   selectedNodeId,
   onSelectNodeId,
   compact = false,
+  enableLiveTraffic = true,
+  trafficDomain = 'mermaid',
 }) => {
   const uniqueId = useId().replace(/:/g, '');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [showCode, setShowCode] = useState<boolean>(false);
+  const [showLiveTraffic, setShowLiveTraffic] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState<boolean>(() =>
     typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false
@@ -126,7 +133,22 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
           <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h4>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {enableLiveTraffic && (
+            <button
+              type="button"
+              onClick={() => setShowLiveTraffic((v) => !v)}
+              aria-pressed={showLiveTraffic}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                showLiveTraffic
+                  ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 hover:border-sky-500'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+              {showLiveTraffic ? 'Hide Live Traffic' : 'Live Traffic Flow'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setShowCode((s) => !s)}
@@ -153,6 +175,19 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
           />
         )}
       </div>
+
+      {showLiveTraffic && (
+        <div className="border-t border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50/40 dark:bg-slate-950/60">
+          <LiveTrafficFlowSimulator
+            mermaidCode={mermaidCode}
+            mermaidTitle={title}
+            domain={trafficDomain}
+            compact
+            allowPresetSwitcher={false}
+            heading="Mermaid Live Traffic & Failover Simulator"
+          />
+        </div>
+      )}
 
       {showCode && (
         <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-950 p-3.5">

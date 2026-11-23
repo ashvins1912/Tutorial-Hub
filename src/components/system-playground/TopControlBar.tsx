@@ -24,6 +24,8 @@ interface TopControlBarProps {
   onToggleFullscreen: () => void;
   showExplanation: boolean;
   onToggleExplanation: () => void;
+  showTrafficWidget: boolean;
+  onToggleTrafficWidget: () => void;
 }
 
 // Logarithmic mapping so slider moves smoothly across 100 RPS -> 1,000,000 RPS
@@ -52,6 +54,8 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
   onToggleFullscreen,
   showExplanation,
   onToggleExplanation,
+  showTrafficWidget,
+  onToggleTrafficWidget,
 }) => {
   const { data: BLUEPRINT_LIST } = useAsyncCatalog('system-design-blueprints');
   const activeBlueprintId = useSystemStore((s) => s.activeBlueprintId);
@@ -152,6 +156,21 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
               </button>
             </>
           )}
+
+          <button
+            type="button"
+            onClick={onToggleTrafficWidget}
+            aria-pressed={showTrafficWidget}
+            title="Toggle synchronized animated packet flow, bottleneck & failover simulator"
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              showTrafficWidget
+                ? 'border-sky-500 bg-sky-500/20 text-sky-200'
+                : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-sky-500 hover:text-white'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Packet Flow</span>
+          </button>
         </div>
       </div>
 
