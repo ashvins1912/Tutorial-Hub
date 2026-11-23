@@ -24,3 +24,20 @@ Each scenario has four ordered states. The first three states require a domain-s
 Attach `domainSimulator` to a lesson with `schemaVersion: 1`, a stable `id`, `kind: domain-prediction`, one supported `scenario`, a title, a concise description and one or more exact `objectiveIds`. Unknown scenarios, duplicate objectives and references outside the lesson objective list are rejected. This remains separate from the legacy binary-search/bubble-sort `simulator` contract.
 
 The four fixtures are deterministic and tested. They are instructional models, not verified measurements of any particular database, architecture, language runtime or cloud provider.
+
+
+## Parameterized learner controls and evidence
+
+The runtime exposes bounded scenario controls for:
+- Database row count, predicate selectivity, index availability and covering-index state.
+- System incoming request rate and each serial service's stated capacity.
+- Concurrency initial balance and each transaction's withdrawal amount.
+- Cloud secret detection, test result, vulnerability policy result and artifact signature/provenance validity.
+
+Each change recalculates the scenario and resets the active prediction session so old answers cannot be applied to new assumptions. The system-capacity model handles tied bottlenecks. All results remain instructional approximations and must be checked against the target database, distributed architecture or CI/CD provider.
+
+Completed sessions are stored in a bounded, authenticated progress history separate from quiz attempts. The server checks the simulator ID, scenario and objective references against the published lesson and records only completion plus the number of answered checkpoints. It deliberately does not accept client-reported correctness and does not award mastery.
+
+## Accessibility and test coverage
+
+Native radio/checkbox/number inputs support keyboard operation; controls have visible focus treatment and labels; the current step exposes progress semantics; feedback uses a polite live region; no forced animation is used. Automated tests cover scenario parameter sensitivity, session state transitions, published-lesson sanitization and rendered accessibility landmarks. Manual assistive-technology and real-device validation remains outstanding.
