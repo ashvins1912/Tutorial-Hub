@@ -670,7 +670,7 @@ const memSharedProblems = new Map<string, SolverLibraryRecord>([
   ],
 ]);
 
-function extractAuthenticatedActor(req: Request): { userId: string; email: string; authorName: string } {
+export function extractAuthenticatedActor(req: Request): { userId: string; email: string; authorName: string } {
   const user = req.authUser;
   if (!user?.id) {
     throw new Error('Authenticated user context is required for solver library operations.');
