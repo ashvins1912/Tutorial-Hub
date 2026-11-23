@@ -32,7 +32,8 @@ const QuizAttemptSchema = new Schema({
   total: { type: Number, required: true, min: 1, max: 40 },
   accuracy: { type: Number, required: true, min: 0, max: 100 },
   attemptedAt: { type: Date, default: Date.now },
-  objectiveResults: { type: [ObjectiveResultSchema], default: [] },\n  questionIndexes: { type: [Number], default: [] },
+  objectiveResults: { type: [ObjectiveResultSchema], default: [] },
+  questionIndexes: { type: [Number], default: [] },
 }, { _id: false });
 
 const LearningProgressSchema = new Schema<ILearningProgress>({
