@@ -15,6 +15,7 @@ type PublishedLesson = {
   visualizations?: LessonVisual[];
   quiz?: QuizQuestion[];
   practiceTasks?: PracticeTask[];
+  simulator?: LessonSimulator;
 };
 
 export function PublishedLessonView({ lessonId }: { lessonId: string }) {
