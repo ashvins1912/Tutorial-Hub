@@ -42,7 +42,7 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     if (!isText(visual.title) || !isText(visual.source) || !['mermaid','step-animation','table','equation','chart-spec'].includes(String(visual.type))) throw new Error('GENERATED_VISUALIZATION_INCOMPLETE');
     if (visual.type === 'step-animation' && asArray(visual.steps).length < 2) throw new Error('GENERATED_ANIMATION_NEEDS_TWO_STEPS');
   }
-  const lesson: GeneratedLesson = {
+  let simulator: GeneratedLesson['simulator'];\n  if (raw.simulator !== undefined && raw.simulator !== null) {\n    if (!raw.simulator || typeof raw.simulator !== 'object' || Array.isArray(raw.simulator)) throw new Error('GENERATED_SIMULATOR_INVALID');\n    const candidate = raw.simulator as Record<string, unknown>;\n    if (candidate.schemaVersion !== 1 || !isText(candidate.id) || candidate.id.length > 80 || candidate.kind !== 'algorithm-trace' || !isText(candidate.title) || !isText(candidate.description) || !['binary-search', 'bubble-sort'].includes(String(candidate.algorithm)) || typeof candidate.initialInput !== 'string' || candidate.initialInput.length > 256) throw new Error('GENERATED_SIMULATOR_INVALID');\n    if (candidate.algorithm === 'binary-search' && !isText(candidate.target)) throw new Error('GENERATED_SIMULATOR_TARGET_REQUIRED');\n    simulator = { schemaVersion: 1, id: candidate.id, kind: 'algorithm-trace', title: candidate.title, description: candidate.description, algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, ...(typeof candidate.target === 'string' ? { target: candidate.target } : {}) };\n  }\n  const lesson: GeneratedLesson = {
     schemaVersion: '1.0',
     title: raw.title as string,
     summary: raw.summary as string,
@@ -50,10 +50,10 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     modules: modules as GeneratedLesson['modules'],
     visualizations: visualizations as GeneratedLesson['visualizations'],
     quiz: quiz as GeneratedLesson['quiz'],
-    practiceTasks: practiceTasks as GeneratedLesson['practiceTasks'],
+    practiceTasks: practiceTasks as GeneratedLesson['practiceTasks'],\n    ...(simulator ? { simulator } : {}),
     references: allowedReferences.map((ref) => ({ label: String(ref.label), url: String(ref.url), suppliedByUser: true })),
     qualityNotes: asArray(raw.qualityNotes).filter(isText),
-    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and quiz structure checked'], warnings },
+    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and quiz structure checked', 'Optional simulator configuration shape checked'], warnings },
   };
   return { lesson, warnings };
 }
