@@ -34,7 +34,7 @@ export function buildGenerationPrompt(input: {
     visualizations: [{ id: 'string', title: 'string', type: 'mermaid|step-animation|table|equation|chart-spec', description: 'string', source: 'Mermaid source, JSON string, equation or table data', steps: [{ title: 'string', explanation: 'string', state: {} }] }],
     quiz: [{ question: 'string', type: 'single-choice|multiple-choice|short-answer', options: ['string'], correctAnswer: 'string or string[]', explanation: 'string', difficulty: 'beginner|intermediate|advanced' }],
     practiceTasks: [{ title: 'string', instructions: 'string', expectedOutcome: 'string', difficulty: 'string' }],
-    simulator: { schemaVersion: 1, id: 'stable topic-specific id', kind: 'algorithm-trace', title: 'string', description: 'string', algorithm: 'binary-search|bubble-sort', initialInput: 'comma-separated numeric values', target: 'required for binary-search' },
+    simulator: 'optional object; omit when no supported topic-specific simulator applies; when present use schemaVersion 1, kind algorithm-trace, stable id, title, description, algorithm, initialInput and target for binary-search',
     references: [{ label: 'string', url: 'string', suppliedByUser: true }],
     qualityNotes: ['string'],
   };
