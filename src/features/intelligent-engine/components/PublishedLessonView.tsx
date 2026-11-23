@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '../../../lib/apiFetch';
 import { LearningRuntime } from './LearningRuntime';
 import { VisualizationRenderer, type LessonVisual } from './VisualizationRenderer';
+import { LessonMarkdown } from './LessonMarkdown';
+import type { LessonSimulatorConfig } from './lessonContracts';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
@@ -13,6 +15,7 @@ type PublishedLesson = {
   visualizations?: LessonVisual[];
   quiz?: QuizQuestion[];
   practiceTasks?: PracticeTask[];
+  simulator?: LessonSimulatorConfig;
 };
 
 export function PublishedLessonView({ lessonId }: { lessonId: string }) {
@@ -48,7 +51,7 @@ export function PublishedLessonView({ lessonId }: { lessonId: string }) {
       </header>
       {lesson.modules?.map((module) => <section key={module.sectionId} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-base font-semibold">{module.title}</h2>
-        <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{module.contentMarkdown}</div>
+        <LessonMarkdown source={module.contentMarkdown}/>
         {module.keyPoints?.length ? <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-500">{module.keyPoints.map((point, index) => <li key={index}>{point}</li>)}</ul> : null}
         {module.reasoningSteps?.length ? <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs text-slate-500">{module.reasoningSteps.map((step, index) => <li key={index}>{step}</li>)}</ol> : null}
         {module.codeExamples?.map((example, index) => <div key={index} className="mt-4"><p className="text-[10px] font-semibold uppercase text-slate-500">{example.language}</p><pre className="mt-1 overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{example.code}</pre><p className="mt-1 text-xs text-slate-500">{example.explanation}</p></div>)}
@@ -57,7 +60,7 @@ export function PublishedLessonView({ lessonId }: { lessonId: string }) {
       <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-base font-semibold">Your learning progress</h2>
         <p className="mt-1 text-xs text-slate-500">Your quiz results and practice progress are private to your account.</p>
-        <div className="mt-4"><LearningRuntime jobId={lessonId} quiz={lesson.quiz || []} practiceTasks={lesson.practiceTasks || []}/></div>
+        <div className="mt-4"><LearningRuntime jobId={lessonId} quiz={lesson.quiz || []} practiceTasks={lesson.practiceTasks || []} simulator={lesson.simulator}/></div>
       </section>
     </article>
   </main>;
