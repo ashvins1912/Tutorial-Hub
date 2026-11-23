@@ -1696,6 +1696,123 @@ static boolean canShip(int[] weights, int days, long capacity) {
       'Why must type width be considered before shifting?',
       'When is bitmask DP practical and when does 2^n become too large?',
       'What changes when the input integer is negative?'
+    ],
+    learningOutcomes: [
+      'Apply AND, OR, XOR, NOT and shifts using a clearly stated fixed-width integer model.',
+      'Implement bit test, set, clear, toggle, parity, power-of-two and set-bit counting operations.',
+      'Prove XOR cancellation and lowest-set-bit identities rather than memorizing them.',
+      'Choose a sufficiently wide integer type and validate shift positions.',
+      'Represent small subsets with bitmasks and estimate the exponential state-space cost.',
+      'Explain signed right-shift behavior and why negative values need explicit language semantics.'
+    ],
+    prerequisites: [
+      'Understand binary place values and positional notation.',
+      'Know integer types, signedness and overflow at a basic level.',
+      'Be comfortable with boolean logic and algebraic identities.',
+      'Understand arrays and index-to-bit mappings.'
+    ],
+    deepDive: [
+      'Bit positions are numbered from zero at the least significant bit. A fixed-width integer has a finite number of positions; shifts and NOT operate within the language-defined representation.',
+      'AND returns 1 only when both corresponding bits are 1; OR returns 1 when either is 1; XOR returns 1 when the bits differ. XOR is addition modulo two at each bit without carry.',
+      'For a mask 1<<k, test with (x&mask)!=0, set with x|mask, clear with x&~mask and toggle with x^mask. In Java use 1L for long masks and validate k against the width.',
+      'In two’s-complement arithmetic, -x is formed by inverting bits and adding one. Therefore x&-x isolates the lowest set bit for nonzero x under the fixed-width integer rules.',
+      'The identity x&(x-1) removes the lowest set bit. If x ends in t trailing zeroes followed by a one, subtracting one flips that one and all trailing zeroes; AND clears the changed suffix while preserving higher set bits.',
+      'Brian Kernighan counting repeatedly applies x&=x-1. The loop runs once per set bit, so it is O(popcount(x)); for a fixed W-bit type it is bounded by W iterations.',
+      'A positive power of two has one set bit. The x>0 guard is essential because zero also satisfies x&(x-1)==0.',
+      'XOR cancellation follows associativity, commutativity, x^x=0 and x^0=x. A single-number scan works only when every other value appears an even number of times under the specified equality.',
+      'Java >> is arithmetic right shift and preserves the sign bit; >>> is logical right shift and fills with zeroes. Left shift discards bits shifted beyond the fixed width.',
+      'Shift counts are language-specific. Java masks shift distances for int/long rather than treating every large shift as an error; validate inputs instead of relying on that behavior.',
+      'A bitmask for n boolean choices uses bit i for choice i and has 2^n possible masks. This is practical only for small n; memory and transition count grow exponentially.',
+      'For subset enumeration, mask from 0 to (1<<n)-1 is safe only when n is below the chosen type width and the shift expression itself cannot overflow. Use long masks and explicit limits when appropriate.',
+      'Bit operations can be concise but are not automatically clearer or faster than ordinary arithmetic. Name masks and explain the representation in maintainable code.'
+    ],
+    correctness: [
+      'Bit-test correctness: mask has exactly bit k set, so x&mask is nonzero if and only if x has bit k set.',
+      'Set/clear/toggle correctness follows the truth table at bit k while all other mask bits are zero; unrelated positions remain unchanged.',
+      'Lowest-set-bit identity: two’s-complement -x preserves the least significant one-bit position while complementing higher relevant bits; AND retains exactly that least set bit.',
+      'Kernighan invariant: after t iterations, exactly t of the original set bits have been removed; the loop ends when no set bits remain.',
+      'XOR single-number correctness: every paired value contributes x^x=0 and the unpaired value remains because y^0=y.',
+      'Subset-mask correctness: each of n bit positions independently encodes inclusion/exclusion, giving a one-to-one mapping between bitmasks and subsets.'
+    ],
+    implementationSteps: [
+      'State the language, integer width and signedness before writing bit formulas.',
+      'Draw the binary representation and label the target bit position.',
+      'Create masks using the intended type, such as 1L for Java long operations.',
+      'Validate shift counts and the maximum subset size before shifting.',
+      'Use x>0 for power-of-two checks and document behavior for negative inputs.',
+      'For XOR patterns, verify the exact multiplicity condition before applying cancellation.',
+      'Use unsigned/logical right shift only when zero-fill semantics are intended.',
+      'Test zero, one, negative values, highest supported bit, repeated values and boundary shift counts.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Bit operations and set-bit count', code: `static boolean isBitSet(int value, int bit) {
+    if (bit < 0 || bit >= Integer.SIZE) throw new IllegalArgumentException("invalid bit");
+    return (value & (1 << bit)) != 0;
+}
+
+static int countSetBits(int value) {
+    int count = 0;
+    while (value != 0) {
+        value &= value - 1;
+        count++;
+    }
+    return count;
+}
+
+static boolean isPositivePowerOfTwo(int value) {
+    return value > 0 && (value & (value - 1)) == 0;
+}
+
+static int singleNumber(int[] values) {
+    int result = 0;
+    for (int value : values) result ^= value;
+    return result;
+}`, explanation: 'The set-bit loop works on the fixed-width two’s-complement representation too, terminating after at most Integer.SIZE iterations. The power-of-two check deliberately excludes zero and negatives.' },
+      { language: 'Java 21', title: 'Enumerate subsets with a long bitmask', code: `static List<List<Integer>> subsets(int[] values) {
+    if (values.length >= Long.SIZE - 1) {
+        throw new IllegalArgumentException("too many elements for this mask demo");
+    }
+    long limit = 1L << values.length;
+    List<List<Integer>> result = new ArrayList<>();
+    for (long mask = 0; mask < limit; mask++) {
+        List<Integer> subset = new ArrayList<>();
+        for (int bit = 0; bit < values.length; bit++) {
+            if ((mask & (1L << bit)) != 0) subset.add(values[bit]);
+        }
+        result.add(subset);
+    }
+    return result;
+}`, explanation: 'Each mask represents one subset. There are 2^n masks and scanning n bits per mask costs O(n*2^n) time plus output storage. The guard prevents shift-width misuse; practical memory limits are much smaller than the type limit.' }
+    ],
+    traceExercises: [
+      'For x=10 (1010), calculate x&-x, x&(x-1), x|0010 and x^0010.',
+      'Run Kernighan counting on 10110100 and show the value after each iteration.',
+      'XOR [4,1,2,1,2] from left to right and show the cancellation pairs.',
+      'For values [a,b,c], list masks 000 through 111 and the subset represented by each.'
+    ],
+    realWorldApplications: [
+      'Permission flags and compact feature configuration.',
+      'Network protocols and file formats that pack fields into fixed-width words.',
+      'Subset dynamic programming for small state spaces.',
+      'Parity checks, checksums and low-level error-detection primitives.',
+      'Efficient set membership when the universe is small and dense.'
+    ],
+    assessment: [
+      'Derive why x&(x-1) removes exactly the lowest set bit.',
+      'Prove XOR single-number behavior and state the required multiplicity condition.',
+      'Implement test, set, clear and toggle for a bit and explain what happens at the type boundary.',
+      'Explain Java >> versus >>> for a negative integer.',
+      'Count set bits and derive the O(popcount(x)) bound.',
+      'Enumerate subsets with a bitmask and explain why the state count is 2^n.',
+      'Identify unsafe shifts and explain how type width changes the result.'
+    ],
+    revisionPrompts: [
+      'Write the AND/OR/XOR truth tables from memory.',
+      'Re-derive x&(x-1) and x&-x using a binary example.',
+      'Explain the XOR cancellation proof in one minute.',
+      'After two days, implement set-bit count, power-of-two and single-number checks.',
+      'After one week, enumerate subsets and estimate time/memory for n=10, 20 and 30.',
+      'Explain signed versus logical right shift in Java with a negative value.'
     ]
   },
 
