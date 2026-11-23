@@ -956,11 +956,16 @@ router.post('/shared-problems/:id/upvote', requireAuth, async (req, res) => {
         { $addToSet: { upvotedBy: req.authUser!.id }, $inc: { upvotes: 1 } },
         { new: true }
       ).lean();
-      if (!updated) {
+      if (updated) {
+        res.json({ problem: serializeDoc(updated as unknown as Record<string, unknown>) });
+        return;
+      }
+      const existing = await SolverSharedProblem.findOne({ publicId: id, visibility: 'shared' }).lean();
+      if (!existing) {
         res.status(404).json({ error: 'Shared problem not found.' });
         return;
       }
-      res.json({ problem: serializeDoc(updated as unknown as Record<string, unknown>) });
+      res.json({ problem: serializeDoc(existing as unknown as Record<string, unknown>) });
       return;
     }
     const existing = memSharedProblems.get(id);
