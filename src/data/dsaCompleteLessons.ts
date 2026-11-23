@@ -1399,19 +1399,15 @@ static int[] mergeKSorted(int[][] arrays) {
     return seen.stream().mapToInt(Integer::intValue).toArray();
 }
 
-static int[] twoSumIndices(int[] values, int target) {
+static boolean hasPairWithSum(int[] values, int target) {
     Set<Integer> earlier = new HashSet<>();
-    for (int i = 0; i < values.length; i++) {
-        int complement = target - values[i];
-        if (earlier.contains(complement)) {
-            for (int j = 0; j < i; j++) {
-                if (values[j] == complement) return new int[]{j, i};
-            }
-        }
-        earlier.add(values[i]);
+    for (int value : values) {
+        int complement = target - value;
+        if (earlier.contains(complement)) return true;
+        earlier.add(value);
     }
-    return new int[0];
-}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup illustrates the earlier-values invariant; this pedagogical version scans earlier indices to recover a matching index, so worst-case time is O(n²). For expected O(n) index lookup, use a Map<Integer,Integer> as shown in the Map lesson.' }
+    return false;
+}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup illustrates the earlier-values invariant and answers existence in expected O(n) time with O(n) space. Use a map instead when the actual matching indices must be returned.' }
     ],
     traceExercises: [
       'Trace LinkedHashSet on [4,1,2,1,3,4]. Show membership and output after each input.',
