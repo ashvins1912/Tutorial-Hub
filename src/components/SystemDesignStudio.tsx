@@ -6,6 +6,7 @@ import { DatabaseVisualAnimator as DatabaseVisualAnimatorBase } from './database
 import { SystemDfdSimulator as SystemDfdSimulatorBase } from './system-design/SystemDfdSimulator';
 import { RealWorldArchitecturesAndInterviewLab as RealWorldArchitecturesAndInterviewLabBase } from './system-design/RealWorldArchitecturesAndInterviewLab';
 import { InteractiveSystemMermaidFlows as InteractiveSystemMermaidFlowsBase } from './system-design/InteractiveSystemMermaidFlows';
+import { FrontierLlmArchitectureLab as FrontierLlmArchitectureLabBase } from './system-design/FrontierLlmArchitectureLab';
 import {
   ArchitectureExplainerSidebar,
   type ActiveArchitecturePayload,
@@ -13,7 +14,12 @@ import {
 import { VISUAL_FLOW_SCENARIOS } from '../data/databaseVisualData';
 import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
 import { REAL_WORLD_SYSTEM_BLUEPRINTS } from '../data/realWorldSystemBlueprintsData';
+import { getBlueprintDeepSpec } from '../data/realWorldBlueprintMermaidDfdData';
 import { SYSTEM_DESIGN_MERMAID_BLUEPRINTS } from '../data/systemDesignMermaidFlowsData';
+import {
+  FRONTIER_LLM_PLATFORMS,
+  type FrontierLlmPlatformId,
+} from '../data/llmFrontierArchitectureData';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { useSystemStore } from '../store/useSystemStore';
 import { withStudioBoundary } from './hoc';
@@ -43,6 +49,9 @@ const RealWorldArchitecturesAndInterviewLab = withStudioBoundary(
 );
 const InteractiveSystemMermaidFlows = withStudioBoundary(InteractiveSystemMermaidFlowsBase, {
   studioName: 'Interactive System Design Mermaid Flows',
+});
+const FrontierLlmArchitectureLab = withStudioBoundary(FrontierLlmArchitectureLabBase, {
+  studioName: 'ChatGPT, Gemini & Claude Architecture Internals Lab',
 });
 import {
   DndContext,
@@ -80,6 +89,7 @@ import {
   Sparkles,
   Trash2,
   Workflow,
+  X,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
@@ -597,6 +607,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
   } = useAsyncCatalog('system-design-scenarios');
   const [subTab, setSubTab] = useState<
     | 'mermaid-flows'
+    | 'llm-internals'
     | 'real-world-interview'
     | 'playground'
     | 'dfd-simulator'
@@ -612,15 +623,23 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
   const [selectedMermaidArchId, setSelectedMermaidArchId] = useState<string>(
     SYSTEM_DESIGN_MERMAID_BLUEPRINTS[0].id
   );
+  const [selectedLlmPlatformId, setSelectedLlmPlatformId] =
+    useState<FrontierLlmPlatformId>('chatgpt');
   const [selectedRealWorldId, setSelectedRealWorldId] = useState<string>(
     REAL_WORLD_SYSTEM_BLUEPRINTS[0].id
   );
   const [explainerOpen, setExplainerOpen] = useState<boolean>(false);
   const [explainTriggerCount, setExplainTriggerCount] = useState<number>(0);
+  const [flowSimActive, setFlowSimActive] = useState<boolean>(false);
+  const [flowSimSignal, setFlowSimSignal] = useState<number>(0);
+  const [flowSimStepIdx, setFlowSimStepIdx] = useState<number>(0);
 
   const playgroundNodes = useSystemStore((s) => s.nodes);
   const playgroundEdges = useSystemStore((s) => s.edges);
   const playgroundBlueprintId = useSystemStore((s) => s.activeBlueprintId);
+  const playgroundIsSimulating = useSystemStore((s) => s.isSimulating);
+  const togglePlaygroundSimulation = useSystemStore((s) => s.toggleSimulation);
+  const highlightPlaygroundNodes = useSystemStore((s) => s.highlightNodes);
 
   const [roadmapExternalModuleId, setRoadmapExternalModuleId] = useState<string | null>(null);
   const [academyExternalTarget, setAcademyExternalTarget] = useState<{
@@ -735,6 +754,32 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
   const currentAnimFrame = scenario.animationSteps[animStep] ?? scenario.animationSteps[0];
 
   const activeArchitecture = useMemo<ActiveArchitecturePayload>(() => {
+    if (subTab === 'llm-internals') {
+      const platform =
+        FRONTIER_LLM_PLATFORMS.find((p) => p.id === selectedLlmPlatformId) ??
+        FRONTIER_LLM_PLATFORMS[0];
+      return {
+        id: `llm:${platform.id}`,
+        architectureTitle: `${platform.name} (${platform.vendor}) — Inference & Token-Streaming Architecture`,
+        sourceWorkspace: 'ChatGPT, Gemini & Claude Internals',
+        domain: platform.flagshipStack,
+        scaleContext: `${platform.contextAndCacheSpec.split('.')[0]} · ${platform.streamingProtocolSpec.split('.')[0]}`,
+        summary: platform.formalDefinition,
+        components: [
+          `Hardware Fabric: ${platform.hardwareFabric}`,
+          `Tokenizer: ${platform.tokenizerSpec}`,
+          `Context & KV Cache: ${platform.contextAndCacheSpec}`,
+          `Client Streaming Protocol: ${platform.streamingProtocolSpec}`,
+          `Safety & Tooling: ${platform.safetyAndToolingSpec}`,
+        ],
+        connections: platform.flowSteps.map(
+          (st) =>
+            `Hop ${st.step} [${st.layer} · ${st.latencyMs}ms] ${st.phase}: ${st.summary} — ${st.internalLogic}`
+        ),
+        mermaidDiagram: platform.buildArchitectureMermaid(null, []),
+      };
+    }
+
     if (subTab === 'mermaid-flows') {
       const arch =
         SYSTEM_DESIGN_MERMAID_BLUEPRINTS.find((b) => b.id === selectedMermaidArchId) ??
@@ -760,13 +805,14 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
       const bp =
         REAL_WORLD_SYSTEM_BLUEPRINTS.find((b) => b.id === selectedRealWorldId) ??
         REAL_WORLD_SYSTEM_BLUEPRINTS[0];
+      const deepSpec = getBlueprintDeepSpec(bp);
       return {
         id: `realworld:${bp.id}`,
         architectureTitle: bp.title,
         sourceWorkspace: 'Real-World Blueprints & Mock Interview',
         domain: bp.domain,
         scaleContext: bp.scaleBadge,
-        summary: `${bp.simpleEnglish} ${bp.architectureSummary}`,
+        summary: `${deepSpec.formalDefinition} ${bp.architectureSummary}`,
         components: [
           ...bp.dfdNodes.map((n) => `${n.label}: ${n.sublabel}`),
           ...bp.dbTables.map((t) => `DB Table ${t.tableName} (${t.engine}, shard/partition: ${t.partitionOrShardKey})`),
@@ -774,6 +820,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
         connections: bp.dfdSteps.map(
           (st) => `Step ${st.step} [${st.packetLabel}] — ${st.title}: ${st.technicalDetail}`
         ),
+        mermaidDiagram: deepSpec.systemDfdMermaid,
       };
     }
 
@@ -858,6 +905,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     };
   }, [
     subTab,
+    selectedLlmPlatformId,
     selectedMermaidArchId,
     selectedRealWorldId,
     selectedDfdPatternId,
@@ -873,6 +921,140 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     latencyBudgetMs,
     consistencyMode,
   ]);
+
+  const flowSimHops = useMemo<
+    { id: string; label: string; badge: string; detail: string }[]
+  >(() => {
+    if (subTab === 'llm-internals') {
+      const platform =
+        FRONTIER_LLM_PLATFORMS.find((p) => p.id === selectedLlmPlatformId) ??
+        FRONTIER_LLM_PLATFORMS[0];
+      return platform.flowSteps.map((st) => ({
+        id: st.nodeId,
+        label: st.phase,
+        badge: `${st.layer} · ${st.latencyMs}ms`,
+        detail: `${st.summary} (${st.internalLogic})`,
+      }));
+    }
+    if (subTab === 'mermaid-flows') {
+      const arch =
+        SYSTEM_DESIGN_MERMAID_BLUEPRINTS.find((b) => b.id === selectedMermaidArchId) ??
+        SYSTEM_DESIGN_MERMAID_BLUEPRINTS[0];
+      return arch.walkthroughOrder.map((nodeId) => {
+        const node = arch.nodes.find((n) => n.id === nodeId);
+        return {
+          id: nodeId,
+          label: node?.label ?? nodeId,
+          badge: node ? `${node.layer} · ${node.latencyBudget}` : 'Hop',
+          detail: node?.role ?? 'Traversing architecture hop.',
+        };
+      });
+    }
+    if (subTab === 'real-world-interview') {
+      const bp =
+        REAL_WORLD_SYSTEM_BLUEPRINTS.find((b) => b.id === selectedRealWorldId) ??
+        REAL_WORLD_SYSTEM_BLUEPRINTS[0];
+      return bp.dfdSteps.map((st) => ({
+        id: `rw-${st.step}`,
+        label: st.title,
+        badge: st.packetLabel,
+        detail: st.technicalDetail,
+      }));
+    }
+    if (subTab === 'dfd-simulator') {
+      const pat =
+        SYSTEM_DFD_PATTERNS.find((p) => p.id === selectedDfdPatternId) ?? SYSTEM_DFD_PATTERNS[0];
+      return pat.fastPathSteps.map((st) => ({
+        id: `dfd-${st.step}`,
+        label: st.title,
+        badge: st.packetLabel,
+        detail: st.plainEnglish,
+      }));
+    }
+    if (subTab === 'db-dfd') {
+      const dbFlow =
+        VISUAL_FLOW_SCENARIOS.find((f) => f.id === selectedDbFlowId) ?? VISUAL_FLOW_SCENARIOS[0];
+      return dbFlow.steps.map((st) => ({
+        id: `db-${st.stepNumber}`,
+        label: st.title,
+        badge: st.metricTag,
+        detail: st.algorithmDetail,
+      }));
+    }
+    if (subTab === 'playground' && playgroundNodes.length > 0) {
+      return playgroundNodes.map((n) => ({
+        id: n.id,
+        label: n.data.label,
+        badge: `${n.data.componentType} · ${n.data.replicas}x`,
+        detail: `Routing live simulated traffic across ${n.data.label} (${n.data.componentType}).`,
+      }));
+    }
+    return scenario.animationSteps.map((st) => ({
+      id: `sc-${st.step}`,
+      label: st.title,
+      badge: `${st.latencyMs}ms`,
+      detail: st.packetNote,
+    }));
+  }, [
+    subTab,
+    selectedLlmPlatformId,
+    selectedMermaidArchId,
+    selectedRealWorldId,
+    selectedDfdPatternId,
+    selectedDbFlowId,
+    playgroundNodes,
+    scenario,
+  ]);
+
+  useEffect(() => {
+    setFlowSimStepIdx(0);
+  }, [subTab, activeArchitecture.id]);
+
+  useEffect(() => {
+    if (!flowSimActive || flowSimHops.length === 0) return;
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
+    const timer = window.setInterval(() => {
+      setFlowSimStepIdx((prev) => (prev + 1) % flowSimHops.length);
+    }, 2200);
+    return () => window.clearInterval(timer);
+  }, [flowSimActive, flowSimHops.length]);
+
+  const activeSimHop = flowSimHops[flowSimStepIdx] ?? flowSimHops[0];
+
+  useEffect(() => {
+    if (subTab !== 'playground') return;
+    if (flowSimActive && activeSimHop) {
+      highlightPlaygroundNodes([activeSimHop.id]);
+    } else {
+      highlightPlaygroundNodes([]);
+    }
+  }, [subTab, flowSimActive, activeSimHop, highlightPlaygroundNodes]);
+
+  const handleTriggerSimulateDataFlow = () => {
+    if (flowSimActive) {
+      setFlowSimActive(false);
+      if (subTab === 'playground') {
+        if (playgroundIsSimulating) togglePlaygroundSimulation();
+        highlightPlaygroundNodes([]);
+      }
+      if (subTab === 'animations') setAnimPlaying(false);
+      return;
+    }
+    setFlowSimStepIdx(0);
+    setFlowSimActive(true);
+    setFlowSimSignal((prev) => prev + 1);
+    if (subTab === 'playground' && !playgroundIsSimulating) {
+      togglePlaygroundSimulation();
+    }
+    if (subTab === 'animations') {
+      setAnimStep(0);
+      setAnimPlaying(true);
+    }
+  };
 
   const handleOpenExplainArchitecture = () => {
     setExplainerOpen(true);
@@ -893,15 +1075,35 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
             </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={handleOpenExplainArchitecture}
-            aria-expanded={explainerOpen}
-            className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 transition-colors shrink-0 self-start"
-          >
-            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-            Explain Architecture
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0 self-start">
+            <button
+              type="button"
+              onClick={handleTriggerSimulateDataFlow}
+              aria-pressed={flowSimActive}
+              className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                flowSimActive
+                  ? 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'border-slate-300 dark:border-slate-700 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white'
+              }`}
+            >
+              {flowSimActive ? (
+                <Pause className="w-3.5 h-3.5" aria-hidden="true" />
+              ) : (
+                <Play className="w-3.5 h-3.5" aria-hidden="true" />
+              )}
+              {flowSimActive ? 'Stop Data Flow' : 'Simulate Data Flow'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenExplainArchitecture}
+              aria-expanded={explainerOpen}
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+              Explain Architecture
+            </button>
+          </div>
         </div>
 
         <SegmentedTabBar
@@ -914,6 +1116,11 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
               id: 'mermaid-flows',
               label: 'Interactive Mermaid Flows',
               count: SYSTEM_DESIGN_MERMAID_BLUEPRINTS.length,
+            },
+            {
+              id: 'llm-internals',
+              label: 'ChatGPT, Gemini & Claude Internals',
+              count: FRONTIER_LLM_PLATFORMS.length,
             },
             {
               id: 'real-world-interview',
@@ -930,11 +1137,119 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
             { id: 'academy', label: 'Deep Academy' },
           ]}
         />
+
+        {/* Active Request Path Highlight Strip (Driven by 'Simulate Data Flow') */}
+        {flowSimActive && activeSimHop && (
+          <div className="rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-50/60 dark:bg-sky-950/30 p-3.5 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-sky-800 dark:text-sky-300">
+                  <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+                  Live Request Path Trace
+                </span>
+                <span aria-hidden="true" className="text-slate-400">
+                  ·
+                </span>
+                <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                  {activeArchitecture.architectureTitle}
+                </span>
+                <span className="font-mono tabular-nums text-[11px] text-sky-700 dark:text-sky-400">
+                  Hop {flowSimStepIdx + 1} / {flowSimHops.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFlowSimStepIdx((prev) => (prev + 1) % Math.max(1, flowSimHops.length))
+                  }
+                  className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500"
+                >
+                  Next Hop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFlowSimStepIdx(0)}
+                  aria-label="Restart request path trace"
+                  className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 text-slate-600 dark:text-slate-300 hover:border-sky-500"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTriggerSimulateDataFlow}
+                  aria-label="Close request path trace"
+                  className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1 text-slate-600 dark:text-slate-300 hover:border-sky-500"
+                >
+                  <X className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {flowSimHops.map((hop, idx) => {
+                const isActive = idx === flowSimStepIdx;
+                const isVisited = idx < flowSimStepIdx;
+                return (
+                  <div key={`${hop.id}-${idx}`} className="inline-flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFlowSimStepIdx(idx)}
+                      className={`rounded-md border px-2 py-1 text-[11px] font-mono transition-colors ${
+                        isActive
+                          ? 'border-sky-600 bg-sky-600 text-white font-semibold'
+                          : isVisited
+                            ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {idx + 1}. {hop.label}
+                    </button>
+                    {idx < flowSimHops.length - 1 && (
+                      <ArrowRight
+                        className={`w-3 h-3 shrink-0 ${
+                          isVisited || isActive
+                            ? 'text-sky-600 dark:text-sky-400'
+                            : 'text-slate-300 dark:text-slate-700'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="text-slate-700 dark:text-slate-200 leading-5">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {activeSimHop.label}:
+                </span>{' '}
+                {activeSimHop.detail}
+              </div>
+              <span className="font-mono text-[11px] text-sky-700 dark:text-sky-400 shrink-0">
+                {activeSimHop.badge}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mode 00A: Interactive Expandable & Clickable Mermaid.js Architecture Flows */}
       {subTab === 'mermaid-flows' && (
-        <InteractiveSystemMermaidFlows onActiveBlueprintChange={setSelectedMermaidArchId} />
+        <InteractiveSystemMermaidFlows
+          onActiveBlueprintChange={setSelectedMermaidArchId}
+          externalSimulateSignal={flowSimSignal}
+        />
+      )}
+
+      {/* Mode 00B: Frontier LLM Systems — ChatGPT, Google Gemini & Anthropic Claude Internals + Token Streaming */}
+      {subTab === 'llm-internals' && (
+        <FrontierLlmArchitectureLab
+          externalSimulateSignal={flowSimSignal}
+          onActivePlatformChange={setSelectedLlmPlatformId}
+        />
       )}
 
       {/* Mode 00: 16 Real-World Production Blueprints (DB Design + Animated DFD), Webhooks/WebSockets/Enqueue Lab & 45-Min Mock Interview */}
@@ -966,6 +1281,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
       )}
 
       {subTab !== 'mermaid-flows' &&
+        subTab !== 'llm-internals' &&
         subTab !== 'real-world-interview' &&
         subTab !== 'dfd-simulator' &&
         subTab !== 'playground' &&

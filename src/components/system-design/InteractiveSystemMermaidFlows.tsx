@@ -22,10 +22,12 @@ import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
 
 interface InteractiveSystemMermaidFlowsProps {
   onActiveBlueprintChange?: (archId: string) => void;
+  externalSimulateSignal?: number;
 }
 
 export const InteractiveSystemMermaidFlows: React.FC<InteractiveSystemMermaidFlowsProps> = ({
   onActiveBlueprintChange,
+  externalSimulateSignal,
 }) => {
   const prefersReducedMotion = useReducedMotion();
   const [archId, setArchId] = useState<string>(SYSTEM_DESIGN_MERMAID_BLUEPRINTS[0].id);
@@ -97,6 +99,37 @@ export const InteractiveSystemMermaidFlows: React.FC<InteractiveSystemMermaidFlo
     }, 2400);
     return () => window.clearInterval(timer);
   }, [isAnimating, prefersReducedMotion, activeArch.walkthroughOrder]);
+
+  useEffect(() => {
+    if (!externalSimulateSignal || externalSimulateSignal <= 0) return;
+    const first = activeArch.walkthroughOrder[0] ?? activeArch.nodes[0]?.id;
+    setWalkIdx(0);
+    if (first) setSelectedNodeId(first);
+    setIsAnimating(true);
+  }, [externalSimulateSignal, activeArch.walkthroughOrder, activeArch.nodes]);
+
+  const highlightedMermaidCode = useMemo(() => {
+    const base = expandedFull ? activeArch.expandedFullMermaid : activeArch.overviewMermaid;
+    const activeOrderIdx = activeArch.walkthroughOrder.indexOf(selectedNode.id);
+    const visitedIds =
+      activeOrderIdx > 0
+        ? activeArch.walkthroughOrder.slice(0, activeOrderIdx)
+        : [];
+    const styleLines: string[] = [];
+
+    for (const vid of visitedIds) {
+      if (new RegExp(`\\b${vid}\\b`).test(base)) {
+        styleLines.push(`  style ${vid} fill:#059669,stroke:#047857,color:#ffffff,stroke-width:2px`);
+      }
+    }
+    if (selectedNode.id && new RegExp(`\\b${selectedNode.id}\\b`).test(base)) {
+      styleLines.push(
+        `  style ${selectedNode.id} fill:#0284c7,stroke:#0369a1,color:#ffffff,stroke-width:3px`
+      );
+    }
+
+    return styleLines.length > 0 ? `${base}\n${styleLines.join('\n')}` : base;
+  }, [expandedFull, activeArch, selectedNode.id]);
 
   const handleSelectNode = (nodeId: string) => {
     setIsAnimating(false);
@@ -218,12 +251,60 @@ export const InteractiveSystemMermaidFlows: React.FC<InteractiveSystemMermaidFlo
                 ? `${activeArch.name} — Expanded Subgraph & DB Internals Flow`
                 : `${activeArch.name} — Click Any Node to Expand Internals`
             }
-            subtitle={`Scale Profile: ${activeArch.scaleTarget} · Click directly on rendered Mermaid boxes or use the component selector below.`}
-            mermaidCode={expandedFull ? activeArch.expandedFullMermaid : activeArch.overviewMermaid}
+            subtitle={`Scale Profile: ${activeArch.scaleTarget} · Active hop: ${selectedNode.label} (${selectedNode.latencyBudget}).`}
+            mermaidCode={highlightedMermaidCode}
             nodes={clickableNodes}
             selectedNodeId={selectedNode.id}
             onSelectNodeId={handleSelectNode}
           />
+
+          {/* Live Highlighted Request Path Sequence */}
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 space-y-2">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                Highlighted Request Path
+              </span>
+              <span className="font-mono tabular-nums text-[11px] text-sky-700 dark:text-sky-400">
+                Hop {Math.max(1, activeArch.walkthroughOrder.indexOf(selectedNode.id) + 1)} /{' '}
+                {activeArch.walkthroughOrder.length} · {selectedNode.latencyBudget}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {activeArch.walkthroughOrder.map((stepNodeId, idx) => {
+                const nodeMeta = activeArch.nodes.find((n) => n.id === stepNodeId);
+                const activeOrderIdx = activeArch.walkthroughOrder.indexOf(selectedNode.id);
+                const isCurrent = stepNodeId === selectedNode.id;
+                const isVisited = activeOrderIdx > idx;
+                return (
+                  <React.Fragment key={stepNodeId}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectNode(stepNodeId)}
+                      className={`rounded-md border px-2 py-1 text-[11px] font-mono transition-colors ${
+                        isCurrent
+                          ? 'border-sky-500 bg-sky-600 text-white font-semibold'
+                          : isVisited
+                            ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300'
+                            : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {idx + 1}. {nodeMeta?.label ?? stepNodeId}
+                    </button>
+                    {idx < activeArch.walkthroughOrder.length - 1 && (
+                      <ArrowRight
+                        className={`w-3 h-3 shrink-0 ${
+                          isVisited || isCurrent
+                            ? 'text-sky-500 dark:text-sky-400'
+                            : 'text-slate-300 dark:text-slate-700'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Quick Interactive Component Strip (Synced with Mermaid Clicks & Request Walkthrough) */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">

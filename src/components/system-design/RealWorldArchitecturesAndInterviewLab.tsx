@@ -14,13 +14,17 @@ import {
   Database,
   Eye,
   EyeOff,
+  GitBranch,
+  Globe,
   Layers,
   MessageSquare,
   Pause,
   Play,
   Radio,
   RotateCcw,
+  Scale,
   Send,
+  Server,
   ShieldAlert,
   ShieldCheck,
   Terminal,
@@ -38,9 +42,15 @@ import {
   type RealWorldSystemBlueprint,
 } from '../../data/realWorldSystemBlueprintsData';
 import {
+  buildBlueprintDbErMermaid,
+  COMM_PROTOCOL_MERMAID_DFDS,
+  getBlueprintDeepSpec,
+} from '../../data/realWorldBlueprintMermaidDfdData';
+import {
   SYSTEM_DESIGN_MOCK_INTERVIEWS,
   type MockSignalLevel,
 } from '../../data/systemDesignMockInterviewData';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
 import { CopyButton, SegmentedTabBar } from '../ui';
 import { QuickCommerceLiveSimulator } from './QuickCommerceLiveSimulator';
 
@@ -549,8 +559,38 @@ export function RealWorldArchitecturesAndInterviewLab(
   const [selectedOptions, setSelectedOptions] = useState<Record<number, string>>({});
   const [whiteboardNotes, setWhiteboardNotes] = useState<Record<number, string>>({});
   const [showHints, setShowHints] = useState(false);
+  const [showMockMermaid, setShowMockMermaid] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(45 * 60);
   const [timerRunning, setTimerRunning] = useState(false);
+
+  // Mermaid View Selectors across all 3 tracks
+  const [blueprintMermaidView, setBlueprintMermaidView] = useState<'dfd' | 'sequence' | 'er'>('dfd');
+  const [commMermaidView, setCommMermaidView] = useState<'dfd' | 'sequence'>('dfd');
+  const [mockMermaidView, setMockMermaidView] = useState<'dfd' | 'sequence' | 'er'>('dfd');
+
+  // Track 2 Sandbox D: SSE (Server-Sent Events) state
+  const [sseConnected, setSseConnected] = useState(true);
+  const [sseLastEventId, setSseLastEventId] = useState(401);
+  const [sseReplays, setSseReplays] = useState(0);
+  const [sseLogs, setSseLogs] = useState<{ id: number; eventId: number; detail: string }[]>([
+    {
+      id: 1,
+      eventId: 401,
+      detail: 'HTTP 200 OK (Content-Type: text/event-stream, X-Accel-Buffering: no) — Stream open over HTTP/2.',
+    },
+  ]);
+
+  // Track 2 Sandbox E: gRPC + Debezium WAL CDC state
+  const [grpcRpcCount, setGrpcRpcCount] = useState(1);
+  const [cdcWalLsn, setCdcWalLsn] = useState(10420);
+  const [cdcLagMs, setCdcLagMs] = useState(48);
+  const [grpcLogs, setGrpcLogs] = useState<{ id: number; kind: string; detail: string }[]>([
+    {
+      id: 1,
+      kind: 'GRPC+CDC',
+      detail: 'ReserveStock (Protobuf 38B, 5ms) committed WAL LSN #10420 -> Debezium synced Redis & Search in 48ms.',
+    },
+  ]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -574,18 +614,148 @@ export function RealWorldArchitecturesAndInterviewLab(
     filteredBlueprints[0] ??
     REAL_WORLD_SYSTEM_BLUEPRINTS[0];
 
-  const matchingMockForBlueprint = useMemo(
-    () => SYSTEM_DESIGN_MOCK_INTERVIEWS.find((m) => m.relatedBlueprintId === activeBlueprint.id),
-    [activeBlueprint.id]
+  const activeBlueprintDeepSpec = useMemo(
+    () => getBlueprintDeepSpec(activeBlueprint),
+    [activeBlueprint]
   );
+
+  const activeBlueprintErMermaid = useMemo(
+    () => buildBlueprintDbErMermaid(activeBlueprint),
+    [activeBlueprint]
+  );
+
+  const matchingMockForBlueprint = useMemo(() => {
+    const aliasMap: Record<string, string> = {
+      'zerodha-kite': 'mock-nasdaq-zerodha',
+      'slack-ms-teams': 'mock-whatsapp-slack',
+    };
+    const aliasedId = aliasMap[activeBlueprint.id];
+    return (
+      SYSTEM_DESIGN_MOCK_INTERVIEWS.find((m) => m.relatedBlueprintId === activeBlueprint.id) ??
+      (aliasedId ? SYSTEM_DESIGN_MOCK_INTERVIEWS.find((m) => m.id === aliasedId) : undefined)
+    );
+  }, [activeBlueprint.id]);
 
   const activeComm =
     COMM_ARCHITECTURE_PRIMITIVES.find((c) => c.id === selectedCommId) ??
     COMM_ARCHITECTURE_PRIMITIVES[0];
 
+  const activeCommMermaid = COMM_PROTOCOL_MERMAID_DFDS[activeComm.id];
+
   const activeMock =
     SYSTEM_DESIGN_MOCK_INTERVIEWS.find((m) => m.id === selectedMockId) ??
     SYSTEM_DESIGN_MOCK_INTERVIEWS[0];
+
+  const activeMockBlueprint = useMemo(
+    () =>
+      REAL_WORLD_SYSTEM_BLUEPRINTS.find((b) => b.id === activeMock.relatedBlueprintId) ??
+      REAL_WORLD_SYSTEM_BLUEPRINTS[0],
+    [activeMock.relatedBlueprintId]
+  );
+
+  const activeMockDeepSpec = useMemo(
+    () => getBlueprintDeepSpec(activeMockBlueprint),
+    [activeMockBlueprint]
+  );
+
+  const activeMockErMermaid = useMemo(
+    () => buildBlueprintDbErMermaid(activeMockBlueprint),
+    [activeMockBlueprint]
+  );
+
+  // SSE Sandbox Handlers
+  const pushSseChunk = () => {
+    const nextId = sseLastEventId + 1;
+    setSseConnected(true);
+    setSseLastEventId(nextId);
+    setSseLogs((prev) => [
+      {
+        id: Date.now(),
+        eventId: nextId,
+        detail: `id: ${nextId} | data: {"token":"chunk_${nextId}","latencyMs":19} flushed immediately over HTTP/2.`,
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
+
+  const sendSseHeartbeat = () => {
+    setSseLogs((prev) => [
+      {
+        id: Date.now(),
+        eventId: sseLastEventId,
+        detail: ': keep-alive comment flushed (15s timer) — prevents L7 ALB / NAT idle 60s timeout.',
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
+
+  const dropAndResumeSse = () => {
+    const missed1 = sseLastEventId + 1;
+    const missed2 = sseLastEventId + 2;
+    setSseConnected(true);
+    setSseLastEventId(missed2);
+    setSseReplays((r) => r + 1);
+    setSseLogs((prev) => [
+      {
+        id: Date.now(),
+        eventId: missed2,
+        detail: `Network drop detected -> Browser auto-reconnected with Header Last-Event-ID: ${sseLastEventId} -> Redis Stream replayed #${missed1}, #${missed2} with zero missed tokens!`,
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
+
+  // gRPC + CDC Sandbox Handlers
+  const sendGrpcAndCdc = () => {
+    const nextLsn = cdcWalLsn + 16;
+    setGrpcRpcCount((c) => c + 1);
+    setCdcWalLsn(nextLsn);
+    setCdcLagMs(42);
+    setGrpcLogs((prev) => [
+      {
+        id: Date.now(),
+        kind: 'OK (4ms)',
+        detail: `gRPC ReserveStock (Protobuf 38B, deadline=50ms) -> PG COMMIT WAL LSN #${nextLsn} -> Debezium CDC synced Kafka + Redis in 42ms.`,
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
+
+  const simulateGrpcDeadline = () => {
+    setGrpcLogs((prev) => [
+      {
+        id: Date.now(),
+        kind: 'DEADLINE_EXCEEDED',
+        detail: 'Caller 50ms gRPC context deadline expired -> Envoy propagated cancellation downstream so Inventory DB aborted wasted query!',
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
+
+  const simulateWalSlotLag = () => {
+    setCdcLagMs(14200);
+    setGrpcLogs((prev) => [
+      {
+        id: Date.now(),
+        kind: 'WAL_ALERT',
+        detail: 'Debezium connector paused! pg_replication_slots retained WAL growing (14.2s lag) -> PagerDuty alert triggered before primary disk fills.',
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
+
+  const recoverWalSlot = () => {
+    setCdcLagMs(38);
+    setCdcWalLsn((l) => l + 64);
+    setGrpcLogs((prev) => [
+      {
+        id: Date.now(),
+        kind: 'RECOVERED',
+        detail: 'Debezium connector restarted -> drained backlog from LSN cursor -> replication lag back to 38ms & WAL recycled cleanly.',
+      },
+      ...prev.slice(0, 6),
+    ]);
+  };
 
   const handleSelectMock = (mockId: string) => {
     const target = SYSTEM_DESIGN_MOCK_INTERVIEWS.find((m) => m.id === mockId);
@@ -831,8 +1001,7 @@ export function RealWorldArchitecturesAndInterviewLab(
             Real-World Systems, Database Design & Staff Interview Simulator
           </h3>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-            Zepto/Blinkit/Instamart, IRCTC, BookMyShow, Flights/GDS, NASDAQ/NSE/BSE, Zerodha,
-            ChatGPT/Gemini, Instagram, WhatsApp, Uber, Teams/Slack, 5G Telecom, Google Search &amp; Internet `www.com` — with DB DDL &amp; live Webhooks/WebSockets/Enqueue labs.
+            All {REAL_WORLD_SYSTEM_BLUEPRINTS.length} production blueprints with live Mermaid.js System DFDs, Sequence Diagrams, Database ER &amp; Sharding DDL, formal technical specs, {COMM_ARCHITECTURE_PRIMITIVES.length} interactive protocol sandboxes (Webhooks, WebSockets, Enqueue, SSE, gRPC+CDC), and {SYSTEM_DESIGN_MOCK_INTERVIEWS.length} Staff mock interviews.
           </p>
         </div>
 
@@ -844,12 +1013,12 @@ export function RealWorldArchitecturesAndInterviewLab(
           tabs={[
             {
               id: 'blueprints',
-              label: `${REAL_WORLD_SYSTEM_BLUEPRINTS.length} Real-World Blueprints + DB`,
+              label: `${REAL_WORLD_SYSTEM_BLUEPRINTS.length} Real-World Blueprints + Mermaid DFD`,
               count: REAL_WORLD_SYSTEM_BLUEPRINTS.length,
             },
             {
               id: 'comm-lab',
-              label: 'Webhooks, WebSockets & Enqueue',
+              label: 'Webhooks, WS, Enqueue, SSE & gRPC/CDC',
               count: COMM_ARCHITECTURE_PRIMITIVES.length,
             },
             {
@@ -992,11 +1161,216 @@ export function RealWorldArchitecturesAndInterviewLab(
             </div>
           </div>
 
+          {/* Interactive 3-View Mermaid.js Architecture, Sequence & Database ER Visualizer */}
+          <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                  <GitBranch className="w-3.5 h-3.5" />
+                  Visual Mermaid.js Architecture, Sequence &amp; Database ER Design
+                </p>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                  {activeBlueprint.shortTitle} — Layered System DFD &amp; Storage Topology
+                </h4>
+              </div>
+
+              <div className="inline-flex flex-wrap gap-1 p-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                {(
+                  [
+                    { id: 'dfd', label: 'System DFD (Flowchart)' },
+                    { id: 'sequence', label: 'Request Sequence' },
+                    { id: 'er', label: 'DB ER & Sharding Schema' },
+                  ] as const
+                ).map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setBlueprintMermaidView(mode.id)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                      blueprintMermaidView === mode.id
+                        ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-slate-950 font-semibold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <FlightMermaidViewer
+              title={
+                blueprintMermaidView === 'dfd'
+                  ? `${activeBlueprint.shortTitle} — Production System Architecture DFD`
+                  : blueprintMermaidView === 'sequence'
+                    ? `${activeBlueprint.shortTitle} — End-to-End Request & Event Sequence`
+                    : `${activeBlueprint.shortTitle} — Database Entity-Relationship & Sharding Schema`
+              }
+              subtitle={
+                blueprintMermaidView === 'dfd'
+                  ? 'Shows Edge, Compute, Cache/Async Pipeline, and Sharded Storage boundaries.'
+                  : blueprintMermaidView === 'sequence'
+                    ? 'Exact synchronous calls, atomic locks/transactions, and asynchronous queue/CDC handoffs.'
+                    : `Derived directly from ${activeBlueprint.dbTables.length} production tables with PK, SHARD, UK & IDX keys.`
+              }
+              mermaidCode={
+                blueprintMermaidView === 'dfd'
+                  ? activeBlueprintDeepSpec.systemDfdMermaid
+                  : blueprintMermaidView === 'sequence'
+                    ? activeBlueprintDeepSpec.sequenceMermaid
+                    : activeBlueprintErMermaid
+              }
+            />
+          </div>
+
           {/* Animated 5-Node SVG DFD */}
           <BlueprintAnimatedDfd blueprint={activeBlueprint} />
 
           {/* Interactive 10-Minute Dark-Store SLA Simulator when Zepto/Blinkit/Instamart is selected */}
           {activeBlueprint.id === 'zepto-blinkit-instamart' && <QuickCommerceLiveSimulator />}
+
+          {/* Complete Formal Definition, Consistency/CAP, API Contracts, DR & Trade-off Matrix */}
+          <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-5 space-y-5">
+            <div>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-sky-700 dark:text-sky-400">
+                Complete Principal System Definition &amp; Design Specification
+              </p>
+              <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                Formal Definition, Consistency Guarantees, API Contracts &amp; Trade-Offs
+              </h4>
+            </div>
+
+            <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 space-y-1.5">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Standard Technical Definition
+              </div>
+              <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed">
+                {activeBlueprintDeepSpec.formalDefinition}
+              </p>
+            </div>
+
+            {/* Consistency, Isolation, RPO/RTO Strip */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 space-y-1">
+                <div className="text-[10px] font-mono uppercase text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                  <Scale className="w-3.5 h-3.5" />
+                  CAP / PACELC Consistency Model
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {activeBlueprintDeepSpec.consistencyModel}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 space-y-1">
+                <div className="text-[10px] font-mono uppercase text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Isolation &amp; Durability Guarantee
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {activeBlueprintDeepSpec.isolationAndDurability}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 space-y-1">
+                <div className="text-[10px] font-mono uppercase text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  RPO / RTO Recovery Targets
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {activeBlueprintDeepSpec.rpoRto}
+                </p>
+              </div>
+            </div>
+
+            {/* Caching, Multi-Region DR & Observability SLIs */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-900 dark:text-slate-100">
+                  Caching &amp; Invalidation Strategy
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {activeBlueprintDeepSpec.cachingStrategy}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-900 dark:text-slate-100">
+                  Multi-Region &amp; Disaster Recovery
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {activeBlueprintDeepSpec.multiRegionDr}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-900 dark:text-slate-100">
+                  Production Observability SLIs / SLOs
+                </div>
+                <ul className="space-y-1 text-xs font-mono text-slate-600 dark:text-slate-400">
+                  {activeBlueprintDeepSpec.observabilitySlis.map((sli, idx) => (
+                    <li key={idx}>• {sli}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Core API Contracts */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Server className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                Core API &amp; Wire Protocol Contracts
+              </div>
+              <div className="border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden">
+                {activeBlueprintDeepSpec.apiContracts.map((api, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 grid grid-cols-1 lg:grid-cols-12 gap-2 text-xs bg-slate-50/40 dark:bg-slate-950/30"
+                  >
+                    <div className="lg:col-span-5 font-mono flex items-start gap-2 min-w-0">
+                      <span className="px-1.5 py-0.5 rounded border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/50 text-[10px] font-semibold text-sky-800 dark:text-sky-300 shrink-0">
+                        {api.method}
+                      </span>
+                      <span className="text-slate-900 dark:text-slate-100 break-all">
+                        {api.endpoint}
+                      </span>
+                    </div>
+                    <div className="lg:col-span-4 text-slate-700 dark:text-slate-300">
+                      {api.purpose}
+                    </div>
+                    <div className="lg:col-span-3 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+                      {api.idempotencyOrGuarantee}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Key Architectural Trade-Offs Matrix */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                Key Architectural Trade-Offs (Staff Interview Rubric)
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {activeBlueprintDeepSpec.tradeoffs.map((tr, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 space-y-2 text-xs"
+                  >
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                      {tr.decision}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-emerald-700 dark:text-emerald-400 font-medium">
+                        Chosen: {tr.chosen}
+                      </div>
+                      <div className="text-rose-700 dark:text-rose-400">
+                        Rejected: {tr.rejected}
+                      </div>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {tr.rationale}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Core Algorithms + Hardest Bottleneck & Fix */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1118,12 +1492,20 @@ export function RealWorldArchitecturesAndInterviewLab(
          ==================================================================== */}
       {track === 'comm-lab' && (
         <div className="space-y-5">
-          {/* Selector Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Selector Cards (All 5 Core Protocols) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {COMM_ARCHITECTURE_PRIMITIVES.map((prim) => {
               const selected = prim.id === activeComm.id;
               const Icon =
-                prim.id === 'webhook' ? Webhook : prim.id === 'websocket' ? Radio : Layers;
+                prim.id === 'webhook'
+                  ? Webhook
+                  : prim.id === 'websocket'
+                    ? Radio
+                    : prim.id === 'enqueue'
+                      ? Layers
+                      : prim.id === 'sse'
+                        ? Activity
+                        : Server;
               return (
                 <button
                   key={prim.id}
@@ -1136,10 +1518,10 @@ export function RealWorldArchitecturesAndInterviewLab(
                   }`}
                 >
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    <Icon className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                    {prim.shortTitle}
+                    <Icon className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                    <span className="truncate">{prim.shortTitle}</span>
                   </div>
-                  <div className="text-[11px] font-mono text-sky-700 dark:text-sky-400 mt-1">
+                  <div className="text-[11px] font-mono text-sky-700 dark:text-sky-400 mt-1 truncate">
                     {prim.direction}
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2">
@@ -1148,6 +1530,59 @@ export function RealWorldArchitecturesAndInterviewLab(
                 </button>
               );
             })}
+          </div>
+
+          {/* Protocol Mermaid.js Architecture DFD & Sequence Visualizer */}
+          <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                  <GitBranch className="w-3.5 h-3.5" />
+                  Mermaid.js Protocol Architecture DFD &amp; Wire Sequence
+                </p>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                  {activeComm.title}
+                </h4>
+              </div>
+              <div className="inline-flex gap-1 p-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                <button
+                  type="button"
+                  onClick={() => setCommMermaidView('dfd')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    commMermaidView === 'dfd'
+                      ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-slate-950 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  Architecture DFD
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCommMermaidView('sequence')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    commMermaidView === 'sequence'
+                      ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-slate-950 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  Wire Sequence
+                </button>
+              </div>
+            </div>
+
+            <FlightMermaidViewer
+              title={
+                commMermaidView === 'dfd'
+                  ? `${activeComm.shortTitle} — System Architecture DFD`
+                  : `${activeComm.shortTitle} — Packet & Recovery Sequence`
+              }
+              subtitle={activeCommMermaid.keyMetrics.join(' · ')}
+              mermaidCode={
+                commMermaidView === 'dfd'
+                  ? activeCommMermaid.architectureDfdMermaid
+                  : activeCommMermaid.sequenceMermaid
+              }
+            />
           </div>
 
           {/* Live Interactive Sandbox for Selected Primitive */}
@@ -1438,6 +1873,151 @@ export function RealWorldArchitecturesAndInterviewLab(
 
                 <div className="border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden">
                   {qLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="px-3.5 py-2.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50/40 dark:bg-slate-950/40"
+                    >
+                      <span className="font-mono font-semibold uppercase text-[10px] text-sky-700 dark:text-sky-400 mr-2">
+                        [{log.kind}]
+                      </span>
+                      {log.detail}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SANDBOX D: SERVER-SENT EVENTS (SSE) */}
+            {activeComm.id === 'sse' && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={pushSseChunk}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-xs font-semibold text-sky-800 dark:text-sky-300"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Push Token Frame (id: #{sseLastEventId + 1})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendSseHeartbeat}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    Send :keep-alive Comment
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dropAndResumeSse}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-xs font-semibold text-amber-800 dark:text-amber-300"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    Drop Link &amp; Resume (Last-Event-ID)
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 font-mono tabular-nums">
+                  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="text-[10px] text-slate-500">HTTP/2 STREAM</div>
+                    <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      {sseConnected ? 'OPEN (SSE)' : 'CLOSED'}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="text-[10px] text-slate-500">LAST-EVENT-ID</div>
+                    <div className="text-sm font-semibold text-sky-700 dark:text-sky-400 mt-0.5">
+                      #{sseLastEventId}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="text-[10px] text-slate-500">ZERO-LOSS RESUMES</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                      {sseReplays}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden">
+                  {sseLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="px-3.5 py-2.5 text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50/40 dark:bg-slate-950/40"
+                    >
+                      {log.detail}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SANDBOX E: gRPC + DEBEZIUM WAL CDC */}
+            {activeComm.id === 'grpc-cdc' && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={sendGrpcAndCdc}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-xs font-semibold text-emerald-800 dark:text-emerald-300"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Execute gRPC + WAL CDC Sync
+                  </button>
+                  <button
+                    type="button"
+                    onClick={simulateGrpcDeadline}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-xs font-semibold text-amber-800 dark:text-amber-300"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    Trigger 50ms Deadline Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={simulateWalSlotLag}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-xs font-semibold text-rose-800 dark:text-rose-300"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Pause Debezium (WAL Slot Lag)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={recoverWalSlot}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-xs font-semibold text-sky-800 dark:text-sky-300"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Resume CDC &amp; Recycle WAL
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 font-mono tabular-nums">
+                  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="text-[10px] text-slate-500">GRPC CALLS (H2)</div>
+                    <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      {grpcRpcCount}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="text-[10px] text-slate-500">PG WAL LSN CURSOR</div>
+                    <div className="text-sm font-semibold text-sky-700 dark:text-sky-400 mt-0.5">
+                      0/{cdcWalLsn}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
+                    <div className="text-[10px] text-slate-500">CDC REPLICATION LAG</div>
+                    <div
+                      className={`text-sm font-semibold mt-0.5 ${
+                        cdcLagMs > 1000
+                          ? 'text-rose-700 dark:text-rose-400'
+                          : 'text-emerald-700 dark:text-emerald-400'
+                      }`}
+                    >
+                      {cdcLagMs} ms
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden">
+                  {grpcLogs.map((log) => (
                     <div
                       key={log.id}
                       className="px-3.5 py-2.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50/40 dark:bg-slate-950/40"
@@ -1840,6 +2420,61 @@ export function RealWorldArchitecturesAndInterviewLab(
                     </ul>
                   )}
                 </div>
+
+                {/* Toggleable Target Reference Mermaid Whiteboard inside Interview Room */}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-4 space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowMockMermaid((v) => !v)}
+                    className="w-full flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <GitBranch className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                      Reference Mermaid DFD &amp; DB ER
+                    </span>
+                    <span className="text-[10px] font-mono text-sky-700 dark:text-sky-400">
+                      {showMockMermaid ? 'Hide' : 'Reveal'}
+                    </span>
+                  </button>
+                  {showMockMermaid && (
+                    <div className="space-y-2.5 pt-1">
+                      <div className="flex flex-wrap gap-1">
+                        {(
+                          [
+                            { id: 'dfd', label: 'System DFD' },
+                            { id: 'sequence', label: 'Sequence' },
+                            { id: 'er', label: 'DB ER' },
+                          ] as const
+                        ).map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setMockMermaidView(m.id)}
+                            className={`px-2 py-1 rounded text-[11px] font-medium border ${
+                              mockMermaidView === m.id
+                                ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300'
+                                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                            }`}
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                      <FlightMermaidViewer
+                        compact
+                        title={`${activeMockBlueprint.shortTitle} (${mockMermaidView.toUpperCase()})`}
+                        subtitle="Staff target architecture reference diagram."
+                        mermaidCode={
+                          mockMermaidView === 'dfd'
+                            ? activeMockDeepSpec.systemDfdMermaid
+                            : mockMermaidView === 'sequence'
+                              ? activeMockDeepSpec.sequenceMermaid
+                              : activeMockErMermaid
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1895,6 +2530,49 @@ export function RealWorldArchitecturesAndInterviewLab(
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Target Staff Architecture Mermaid DFD & DB ER Review on Scorecard */}
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    Model Staff Whiteboard — Mermaid DFD, Sequence &amp; DB Schema
+                  </h4>
+                  <div className="inline-flex gap-1 p-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+                    {(
+                      [
+                        { id: 'dfd', label: 'System DFD' },
+                        { id: 'sequence', label: 'Sequence' },
+                        { id: 'er', label: 'DB ER Schema' },
+                      ] as const
+                    ).map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMockMermaidView(m.id)}
+                        className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                          mockMermaidView === m.id
+                            ? 'bg-sky-600 text-white dark:bg-sky-500 dark:text-slate-950 font-semibold'
+                            : 'text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <FlightMermaidViewer
+                  title={`${activeMockBlueprint.shortTitle} — Model Staff Architecture`}
+                  subtitle={activeMockDeepSpec.consistencyModel}
+                  mermaidCode={
+                    mockMermaidView === 'dfd'
+                      ? activeMockDeepSpec.systemDfdMermaid
+                      : mockMermaidView === 'sequence'
+                        ? activeMockDeepSpec.sequenceMermaid
+                        : activeMockErMermaid
+                  }
+                />
               </div>
 
               {/* Model Staff Wrap-Up Checklist */}

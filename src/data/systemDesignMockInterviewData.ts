@@ -3098,4 +3098,474 @@ export const SYSTEM_DESIGN_MOCK_INTERVIEWS: MockInterviewQuestion[] = [
       'Automatic Signaling-orchestrated ICE Restart to recover mid-call SFU node crashes in <2 seconds.',
     ],
   },
+  {
+    id: 'mock-youtube-netflix',
+    title: 'Design YouTube / Netflix Global Video Streaming & Adaptive Bitrate CDN',
+    shortTitle: 'YouTube / Netflix Video',
+    companyStyle: 'Netflix / YouTube · Planetary Bandwidth & Media Delivery',
+    difficulty: 'Staff / Principal (L6+)',
+    durationMinutes: 45,
+    relatedBlueprintId: 'youtube-netflix-streaming',
+    openingPrompt:
+      'Design a global video streaming platform serving 500M daily viewers with 100+ hours of 4K video uploaded every minute. We need fast resumable uploads, sub-5-minute transcoding for 1-hour videos, zero-rebuffer Adaptive Bitrate playback across 3G to Fiber, and resilience during a 50M-concurrent live finale.',
+    whiteboardHints: [
+      'Upload: Direct-to-Object-Store pre-signed chunked resumable upload (Content-Range) — never proxy 10GB files through API servers.',
+      'Transcode: Split video at GOP scene boundaries into 4s chunks -> parallel DAG workers encode 360p/720p/1080p/4K (H.264/AV1) simultaneously.',
+      'Delivery: ISP-embedded Open Connect CDN boxes + client-side ABR (HLS/DASH) + multi-CDN mid-stream manifest failover.',
+    ],
+    phases: [
+      {
+        phaseNumber: 1,
+        phaseName: 'Resumable 4K Upload Ingestion',
+        timeBudget: '0–8 min',
+        interviewerQuestion:
+          'A creator uploads an 8 GB 4K documentary over flaky hotel Wi-Fi that drops at 74%. How do you ingest uploads reliably without melting your API servers?',
+        contextClue: 'Think chunked direct-to-object-store resumable upload sessions, NOT single-shot multipart POST through app pods.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Issue a Resumable Upload Session with pre-signed S3/GCS Multipart URLs (8MB chunks with SHA-256 checksums & `Content-Range` offsets). The client uploads chunks directly to Object Storage in parallel and resumes cleanly from byte 74% after Wi-Fi drops, notifying the API only on final chunk completion.',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Textbook media ingestion! Bypassing API compute pods avoids OOMs and bandwidth bottlenecks, while chunked multipart upload + byte-offset resume makes 8GB transfers resilient to flaky links.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Stream the entire 8 GB file in one single HTTP POST through your Node.js API server into a PostgreSQL `BYTEA` blob column.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Storing 8GB video blobs in PostgreSQL bloats WAL/backups catastrophically, and a single connection drop forces restarting from 0%.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Upload to an API server’s local `/tmp` disk and run a nightly cron job to copy files to S3.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Local pod disks fill up instantly and lose in-flight uploads on autoscaling/restarts.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Force creators to downscale videos to 480p on their laptop before uploading.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Pushes complexity onto creators and destroys 4K HDR quality.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 2,
+        phaseName: 'Parallel DAG Per-Title Video Transcoding',
+        timeBudget: '8–17 min',
+        interviewerQuestion:
+          'Sequentially transcoding a 2-hour 4K master video into 6 resolutions x 3 codecs (H.264, VP9, AV1) takes 12+ hours on one machine. How do you finish in under 5 minutes while saving 30% CDN bandwidth?',
+        contextClue: 'Think GOP boundary splitting + parallel Kafka/DAG worker fan-out + Per-Title Complexity Encoding.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Run a fast GOP Splitter that slices the master into independent 4-second scene chunks -> fan out chunks over a Kafka/DAG orchestrator to hundreds of elastic Spot GPU/CPU transcode workers in parallel! Apply Per-Title Complexity Encoding (lower bitrate for cartoons, higher for fast sports) and assemble HLS/DASH `.m3u8/.mpd` manifests.',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Spot on! Parallel GOP-chunk DAG transcoding turns 12 hours into ~3 minutes, and Netflix’s Per-Title Encoding saves 25-35% global egress bandwidth with identical visual VMAF quality.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Transcode video on-the-fly in real time on the CDN edge for every single viewer who presses Play.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Transcoding 4K AV1 costs enormous GPU compute—doing it per viewer instead of once-per-upload would bankrupt the company!',
+          },
+          {
+            id: 'opt-c',
+            label: 'Store only the raw 4K MP4 file and let every mobile phone download 8 GB over 4G.',
+            points: 2,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Causes endless buffering on cellular networks and wastes petabytes of transit.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Buy one giant 256-core bare-metal server to encode each video sequentially from start to finish.',
+            points: 8,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Single-machine vertical scaling cannot handle 100 hours/min of parallel uploads and leaves zero fault isolation.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 3,
+        phaseName: 'Adaptive Bitrate (ABR) & ISP Open Connect CDN',
+        timeBudget: '17–26 min',
+        interviewerQuestion:
+          'At 8:00 PM prime time, 40% of a country’s internet traffic is your video streams. How do you serve 100+ Tbps smoothly when users step into elevators or suffer Wi-Fi drops?',
+        contextClue: 'Think ISP-embedded edge appliances (proactive off-peak push) + Client-Driven ABR HLS/DASH 4s segments.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Deploy ISP-embedded Edge CDN appliances (like Netflix Open Connect) pre-loaded overnight during off-peak hours with the top 5% trending catalog (>95% local offload). On playback, the client player runs an Adaptive Bitrate (ABR) controller over 4-second HLS/DASH chunks—smoothly stepping down to 480p when buffer dips and stepping back up to 4K when bandwidth recovers!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Principal-level media delivery! Proactive overnight ISP edge placement keeps 95%+ traffic off expensive internet transit, and client-side ABR eliminates rebuffering dynamically.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Serve all 100 Tbps directly from a single US-East AWS S3 bucket.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Catastrophic egress bills and cross-ocean RTT stalls playback globally.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Lock every viewer to whatever resolution they picked at second 0 for the entire 2-hour movie.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Static resolution stalls the second mobile signal drops; dynamic chunk-by-chunk ABR is mandatory.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Have the server push fixed-rate UDP frames without client buffer feedback.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Without client buffer occupancy feedback, congested links suffer severe frame loss and freezes.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 4,
+        phaseName: 'Video Metadata, View Counters & Watch-Resume DB',
+        timeBudget: '26–35 min',
+        interviewerQuestion:
+          'A viral trailer gets 2M views/minute and 50M users pause/resume movies across TV and phone. How do you design the database so view increments and resume bookmarks do not melt your primary DB?',
+        contextClue: 'Think Kafka -> Flink/ClickHouse batched view counters + Cassandra/DynamoDB partitioned by `user_id` for resume timestamps.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Store immutable video metadata in sharded MySQL/Vitess (cached aggressively in Redis/CDN). Never run `UPDATE videos SET views = views + 1` synchronously—emit playback heartbeats to Kafka -> Flink sliding-window aggregator -> batch flush every 10s to DB/ClickHouse. Store per-user resume bookmarks `(user_id, video_id, position_sec)` in Cassandra/DynamoDB partitioned by `user_id` (updated every 30s).',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Clean write-amplification mastery! Aggregating view counts in Kafka/Flink eliminates hot-row lock contention on viral videos, and `user_id`-partitioned wide-column storage absorbs millions of bookmark writes effortlessly.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Run `UPDATE videos SET view_count = view_count + 1` in a PostgreSQL SERIALIZABLE transaction on every Play click.',
+            points: 2,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Instant hot-row lock meltdown! Two million concurrent updates to one row bring PostgreSQL to its knees.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Write the user’s resume timestamp to disk every 100 milliseconds from the video player.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              '10 writes/sec x 50M viewers = 500M writes/sec! Coalesce heartbeats to every 30s + on pause/exit.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Store resume positions only in browser `localStorage` so TV and phone never sync.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Breaks the core cross-device continue-watching product requirement.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 5,
+        phaseName: 'Staff Curveball: 50M Live Finale & Regional CDN Outage',
+        timeBudget: '35–45 min',
+        interviewerQuestion:
+          'Curveball: During a 50M-viewer live World Cup finale, CDN Provider A suffers a major regional outage in India AND millions of viewers hit Refresh simultaneously! How do you avoid an Origin Meltdown?',
+        contextClue: 'Think Origin Shield + Request Collapsing (Coalescing) + Multi-CDN Dynamic Manifest Steering.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Use Multi-CDN Steering (Akamai + Fastly + ISP Open Connect) where the client player’s HLS/DASH manifest includes backup CDN base URLs and automatically switches CDN mid-stream within 1 segment (<4s) on 5xx/stall! Place an Origin Shield tier with **Request Collapsing (SingleFlight)** in front of S3/Live Packager so 10M simultaneous cache-miss requests for `seg_904.m4s` collapse into ONE single origin fetch!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Principal-level resilience! Request Collapsing (SingleFlight) at the Origin Shield stops cache-stampede meltdowns cold, and client-side Multi-CDN manifest failover keeps live viewers watching through a full CDN outage!',
+          },
+          {
+            id: 'opt-b',
+            label: 'Let all 50M players fall back directly to your Origin Live Packager simultaneously.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              '50M direct origin hits crush the Live Packager in milliseconds and take down the stream globally.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Wait for DNS TTLs (30 minutes) to expire before moving users off the broken CDN.',
+            points: 6,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              '30 minutes is an eternity during a live sports finale; client-side backup CDN URLs inside the manifest fail over in <4 seconds.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Manually restart the origin servers until traffic drops.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Restarting origin servers under a thundering herd only amplifies the outage.',
+          },
+        ],
+      },
+    ],
+    modelStaffChecklist: [
+      'Direct-to-Object-Store chunked resumable uploads with SHA-256 checksums and byte-offset resume.',
+      'Parallel GOP-chunk DAG transcoding + Per-Title Complexity Encoding into HLS/DASH adaptive ladders.',
+      'ISP-embedded Edge CDN appliances (overnight top-catalog push) + Client-Side Adaptive Bitrate (ABR).',
+      'Kafka -> Flink batched view counters (zero hot-row locks) + user_id-partitioned Cassandra resume bookmarks.',
+      'Origin Shield with SingleFlight Request Collapsing + Multi-CDN mid-stream manifest failover.',
+    ],
+  },
+  {
+    id: 'mock-url-shortener-ratelimiter',
+    title: 'Design a Global URL Shortener (Bitly) & Distributed Rate Limiter',
+    shortTitle: 'URL Shortener & Rate Limiter',
+    companyStyle: 'Google / Meta / Cloudflare · High-Throughput Edge Primitives',
+    difficulty: 'Senior (L5)',
+    durationMinutes: 45,
+    relatedBlueprintId: 'url-shortener-ratelimiter',
+    openingPrompt:
+      'Design a global URL shortener handling 100M new URLs/day and 10B redirects/day (100:1 read/write ratio, <10ms redirect latency) protected by a distributed API Rate Limiter blocking scrapers and abuse across 50+ global edge PoPs with <2ms overhead.',
+    whiteboardHints: [
+      'ID Gen: 7-char Base62 = 62^7 = 3.5 Trillion keys; use pre-allocated KGS numeric ranges per app server (zero collision DB retries).',
+      'Redirect: 301 Permanent (browser caches -> zero analytics) vs 302 Temporary (hits edge -> exact click tracking + editable target).',
+      'Rate Limiter: Redis Atomic Lua Token Bucket / Sliding Window Counter + configurable Fail-Open policy on Redis shard failure.',
+    ],
+    phases: [
+      {
+        phaseNumber: 1,
+        phaseName: 'Collision-Free Base62 Key Generation at Scale',
+        timeBudget: '0–8 min',
+        interviewerQuestion:
+          'We need short, unguessable 7-character Base62 codes (`3.5T` space) minted across 200 stateless API servers in 3 regions with zero write collisions and zero cross-region locks. How do you generate keys?',
+        contextClue: 'Compare MD5 truncation collisions vs Pre-Allocated Range / KGS (Key Generation Service) + Feistel/bijective scrambling.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Use a Key Generation Service (KGS) or ZooKeeper/etcd Range Allocator that leases disjoint numeric blocks (e.g., 100,000 IDs at a time) into each API server’s RAM. Each server increments locally in O(1), applies a lightweight bijective Feistel permutation (so sequential IDs aren’t guessable!), and Base62-encodes it—guaranteeing zero collisions and zero cross-region write coordination!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Staff-level ID design! Pre-allocated RAM ranges eliminate DB round-trips and collision retries, while a bijective Feistel shuffle prevents competitors from scraping your business volume via sequential URLs.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Take the first 7 chars of `MD5(long_url)` and retry in a `while` loop against a global primary DB until no duplicate exists.',
+            points: 8,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Works at tiny scale, but forces synchronous uniqueness DB lookups on every write and suffers birthday-paradox collision retries at scale.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Use a single global PostgreSQL `SERIAL` auto-increment counter across all 3 continents.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Single-region write bottleneck + exposes exact sequential URL counts to scrapers.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Use a 36-character UUIDv4 as the "short" URL.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Defeats the entire purpose of a 7-character URL shortener!',
+          },
+        ],
+      },
+      {
+        phaseNumber: 2,
+        phaseName: 'HTTP 301 vs 302 Redirect & Read-Path Latency',
+        timeBudget: '8–17 min',
+        interviewerQuestion:
+          'Enterprise customers demand accurate real-time click analytics (geo, device, referrer) AND ability to update expired links—while you still must serve 115K+ redirects/sec at <10ms p99. Do you return HTTP 301 or 302, and how do you log clicks without slowing redirects?',
+        contextClue: 'Think 302 Found + Redis LRU Cache + Non-Blocking Async Kafka Click Pipeline.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Return **HTTP 302 Found** (or `307` with short `Cache-Control: private, max-age=0`) so browsers hit our Edge Gateway instead of permanently caching the redirect—giving us accurate click counts and link mutability. Serve the target URL in <5ms from regional Redis LRU caches (>95% hit rate) and emit the click event asynchronously via a local ring buffer -> Kafka -> ClickHouse (zero latency added to the redirect)!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Nailed the classic 301 vs 302 trade-off! Only use 301 when pure CDN offload matters more than click analytics; decoupling analytics via async Kafka guarantees <10ms p99 redirects.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Return HTTP 301 Permanent Redirect with `max-age=31536000` and promise enterprise customers exact real-time click counts.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Browsers cache 301 permanently, so repeat visits bypass your servers completely—breaking click analytics and making expired links impossible to disable!',
+          },
+          {
+            id: 'opt-c',
+            label: 'Run a synchronous `INSERT INTO click_logs` into PostgreSQL before sending the HTTP 302 response.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Turning a 115K RPS read workload into 115K synchronous DB writes kills redirect latency and crashes PostgreSQL.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Fetch the target HTML page on your server and proxy the entire destination website back to the user.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Massive bandwidth waste, breaks cookies/TLS origin, and turns your shortener into an open proxy.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 3,
+        phaseName: 'Distributed Rate Limiter Algorithm & Atomicity',
+        timeBudget: '17–26 min',
+        interviewerQuestion:
+          'You need to enforce 100 requests/min per API key across 40 stateless gateway nodes with zero race conditions and no 2x boundary spikes at minute boundaries (e.g., 100 reqs at 10:00:59 + 100 reqs at 10:01:01). How do you implement it?',
+        contextClue: 'Think Redis Atomic Lua Token Bucket or Sliding Window Counter—NOT non-atomic GET-then-SET!',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Run a **Token Bucket** or **Sliding Window Counter** inside a single atomic **Redis Lua Script** (`EVALSHA`) keyed by `rl:{api_key}`. The Lua script reads the timestamp, refills tokens proportionally, checks `tokens >= 1`, decrements, and sets TTL in ONE atomic single-threaded operation (<1.5ms)—eliminating both race conditions and fixed-window boundary 2x bursts, and returning standard `X-RateLimit-Remaining` + `Retry-After` headers!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Textbook distributed rate limiting! Atomic Lua execution prevents the classic GET-then-INCR race condition across 40 gateways, and Token Bucket / Sliding Window Counter stops 2x minute-edge spikes cleanly.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Keep a `Map<apiKey, count>` inside each of the 40 gateway servers’ local memory.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Behind a round-robin load balancer, an attacker gets 40 x 100 = 4,000 requests/min instead of 100!',
+          },
+          {
+            id: 'opt-c',
+            label: 'Execute `GET key`, check `count < 100` in Node.js, then execute `INCR key` as two separate Redis calls.',
+            points: 8,
+            signal: 'Lean / Partial',
+            interviewerFeedback:
+              'Non-atomic read-modify-write! Under concurrency, 20 requests read `count=99` simultaneously and all slip through.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Store every single request timestamp forever in a PostgreSQL table and run `SELECT COUNT(*)` on every API call.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Adds 20-100ms per request and melts your database under DDoS spikes.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 4,
+        phaseName: 'Storage Sharding, Expiration & Security Hygiene',
+        timeBudget: '26–35 min',
+        interviewerQuestion:
+          'Over 5 years you accumulate 180 Billion URL rows (~90 TB). How do you shard storage, expire old links cleanly, and stop phishers from weaponizing your shortener domain?',
+        contextClue: 'Think hash-sharded DynamoDB/Cassandra by `short_code`, lazy + TTL expiration, and async Safe-Browsing / phishing scanning.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'Use a horizontally sharded Key-Value / Wide-Column store (DynamoDB / Cassandra / Sharded PG) partitioned by `short_code` for O(1) lookups. Handle expiration via **Lazy Expiration** on read (`if now > expires_at return 410 Gone`) paired with native storage TTL compaction. Protect brand reputation with synchronous Bloom-Filter blocklist checks on creation + async Google Safe Browsing / ML phishing scanners.',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Complete Staff coverage! Partitioning by `short_code` gives uniform O(1) routing, lazy + TTL expiration avoids expensive full-table delete sweeps, and phishing defense is a real-world must-have.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Keep all 180 Billion rows on one unsharded MySQL node and run `DELETE FROM urls WHERE expires_at < NOW()` every minute.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              '90TB cannot fit on one node, and full-table delete sweeps cause massive lock contention and replication lag.',
+          },
+          {
+            id: 'opt-c',
+            label: 'Shard by `long_url` instead of `short_code`.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Redirects only know `short_code`! Sharding by `long_url` turns every single redirect into a scatter-gather query across all shards.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Allow arbitrary `javascript:` or internal `http://169.254.169.254` URLs without validation.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Severe XSS and SSRF vulnerability! Always strictly allowlist `http://` and `https://` schemes.',
+          },
+        ],
+      },
+      {
+        phaseNumber: 5,
+        phaseName: 'Staff Curveball: Viral Celebrity Link Hot-Key & Redis Outage',
+        timeBudget: '35–45 min',
+        interviewerQuestion:
+          'Curveball: A Super Bowl QR code sends 2M clicks/sec to ONE single short code (`bit.ly/bowl26`), saturating the single Redis shard holding that key—AND 10 minutes later a Rate-Limiter Redis shard crashes! How do you survive both?',
+        contextClue: 'Think L1 Local In-Process Cache / CDN Edge for hot keys + Configurable Fail-Open vs Fail-Closed policy for Rate Limiter.',
+        options: [
+          {
+            id: 'opt-a',
+            label: 'For the 2M RPS hot key: detect hot short codes (via Count-Min Sketch / heavy-hitter telemetry) and promote them into a tiny **L1 In-Process Gateway Cache (5s TTL)** + Edge CDN Workers—instantly turning 2M Redis calls/sec into ~100/sec! For the crashed Rate-Limiter Redis shard: apply a **Fail-Open** policy on read/public endpoints with a conservative local fallback limiter (so paying users aren’t locked out) and **Fail-Closed** strictly on high-risk endpoints like `/login` or `/payments`!',
+            points: 20,
+            signal: 'Strong Hire',
+            interviewerFeedback:
+              'Principal-level operational nuance! L1 in-process caching + CMS hot-key detection eliminates Redis single-shard saturation completely, and differentiating Fail-Open (reads) vs Fail-Closed (auth/money) prevents self-inflicted outages.',
+          },
+          {
+            id: 'opt-b',
+            label: 'Add 100 more Redis shards—surely consistent hashing spreads one single key across all 100 shards!',
+            points: 2,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Classic distributed systems trap! Consistent hashing maps ONE key (`bowl26`) to ONE shard—adding 100 shards leaves that single hot shard 100% melted!',
+          },
+          {
+            id: 'opt-c',
+            label: 'Return HTTP 500 across the entire global website whenever a single Rate-Limiter Redis node restarts.',
+            points: 4,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Turns a 10-second cache blip into a total company outage; use Fail-Open with local fallback caps for normal traffic.',
+          },
+          {
+            id: 'opt-d',
+            label: 'Temporarily delete the Super Bowl short link so traffic stops.',
+            points: 0,
+            signal: 'Red Flag',
+            interviewerFeedback:
+              'Destroys a multi-million-dollar Super Bowl campaign during peak visibility!',
+          },
+        ],
+      },
+    ],
+    modelStaffChecklist: [
+      'Pre-allocated KGS numeric ranges per server + bijective Feistel scramble + Base62 encoding (zero collisions, unguessable).',
+      'HTTP 302 Found for analytics/mutability vs 301 for permanent CDN offload; async Kafka -> ClickHouse click telemetry.',
+      'Atomic Redis Lua Token Bucket / Sliding Window Counter eliminating race conditions & 2x boundary spikes.',
+      'Partitioned by `short_code` + lazy & TTL expiration + Safe-Browsing phishing & URL scheme validation.',
+      'L1 in-process cache / CDN edge promotion for viral hot keys + Fail-Open (reads) vs Fail-Closed (auth/payments) Redis outage policy.',
+    ],
+  },
 ];

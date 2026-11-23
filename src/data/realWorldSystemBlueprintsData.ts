@@ -1,4 +1,4 @@
-export type CommPrimitiveId = 'webhook' | 'websocket' | 'enqueue';
+export type CommPrimitiveId = 'webhook' | 'websocket' | 'enqueue' | 'sse' | 'grpc-cdc';
 
 export interface CommPrimitiveSpec {
   id: CommPrimitiveId;
@@ -219,6 +219,101 @@ BEGIN;
   VALUES (gen_random_uuid(), $1, 'booking.created', $4);
 COMMIT;
 -- Debezium CDC / Outbox Relay streams committed rows to Kafka/SQS reliably!`,
+  },
+  {
+    id: 'sse',
+    title: 'Server-Sent Events (SSE — Unidirectional HTTP/2 Token & Live Feed Push)',
+    shortTitle: 'Server-Sent Events (SSE)',
+    direction: 'Server -> Client (HTTP/2 Persistent Push)',
+    tagline: 'Stream LLM tokens (ChatGPT/Gemini), live stadium seat diffs, and dashboards over plain HTTP with native Last-Event-ID resume.',
+    simpleEnglish:
+      'Think of SSE like tuning into a live FM radio broadcast over standard HTTP. You open ONE regular HTTP request, and the server continuously speaks new updates (`data: ...`) down the pipe. If your train goes through a tunnel, the browser automatically reconnects and tells the server the exact last broadcast ID it heard (`Last-Event-ID`)!',
+    technicalDefinition:
+      'SSE (`Content-Type: text/event-stream`) streams UTF-8 event frames (`id:`, `event:`, `data:`, `retry:`) over standard HTTP/1.1 or HTTP/2 multiplexed connections. Unlike WebSockets, SSE requires no protocol upgrade, works seamlessly through corporate proxies and L7 load balancers, and supports automatic browser cursor resumption via the `Last-Event-ID` header.',
+    whenToUse: [
+      'AI / LLM token-by-token streaming (ChatGPT, Gemini, code generation UIs).',
+      'One-way server push feeds: live sports scoreboards, CI/CD build logs, stock tickers, notification bells.',
+      'Environments behind strict corporate HTTP firewalls where WebSocket upgrades get dropped.',
+    ],
+    whenNotToUse: [
+      'High-frequency bi-directional client-to-server streaming (e.g., multiplayer game physics or real-time voice/video — use WebSockets or WebRTC).',
+      'Binary payloads (SSE is UTF-8 text; binary must be Base64-encoded, adding 33% overhead).',
+    ],
+    reliabilityGuarantees: [
+      'Disable reverse-proxy response buffering (`X-Accel-Buffering: no`, `Cache-Control: no-cache`) or chunks stall until buffer fills.',
+      'Emit monotonically increasing `id:` values backed by a short-lived Redis Stream so `Last-Event-ID` replays missed events on drop.',
+      'Send `: keep-alive\\n\\n` comment heartbeats every 15-20s to prevent idle NAT/ALB timeouts (usually 60s), and use HTTP/2 to avoid HTTP/1.1’s 6-connection-per-domain browser cap.',
+    ],
+    protocolDiagramSteps: [
+      { step: 1, actor: 'Browser / SDK', action: 'GET /stream (Accept: text/event-stream)', detail: 'Opens standard HTTP/2 stream; sends Last-Event-ID header if resuming.' },
+      { step: 2, actor: 'Edge Proxy & API', action: '200 OK + Disable Buffering', detail: 'Flushes headers immediately with X-Accel-Buffering: no & keep-alive.' },
+      { step: 3, actor: 'Producer -> API', action: 'Push id + data Frames', detail: 'Streams LLM tokens or Redis Stream deltas as `id: 402\\ndata: {...}\\n\\n`.' },
+      { step: 4, actor: 'Auto-Reconnect', action: 'Replay Missed Cursor', detail: 'On drop, browser auto-reconnects after retry ms and replays IDs > Last-Event-ID.' },
+    ],
+    productionCode: `// Production Express SSE Endpoint with Last-Event-ID Replay & Keep-Alive
+app.get('/api/stream', async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Prevent Nginx buffering!
+  res.flushHeaders();
+
+  const lastId = req.header('Last-Event-ID');
+  if (lastId) {
+    const missed = await redis.xrange('live:events', '(' + lastId, '+');
+    for (const [id, fields] of missed) {
+      res.write(\`id: \${id}\\ndata: \${fields.payload}\\n\\n\`);
+    }
+  }
+
+  const heartbeat = setInterval(() => res.write(': keep-alive\\n\\n'), 15_000);
+  req.on('close', () => clearInterval(heartbeat));
+});`,
+  },
+  {
+    id: 'grpc-cdc',
+    title: 'gRPC (HTTP/2 Protobuf RPC) & Debezium WAL CDC Streaming',
+    shortTitle: 'gRPC & WAL CDC',
+    direction: 'Service <-> Service (Binary RPC) + DB WAL -> Kafka',
+    tagline: 'Sub-5ms strongly-typed microservice RPC paired with zero-dual-write Change Data Capture directly from database transaction logs.',
+    simpleEnglish:
+      'Think of gRPC like an express pneumatic tube between two kitchens using compact coded shorthand (Protobuf) instead of verbose English letters (JSON)—delivering 5-10x faster calls with strict timeouts. Pair it with WAL CDC (Debezium), which quietly reads the database’s permanent receipt tape (Write-Ahead Log) and streams every committed change to Kafka, Redis, and Search with zero lost events!',
+    technicalDefinition:
+      'gRPC runs multiplexed binary Protocol Buffers over persistent HTTP/2 connections with built-in deadline propagation, flow control, and bi-directional streaming. Change Data Capture (CDC) via Debezium attaches to PostgreSQL Logical Replication (`pgoutput`) or MySQL Binlog to emit ordered, guaranteed-committed database mutations to Kafka topics governed by a Schema Registry.',
+    whenToUse: [
+      'Low-latency internal east-west microservice calls (Checkout -> Inventory -> RMS Margin Check).',
+      'Keeping Redis caches, Elasticsearch/OpenSearch indexes, and ClickHouse warehouses synchronized with primary OLTP databases without brittle dual-writes.',
+      'Strict contract enforcement across polyglot teams (Go, Java, Rust, Python, TypeScript) via `.proto` schemas.',
+    ],
+    whenNotToUse: [
+      'Direct public browser-facing APIs without an Envoy/gRPC-Web gateway (browsers lack raw HTTP/2 trailer control).',
+      'Exposing raw internal database table columns directly via CDC to external teams—always publish a stable Outbox or versioned domain schema instead!',
+    ],
+    reliabilityGuarantees: [
+      'Always propagate **Context Deadlines** end-to-end across gRPC hops so a timed-out caller cancels wasted downstream DB work.',
+      'Alert aggressively on PostgreSQL **Replication Slot Lag** (`pg_replication_slots`); a dead Debezium connector holding an inactive slot can fill primary disk with retained WAL!',
+      'Enforce `BACKWARD` schema compatibility in Schema Registry (never reuse Protobuf field numbers or drop required fields).',
+    ],
+    protocolDiagramSteps: [
+      { step: 1, actor: 'Caller Service', action: 'gRPC Protobuf + 50ms Deadline', detail: 'Encodes binary request over multiplexed HTTP/2 connection via Envoy L7 LB.' },
+      { step: 2, actor: 'Target Service', action: 'ACID Commit to Primary DB', detail: 'Executes business transaction and commits row + outbox into DB WAL.' },
+      { step: 3, actor: 'Debezium CDC', action: 'Tail WAL Logical Slot', detail: 'Reads committed WAL LSN frames in strict commit order with zero DB polling.' },
+      { step: 4, actor: 'Kafka Consumers', action: 'Hydrate Cache & Search', detail: 'Downstream services update Redis/OpenSearch/ClickHouse within <200ms.' },
+    ],
+    productionCode: `// 1. Strongly-Typed gRPC Contract (inventory.proto)
+syntax = "proto3";
+service InventoryService {
+  rpc ReserveStock (ReserveRequest) returns (ReserveReply);
+}
+message ReserveRequest {
+  string idempotency_key = 1;
+  int64 dark_store_id = 2;
+  repeated SkuQty items = 3; // Binary wire format (~6x smaller than JSON)
+}
+
+// 2. Debezium PostgreSQL CDC Connector Config (Zero Dual-Writes!)
+// plugin.name=pgoutput | slot.name=inv_cdc_slot | table.include.list=public.outbox_events
+// Streams every committed row directly to Kafka topic "outbox.inventory" in <100ms!`,
   },
 ];
 
