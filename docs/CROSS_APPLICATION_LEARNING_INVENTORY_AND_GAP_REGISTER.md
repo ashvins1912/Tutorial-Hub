@@ -116,3 +116,13 @@ Do not upgrade evidence states based only on rendering, page opens, self-atteste
 - Added authenticated simulator completion history as a separate bounded record. It stores completion and answered-checkpoint count only; it does not store or trust client-reported correctness and does not change quiz mastery.
 - Added server validation that completion IDs/scenarios match the published lesson contract and its current objective references.
 - Remaining: manual screen-reader/mobile review, domain-expert review of fixture assumptions, lesson-by-lesson configuration migration, and queue-depth/fan-out/retry engine extensions.
+
+
+## 9. Application-wide content quality audit ledger (2026-11-24)
+
+- Added `docs/learning-content-quality-audit.json`, a machine-readable ledger for all 21 registered learning surfaces.
+- Each surface now has an explicit audit priority, mapped source references, review-focus areas, required evidence and separate inventory/content/verification states.
+- The ledger intentionally keeps content and verification as `not_assessed`; static source inspection and registry mapping are not proof of topic completeness or technical correctness.
+- Added `docs/CONTENT_QUALITY_AUDIT_AND_REVIEW_STANDARD.md` with the universal lesson contract, topic-level 0–4 rubric, domain-specific review criteria and evidence gates.
+- Added a validator and CI step to enforce exact registry coverage, source-path integrity, evidence counts and honest verification semantics.
+- Remaining work is topic/subtopic-level extraction, lesson scorecards, executable example/visual fixtures, objective-linked transfer tasks and human/domain review. No existing lesson is bulk-marked complete.
