@@ -3,7 +3,7 @@ import { apiFetch } from '../../../lib/apiFetch';
 import { LearningRuntime } from './LearningRuntime';
 import { VisualizationRenderer, type LessonVisual } from './VisualizationRenderer';
 import { LessonMarkdown } from './LessonMarkdown';
-import type { LessonSimulator } from './lessonSimulatorContract';
+import { validateLessonSimulator, type LessonSimulator } from './lessonSimulatorContract';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
@@ -36,7 +36,7 @@ export function PublishedLessonView({ lessonId }: { lessonId: string }) {
     return () => { active = false; };
   }, [lessonId]);
 
-  if (loading) return <main className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><p className="mx-auto max-w-4xl text-sm text-slate-500">Loading published lesson…</p></main>;
+  const simulator = validateLessonSimulator(lesson?.simulator);\n\n  if (loading) return <main className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><p className="mx-auto max-w-4xl text-sm text-slate-500">Loading published lesson…</p></main>;
   if (error || !lesson) return <main className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><div className="mx-auto max-w-4xl rounded-xl border border-rose-200 bg-white p-5 text-sm text-rose-700 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300">{error || 'Lesson unavailable.'}</div></main>;
 
   return <main className="min-h-screen bg-slate-50 px-4 py-8 dark:bg-slate-950">
@@ -59,7 +59,7 @@ export function PublishedLessonView({ lessonId }: { lessonId: string }) {
       <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-base font-semibold">Your learning progress</h2>
         <p className="mt-1 text-xs text-slate-500">Your quiz results and practice progress are private to your account.</p>
-        <div className="mt-4"><LearningRuntime jobId={lessonId} quiz={lesson.quiz || []} practiceTasks={lesson.practiceTasks || []} simulator={lesson.simulator}/></div>
+        <div className="mt-4"><LearningRuntime jobId={lessonId} quiz={lesson.quiz || []} practiceTasks={lesson.practiceTasks || []} simulator={simulator || undefined}/></div>
       </section>
     </article>
   </main>;
