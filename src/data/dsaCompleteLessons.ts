@@ -594,7 +594,121 @@ static int[] kmpMatches(String text, String pattern) {
       {level:'Challenge',task:'Minimum window substring.',goal:'Track required vs formed counts and shrink only when valid.'},
       {level:'Transfer',task:'Subarray sum equals K with negative numbers.',goal:'Recognise why a simple sliding window fails and use prefix sums.'}
     ],
-    interviewChecks: ['What property makes pointer movement safe?', 'Why does a positive-number sum window shrink correctly?', 'How do you count exactly K distinct values?', 'When is sorting incompatible with the problem?']
+    interviewChecks: ['What property makes pointer movement safe?', 'Why does a positive-number sum window shrink correctly?', 'How do you count exactly K distinct values?', 'When is sorting incompatible with the problem?'],
+    learningOutcomes: [
+      'Choose opposite-direction or same-direction pointers based on ordering, pairing, palindrome or compaction requirements.',
+      'Implement fixed and variable sliding windows with explicit validity invariants.',
+      'Use frequency maps for distinct-count windows and derive exactly-K counts from atMost(K)-atMost(K-1).',
+      'Prove linear total pointer movement and account for hash-map update costs.',
+      'Recognize when negative values invalidate greedy window shrinking and select prefix sums or a deque instead.',
+      'Include sorting and index-preservation costs when preparing two-pointer input.'
+    ],
+    prerequisites: [
+      'Understand arrays, strings, indexing and half-open intervals.',
+      'Know hash maps and frequency counting.',
+      'Understand sorted order, prefix sums and basic amortized analysis.',
+      'Distinguish contiguous subarrays/substrings from subsequences.'
+    ],
+    deepDive: [
+      'Opposite-direction pointers are safe when sorted order proves one endpoint cannot participate in a valid answer. For pair sum, if the smallest-plus-largest is too small, the smallest value cannot pair with any remaining right endpoint.',
+      'Same-direction read/write pointers separate processed output from unprocessed input. The prefix [0,write) is the retained result; every read position is examined once.',
+      'A fixed window of length k updates its state by adding the entering value and removing the leaving value. Recomputing all k values at every step costs O(nk) instead of O(n).',
+      'A variable window is commonly represented as [left,right). The algorithm expands right, updates state, repairs validity by advancing left, and records an answer only when the window satisfies the required condition.',
+      'For at most K distinct values, maintain a frequency map and a distinct counter. Shrink while distinct>K; remove a key when its count reaches zero.',
+      'Exactly K distinct subarrays can be counted as atMost(K)-atMost(K-1). The transformation works because every subarray with fewer than K distinct values appears in both counts and cancels.',
+      'For longest substring without repeats, lastSeen stores the latest index. Move left to max(left,lastSeen+1) so the left boundary never moves backward.',
+      'For minimum length with positive numbers and sum>=target, expand until valid and then shrink while valid. Positivity ensures removing a value cannot increase the sum; negative values destroy this monotonicity.',
+      'When values may be negative, use prefix sums and an appropriate data structure such as a monotonic deque for shortest-subarray constraints. Do not apply a positive-only window proof.',
+      'Sorting can enable two-pointer scans but costs O(n log n) and may destroy original order. Preserve original indices in records when the result contract needs them.',
+      'Each pointer moves only forward and at most n positions. Nested while loops remain O(n) when every iteration advances a pointer that never retreats.',
+      'Duplicate skipping in 3Sum prevents duplicate output tuples; it is separate from the proof that the two-pointer movement is safe.'
+    ],
+    correctness: [
+      'Sorted pair invariant: every unexamined candidate pair lies within [left,right]. A sum below target proves the current left value cannot pair with any remaining right-side value, so discarding it is safe.',
+      'Fixed-window invariant: after each update, the running aggregate equals exactly the current k-element window.',
+      'At-most-K invariant: after shrinking, the current window contains no more than K distinct keys; each right endpoint contributes the number of valid suffix windows ending there.',
+      'Exactly-K identity: sets of subarrays counted by atMost(K-1) are a subset of those counted by atMost(K); their difference contains precisely those with exactly K distinct values.',
+      'Longest-unique invariant: after each right step, the current window contains no repeated symbol because left is moved beyond the previous occurrence and never moves backward.',
+      'Linear-time bound: each endpoint advances at most n times; every frequency-map insertion/removal is associated with a boundary movement.'
+    ],
+    implementationSteps: [
+      'Write assumptions: sorted or unsorted, positive or signed values, contiguous or non-contiguous, and whether input mutation is allowed.',
+      'Choose [left,right] or [left,right) and keep the corresponding size formula consistent.',
+      'For opposite pointers, prove why the endpoint being moved can be discarded.',
+      'For fixed windows, validate k and update by one incoming and one outgoing element.',
+      'For variable windows, define validity and state whether the answer is recorded before or after shrinking.',
+      'For distinct-count windows, update counts and distinct count only on zero-to-one or one-to-zero transitions.',
+      'For exactly K, implement both atMost passes and guard K<=0.',
+      'If negatives are allowed, challenge the shrinking proof and use prefix-sum techniques when needed.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Maximum sum of a fixed-size window', code: `static long maximumWindowSum(int[] values, int k) {
+    if (k <= 0 || k > values.length) throw new IllegalArgumentException("invalid k");
+    long sum = 0L;
+    for (int i = 0; i < k; i++) sum += values[i];
+    long best = sum;
+    for (int right = k; right < values.length; right++) {
+        sum += values[right] - values[right - k];
+        best = Math.max(best, sum);
+    }
+    return best;
+}`, explanation: 'The running sum always represents exactly k values. Each value enters and leaves once: O(n) time and O(1) extra space.' },
+      { language: 'Java 21', title: 'Count subarrays with exactly K distinct values', code: `static long exactlyKDistinct(int[] values, int k) {
+    if (k <= 0) return 0L;
+    return atMostKDistinct(values, k) - atMostKDistinct(values, k - 1);
+}
+
+static long atMostKDistinct(int[] values, int k) {
+    Map<Integer, Integer> counts = new HashMap<>();
+    int left = 0, distinct = 0;
+    long total = 0L;
+    for (int right = 0; right < values.length; right++) {
+        int value = values[right];
+        if (counts.getOrDefault(value, 0) == 0) distinct++;
+        counts.merge(value, 1, Integer::sum);
+        while (distinct > k) {
+            int outgoing = values[left++];
+            int remaining = counts.get(outgoing) - 1;
+            if (remaining == 0) {
+                counts.remove(outgoing);
+                distinct--;
+            } else counts.put(outgoing, remaining);
+        }
+        total += right - left + 1L;
+    }
+    return total;
+}`, explanation: 'For each right endpoint, there are right-left+1 valid suffix windows with at most K distinct values. Expected O(n) time and O(u) map space.' }
+    ],
+    traceExercises: [
+      'Fixed-window trace: [2,1,5,1,3,2], k=3. Record incoming, outgoing, sum and best.',
+      'At-most-K trace: [1,2,1,2,3], K=2. Show counts, distinct and left after every right expansion.',
+      'Exactly-K trace: use the same array with K=2. Calculate atMost(2), atMost(1) and their difference.',
+      'Counterexample: [4,-5,3], target=3. Explain why removing a left value can increase the sum.'
+    ],
+    realWorldApplications: [
+      'Rolling telemetry and financial metrics over fixed time/count windows.',
+      'Text processing for unique substrings, bounded vocabularies and minimum covering windows.',
+      'Streaming event analytics that count distinct users or event types in a moving range.',
+      'In-place filtering and compaction while preserving relative order.',
+      'Sorted dataset joins and pair searches without nested full scans.'
+    ],
+    assessment: [
+      'Prove a sorted pair-sum pointer movement and include sorting cost when applicable.',
+      'Implement a fixed-size window and state its exact aggregate invariant.',
+      'Derive exactly-K distinct as atMost(K)-atMost(K-1) and explain why the sets cancel.',
+      'Implement atMost-K distinct and prove the right-left+1 contribution.',
+      'Explain why positive values permit a sum-based shrink rule but negative values may invalidate it.',
+      'Give an amortized proof for nested expand/shrink loops.',
+      'Choose between sliding window and prefix-sum/deque methods for signed input.'
+    ],
+    revisionPrompts: [
+      'Write the invariant for opposite pointers, read/write compaction and fixed windows.',
+      'Reconstruct the atMost(K) counting formula without notes.',
+      'Explain the positivity assumption behind minimum-size sum windows.',
+      'After two days, solve longest unique substring and exactly-K distinct subarrays.',
+      'After one week, create a negative-number counterexample to an invalid sliding-window approach.',
+      'Explain why nested pointer loops can still be linear using total pointer movement.'
+    ]
   },
   {
     id: 'binary-tree', sourcePages: [17], title: '8. Binary Tree', promise: 'Master recursive structure, iterative traversals, level order, paths and tree construction.',
