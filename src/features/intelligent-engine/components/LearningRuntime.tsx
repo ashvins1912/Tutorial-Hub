@@ -117,7 +117,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
       setQuizGrading(payload.grading);
       setObjectiveMastery(payload.objectiveMastery || payload.grading.objectiveMastery || []);
       setAttempts(payload.progress?.attempts ?? attempts + 1);
-      setMasterySummary({ bestScore: payload.progress?.bestScore ?? accuracy, masteryLevel: payload.progress?.masteryLevel ?? nextLevel });
+      if (!focusedObjectiveId) setMasterySummary({ bestScore: payload.progress?.bestScore ?? accuracy, masteryLevel: payload.progress?.masteryLevel ?? nextLevel });
       setProgressStatus('Quiz result saved');
     } catch { setSubmitted(false); setProgressStatus('Quiz could not be verified or saved. Please retry.'); }
   };
