@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildGenerationPrompt } from '../../server/modules/content-authoring/generation/contentGeneration.prompts.ts';
 import { validateGeneratedLesson } from '../../server/modules/content-authoring/generation/contentGeneration.validator.ts';
 import { generateLearningDraft } from '../../server/modules/content-authoring/generation/contentGeneration.service.ts';
+import { validateLessonSimulator } from '../../src/features/intelligent-engine/components/lessonContracts.ts';
 
 const sections = [
   { id: 'overview', title: 'Overview', purpose: 'Explain the concept', required: true, blockType: 'explanation' },
@@ -85,4 +86,18 @@ test('rejects simulator contracts without objective links or with unsupported al
   assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, schemaVersion: 2 } }, sections), /GENERATED_SIMULATOR_INCOMPLETE/);
   assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, description: '' } }, sections), /GENERATED_SIMULATOR_INCOMPLETE/);
   assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, initialInput: Array.from({ length: 13 }, (_, i) => i).join(',') } }, sections), /GENERATED_SIMULATOR_INPUT_INVALID/);
+});
+
+
+test('published simulator must map to real lesson objectives and reject duplicate bindings', () => {
+  const config = {
+    schemaVersion: 1, id: 'binary-search-trace', title: 'Binary search trace',
+    description: 'Trace the shrinking interval.', kind: 'algorithm-trace',
+    algorithm: 'binary-search', initialInput: '1, 3, 5, 7', initialTarget: '5',
+    objectiveIds: ['Understand the invariant'],
+  };
+  assert.equal(validateLessonSimulator(config, ['Understand the invariant'])?.id, 'binary-search-trace');
+  assert.equal(validateLessonSimulator(config, ['Understand recursion']), null);
+  assert.equal(validateLessonSimulator({ ...config, objectiveIds: ['Understand the invariant', 'Understand the invariant'] }, ['Understand the invariant']), null);
+  assert.equal(validateLessonSimulator(config)?.id, 'binary-search-trace');
 });
