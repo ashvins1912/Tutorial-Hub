@@ -3,11 +3,11 @@ import test from 'node:test';
 import { DSA_COMPLETE_LESSONS } from '../../src/data/dsaCompleteLessons.ts';
 
 const required = [
-  ['queue-deep-dive', 8],
-  ['sorting-algorithms', 14],
-  ['searching-algorithms', 15],
-  ['binary-search-on-answer', 16],
-  ['bit-manipulation', 17],
+  ['queue-deep-dive', 7],
+  ['sorting-algorithms', 13],
+  ['searching-algorithms', 14],
+  ['binary-search-on-answer', 15],
+  ['bit-manipulation', 16],
 ];
 
 test('handwritten-notes topics are integrated with source page references', () => {
