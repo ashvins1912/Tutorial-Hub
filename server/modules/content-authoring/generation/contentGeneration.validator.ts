@@ -47,7 +47,11 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     if (!raw.simulator || typeof raw.simulator !== 'object' || Array.isArray(raw.simulator)) throw new Error('GENERATED_SIMULATOR_INVALID');
     const candidate = raw.simulator as Record<string, unknown>;
     if (candidate.schemaVersion !== 1 || !isText(candidate.id) || candidate.id.length > 80 || candidate.kind !== 'algorithm-trace' || !isText(candidate.title) || !isText(candidate.description) || !['binary-search', 'bubble-sort'].includes(String(candidate.algorithm)) || typeof candidate.initialInput !== 'string' || candidate.initialInput.length > 256) throw new Error('GENERATED_SIMULATOR_INVALID');
-    if (candidate.algorithm === 'binary-search' && !isText(candidate.target)) throw new Error('GENERATED_SIMULATOR_TARGET_REQUIRED');
+    if (!isText(candidate.initialInput)) throw new Error('GENERATED_SIMULATOR_INPUT_REQUIRED');
+    const values = candidate.initialInput.split(',').map((part) => Number(part.trim()));
+    if (values.length > 12 || values.some((value) => !Number.isFinite(value))) throw new Error('GENERATED_SIMULATOR_INPUT_INVALID');
+    if (candidate.algorithm === 'binary-search' && (!isText(candidate.target) || !Number.isFinite(Number(candidate.target)))) throw new Error('GENERATED_SIMULATOR_TARGET_REQUIRED');
+    if (candidate.algorithm === 'binary-search' && values.some((value, index) => index > 0 && values[index - 1] > value)) throw new Error('GENERATED_SIMULATOR_INPUT_MUST_BE_SORTED');
     simulator = { schemaVersion: 1, id: candidate.id, kind: 'algorithm-trace', title: candidate.title, description: candidate.description, algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, ...(typeof candidate.target === 'string' ? { target: candidate.target } : {}) };
   }
   const lesson: GeneratedLesson = {
