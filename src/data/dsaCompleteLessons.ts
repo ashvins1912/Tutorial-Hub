@@ -1346,6 +1346,102 @@ static int[] mergeKSorted(int[][] arrays) {
       'How do you preserve input order while deduplicating?',
       'Why is a frequency map required instead of a set for some anagram problems?',
       'How do you avoid pairing an element with itself in a one-pass complement search?'
+    ],
+    learningOutcomes: [
+      'Define set membership through equality and explain why a hash code alone cannot establish identity.',
+      'Choose HashSet, insertion-ordered set or sorted set according to lookup and iteration requirements.',
+      'Implement deduplication, intersection and complement lookup while preserving any required input order.',
+      'Distinguish expected hash-table complexity from collision-dependent worst cases.',
+      'Explain the equals/hashCode contract and why mutable keys are dangerous.',
+      'Recognize when multiplicity requires a frequency map rather than a set.'
+    ],
+    prerequisites: [
+      'Understand arrays, iteration, equality and object identity.',
+      'Know expected O(1) versus O(log n) lookup at a high level.',
+      'Understand that duplicate values can be equal even when they are different object instances.',
+      'Review the Map lesson when counts or key-to-value associations are required.'
+    ],
+    deepDive: [
+      'A set represents membership: each equality class appears at most once. It does not represent multiplicity or positional order unless the concrete implementation explicitly provides an iteration-order contract.',
+      'A hash set computes a hash code to select a bucket, then uses equality to distinguish keys within that bucket. Hash collisions are normal and do not imply that two keys are equal.',
+      'The hash contract requires equal objects to have equal hash codes. Unequal objects may share a hash code. Violating the contract can make lookup fail even when an apparently equal key was inserted.',
+      'HashSet offers expected O(1) add, contains and remove under a suitable distribution. This is not an unconditional worst-case guarantee; collisions and implementation details matter.',
+      'TreeSet maintains comparator order and typically provides O(log n) add, contains and remove. Its comparator must be consistent with the equality semantics expected by the application.',
+      'LinkedHashSet preserves insertion iteration order while retaining hash-based membership. It is useful when deduplication should keep the first-seen order.',
+      'Set union combines all distinct members; intersection keeps members present in both; difference keeps members in the first but not the second; symmetric difference keeps members present in exactly one.',
+      'For pair-sum, check whether target-current exists before adding current when the same array position cannot be reused. This makes the scan invariant precise: the set contains only earlier elements.',
+      'For longest consecutive sequence, begin expanding only at values whose predecessor is absent. Each consecutive run is then traversed from its unique start, avoiding repeated full-run scans.',
+      'A set discards counts. If a task asks whether one string has enough copies of each symbol to form another, use a frequency map or decrementing multiset representation.',
+      'Keys should be immutable with respect to equality and hashing while stored. Changing a field used by equals/hashCode can leave the object in a bucket that future lookup no longer searches.',
+      'Normalization is part of the equality definition. Case-folded or whitespace-normalized membership must normalize consistently both when inserting and when querying.'
+    ],
+    correctness: [
+      'Deduplication invariant: after processing the first i values, the membership set contains exactly the distinct values in that prefix, and the output contains their first occurrences in original order.',
+      'One-pass pair-sum invariant: before processing index i, the set contains exactly the values at indices less than i. A found complement therefore uses a different index.',
+      'Intersection invariant: every emitted value belongs to both input sets, and every distinct value in the smaller set that belongs to the larger is emitted once.',
+      'Longest-consecutive invariant: a run is expanded only from its minimum value because only that value has no predecessor in the set; runs cannot be counted from an interior point.',
+      'Hash correctness depends on the equality/hashCode contract: equal keys route to compatible lookup buckets, and equality resolves collisions within a bucket.'
+    ],
+    implementationSteps: [
+      'Write the exact equality rule for the key, including normalization and composite-key fields.',
+      'Choose HashSet for membership, LinkedHashSet for first-seen iteration order, or TreeSet for sorted order.',
+      'For deduplication, append to output only when add returns true.',
+      'For pair-sum, query the complement before insertion unless reusing the same index is explicitly permitted.',
+      'For intersection, consider iterating the smaller collection and probing the larger one.',
+      'For mutable domain objects, prefer immutable key records or derive a stable immutable key.',
+      'State expected time, worst-case caveat and auxiliary storage in the solution explanation.',
+      'Test duplicates, negative values, empty input, equal-but-distinct objects and normalization boundaries.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Stable deduplication and one-pass pair lookup', code: `static int[] uniqueInFirstSeenOrder(int[] values) {
+    Set<Integer> seen = new LinkedHashSet<>();
+    for (int value : values) seen.add(value);
+    return seen.stream().mapToInt(Integer::intValue).toArray();
+}
+
+static int[] twoSumIndices(int[] values, int target) {
+    Set<Integer> earlier = new HashSet<>();
+    for (int i = 0; i < values.length; i++) {
+        int complement = target - values[i];
+        if (earlier.contains(complement)) {
+            for (int j = 0; j < i; j++) {
+                if (values[j] == complement) return new int[]{j, i};
+            }
+        }
+        earlier.add(values[i]);
+    }
+    return new int[0];
+}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup illustrates the earlier-values invariant; this pedagogical version scans earlier indices to recover a matching index, so worst-case time is O(n²). For expected O(n) index lookup, use a Map<Integer,Integer> as shown in the Map lesson.' }
+    ],
+    traceExercises: [
+      'Trace LinkedHashSet on [4,1,2,1,3,4]. Show membership and output after each input.',
+      'For target 9 and values [2,7,2], show the earlier-values set before each iteration and explain when the pair is found.',
+      'Compute union, intersection, difference and symmetric difference for A={1,2,3} and B={3,4}.',
+      'Give two unequal keys with the same hash code and explain why both can still coexist in a correct hash set.'
+    ],
+    realWorldApplications: [
+      'Deduplicating event IDs while preserving the order in which events first arrived.',
+      'Permission and feature-flag membership checks.',
+      'Detecting repeated states in graph traversal and cycle-sensitive simulations.',
+      'Finding shared tags, categories or identifiers between datasets.',
+      'Maintaining a visited set in BFS/DFS to avoid processing a node repeatedly.'
+    ],
+    assessment: [
+      'Explain why a hash code is not a unique identifier and describe collision resolution at the contract level.',
+      'Choose between HashSet, LinkedHashSet and TreeSet for three different ordering requirements.',
+      'Prove that checking a complement before insertion prevents same-index reuse in one-pass pair-sum.',
+      'Implement stable deduplication and state its time and space complexity.',
+      'Explain why a set cannot solve a multiplicity-sensitive anagram requirement by itself.',
+      'Describe a failure mode caused by mutating a field used by equals/hashCode after insertion.',
+      'Test empty, duplicate-heavy, negative and equal-but-distinct values.'
+    ],
+    revisionPrompts: [
+      'State the equals/hashCode contract from memory and give a collision example.',
+      'Re-derive the one-pass pair-sum invariant and explain why operation order matters.',
+      'Compare HashSet, LinkedHashSet and TreeSet by order and expected operation cost.',
+      'After two days, solve Longest Consecutive Sequence and justify why each value is expanded at most once.',
+      'After one week, explain when a set must be replaced by a frequency map.',
+      'Write a stable deduplication implementation without notes and test duplicate-heavy input.'
     ]
   },
   {
@@ -1416,6 +1512,108 @@ static int[] mergeKSorted(int[][] arrays) {
       'Why should Two Sum check the complement before inserting the current value?',
       'When would you choose a TreeMap over a HashMap?',
       'What happens if a mutable key changes after insertion?'
+    ],
+    learningOutcomes: [
+      'Model key-to-value relationships and select values that represent counts, indices, earliest/latest positions or grouped records.',
+      'Implement frequency counting, complement lookup and prefix-sum frequency counting.',
+      'Choose HashMap versus TreeMap based on expected lookup and ordered traversal requirements.',
+      'Preserve correct update semantics: overwrite, increment, merge, append, keep earliest or keep latest.',
+      'Derive the prefix-sum invariant for counting subarrays whose sum equals a target.',
+      'State integer-width and hash/equality assumptions explicitly.'
+    ],
+    prerequisites: [
+      'Understand arrays, iteration, equality and set membership.',
+      'Know prefix sums and basic arithmetic over integer ranges.',
+      'Be comfortable with arrays of indices and the difference between an index and a count.',
+      'Review the Set lesson for hash collisions and equality/hashCode behavior.'
+    ],
+    deepDive: [
+      'A map stores one value for each key according to the map implementation’s key-equality semantics. Inserting an existing key usually replaces its value; accumulation requires an explicit merge or increment.',
+      'A frequency map stores key -> count. Each occurrence increments a value; this preserves multiplicity that a set would discard.',
+      'An index map stores key -> position. Keeping the first index, last index or all indices are different algorithms; choose the update rule from the required output.',
+      'A grouping map stores key -> collection. The key is a derived grouping signature, while the value accumulates all records sharing that signature.',
+      'HashMap put/get/remove are expected O(1) under a suitable hash distribution, with collision-dependent worst-case behavior. TreeMap provides ordered keys with O(log u) operations for u distinct keys.',
+      'Two Sum checks the complement before inserting the current value. Store value -> index to retrieve the actual pair in expected O(n) time and avoid pairing an index with itself.',
+      'Prefix sums define P[j] as the sum of elements before index j. A subarray [i,j) has sum k exactly when P[j]-P[i]=k, so the current prefix p needs earlier prefixes equal to p-k.',
+      'For subarray-sum counting, initialize frequency[0]=1 to represent the empty prefix before the array. At each position, add frequency[p-k] to the answer before incrementing frequency[p].',
+      'The query-before-update order ensures only earlier prefixes are counted. Updating first can count the current prefix as its own start, especially visible when k=0.',
+      'Prefix sums and answers may exceed 32-bit integer range even when each element fits in int. Use long for cumulative sums and counts when constraints require it.',
+      'A map’s null semantics vary by implementation. Prefer getOrDefault, containsKey or explicit Optional-like logic when null is a valid stored value.',
+      'Mutable keys can become unreachable if their equality/hash behavior changes after insertion. Use immutable keys such as records or normalized strings.',
+      'A concurrent map is needed when multiple threads mutate shared mappings; an ordinary HashMap does not make compound read-modify-write operations atomic.'
+    ],
+    correctness: [
+      'Frequency invariant: after processing a prefix, map[key] equals the number of occurrences of key in exactly that prefix.',
+      'Two Sum invariant: before processing index i, each stored value maps to a previously seen index; a found complement therefore returns two distinct indices.',
+      'Prefix-frequency invariant: before querying position j, the map stores counts of prefix sums P[i] for i<j. The number of subarrays ending at j with sum k is exactly frequency[P[j]-k].',
+      'Seeding frequency[0]=1 accounts for subarrays that begin at array index zero because their starting prefix is the empty prefix P[0].',
+      'Query-before-increment preserves the earlier-prefix invariant and prevents the current prefix from being counted as its own predecessor.',
+      'Grouping invariant: after processing each record, the bucket for its derived key contains exactly the processed records with that key.'
+    ],
+    implementationSteps: [
+      'Define the key and value meaning in one sentence before coding.',
+      'Choose update semantics explicitly: overwrite, increment, append, minimum/maximum index or merge.',
+      'Use getOrDefault/merge for counts and a stable immutable key.',
+      'For Two Sum, query the complement before storing the current value and use a map when the matching index is needed.',
+      'For subarray sum, seed prefix frequency with 0 -> 1; query p-k before incrementing frequency[p].',
+      'Use long for prefix sums and answer counts when the input constraints can overflow int.',
+      'Choose TreeMap only when sorted-key iteration or range queries justify O(log u) operations.',
+      'Test empty input, zeros, negative values, duplicate keys, overflow boundaries and null policy.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Subarray sum equals k using prefix frequencies', code: `static long countSubarraysWithSum(int[] values, long target) {
+    Map<Long, Long> prefixFrequency = new HashMap<>();
+    prefixFrequency.put(0L, 1L);
+    long prefix = 0L;
+    long answer = 0L;
+
+    for (int value : values) {
+        prefix += value;
+        answer += prefixFrequency.getOrDefault(prefix - target, 0L);
+        prefixFrequency.merge(prefix, 1L, Long::sum);
+    }
+    return answer;
+}`, explanation: 'Before each query, the map contains only earlier prefix sums. Querying prefix-target counts valid starts; then the current prefix is recorded for future endpoints. Expected O(n) time and O(n) space; long avoids common 32-bit overflow.' },
+      { language: 'Java 21', title: 'Two Sum with value-to-index mapping', code: `static int[] twoSum(int[] values, int target) {
+    Map<Integer, Integer> earlierIndex = new HashMap<>();
+    for (int i = 0; i < values.length; i++) {
+        int complement = target - values[i];
+        Integer j = earlierIndex.get(complement);
+        if (j != null) return new int[]{j, i};
+        earlierIndex.putIfAbsent(values[i], i);
+    }
+    return new int[0];
+}`, explanation: 'Lookup occurs before insertion so an element cannot pair with itself. putIfAbsent retains the earliest index for duplicate values. Expected O(n) time and O(n) space.' }
+    ],
+    traceExercises: [
+      'Frequency trace: process [a,b,a,c,b,a] and write the full map after each item.',
+      'Two Sum trace: [2,7,11,15], target 9. Show complement, map lookup and insertion at each index.',
+      'Prefix trace: values=[1,1,1], k=2. Show prefix, required prefix, answer increment and map after every element.',
+      'Zero-sum trace: values=[0,0], k=0. Explain why querying before increment counts exactly three non-empty subarrays.'
+    ],
+    realWorldApplications: [
+      'Counting events by type, user, status or time bucket.',
+      'Caching records by stable identifier for expected constant-time lookup.',
+      'Grouping transactions, logs or products by a derived category.',
+      'Streaming analytics that count occurrences or rolling prefix-state frequencies.',
+      'Indexing the latest known position of an item in text or event streams.'
+    ],
+    assessment: [
+      'Explain the difference between a set and a frequency map using an input with duplicates.',
+      'Implement Two Sum and prove the map never returns the same index twice.',
+      'Derive the prefix-frequency equation for subarray sum k from P[j]-P[i]=k.',
+      'Explain why the map must begin with 0 -> 1 and why query must precede increment.',
+      'Trace [0,0] with k=0 and show why the answer is three.',
+      'Choose long or int for prefix sums and answer counts based on explicit constraints.',
+      'Compare HashMap and TreeMap for an application that needs sorted key ranges.'
+    ],
+    revisionPrompts: [
+      'Re-derive frequency counting and Two Sum update semantics without notes.',
+      'Write the prefix-sum subarray equation and solve it for the required earlier prefix.',
+      'Explain the empty-prefix seed using a subarray that begins at index zero.',
+      'After two days, implement Subarray Sum Equals K and test negative values and zeros.',
+      'After one week, explain how a map can store a count, earliest index or latest index and why those choices differ.',
+      'Review the equals/hashCode contract and describe why immutable map keys are safer.'
     ]
   },
   {
