@@ -37,7 +37,7 @@ export function PublishedLessonView({ lessonId }: { lessonId: string }) {
     return () => { active = false; };
   }, [lessonId]);
 
-  const simulator = validateLessonSimulator(lesson?.simulator);
+  const simulator = validateLessonSimulator(lesson?.simulator, lesson?.learningObjectives || []);
 
   if (loading) return <main className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><p className="mx-auto max-w-4xl text-sm text-slate-500">Loading published lesson…</p></main>;
   if (error || !lesson) return <main className="min-h-screen bg-slate-50 p-6 dark:bg-slate-950"><div className="mx-auto max-w-4xl rounded-xl border border-rose-200 bg-white p-5 text-sm text-rose-700 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300">{error || 'Lesson unavailable.'}</div></main>;
