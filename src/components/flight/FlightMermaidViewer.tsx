@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { Code2 } from 'lucide-react';
 import type { FlightNodeData } from '../../data/flightSimulatorData';
+import { renderMermaidToSvgElement } from '../../utils/mermaidRenderer';
 import { CopyButton } from '../ui';
 
 export interface FlightMermaidViewerProps {
@@ -48,29 +48,13 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
     const render = async () => {
       try {
         setError(null);
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: 'strict',
-          theme: isDark ? 'dark' : 'neutral',
-          flowchart: { useMaxWidth: true, htmlLabels: false, curve: 'basis' },
-          sequence: { useMaxWidth: true, showSequenceNumbers: true },
+        const imported = await renderMermaidToSvgElement(mermaidCode, {
+          idPrefix: `flight-${uniqueId}`,
+          isDark,
+          maxHeight: compact ? '270px' : '420px',
         });
-        const key = `flight-mmd-${uniqueId}-${isDark ? 'd' : 'l'}-${Date.now()}`;
-        const { svg } = await mermaid.render(key, mermaidCode);
         if (cancelled || !containerRef.current) return;
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(svg, 'image/svg+xml');
-        const svgEl = doc.documentElement;
-        if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg') {
-          setError('Invalid SVG produced by Mermaid renderer.');
-          return;
-        }
-        svgEl.style.width = '100%';
-        svgEl.style.height = 'auto';
-        svgEl.style.maxHeight = compact ? '270px' : '420px';
-
-        const imported = document.importNode(svgEl, true);
         containerRef.current.replaceChildren(imported);
 
         if (nodes.length > 0 && onSelectNodeId) {
@@ -116,7 +100,7 @@ export const FlightMermaidViewer: React.FC<FlightMermaidViewerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [mermaidCode, isDark, uniqueId, nodes, onSelectNodeId]);
+  }, [mermaidCode, isDark, uniqueId, nodes, onSelectNodeId, compact]);
 
   useEffect(() => {
     const host = containerRef.current;

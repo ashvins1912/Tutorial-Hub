@@ -1,5 +1,4 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   AlertTriangle,
@@ -8,6 +7,7 @@ import {
   Info,
   ShieldCheck,
 } from 'lucide-react';
+import { renderMermaidToSvgElement } from '../../utils/mermaidRenderer';
 import { CopyButton } from '../ui';
 
 interface MermaidNodeDoc {
@@ -245,37 +245,14 @@ export const MermaidLevel1DfdViewer: React.FC<MermaidLevel1DfdViewerProps> = ({
     const renderDiagram = async () => {
       try {
         setRenderError(null);
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: 'strict',
-          theme: isDark ? 'dark' : 'neutral',
-          flowchart: {
-            useMaxWidth: true,
-            htmlLabels: false,
-            curve: 'basis',
-            padding: 14,
-          },
+        const importedSvg = await renderMermaidToSvgElement(LEVEL1_MERMAID_CODE, {
+          idPrefix: `l1-${uniqueId}`,
+          isDark,
+          maxHeight: '340px',
+          flowchartPadding: 14,
         });
-
-        const renderKey = `mermaid-l1-${uniqueId}-${isDark ? 'dark' : 'light'}-${Date.now()}`;
-        const { svg } = await mermaid.render(renderKey, LEVEL1_MERMAID_CODE);
         if (cancelled || !containerRef.current) return;
 
-        // Parse safely as XML/SVG document rather than raw innerHTML string injection
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
-        const svgEl = svgDoc.documentElement;
-
-        if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg') {
-          setRenderError('Unable to parse rendered Mermaid SVG.');
-          return;
-        }
-
-        svgEl.style.width = '100%';
-        svgEl.style.height = 'auto';
-        svgEl.style.maxHeight = '340px';
-
-        const importedSvg = document.importNode(svgEl, true);
         containerRef.current.replaceChildren(importedSvg);
 
         // Attach accessible click & keyboard handlers to every Mermaid node
