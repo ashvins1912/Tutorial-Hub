@@ -1,0 +1,769 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-11-24",
+  "baseline": {
+    "branch": "main",
+    "commit": "8c83bc6d2bed2222ae08a524a78c20b1ede9d930"
+  },
+  "purpose": "Evidence-led quality audit ledger for every registered learning surface. Inventory mapping is not lesson completeness or technical verification.",
+  "evidencePolicy": {
+    "inventory": "Source paths and responsibilities are mapped.",
+    "static_review": "Selected source structures and documentation have been inspected; no runtime or subject-matter certification is implied.",
+    "content_verified": "Only permitted with topic-level reviewer evidence and completed applicable quality gates.",
+    "learning_validated": "Only permitted with learner outcome, transfer and delayed-retention evidence."
+  },
+  "surfaces": [
+    {
+      "surfaceId": "solver",
+      "title": "Universal problem solver",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/features/solver-studio/UniversalSolverStudio.tsx",
+        "src/features/solver-studio/GuidedLogicBuilderPanel.tsx",
+        "src/features/solver-studio/AdaptiveCoachPanel.tsx",
+        "src/features/solver-studio/OptimizationCheckerPanel.tsx",
+        "src/features/solver-studio/PulledProblemLibraryPanel.tsx",
+        "src/features/solver-studio/systemProblemsAdapter.ts",
+        "src/data/problems.ts",
+        "src/data/algorithmsCatalog.ts"
+      ],
+      "reviewFocus": [
+        "Objective alignment",
+        "Reasoning trace quality",
+        "Hint progression",
+        "Independent problem transfer"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 5,
+        "mappedDataSources": 3,
+        "mappedApiRoutes": 2,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "knowledge-engine",
+      "title": "Concept knowledge engine",
+      "priority": "P0",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/features/intelligent-engine/components/IntelligentEngineStudio.tsx",
+        "src/features/intelligent-engine/components/CodeExecutionLab.tsx",
+        "src/features/intelligent-engine/components/PublishedLessonView.tsx",
+        "src/data/canonicalDataRegistry.ts"
+      ],
+      "reviewFocus": [
+        "Lesson completeness",
+        "Markdown and code rendering",
+        "Generated-content review",
+        "Explanation/code/visual consistency"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 3,
+        "mappedDataSources": 1,
+        "mappedApiRoutes": 3,
+        "mappedTestFiles": 4
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "ai-academy",
+      "title": "AI engineering academy",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/features/ai-academy/components/AIEngineeringAcademy.tsx",
+        "src/features/ai-academy/data/aiEngineeringCurriculum.ts",
+        "src/features/ai-academy/data/aiEngineeringDeepDiveLessons.ts",
+        "src/features/ai-academy/data/aiEngineeringExtraLessons.ts",
+        "src/features/ai-academy/data/aiEngineeringRagSystems.ts",
+        "src/features/ai-academy/data/aiEngineeringMcpSystems.ts"
+      ],
+      "reviewFocus": [
+        "Concept depth",
+        "Worked example correctness",
+        "RAG/agent/MCP production boundaries",
+        "Outcome-linked assessment"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 1,
+        "mappedDataSources": 5,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 2
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "workspace",
+      "title": "DSA curriculum workspace",
+      "priority": "P0",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/features/topics/components/CurriculumWorkbench.tsx",
+        "src/components/CompleteDsaCourse.tsx",
+        "src/components/CompleteDsaRoadmap.tsx",
+        "src/components/MasteryStepper.tsx",
+        "src/features/topics/data/curriculumIndex.ts",
+        "src/data/completeDsaRoadmap.ts",
+        "src/data/dsaCompleteLessons.ts",
+        "src/data/curriculum.ts"
+      ],
+      "reviewFocus": [
+        "Topic/subtopic completeness",
+        "Prerequisite ordering",
+        "Worked implementations",
+        "Transfer assessment"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 4,
+        "mappedDataSources": 4,
+        "mappedApiRoutes": 2,
+        "mappedTestFiles": 2
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "algorithms",
+      "title": "Algorithms studio",
+      "priority": "P0",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/algorithms/AlgorithmsStudio.tsx",
+        "src/components/algorithms/AlgorithmVisualStage.tsx",
+        "src/components/algorithms/SortingAlgorithmLab.tsx",
+        "src/data/algorithmsCatalog.ts",
+        "src/data/algorithmsMasterCorePack.ts",
+        "src/data/algorithmsMasterAdvancedPack.ts",
+        "src/data/algorithmsMasterSystemsPack.ts",
+        "src/data/algorithmCombinationsAndRoadmap.ts"
+      ],
+      "reviewFocus": [
+        "Algorithm selection rationale",
+        "Correctness proofs",
+        "Complexity and edge cases",
+        "Trace-to-code consistency"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 3,
+        "mappedDataSources": 5,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 1
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "fuzzy-search",
+      "title": "N-gram and fuzzy search lab",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/fuzzy/NGramFuzzyStudio.tsx",
+        "src/components/fuzzy/NGramVisualStage.tsx",
+        "src/components/fuzzy/PruningLogicSimulator.tsx",
+        "src/data/ngramTaxonomy.ts",
+        "src/data/ngramTaxonomyPart1.ts",
+        "src/data/ngramTaxonomyPart2.ts",
+        "src/data/fuzzyCurriculumModules.ts"
+      ],
+      "reviewFocus": [
+        "Metric assumptions",
+        "Precision/recall evaluation",
+        "Dataset-driven examples",
+        "Pruning correctness"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 3,
+        "mappedDataSources": 4,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "ood",
+      "title": "OOP, SOLID and design patterns",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/OodPrinciplesStudio.tsx",
+        "src/components/OodAnimationStage.tsx",
+        "src/components/languages/OopCustomDsAcademy.tsx",
+        "src/data/ood/oopsAndSolidData.ts",
+        "src/data/ood/patternsAndOodData.ts",
+        "src/data/ood/extendedPatternsData.ts"
+      ],
+      "reviewFocus": [
+        "Before/after design examples",
+        "SOLID trade-offs",
+        "Pattern misuse cases",
+        "Refactoring practice"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 3,
+        "mappedDataSources": 3,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "ai-engineering",
+      "title": "AI engineering studio",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/AiEngineeringStudio.tsx",
+        "src/components/system-design/FrontierLlmArchitectureLab.tsx",
+        "src/data/aiEngineeringData.ts",
+        "src/data/aiStudioDeepEnrichmentData.ts",
+        "src/data/llmFrontierArchitectureData.ts"
+      ],
+      "reviewFocus": [
+        "Model/runtime assumptions",
+        "Evaluation and safety",
+        "Failure analysis",
+        "Architecture trade-offs"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 2,
+        "mappedDataSources": 3,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "db-internals",
+      "title": "Database internals studio",
+      "priority": "P0",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/database/DatabaseInternalsStudio.tsx",
+        "src/components/database/DatabasePracticeWorkbench.tsx",
+        "src/components/database/QueryPipelinePlayground.tsx",
+        "src/components/database/DeadlockWaitForVisualizer.tsx",
+        "src/components/database/PitrRecoveryPlayground.tsx",
+        "src/data/databaseInternalsData.ts",
+        "src/data/databaseTaxonomyAndSqlData.ts",
+        "src/data/dbQueryDataFlowData.ts"
+      ],
+      "reviewFocus": [
+        "Engine/version specificity",
+        "Query-plan evidence",
+        "Isolation anomalies",
+        "Recovery and contention cases"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 5,
+        "mappedDataSources": 5,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "devops-cloud",
+      "title": "DevOps and cloud studio",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/devops/DevOpsCloudStudio.tsx",
+        "src/components/devops/DevOpsInteractiveSimulators.tsx",
+        "src/components/devops/DevOpsVisualPlayground.tsx",
+        "src/components/devops/CloudDevCompleteTutorial.tsx",
+        "src/data/devopsCloudCurriculumData.ts",
+        "src/data/devopsCloudDeepGapsData.ts",
+        "src/data/dockerK8sCloudDevTutorialData.ts"
+      ],
+      "reviewFocus": [
+        "Provider/version accuracy",
+        "IAM/networking/security",
+        "Pipeline failure recovery",
+        "Cost and rollback trade-offs"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 4,
+        "mappedDataSources": 3,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "flight-simulator",
+      "title": "SDLC and architecture flight simulator",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/flight/FlightSimulatorStudio.tsx",
+        "src/components/flight/FlightMermaidViewer.tsx",
+        "src/data/flightSimulatorData.ts"
+      ],
+      "reviewFocus": [
+        "Scenario decision rubric",
+        "Failure injection",
+        "Outcome explanations",
+        "Architecture trade-off scoring"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 2,
+        "mappedDataSources": 1,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "languages",
+      "title": "Programming languages studio",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/languages/LanguagesTutorialStudio.tsx",
+        "src/components/languages/LanguagePracticeWorkbench.tsx",
+        "src/components/languages/LanguageVisualAnimator.tsx",
+        "src/components/languages/CollectionsConcurrencyPlayground.tsx",
+        "src/components/languages/MultithreadingTelemetryLab.tsx",
+        "src/data/languagesTutorialData.ts",
+        "src/data/javaPythonCodingMasteryData.ts",
+        "src/data/langCollectionsConcurrencyData.ts"
+      ],
+      "reviewFocus": [
+        "Language/version specificity",
+        "Runtime and memory mechanics",
+        "Concurrency correctness",
+        "Executable examples"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 5,
+        "mappedDataSources": 4,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "full-stack",
+      "title": "Full-stack systems studio",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/fullstack/FullStackSystemsStudio.tsx",
+        "src/components/fullstack/FullStackStoryboardAnimator.tsx",
+        "src/components/fullstack/RuntimeAndInfraInternalsLab.tsx",
+        "src/components/fullstack/StorageAndDiagnosticsLab.tsx",
+        "src/data/fullStackArchitectureData.ts",
+        "src/data/fullStackDeepEnrichmentData.ts",
+        "src/data/runtimeAndInfraInternalsData.ts"
+      ],
+      "reviewFocus": [
+        "End-to-end request tracing",
+        "Framework/version accuracy",
+        "Performance diagnostics",
+        "Security and failure cases"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 4,
+        "mappedDataSources": 3,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "system-design",
+      "title": "System design studio",
+      "priority": "P0",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/SystemDesignStudio.tsx",
+        "src/components/SystemDesignLearningAcademy.tsx",
+        "src/components/system-playground/SystemPlayground.tsx",
+        "src/components/system-design/SystemDfdSimulator.tsx",
+        "src/components/system-design/RealWorldArchitecturesAndInterviewLab.tsx",
+        "src/data/systemDesignData.ts",
+        "src/data/systemDesignMasterRoadmapData.ts",
+        "src/data/systemDfdLibraryData.ts"
+      ],
+      "reviewFocus": [
+        "Capacity assumptions",
+        "Queueing/retry/backpressure",
+        "Consistency and partition trade-offs",
+        "Failure recovery"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 5,
+        "mappedDataSources": 5,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "revision",
+      "title": "Quick revision hub",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/QuickRevisionHub.tsx",
+        "src/components/shared/MasteryReviewPanel.tsx",
+        "src/data/academyResources.ts"
+      ],
+      "reviewFocus": [
+        "Retrieval question quality",
+        "Misconception targeting",
+        "Delayed review evidence",
+        "Topic linkage"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 2,
+        "mappedDataSources": 1,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "skill-tree",
+      "title": "Noob-to-pro skill tree",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/cognitive/NoobToProSkillTree.tsx",
+        "src/components/cognitive/ConceptAcademyDrawer.tsx",
+        "src/data/completeDsaRoadmap.ts",
+        "src/data/curriculum.ts"
+      ],
+      "reviewFocus": [
+        "Prerequisite graph integrity",
+        "Outcome mapping",
+        "Progression criteria",
+        "Dead-end detection"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 2,
+        "mappedDataSources": 2,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "schemas",
+      "title": "Database and API schemas reference",
+      "priority": "P2",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/SchemasReferenceView.tsx",
+        "src/data/mongooseSchemas.ts"
+      ],
+      "reviewFocus": [
+        "Schema provenance",
+        "Field constraints",
+        "Index and relationship explanations",
+        "Version/freshness metadata"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 1,
+        "mappedDataSources": 1,
+        "mappedApiRoutes": 0,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "roadmap",
+      "title": "Topic and interview problem bank",
+      "priority": "P1",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/Patterns28RoadmapView.tsx",
+        "src/components/interview/ProductCompanyMasterBankView.tsx",
+        "src/components/interview/TopicPatternExplorer.tsx",
+        "src/components/ProblemBank45View.tsx",
+        "src/components/cognitive/NoobToProSkillTree.tsx",
+        "src/data/dsa28Patterns.ts",
+        "src/data/productCompanyMasterBank.ts",
+        "src/data/highRoi45.ts"
+      ],
+      "reviewFocus": [
+        "Canonical topic mapping",
+        "Problem difficulty accuracy",
+        "Pattern discrimination",
+        "Question-to-outcome alignment"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 5,
+        "mappedDataSources": 4,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 1
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "sprint",
+      "title": "Interview sprint war room",
+      "priority": "P2",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/sprint/SprintWarRoomDashboard.tsx",
+        "src/components/sprint/SprintConfiguratorModal.tsx",
+        "src/components/sprint/Mock45SimulatorModal.tsx",
+        "server/seed/bigTechTopicSeed.ts",
+        "src/data/highRoi45.ts"
+      ],
+      "reviewFocus": [
+        "Mock rubric quality",
+        "Feedback specificity",
+        "Skill coverage balance",
+        "Progress evidence semantics"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 3,
+        "mappedDataSources": 2,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "community",
+      "title": "Community and pair programming",
+      "priority": "P2",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/CommunityHubView.tsx",
+        "src/components/PairProgrammingCanvas.jsx"
+      ],
+      "reviewFocus": [
+        "Collaboration learning outcomes",
+        "Pair-session reflection",
+        "Independent mastery separation",
+        "Moderation/safety guidance"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 2,
+        "mappedDataSources": 0,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 0
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "profile",
+      "title": "Learner profile and progress",
+      "priority": "P2",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/components/ProfileStatsView.tsx",
+        "src/components/profile/DbSyncInspectorCard.tsx",
+        "src/components/profile/MonthlyLearningResetCard.tsx",
+        "src/store/usePatternForgeStore.ts",
+        "src/store/useSprintStore.ts"
+      ],
+      "reviewFocus": [
+        "Progress metric semantics",
+        "Evidence provenance",
+        "Mastery/revision distinction",
+        "Data freshness and resilience"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 3,
+        "mappedDataSources": 2,
+        "mappedApiRoutes": 2,
+        "mappedTestFiles": 1
+      },
+      "requiredEvidence": [
+        "topic-and-subtopic inventory",
+        "lesson-level quality scorecard",
+        "technical accuracy review",
+        "example or simulator fixture validation",
+        "objective-linked assessment",
+        "accessibility review where interactive"
+      ]
+    }
+  ]
+}
