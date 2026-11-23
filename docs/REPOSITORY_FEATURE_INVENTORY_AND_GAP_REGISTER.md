@@ -159,7 +159,19 @@ Existing docs cover:
 
 The master roadmap and this inventory add the cross-platform acceptance contract and feature mapping. A root README is also added by this PR to provide a contributor and setup entry point.
 
-## 5. Evidence-backed gaps and risks
+## 5. Machine-readable first-pass surface registry
+
+The repository now contains `docs/learning-surface-registry.json`, which maps every value in the `TopView` union to representative components, data sources, API routes and related tests. The initial registry covers all 21 view IDs and lists all 11 existing test files as cross-cutting test inventory. It deliberately records each surface as `qualityState: inventory` and `verificationState: not_assessed`; this proves path integrity and discoverability only, not content correctness or runtime behavior.
+
+Run `npm run audit:learning-surfaces` to validate that:
+- every typed `TopView` has exactly one registry entry (and no unknown IDs are added);
+- every referenced component, data, route and test path exists;
+- each surface has required metadata and explicit non-verified quality state;
+- global test paths exist and are unique.
+
+This is the first navigation-surface layer of the inventory. Nested routes, individual lessons/problems, visualizer fixtures, persistence models, prerequisite edges, owners and quality evidence still require their own cataloguing.
+
+## 6. Evidence-backed gaps and risks
 
 These are gaps in evidence, governance or repository discoverability. They are not assertions that a feature is broken.
 
