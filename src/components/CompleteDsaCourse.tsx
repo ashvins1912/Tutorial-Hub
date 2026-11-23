@@ -7,21 +7,40 @@ import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { CatalogSearchInput } from './ui';
 
-type SectionKey = 'concepts' | 'recognition' | 'method' | 'workedExample' | 'complexity' | 'pitfalls' | 'practice' | 'interviewChecks';
+type SectionKey = 'learningOutcomes' | 'prerequisites' | 'concepts' | 'deepDive' | 'recognition' | 'method' | 'workedExample' | 'traceExercises' | 'implementationSteps' | 'codeExamples' | 'correctness' | 'complexity' | 'pitfalls' | 'practice' | 'assessment' | 'realWorldApplications' | 'interviewChecks' | 'revisionPrompts';
 
 const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
+  { key: 'learningOutcomes', title: 'What you will be able to do', intro: 'Observable outcomes that define when this topic is understood.' },
+  { key: 'prerequisites', title: 'Prerequisites and foundations', intro: 'What to know first, with a clear bridge back when needed.' },
   { key: 'concepts', title: 'Concepts to understand', intro: 'Learn the vocabulary and mechanics before memorising templates.' },
+  { key: 'deepDive', title: 'Complete topic explanation', intro: 'Build from intuition to underlying mechanics, assumptions and variations.' },
   { key: 'recognition', title: 'When should I use this?', intro: 'Recognise the problem signals and the assumptions that make the technique valid.' },
   { key: 'method', title: 'How to derive a solution', intro: 'A repeatable reasoning process from the direct approach to a justified algorithm.' },
   { key: 'workedExample', title: 'Worked example', intro: 'Follow the reasoning step by step; trace the state on paper before coding.' },
+  { key: 'traceExercises', title: 'Predict and trace', intro: 'Try each state transition before checking the explanation.' },
+  { key: 'implementationSteps', title: 'Implementation guide', intro: 'Translate the reasoning into safe, maintainable code.' },
+  { key: 'codeExamples', title: 'Runnable code examples', intro: 'Study language-specific implementations and why each important line exists.' },
+  { key: 'correctness', title: 'Correctness and invariants', intro: 'Understand why the algorithm works, not just that it passes examples.' },
   { key: 'complexity', title: 'Time and space complexity', intro: 'Know what is counted and why the bound follows.' },
   { key: 'pitfalls', title: 'Common mistakes', intro: 'Use these as a pre-submit checklist.' },
   { key: 'practice', title: 'Practice ladder', intro: 'Move from guided fundamentals to independent transfer.' },
+  { key: 'assessment', title: 'Knowledge and application assessment', intro: 'Demonstrate the outcomes on fresh questions and constraints.' },
+  { key: 'realWorldApplications', title: 'Engineering applications', intro: 'Connect the topic to real software and data workflows.' },
   { key: 'interviewChecks', title: 'Interview readiness checks', intro: 'Answer these without reading the lesson.' },
+  { key: 'revisionPrompts', title: 'Revision and long-term retention', intro: 'Use retrieval prompts and spaced review to retain the skill.' },
 ];
 
 type LessonProgress = Record<string, string[]>;
 function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
+  if (section === 'codeExamples') {
+    return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => (
+      <article key={example.title} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800"><h4 className="text-sm font-semibold">{example.title}</h4><span className="text-xs text-slate-500">{example.language}</span></div>
+        <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-800 dark:text-slate-200"><code>{example.code}</code></pre>
+        <p className="border-t border-slate-100 p-4 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300">{example.explanation}</p>
+      </article>
+    ))}</div>;
+  }
   if (section === 'practice') {
     return <div className="grid gap-3 sm:grid-cols-2">{lesson.practice.map((item, index) => (
       <article key={item.task} className="rounded-xl border border-slate-200 dark:border-slate-700 p-4">
@@ -31,7 +50,8 @@ function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionK
       </article>
     ))}</div>;
   }
-  const values = lesson[section] as string[];
+  const values = (lesson[section] ?? []) as string[];
+  if (values.length === 0) return null;
   return <ol className="space-y-2.5">{values.map((value, index) => (
     <li key={value} className="flex gap-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 dark:bg-slate-800">{index + 1}</span>
@@ -109,7 +129,7 @@ export function CompleteDsaCourse() {
           <div className="mt-5 rounded-xl border border-sky-100 bg-sky-50/70 p-4 dark:border-sky-900 dark:bg-sky-950/30"><div className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Mental model</div><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{active.mentalModel}</p></div>
         </section>
 
-        {sectionMeta.map((meta) => {
+        {sectionMeta.filter((meta) => meta.key === 'codeExamples' ? Boolean(active.codeExamples?.length) : Boolean((active[meta.key] as unknown[] | undefined)?.length)).map((meta) => {
           const isOpen = expanded.includes(meta.key);
           return <section key={meta.key} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <button type="button" onClick={() => toggleSection(meta.key)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5"><div><h3 className="text-sm font-bold sm:text-base">{meta.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{meta.intro}</p></div>{isOpen ? <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />}</button>

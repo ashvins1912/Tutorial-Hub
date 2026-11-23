@@ -32,6 +32,8 @@ jobs:
         run: npm run lint
       - name: Verify handwritten DSA notes curriculum coverage
         run: npm run test:dsa:handwritten
+      - name: Verify DSA topic completeness pilot
+        run: npm run test:dsa:completeness-pilot
       - name: Verify source-authored DSA solutions (Java, JavaScript, Python)
         run: npm run test:dsa:arrays:01
       - name: Test Content Studio ingestion and classification
