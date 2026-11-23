@@ -641,3 +641,18 @@ Implemented in one branch: canonical shared simulator contract, generation/serve
 4. Extend the existing system-design traffic engine with queue-depth/fan-out/retry models and verified expected outcomes; the current domain lesson adapter already reuses its DAG traffic tick.
 5. Add reviewed scenario adapters for database EXPLAIN, transaction isolation and cloud-provider policy only if execution remains safely sandboxed and explicitly approved.
 6. Keep simulator completion separate from quiz mastery, code verification, transfer and retained-learning evidence.
+
+
+## Application-wide content quality initiative (2026-11-24)
+
+**Current state:** The first evidence-led quality ledger covers all 21 registered learning surfaces. This is a surface inventory and review plan, not a claim that all nested topics have been audited.
+
+**Next implementation gates:**
+1. Extract canonical topic/subtopic IDs from existing domain data without duplicating or renaming learner-facing IDs.
+2. Map each topic to its explanation, examples, code/configuration, visualizer/simulator, objectives, assessment and revision content.
+3. Generate topic-level scorecards using the 0–4 rubric in `CONTENT_QUALITY_AUDIT_AND_REVIEW_STANDARD.md`.
+4. Prioritize missing or shallow content by learner impact and evidence confidence.
+5. Verify representative lessons per domain with executable examples, deterministic visual fixtures and domain review.
+6. Expand only after each pilot passes; keep content verification separate from learner mastery and retention.
+
+**Release integrity:** Surface inventory status, content completeness, code verification, visualization verification, accessibility and learner validation must remain separate evidence dimensions. Do not infer one from another.

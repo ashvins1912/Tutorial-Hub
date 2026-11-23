@@ -48,5 +48,7 @@ jobs:
         run: npm run test:dsa:inventory
       - name: Validate canonical learning surface inventory
         run: npm run audit:learning-surfaces
+      - name: Validate application-wide content quality audit ledger
+        run: npm run audit:learning-content
       - name: Build frontend
         run: npm run build
