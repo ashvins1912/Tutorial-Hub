@@ -986,10 +986,10 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
 }`, explanation: 'The code assumes valid half-open intervals with start<=end. Sorting costs O(n log n); the scan is O(n). The exchange argument proves earliest finish is a safe first choice.' },
       { language: 'Java 21', title: 'Jump Game reachability', code: `static boolean canReachEnd(int[] jumps) {
     if (jumps.length == 0) return false;
-    int farthest = 0;
+    long farthest = 0L;
     for (int i = 0; i < jumps.length; i++) {
         if (i > farthest) return false;
-        farthest = Math.max(farthest, i + jumps[i]);
+        farthest = Math.max(farthest, (long) i + jumps[i]);
         if (farthest >= jumps.length - 1) return true;
     }
     return true;
