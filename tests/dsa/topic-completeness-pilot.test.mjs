@@ -460,3 +460,46 @@ test('two pointers and sliding-window Java examples execute against expected out
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('bit manipulation topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'bit-manipulation');
+  assert.ok(lesson, 'bit-manipulation lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 2 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'bit-manipulation requires substantive ' + field);
+  }
+  assert.ok(lesson.correctness.some((item) => /XOR/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /two.s complement/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('bit manipulation Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'bit-manipulation');
+  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-bits-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class BitManipulationLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'if (!isBitSet(10, 3) || isBitSet(10, 2)) throw new AssertionError("bit test");',
+      'if (countSetBits(0b10110100) != 4) throw new AssertionError("set bit count");',
+      'if (!isPositivePowerOfTwo(1024) || isPositivePowerOfTwo(0) || isPositivePowerOfTwo(-8)) throw new AssertionError("power of two");',
+      'if (singleNumber(new int[]{4, 1, 2, 1, 2}) != 4) throw new AssertionError("xor single");',
+      'if (subsets(new int[]{1, 2, 3}).size() != 8) throw new AssertionError("subset count");',
+      'if (subsets(new int[]{}).size() != 1) throw new AssertionError("empty subset");',
+      '}',
+      '}'
+    ].join(String.fromCharCode(10));
+    writeFileSync(join(directory, 'BitManipulationLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['BitManipulationLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['BitManipulationLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
