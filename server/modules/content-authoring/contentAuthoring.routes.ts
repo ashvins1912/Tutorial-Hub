@@ -20,7 +20,7 @@ function requireContentAuthor(req: Request, res: Response, next: express.NextFun
 export function sanitizePublishedLesson(lesson: Record<string, any>) {
   return {
     ...lesson,
-    quiz: Array.isArray(lesson.quiz) ? lesson.quiz.map((question: any) => ({
+    simulator: lesson.simulator && typeof lesson.simulator === 'object' ? lesson.simulator : undefined,\n    quiz: Array.isArray(lesson.quiz) ? lesson.quiz.map((question: any) => ({
       question: question.question,
       options: question.options,
       explanation: question.explanation,
