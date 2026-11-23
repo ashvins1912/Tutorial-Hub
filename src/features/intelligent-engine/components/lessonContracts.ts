@@ -10,7 +10,7 @@ export interface LessonSimulatorConfig {
   objectiveIds: string[];
 }
 
-export function validateLessonSimulator(value: unknown): LessonSimulatorConfig | null {
+export function validateLessonSimulator(value: unknown, availableObjectives?: string[]): LessonSimulatorConfig | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
   if (candidate.schemaVersion !== 1 || typeof candidate.id !== 'string' || !candidate.id.trim() || candidate.id.length > 80) return null;
@@ -20,7 +20,8 @@ export function validateLessonSimulator(value: unknown): LessonSimulatorConfig |
   const values = candidate.initialInput.split(',').map((part) => Number(part.trim()));
   if (values.length > 12 || values.some((item) => !Number.isFinite(item))) return null;
   if (candidate.algorithm === 'binary-search' && (typeof candidate.initialTarget !== 'string' || !candidate.initialTarget.trim() || !Number.isFinite(Number(candidate.initialTarget)) || values.some((item, index) => index > 0 && values[index - 1] > item))) return null;
-  if (!Array.isArray(candidate.objectiveIds) || candidate.objectiveIds.length === 0 || candidate.objectiveIds.some((item) => typeof item !== 'string' || !item.trim())) return null;
+  if (!Array.isArray(candidate.objectiveIds) || candidate.objectiveIds.length === 0 || candidate.objectiveIds.some((item) => typeof item !== 'string' || !item.trim()) || new Set(candidate.objectiveIds).size !== candidate.objectiveIds.length) return null;
+  if (availableObjectives && candidate.objectiveIds.some((id) => !availableObjectives.includes(id as string))) return null;
   return {
     schemaVersion: 1,
     id: candidate.id,
