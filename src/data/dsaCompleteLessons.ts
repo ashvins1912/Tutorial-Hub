@@ -919,7 +919,112 @@ static int[] mergeKSorted(int[][] arrays) {
       {level:'Challenge',task:'Huffman coding.',goal:'Repeatedly merge two smallest frequencies.'},
       {level:'Transfer',task:'Test a proposed greedy coin strategy.',goal:'Find a counterexample or prove the denomination assumptions.'}
     ],
-    interviewChecks: ['What is the greedy-choice property?', 'Give an exchange argument.', 'Why does earliest finish work for interval scheduling?', 'How do you know DP is needed instead?']
+    interviewChecks: ['What is the greedy-choice property?', 'Give an exchange argument.', 'Why does earliest finish work for interval scheduling?', 'How do you know DP is needed instead?'],
+    learningOutcomes: [
+      'Distinguish a proven greedy algorithm from an intuitive but unsupported local heuristic.',
+      'Use exchange, stays-ahead or cut-property arguments to justify greedy choices.',
+      'Implement interval scheduling with explicit open/closed endpoint semantics.',
+      'Recognize when a greedy scan preserves an optimal residual subproblem.',
+      'Construct counterexamples when a greedy choice is unsafe and compare with dynamic programming.',
+      'Account for sorting, priority-queue operations and tie-breaking in complexity.'
+    ],
+    prerequisites: [
+      'Understand sorting, intervals and comparator ordering.',
+      'Know basic induction and proof by contradiction.',
+      'Understand dynamic programming at a high level as an alternative when local choices cannot be proven safe.',
+      'Be comfortable with priority queues for Huffman-style algorithms.'
+    ],
+    deepDive: [
+      'Greedy commits to a locally selected choice and does not revisit it. The algorithm is correct only when a proof shows that some optimal solution can contain that choice.',
+      'The greedy-choice property says there exists an optimal solution beginning with the greedy choice. Optimal substructure says the remaining part of that solution is optimal for the residual problem.',
+      'An exchange argument starts with an optimal solution and replaces one of its choices with the greedy choice without making the solution worse. The residual problem then has the same form.',
+      'A stays-ahead proof compares greedy and optimal partial solutions after each step and shows the greedy solution is never behind under a carefully chosen measure.',
+      'For unweighted interval scheduling, choosing the compatible interval with earliest finish leaves at least as much time as any other first choice. Replace the first interval of an optimal schedule with it, then repeat.',
+      'Endpoint semantics matter. For half-open intervals [start,end), an interval beginning exactly when the previous one ends is compatible (start>=lastEnd). For closed intervals, that equality may represent overlap.',
+      'Sorting by earliest start is not generally optimal for maximum interval count; a long early interval can block several short later intervals. Earliest finish is justified by the exchange argument.',
+      'Jump Game maintains the farthest index reachable from the processed prefix. If the current index is beyond that boundary, the destination is unreachable; otherwise extend the boundary.',
+      'Minimum jumps can be solved by expanding BFS-like layers greedily: currentEnd is the end of the current jump layer and farthest is the next layer boundary. Increment jumps when the scan reaches currentEnd.',
+      'Huffman coding repeatedly combines the two smallest frequencies. The prefix-code tree structure admits an exchange argument: the two least frequent symbols can be placed as deepest siblings in some optimal tree.',
+      'Greedy coin change is not universally optimal. For denominations [1,3,4] and amount 6, greedy takes 4+1+1 (three coins) while optimal is 3+3 (two coins).',
+      'A greedy proof must include ties. If multiple choices share a key, define whether any tie is safe or use a deterministic secondary ordering.',
+      'If the local choice cannot be exchanged into an optimum and no stays-ahead/cut proof applies, investigate DP or graph search. Do not turn a failed proof into an assumption.'
+    ],
+    correctness: [
+      'Interval scheduling exchange invariant: after selecting the earliest-finishing compatible interval, there exists an optimal schedule whose first selected interval is that greedy interval.',
+      'Residual optimality: after fixing the greedy interval, the remaining chosen intervals form an optimal schedule among intervals starting at or after its finish; otherwise replacing the residual would improve the original solution.',
+      'Jump Game invariant: after processing all indices up to the current scan position, farthest is the maximum reachable index from any processed reachable position.',
+      'Minimum-jumps layer invariant: currentEnd is the farthest position reachable using the current number of jumps; farthest is the furthest boundary reachable with one additional jump.',
+      'Huffman invariant: after each merge, the priority queue represents the remaining forest of optimal subtrees; merging the two minimum weights is a safe sibling choice.',
+      'Counterexample correctness: a single valid input where greedy produces a worse objective than another feasible solution disproves a universal greedy claim.'
+    ],
+    implementationSteps: [
+      'State the objective and the candidate local choice in precise terms.',
+      'Try the smallest inputs and tie cases to search for counterexamples before coding.',
+      'Choose a proof technique: exchange, stays-ahead, cut property or a problem-specific invariant.',
+      'Define the residual subproblem and prove it has the same structure after the greedy choice.',
+      'Sort once with a comparator that encodes the proven choice; state tie-breaking and interval endpoint semantics.',
+      'For interval scheduling, update lastEnd only after accepting an interval.',
+      'For Jump Game, ignore unreachable positions and update the farthest reachable boundary.',
+      'If no proof is available, compare against DP or exhaustive search on small random cases.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Maximum number of non-overlapping half-open intervals', code: `record Interval(int start, int end) {}
+
+static int maximumCompatibleIntervals(List<Interval> intervals) {
+    List<Interval> ordered = new ArrayList<>(intervals);
+    ordered.sort(Comparator.comparingInt(Interval::end)
+                           .thenComparingInt(Interval::start));
+    int selected = 0;
+    int lastEnd = Integer.MIN_VALUE;
+    for (Interval interval : ordered) {
+        if (interval.start() >= lastEnd) {
+            selected++;
+            lastEnd = interval.end();
+        }
+    }
+    return selected;
+}`, explanation: 'The code assumes valid half-open intervals with start<=end. Sorting costs O(n log n); the scan is O(n). The exchange argument proves earliest finish is a safe first choice.' },
+      { language: 'Java 21', title: 'Jump Game reachability', code: `static boolean canReachEnd(int[] jumps) {
+    if (jumps.length == 0) return false;
+    int farthest = 0;
+    for (int i = 0; i < jumps.length; i++) {
+        if (i > farthest) return false;
+        farthest = Math.max(farthest, i + jumps[i]);
+        if (farthest >= jumps.length - 1) return true;
+    }
+    return true;
+}`, explanation: 'The farthest boundary summarizes all reachable positions in the processed prefix. O(n) time and O(1) auxiliary space. Inputs are assumed to contain nonnegative jump lengths.' }
+    ],
+    traceExercises: [
+      'Interval trace: [1,3), [2,4), [3,5), [0,7), [5,6). Sort by finish and record accepted intervals.',
+      'Jump Game trace: [2,3,1,1,4] and [3,2,1,0,4]. Record i and farthest after each reachable index.',
+      'Coin counterexample: denominations [1,3,4], amount 6. Compare greedy and optimal solutions.',
+      'Tie trace: two intervals share the same end time. Explain why either can be selected for the maximum-count objective.'
+    ],
+    realWorldApplications: [
+      'Meeting and resource scheduling where the objective is to maximize compatible jobs.',
+      'Data compression using Huffman prefix codes.',
+      'Reachability and minimum-jump planning across bounded transitions.',
+      'Task assignment when sorted priorities admit a proven matching strategy.',
+      'Network algorithms use cut properties for minimum spanning tree greedy choices.'
+    ],
+    assessment: [
+      'Give an exchange proof for earliest-finish interval scheduling.',
+      'Explain why earliest-start scheduling can fail and construct a counterexample.',
+      'Implement Jump Game and state the farthest-reach invariant.',
+      'Show a denomination system where greedy coin change is suboptimal.',
+      'Compare exchange and stays-ahead proofs and identify which fits interval scheduling.',
+      'Explain how endpoint semantics change the interval compatibility comparison.',
+      'State when you would stop pursuing greedy and investigate DP.'
+    ],
+    revisionPrompts: [
+      'State the greedy-choice property and optimal-substructure requirement from memory.',
+      'Reconstruct the interval scheduling exchange argument.',
+      'Find a counterexample to a greedy heuristic before attempting to prove it.',
+      'After two days, implement Jump Game and trace the farthest boundary.',
+      'After one week, explain Huffman’s two-smallest merge choice at a high level.',
+      'For a new greedy problem, write the proof before presenting the implementation.'
+    ]
   },
   {
     id: 'dynamic-programming', sourcePages: [20], title: '13. Dynamic Programming', promise: 'Turn repeated recursive subproblems into a precise state and recurrence.',
