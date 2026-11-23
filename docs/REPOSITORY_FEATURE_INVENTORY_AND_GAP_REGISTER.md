@@ -161,7 +161,7 @@ The master roadmap and this inventory add the cross-platform acceptance contract
 
 ## 5. Machine-readable first-pass surface registry
 
-The repository now contains `docs/learning-surface-registry.json`, which maps every value in the `TopView` union to representative components, data sources, API routes and related tests. The initial registry covers all 21 view IDs and lists all 11 existing test files as cross-cutting test inventory. It deliberately records each surface as `qualityState: inventory` and `verificationState: not_assessed`; this proves path integrity and discoverability only, not content correctness or runtime behavior.
+The repository now contains `docs/learning-surface-registry.json`, which maps every value in the `TopView` union to representative components, data sources, API routes and related tests. The initial registry covers all 21 view IDs. It started from 11 baseline test files; a new 293-question inventory/blueprint integrity test is now included, bringing the registry to 12 test files. It deliberately records each surface as `qualityState: inventory` and `verificationState: not_assessed`; this proves path integrity and discoverability only, not content correctness or runtime behavior.
 
 Run `npm run audit:learning-surfaces` to validate that:
 - every typed `TopView` has exactly one registry entry (and no unknown IDs are added);
