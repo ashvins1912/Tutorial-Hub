@@ -98,7 +98,7 @@ test('strings Java and Python examples execute against expected outputs', () => 
     const execute = spawnSync('java', ['StringLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
 
-    const pythonSource = pythonExample.code + '\\nassert is_ascii_alphanumeric_palindrome("A man, a plan, a canal: Panama")\\nassert not is_ascii_alphanumeric_palindrome("race a car")\\nassert is_ascii_alphanumeric_palindrome("")\\n';
+    const pythonSource = pythonExample.code + '\nassert is_ascii_alphanumeric_palindrome("A man, a plan, a canal: Panama")\nassert not is_ascii_alphanumeric_palindrome("race a car")\nassert is_ascii_alphanumeric_palindrome("")\n';
     writeFileSync(join(directory, 'string_lesson_examples.py'), pythonSource);
     const python = spawnSync('python', ['string_lesson_examples.py'], { cwd: directory, encoding: 'utf8' });
     assert.equal(python.status, 0, python.stderr || python.stdout);
