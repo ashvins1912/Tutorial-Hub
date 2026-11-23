@@ -588,3 +588,14 @@ Every topic release should be accompanied by a review record containing:
 | Publication | Authorized publisher and timestamp |
 
 This sign-off record is the evidence that a topic meets the platform's definition of quality—not the presence of a lesson page or a completion badge.
+
+
+## 12. Canonical companion documents
+
+This roadmap is the delivery plan. The following documents are the operational references and must be kept aligned:
+
+- [Perfect Learning Platform Standard](PERFECT_LEARNING_PLATFORM_STANDARD.md) — normative acceptance contract for lessons, visualization, implementation, assessment, mastery, accessibility, security and release.
+- [Repository Feature Inventory and Gap Register](REPOSITORY_FEATURE_INVENTORY_AND_GAP_REGISTER.md) — evidence-backed map of current repository surfaces, APIs, data domains, tests and known gaps.
+- [Project README](../README.md) — setup, architecture, scripts, safety boundaries and contributor entry point.
+
+The standard defines **what good means**; the inventory records **what exists and what evidence is missing**; this roadmap defines **the order in which gaps should be closed**. Do not treat documentation completion as proof that application features or lessons have passed their quality gates.
