@@ -121,3 +121,15 @@ A topic is assessment-verified only when every learning outcome has an appropria
 - Revision prompts support delayed recall.
 - Sources, tests, reviews and limitations are traceable.
 - Existing lesson IDs, URLs, authentication, academy behavior and learner progress remain compatible.
+
+## 7. Implementation evidence and current rollout status
+
+The roadmap is a completion target, not a claim that every topic is already complete. Track each topic against the same evidence gates:
+
+| Topic | Content contract | Executable examples | Current status |
+|---|---|---|---|
+| Arrays | Outcomes, prerequisites, deep dive, invariants, implementation guide, traces, applications, assessment and revision | Java 21 and Python 3 examples executed in CI | Reference pilot implemented; CI verified |
+| Strings | Character model, Unicode caveats, frequency methods, windows, KMP, correctness invariants, traces, applications and revision | Java 21 anagram/KMP examples and Python 3 palindrome example executed in CI | Second topic implementation added; awaiting CI |
+| Remaining PDF topics | Must satisfy all applicable sections, not just inventory presence | Must compile/run with asserted outputs and edge cases | Planned; not yet complete |
+
+A topic must not be labelled complete merely because it has a title, concept list, practice inventory or source-page mapping. Update this table only when the corresponding CI and review evidence exists. Keep learner mastery separate from content completeness: repository tests validate authored material, not an individual learner's ability to transfer the skill.
