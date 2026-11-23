@@ -419,3 +419,44 @@ test('binary-search-on-answer Java example executes against expected outputs', (
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('two pointers and sliding window satisfy the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'two-pointers-window');
+  assert.ok(lesson, 'two-pointers-window lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 2 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'two-pointers-window requires substantive ' + field);
+  }
+  assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /negative/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('two pointers and sliding-window Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'two-pointers-window');
+  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-two-pointers-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class TwoPointersLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'if (maximumWindowSum(new int[]{2, 1, 5, 1, 3, 2}, 3) != 9L) throw new AssertionError("fixed window");',
+      'if (exactlyKDistinct(new int[]{1, 2, 1, 2, 3}, 2) != 7L) throw new AssertionError("exactly K distinct");',
+      'if (exactlyKDistinct(new int[]{1, 2, 3}, 0) != 0L) throw new AssertionError("zero K");',
+      'if (atMostKDistinct(new int[]{1, 1, 1}, 1) != 6L) throw new AssertionError("at most K");',
+      '}',
+      '}'
+    ].join(String.fromCharCode(10));
+    writeFileSync(join(directory, 'TwoPointersLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['TwoPointersLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['TwoPointersLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
