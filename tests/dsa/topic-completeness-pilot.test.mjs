@@ -379,3 +379,43 @@ test('sorting and searching Java examples execute against expected outputs', () 
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('binary-search-on-answer topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'binary-search-on-answer');
+  assert.ok(lesson, 'binary-search-on-answer lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 1 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'binary-search-on-answer requires substantive ' + field);
+  }
+  assert.ok(lesson.correctness.some((item) => /monotonicity/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('binary-search-on-answer Java example executes against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'binary-search-on-answer');
+  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-answer-search-'));
+  try {
+    const javaSource = [
+      'public class AnswerSearchLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'if (minimumCapacity(new int[]{1, 2, 3, 4, 5}, 3) != 6L) throw new AssertionError("minimum capacity");',
+      'if (minimumCapacity(new int[]{3, 2, 2, 4, 1, 4}, 3) != 6L) throw new AssertionError("capacity case two");',
+      'if (minimumCapacity(new int[]{10}, 1) != 10L) throw new AssertionError("single package");',
+      'if (!canShip(new int[]{1, 2, 3}, 1, 6L)) throw new AssertionError("feasible upper bound");',
+      'if (canShip(new int[]{1, 2, 3}, 2, 2L)) throw new AssertionError("infeasible capacity");',
+      '}',
+      '}'
+    ].join(String.fromCharCode(10));
+    writeFileSync(join(directory, 'AnswerSearchLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['AnswerSearchLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['AnswerSearchLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
