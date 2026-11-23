@@ -278,7 +278,7 @@ test('set and map Java examples execute against expected outputs', () => {
       'if (!Arrays.equals(twoSum(new int[]{3, 3}, 6), new int[]{0, 1})) throw new AssertionError("duplicate two sum");',
       '}',
       '}'
-    ].join('\n');
+    ].join(String.fromCharCode(10));
     writeFileSync(join(directory, 'SetMapLessonExamples.java'), javaSource);
     const compile = spawnSync('javac', ['SetMapLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
