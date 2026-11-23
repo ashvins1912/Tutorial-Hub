@@ -22,3 +22,11 @@ test('rejects unsupported, malformed, or unbounded simulator configuration', () 
   assert.equal(validateLessonSimulator({ schemaVersion: 1, id: 'bad', kind: 'algorithm-trace', title: 'Search', description: 'Search', algorithm: 'binary-search', initialInput: '1,2' }), null);
   assert.equal(validateLessonSimulator({ schemaVersion: 1, id: 'x'.repeat(81), kind: 'algorithm-trace', title: 'Sort', description: 'Sort', algorithm: 'bubble-sort', initialInput: '1,2' }), null);
 });
+
+test('rejects binary search simulator inputs that violate sorted preconditions', () => {
+  assert.equal(validateLessonSimulator({
+    schemaVersion: 1, id: 'invalid-order', kind: 'algorithm-trace',
+    title: 'Binary search', description: 'Search a sorted list.',
+    algorithm: 'binary-search', initialInput: '9, 2, 5', target: '5',
+  }), null);
+});
