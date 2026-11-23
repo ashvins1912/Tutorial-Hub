@@ -3,13 +3,15 @@ import { apiFetch } from '../../../lib/apiFetch';
 import { CodeExecutionLab } from './CodeExecutionLab';
 import { binarySearchTrace, bubbleSortTrace, buildTracePrediction, parseInput } from './learningAlgorithms';
 import type { LessonSimulator } from './lessonSimulatorContract';
+import { DomainPredictionSimulator } from './DomainPredictionSimulator';
+import type { DomainLessonSimulator } from './domainSimulatorContract';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string; objectiveIds?: string[] };
 type ObjectiveMastery = { objectiveId: string; correct: number; total: number; attempts: number; accuracy: number; status: 'mastered' | 'developing' | 'needs-review'; lastAttemptAt: string };
 type QuizGrading = { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy: number }>; objectiveMastery?: ObjectiveMastery[] };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 
-export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[]; simulator?: LessonSimulator }) {
+export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, domainSimulator }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[]; simulator?: LessonSimulator; domainSimulator?: DomainLessonSimulator }) {
   const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>(simulator?.algorithm || 'binary-search');
   const [rawValues, setRawValues] = useState(simulator?.initialInput || '');
   const [target, setTarget] = useState(simulator?.target || '');
@@ -139,6 +141,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
         <div className="flex flex-wrap items-center gap-2"><button type="button" className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40" disabled={traceIndex === 0} onClick={() => { setTraceIndex((value) => value - 1); setPredictionChoice(''); setPredictionFeedback(null); }}>Previous</button><button type="button" className="rounded-lg bg-sky-600 px-3 py-2 text-xs text-white disabled:opacity-40" disabled={traceIndex >= trace.length - 1 || Boolean(prediction && !predictionChoice)} onClick={() => { if (prediction && predictionChoice) setPredictionFeedback({ answer: predictionChoice, correct: predictionChoice === prediction.correctOption, expected: prediction.correctOption }); else setPredictionFeedback(null); setPredictionChoice(''); setTraceIndex((value) => value + 1); }}> {prediction ? 'Reveal next step' : 'Next step'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={() => { setTraceIndex(0); setPredictionChoice(''); setPredictionFeedback(null); }}>Reset</button><span className="ml-auto text-[10px] text-slate-500">Step {traceIndex + 1} / {trace.length}</span></div>
       </>}
     </div>}
+    {domainSimulator && <DomainPredictionSimulator simulator={domainSimulator}/>}
     {quiz.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Adaptive knowledge check</h4><p className="text-[11px] text-slate-500">Submit your choices to see explanations and a suggested next difficulty.</p></div><span className="text-[10px] text-slate-500">{attempts} attempt{attempts === 1 ? '' : 's'}</span></div>
       {focusedObjectiveId && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sky-50 dark:bg-sky-950/40 p-2"><span className="text-[11px] text-sky-800 dark:text-sky-200">Focused practice: {focusedObjectiveId}</span><button type="button" className="text-[11px] underline" onClick={() => { setFocusedObjectiveId(null); setAnswers({}); setSubmitted(false); setQuizGrading(null); }}>Return to full quiz</button></div>}
