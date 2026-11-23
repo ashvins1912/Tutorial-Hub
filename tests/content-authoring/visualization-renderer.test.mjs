@@ -34,5 +34,5 @@ test('bounds parsed graph nodes, edges, and source size', () => {
   const graph = parseGraph(lines.join('\\n'));
   assert.ok(graph.nodes.length <= 30);
   assert.ok(graph.edges.length <= 50);
-  assert.equal(parseGraph('flowchart TD\\n' + 'A'.repeat(13_000)).nodes.length, 0);
+  assert.equal(parseGraph('flowchart TD\\n' + ' '.repeat(13_000) + 'A[late node]').nodes.length, 0);
 });
