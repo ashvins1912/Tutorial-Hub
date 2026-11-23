@@ -70,6 +70,16 @@ export interface GeneratedQuizQuestion {
   explanation: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
+export interface GeneratedLessonSimulator {
+  schemaVersion: 1;
+  id: string;
+  kind: 'algorithm-trace';
+  title: string;
+  description: string;
+  algorithm: 'binary-search' | 'bubble-sort';
+  initialInput: string;
+  target?: string;
+}
 export interface GeneratedLesson {
   schemaVersion: '1.0';
   title: string;
@@ -79,6 +89,7 @@ export interface GeneratedLesson {
   visualizations: GeneratedVisualization[];
   quiz: GeneratedQuizQuestion[];
   practiceTasks: Array<{ title: string; instructions: string; expectedOutcome: string; difficulty: string }>;
+  simulator?: GeneratedLessonSimulator;
   references: Array<{ label: string; url: string; suppliedByUser: boolean }>;
   qualityNotes: string[];
   validation: { status: 'unverified-draft'; checks: string[]; warnings: string[] };

@@ -39,6 +39,23 @@ test('rejects generated content that omits a required section', () => {
   assert.throws(() => validateGeneratedLesson(invalid, sections), /GENERATED_REQUIRED_SECTIONS_MISSING/);
 });
 
+test('accepts a bounded topic-specific simulator in a generated lesson', () => {
+  const result = validateGeneratedLesson({ ...validLesson, simulator: {
+    schemaVersion: 1, id: 'binary-search-interval', kind: 'algorithm-trace',
+    title: 'Binary search interval trace', description: 'Follow the shrinking search interval.',
+    algorithm: 'binary-search', initialInput: '1, 3, 5, 7, 9', target: '7',
+  } }, sections);
+  assert.equal(result.lesson.simulator?.algorithm, 'binary-search');
+  assert.equal(result.lesson.validation.status, 'unverified-draft');
+});
+
+test('rejects an unrelated or malformed generated simulator', () => {
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: {
+    schemaVersion: 1, id: 'generic', kind: 'unrelated', title: 'Generic', description: 'Generic',
+    algorithm: 'bubble-sort', initialInput: '3, 2, 1',
+  } }, sections), /GENERATED_SIMULATOR_INVALID/);
+});
+
 test('rejects step animations without at least two states', () => {
   const invalid = { ...validLesson, visualizations: [{ id: 'anim', title: 'Animation', type: 'step-animation', description: 'Only one state', source: '[]', steps: [{ title: 'Start', explanation: 'Initial state' }] }] };
   assert.throws(() => validateGeneratedLesson(invalid, sections), /GENERATED_ANIMATION_NEEDS_TWO_STEPS/);

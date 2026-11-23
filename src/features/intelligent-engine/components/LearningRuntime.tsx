@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../../lib/apiFetch';
 import { CodeExecutionLab } from './CodeExecutionLab';
 import { binarySearchTrace, bubbleSortTrace, parseInput } from './learningAlgorithms';
+import type { LessonSimulator } from './lessonSimulatorContract';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string };
 type QuizGrading = { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]> };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 
-export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[] }) {
-  const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>('binary-search');
-  const [rawValues, setRawValues] = useState('2, 5, 8, 12, 16, 23, 38');
-  const [target, setTarget] = useState('16');
+export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[]; simulator?: LessonSimulator }) {
+  const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>(simulator?.algorithm || 'binary-search');
+  const [rawValues, setRawValues] = useState(simulator?.initialInput || '');
+  const [target, setTarget] = useState(simulator?.target || '');
   const [traceIndex, setTraceIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -25,7 +26,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
     let active = true;
     setProgressReady(false);
     setProgressStatus('Loading saved progress…');
-    setAlgorithm('binary-search'); setRawValues('2, 5, 8, 12, 16, 23, 38'); setTarget('16'); setTraceIndex(0);
+    setAlgorithm(simulator?.algorithm || 'binary-search'); setRawValues(simulator?.initialInput || ''); setTarget(simulator?.target || ''); setTraceIndex(0);
     setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
@@ -35,9 +36,11 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
         const saved = payload.progress;
         setQuizGrading(payload.grading || null);
         if (saved) {
-          if (saved.algorithm === 'binary-search' || saved.algorithm === 'bubble-sort') setAlgorithm(saved.algorithm);
-          if (typeof saved.input === 'string') setRawValues(saved.input);
-          if (typeof saved.target === 'string') setTarget(saved.target);
+          if (simulator && saved.algorithm === simulator.algorithm) {
+            setAlgorithm(simulator.algorithm);
+            if (typeof saved.input === 'string') setRawValues(saved.input);
+            if (typeof saved.target === 'string') setTarget(saved.target);
+          }
           setTraceIndex(typeof saved.currentStep === 'number' ? saved.currentStep : 0);
           setAttempts(saved.attempts || 0);
           setAnswers(saved.lastAnswers || {});
@@ -50,7 +53,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
       .catch((error) => { if (active) setProgressStatus(error instanceof Error ? error.message : 'Progress unavailable'); })
       .finally(() => { if (active) setProgressReady(true); });
     return () => { active = false; };
-  }, [jobId]);
+  }, [jobId, simulator?.id]);
   const trace = useMemo(() => {
     try {
       const values = parseInput(rawValues);
@@ -74,7 +77,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
   const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };
   useEffect(() => { if (trace.length && traceIndex >= trace.length) setTraceIndex(trace.length - 1); }, [trace.length, traceIndex]);
   useEffect(() => {
-    if (!progressReady) return;
+    if (!progressReady || !simulator) return;
     const timer = setTimeout(async () => {
       try {
         const response = await apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), {
@@ -86,7 +89,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
       } catch { setProgressStatus('Progress not saved — check your connection'); }
     }, 700);
     return () => clearTimeout(timer);
-  }, [progressReady, jobId, algorithm, rawValues, target, traceIndex, completedPracticeIds]);
+  }, [progressReady, jobId, algorithm, rawValues, target, traceIndex, completedPracticeIds, simulator?.id]);
 
   const isCorrect = (question: QuizQuestion, answer: string, index: number) => {
     const correctAnswer = quizGrading?.correctAnswers[index] ?? question.correctAnswer;
@@ -113,20 +116,16 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [] }: { jobId: st
 
   return <section className="space-y-4" aria-label="Interactive learning runtime">
     <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"><span>{progressStatus}</span>{masterySummary && <span>Best score: {masterySummary.bestScore}% · Mastery: <strong className="capitalize">{masterySummary.masteryLevel}</strong></span>}</div>
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Algorithm trace lab</h4><p className="text-[11px] text-slate-500">Deterministic, built-in simulations. No generated source code is executed.</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">Step-by-step</span></div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <label className="text-[11px] text-slate-500">Algorithm<select className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={algorithm} onChange={(event) => { setAlgorithm(event.target.value as typeof algorithm); setTraceIndex(0); }}><option value="binary-search">Binary search</option><option value="bubble-sort">Bubble sort</option></select></label>
-        <label className="text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); }} /></label>
-      </div>
+    {simulator && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3" data-simulator-id={simulator.id}>
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">{simulator.title}</h4><p className="text-[11px] text-slate-500">{simulator.description}</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">{algorithm === 'binary-search' ? 'Binary search trace' : 'Bubble sort trace'}</span></div>
+      <label className="block text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); }} /></label>
       {algorithm === 'binary-search' && <label className="block text-[11px] text-slate-500">Target value<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={target} onChange={(event) => { setTarget(event.target.value); setTraceIndex(0); }} /></label>}
       {!trace.length ? <p role="alert" className="text-xs text-rose-600">Check the input. Binary search requires sorted ascending values.</p> : <>
         <div className="flex flex-wrap gap-1.5 overflow-x-auto py-1">{current.values.map((value, index) => <div key={index} className={`min-w-9 rounded-lg border px-2 py-2 text-center text-xs font-semibold ${current.active.includes(index) ? 'border-sky-500 bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100' : 'border-slate-200 dark:border-slate-700'}`}><span className="block text-[9px] font-normal text-slate-500">{index}</span>{value}</div>)}</div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><strong className="text-xs">{current.title}</strong><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{current.explanation}</p><div className="mt-2 flex flex-wrap gap-2">{Object.entries(current.variables).map(([key, value]) => <span key={key} className="rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 text-[10px]"><b>{key}</b>: {value}</span>)}</div></div>
         <div className="flex flex-wrap items-center gap-2"><button type="button" className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40" disabled={traceIndex === 0} onClick={() => setTraceIndex((value) => value - 1)}>Previous</button><button type="button" className="rounded-lg bg-sky-600 px-3 py-2 text-xs text-white disabled:opacity-40" disabled={traceIndex >= trace.length - 1} onClick={() => setTraceIndex((value) => value + 1)}>Next step</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={() => setTraceIndex(0)}>Reset</button><span className="ml-auto text-[10px] text-slate-500">Step {traceIndex + 1} / {trace.length}</span></div>
       </>}
-    </div>
-
+    </div>}
     {quiz.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Adaptive knowledge check</h4><p className="text-[11px] text-slate-500">Submit your choices to see explanations and a suggested next difficulty.</p></div><span className="text-[10px] text-slate-500">{attempts} attempt{attempts === 1 ? '' : 's'}</span></div>
       {quiz.map((question, index) => <fieldset key={index} disabled={submitted} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">{index + 1}. {question.question}</legend>{question.options.map((option, optionIndex) => { const multi = Array.isArray(question.correctAnswer) && question.correctAnswer.length > 1; const selectedOptions = (answers[index] || '').split('|').filter(Boolean); return <label key={optionIndex} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type={multi ? 'checkbox' : 'radio'} name={`quiz-${jobId}-${index}`} checked={selectedOptions.includes(option)} onChange={() => setAnswers((currentAnswers) => { const current = (currentAnswers[index] || '').split('|').filter(Boolean); const next = multi ? (current.includes(option) ? current.filter((value) => value !== option) : [...current, option]) : [option]; return { ...currentAnswers, [index]: next.join('|') }; })} className="mt-0.5"/>{option}</label>; })}{submitted && <div className="rounded bg-slate-50 dark:bg-slate-950 p-2 text-[11px]"><strong>{isCorrect(question, answers[index] || '', index) ? 'Correct' : 'Review this answer'}</strong><p className="mt-1 text-slate-500">Answer: {(() => { const answer = quizGrading?.correctAnswers[index] ?? question.correctAnswer; return Array.isArray(answer) ? answer.join(', ') : answer || 'Verified after submission'; })()}. {question.explanation}</p></div>}</fieldset>)}
