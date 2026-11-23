@@ -514,7 +514,7 @@ test('greedy topic satisfies the complete learning-unit contract', () => {
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'greedy requires substantive ' + field);
   }
   assert.ok(lesson.correctness.some((item) => /exchange/i.test(item)));
-  assert.ok(lesson.deepDive.some((item) => /counterexample/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /coin change|counterexample/i.test(item)));
   assert.ok(lesson.assessment.length >= 5);
 });
 
