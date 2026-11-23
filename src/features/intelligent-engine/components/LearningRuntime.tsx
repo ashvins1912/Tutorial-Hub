@@ -22,7 +22,8 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const [completedPracticeIds, setCompletedPracticeIds] = useState<string[]>([]);
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
   const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
-  const [objectiveMastery, setObjectiveMastery] = useState<ObjectiveMastery[]>([]);\n  const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);
+  const [objectiveMastery, setObjectiveMastery] = useState<ObjectiveMastery[]>([]);
+  const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
