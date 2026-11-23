@@ -50,5 +50,7 @@ jobs:
         run: npm run audit:learning-surfaces
       - name: Validate application-wide content quality audit ledger
         run: npm run audit:learning-content
+      - name: Inventory canonical topic and lesson candidates
+        run: node --test tests/content-authoring/topic-content-inventory.test.mjs
       - name: Build frontend
         run: npm run build
