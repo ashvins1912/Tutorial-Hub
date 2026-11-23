@@ -1,0 +1,510 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "branch": "main",
+    "commit": "2acd983e8b5d37fa8cbbf9d9073e232727f1aa1b",
+    "auditDate": "2026-11-23",
+    "trackedFileCount": 442
+  },
+  "purpose": "Machine-checkable first-pass map of every TopView value to representative entry components, canonical data sources, API routes and existing test files. This is a discoverability and path-integrity inventory, not a claim that mapped content is complete or verified.",
+  "qualityStateSemantics": {
+    "inventory": "A surface and its representative source paths are catalogued.",
+    "notAssessed": "Technical correctness, content completeness, accessibility and runtime behavior have not been certified by this registry."
+  },
+  "globalTestFiles": [
+    "tests/content-authoring/ai-academy-curriculum.test.mjs",
+    "tests/content-authoring/ai-academy-progress.test.mjs",
+    "tests/content-authoring/code-execution.test.mjs",
+    "tests/content-authoring/generation.test.mjs",
+    "tests/content-authoring/learning-progress-grading.test.mjs",
+    "tests/content-authoring/learning-progress.test.mjs",
+    "tests/content-authoring/learning-runtime.test.mjs",
+    "tests/content-authoring/phase1.test.mjs",
+    "tests/content-authoring/published-lesson-security.test.mjs",
+    "tests/content-authoring/visualization-renderer.test.mjs",
+    "tests/dsa/arrays-batch-01.test.mjs"
+  ],
+  "surfaces": [
+    {
+      "id": "solver",
+      "title": "Universal problem solver",
+      "kind": "problem-solving",
+      "navigation": "primary",
+      "summary": "Guided problem decomposition, adaptive coaching, optimization review and imported problem practice.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/features/solver-studio/UniversalSolverStudio.tsx",
+        "src/features/solver-studio/GuidedLogicBuilderPanel.tsx",
+        "src/features/solver-studio/AdaptiveCoachPanel.tsx",
+        "src/features/solver-studio/OptimizationCheckerPanel.tsx",
+        "src/features/solver-studio/PulledProblemLibraryPanel.tsx"
+      ],
+      "dataSources": [
+        "src/features/solver-studio/systemProblemsAdapter.ts",
+        "src/data/problems.ts",
+        "src/data/algorithmsCatalog.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/universalSolverRoutes.ts",
+        "server/routes/problemRoutes.ts"
+      ],
+      "testFiles": []
+    },
+    {
+      "id": "knowledge-engine",
+      "title": "Concept knowledge engine",
+      "kind": "authoring-and-learning-runtime",
+      "navigation": "primary",
+      "summary": "Intelligent lesson authoring, published lessons and the guarded code-execution capability boundary.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/features/intelligent-engine/components/IntelligentEngineStudio.tsx",
+        "src/features/intelligent-engine/components/CodeExecutionLab.tsx",
+        "src/features/intelligent-engine/components/PublishedLessonView.tsx"
+      ],
+      "dataSources": [
+        "src/data/canonicalDataRegistry.ts"
+      ],
+      "apiRoutes": [
+        "server/modules/content-authoring/contentAuthoring.routes.ts",
+        "server/routes/learningProgressRoutes.ts",
+        "server/routes/codeExecutionRoutes.ts"
+      ],
+      "testFiles": [
+        "tests/content-authoring/generation.test.mjs",
+        "tests/content-authoring/published-lesson-security.test.mjs",
+        "tests/content-authoring/code-execution.test.mjs",
+        "tests/content-authoring/learning-runtime.test.mjs"
+      ]
+    },
+    {
+      "id": "ai-academy",
+      "title": "AI engineering academy",
+      "kind": "academy",
+      "navigation": "primary",
+      "summary": "Structured AI engineering phases, lessons, deep dives, RAG, agentic systems and MCP learning.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/features/ai-academy/components/AIEngineeringAcademy.tsx"
+      ],
+      "dataSources": [
+        "src/features/ai-academy/data/aiEngineeringCurriculum.ts",
+        "src/features/ai-academy/data/aiEngineeringDeepDiveLessons.ts",
+        "src/features/ai-academy/data/aiEngineeringExtraLessons.ts",
+        "src/features/ai-academy/data/aiEngineeringRagSystems.ts",
+        "src/features/ai-academy/data/aiEngineeringMcpSystems.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/aiAcademyProgressRoutes.ts"
+      ],
+      "testFiles": [
+        "tests/content-authoring/ai-academy-curriculum.test.mjs",
+        "tests/content-authoring/ai-academy-progress.test.mjs"
+      ]
+    },
+    {
+      "id": "workspace",
+      "title": "DSA curriculum workspace",
+      "kind": "curriculum",
+      "navigation": "primary",
+      "summary": "Topic-first DSA curriculum, staged problem learning and classic problem-solving workspace.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/features/topics/components/CurriculumWorkbench.tsx",
+        "src/components/CompleteDsaCourse.tsx",
+        "src/components/CompleteDsaRoadmap.tsx",
+        "src/components/MasteryStepper.tsx"
+      ],
+      "dataSources": [
+        "src/features/topics/data/curriculumIndex.ts",
+        "src/data/completeDsaRoadmap.ts",
+        "src/data/dsaCompleteLessons.ts",
+        "src/data/curriculum.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/contentBootstrapRoutes.ts",
+        "server/routes/learningProgressRoutes.ts"
+      ],
+      "testFiles": [
+        "tests/dsa/arrays-batch-01.test.mjs"
+      ]
+    },
+    {
+      "id": "algorithms",
+      "title": "Algorithms studio",
+      "kind": "academy-and-visualizers",
+      "navigation": "primary",
+      "summary": "Core and advanced algorithm catalog, algorithm-specific stages and sorting visual practice.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/algorithms/AlgorithmsStudio.tsx",
+        "src/components/algorithms/AlgorithmVisualStage.tsx",
+        "src/components/algorithms/SortingAlgorithmLab.tsx"
+      ],
+      "dataSources": [
+        "src/data/algorithmsCatalog.ts",
+        "src/data/algorithmsMasterCorePack.ts",
+        "src/data/algorithmsMasterAdvancedPack.ts",
+        "src/data/algorithmsMasterSystemsPack.ts",
+        "src/data/algorithmCombinationsAndRoadmap.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": [
+        "tests/dsa/arrays-batch-01.test.mjs"
+      ]
+    },
+    {
+      "id": "fuzzy-search",
+      "title": "N-gram and fuzzy search lab",
+      "kind": "specialist-academy",
+      "navigation": "primary",
+      "summary": "Tokenization, similarity metrics, retrieval, pruning and hybrid fuzzy-search techniques.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/fuzzy/NGramFuzzyStudio.tsx",
+        "src/components/fuzzy/NGramVisualStage.tsx",
+        "src/components/fuzzy/PruningLogicSimulator.tsx"
+      ],
+      "dataSources": [
+        "src/data/ngramTaxonomy.ts",
+        "src/data/ngramTaxonomyPart1.ts",
+        "src/data/ngramTaxonomyPart2.ts",
+        "src/data/fuzzyCurriculumModules.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "ood",
+      "title": "OOP, SOLID and design patterns",
+      "kind": "academy-and-visualizers",
+      "navigation": "primary",
+      "summary": "Object-oriented principles, design patterns, custom data structures and animated concept traces.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/OodPrinciplesStudio.tsx",
+        "src/components/OodAnimationStage.tsx",
+        "src/components/languages/OopCustomDsAcademy.tsx"
+      ],
+      "dataSources": [
+        "src/data/ood/oopsAndSolidData.ts",
+        "src/data/ood/patternsAndOodData.ts",
+        "src/data/ood/extendedPatternsData.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "ai-engineering",
+      "title": "AI engineering studio",
+      "kind": "specialist-academy",
+      "navigation": "primary",
+      "summary": "AI engineering concepts and advanced LLM architecture visual learning.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/AiEngineeringStudio.tsx",
+        "src/components/system-design/FrontierLlmArchitectureLab.tsx"
+      ],
+      "dataSources": [
+        "src/data/aiEngineeringData.ts",
+        "src/data/aiStudioDeepEnrichmentData.ts",
+        "src/data/llmFrontierArchitectureData.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "db-internals",
+      "title": "Database internals studio",
+      "kind": "academy-and-simulators",
+      "navigation": "primary",
+      "summary": "SQL practice, query execution, indexes, transactions, concurrency, recovery and vector search.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/database/DatabaseInternalsStudio.tsx",
+        "src/components/database/DatabasePracticeWorkbench.tsx",
+        "src/components/database/QueryPipelinePlayground.tsx",
+        "src/components/database/DeadlockWaitForVisualizer.tsx",
+        "src/components/database/PitrRecoveryPlayground.tsx"
+      ],
+      "dataSources": [
+        "src/data/databaseInternalsData.ts",
+        "src/data/databaseTaxonomyAndSqlData.ts",
+        "src/data/dbQueryDataFlowData.ts",
+        "src/data/databaseVisualData.ts",
+        "src/data/mongooseSchemas.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "devops-cloud",
+      "title": "DevOps and cloud studio",
+      "kind": "academy-and-simulators",
+      "navigation": "primary",
+      "summary": "Cloud engineering, delivery pipelines, container orchestration and infrastructure learning.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/devops/DevOpsCloudStudio.tsx",
+        "src/components/devops/DevOpsInteractiveSimulators.tsx",
+        "src/components/devops/DevOpsVisualPlayground.tsx",
+        "src/components/devops/CloudDevCompleteTutorial.tsx"
+      ],
+      "dataSources": [
+        "src/data/devopsCloudCurriculumData.ts",
+        "src/data/devopsCloudDeepGapsData.ts",
+        "src/data/dockerK8sCloudDevTutorialData.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "flight-simulator",
+      "title": "SDLC and architecture flight simulator",
+      "kind": "simulator",
+      "navigation": "primary",
+      "summary": "Scenario-based architecture, infrastructure and delivery decision simulation.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/flight/FlightSimulatorStudio.tsx",
+        "src/components/flight/FlightMermaidViewer.tsx"
+      ],
+      "dataSources": [
+        "src/data/flightSimulatorData.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "languages",
+      "title": "Programming languages studio",
+      "kind": "academy-and-simulators",
+      "navigation": "primary",
+      "summary": "Java and Python language mastery, runtime, collections, concurrency and exception handling.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/languages/LanguagesTutorialStudio.tsx",
+        "src/components/languages/LanguagePracticeWorkbench.tsx",
+        "src/components/languages/LanguageVisualAnimator.tsx",
+        "src/components/languages/CollectionsConcurrencyPlayground.tsx",
+        "src/components/languages/MultithreadingTelemetryLab.tsx"
+      ],
+      "dataSources": [
+        "src/data/languagesTutorialData.ts",
+        "src/data/javaPythonCodingMasteryData.ts",
+        "src/data/langCollectionsConcurrencyData.ts",
+        "src/data/langConcurrencyExceptionsData.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "full-stack",
+      "title": "Full-stack systems studio",
+      "kind": "academy-and-simulators",
+      "navigation": "primary",
+      "summary": "Full-stack architecture, framework/runtime internals, storage and polyglot service design.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/fullstack/FullStackSystemsStudio.tsx",
+        "src/components/fullstack/FullStackStoryboardAnimator.tsx",
+        "src/components/fullstack/RuntimeAndInfraInternalsLab.tsx",
+        "src/components/fullstack/StorageAndDiagnosticsLab.tsx"
+      ],
+      "dataSources": [
+        "src/data/fullStackArchitectureData.ts",
+        "src/data/fullStackDeepEnrichmentData.ts",
+        "src/data/runtimeAndInfraInternalsData.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "system-design",
+      "title": "System design studio",
+      "kind": "academy-and-simulators",
+      "navigation": "hub",
+      "summary": "System design curriculum, architecture playgrounds, distributed algorithms and real-world scenarios.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/SystemDesignStudio.tsx",
+        "src/components/SystemDesignLearningAcademy.tsx",
+        "src/components/system-playground/SystemPlayground.tsx",
+        "src/components/system-design/SystemDfdSimulator.tsx",
+        "src/components/system-design/RealWorldArchitecturesAndInterviewLab.tsx"
+      ],
+      "dataSources": [
+        "src/data/systemDesignData.ts",
+        "src/data/systemDesignMasterRoadmapData.ts",
+        "src/data/systemDfdLibraryData.ts",
+        "src/data/realWorldSystemBlueprintsData.ts",
+        "src/data/realWorldPlaygroundBlueprints.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/systemDesignAiRoutes.ts"
+      ],
+      "testFiles": []
+    },
+    {
+      "id": "revision",
+      "title": "Quick revision hub",
+      "kind": "revision-and-retention",
+      "navigation": "hub",
+      "summary": "Revision notes and review entry points for spaced retrieval and interview preparation.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/QuickRevisionHub.tsx",
+        "src/components/shared/MasteryReviewPanel.tsx"
+      ],
+      "dataSources": [
+        "src/data/academyResources.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/cognitiveRoutes.ts"
+      ],
+      "testFiles": []
+    },
+    {
+      "id": "skill-tree",
+      "title": "Noob-to-pro skill tree",
+      "kind": "learning-path",
+      "navigation": "hub",
+      "summary": "Visual learning progression and skill-tree navigation across core problem-solving topics.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/cognitive/NoobToProSkillTree.tsx",
+        "src/components/cognitive/ConceptAcademyDrawer.tsx"
+      ],
+      "dataSources": [
+        "src/data/completeDsaRoadmap.ts",
+        "src/data/curriculum.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "schemas",
+      "title": "Database and API schemas reference",
+      "kind": "reference",
+      "navigation": "hub",
+      "summary": "Reference view for database and API schema structures.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/SchemasReferenceView.tsx"
+      ],
+      "dataSources": [
+        "src/data/mongooseSchemas.ts"
+      ],
+      "apiRoutes": [],
+      "testFiles": []
+    },
+    {
+      "id": "roadmap",
+      "title": "Topic and interview problem bank",
+      "kind": "problem-bank-and-learning-path",
+      "navigation": "primary",
+      "summary": "Pattern roadmap, product-company bank, company/topic explorer, high-ROI problems and skill tree.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/Patterns28RoadmapView.tsx",
+        "src/components/interview/ProductCompanyMasterBankView.tsx",
+        "src/components/interview/TopicPatternExplorer.tsx",
+        "src/components/ProblemBank45View.tsx",
+        "src/components/cognitive/NoobToProSkillTree.tsx"
+      ],
+      "dataSources": [
+        "src/data/dsa28Patterns.ts",
+        "src/data/productCompanyMasterBank.ts",
+        "src/data/highRoi45.ts",
+        "src/data/topInterview100.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/interviewProblemRoutes.ts"
+      ],
+      "testFiles": []
+    },
+    {
+      "id": "sprint",
+      "title": "Interview sprint war room",
+      "kind": "interview-preparation",
+      "navigation": "primary",
+      "summary": "Time-boxed interview sprint planning, mock sessions and progress dashboard.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/sprint/SprintWarRoomDashboard.tsx",
+        "src/components/sprint/SprintConfiguratorModal.tsx",
+        "src/components/sprint/Mock45SimulatorModal.tsx"
+      ],
+      "dataSources": [
+        "server/seed/bigTechTopicSeed.ts",
+        "src/data/highRoi45.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/sprintRoutes.ts"
+      ],
+      "testFiles": []
+    },
+    {
+      "id": "community",
+      "title": "Community and pair programming",
+      "kind": "community-and-collaboration",
+      "navigation": "primary",
+      "summary": "Community hub and collaborative pair-programming workspace.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/CommunityHubView.tsx",
+        "src/components/PairProgrammingCanvas.jsx"
+      ],
+      "dataSources": [],
+      "apiRoutes": [
+        "server/routes/communityRoutes.ts"
+      ],
+      "testFiles": []
+    },
+    {
+      "id": "profile",
+      "title": "Learner profile and progress",
+      "kind": "learner-account",
+      "navigation": "primary",
+      "summary": "Learner profile, statistics, database sync inspection and account-level learning state.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/components/ProfileStatsView.tsx",
+        "src/components/profile/DbSyncInspectorCard.tsx",
+        "src/components/profile/MonthlyLearningResetCard.tsx"
+      ],
+      "dataSources": [
+        "src/store/usePatternForgeStore.ts",
+        "src/store/useSprintStore.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/profileRoutes.ts",
+        "server/routes/userStateRoutes.ts"
+      ],
+      "testFiles": [
+        "tests/content-authoring/learning-progress.test.mjs"
+      ]
+    }
+  ]
+}
