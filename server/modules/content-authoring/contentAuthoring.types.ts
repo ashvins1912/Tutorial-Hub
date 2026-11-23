@@ -1,8 +1,6 @@
 export type ContentDomain = 'DSA' | 'MACHINE_LEARNING' | 'AI' | 'DATABASE' | 'SYSTEM_DESIGN' | 'SOFTWARE_ENGINEERING' | 'GENERAL';
 export type ContentKind = 'algorithm' | 'coding_problem' | 'concept' | 'model' | 'architecture' | 'database_concept' | 'case_study' | 'tutorial' | 'question_bank' | 'custom';
 export type ContentLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'undetermined';
-export type AuthoringStatus = 'uploaded' | 'analyzed' | 'review_required' | 'failed';
-export type GenerationStatus = 'not_started' | 'generating' | 'generated' | 'failed';
 
 export interface LearningSection {
   id: string;
@@ -79,6 +77,7 @@ export interface GeneratedLessonSimulator {
   algorithm: 'binary-search' | 'bubble-sort';
   initialInput: string;
   target?: string;
+  objectiveIds: string[];
 }
 export interface GeneratedLesson {
   schemaVersion: '1.0';
@@ -95,7 +94,7 @@ export interface GeneratedLesson {
   validation: { status: 'unverified-draft'; checks: string[]; warnings: string[] };
 }
 export interface GenerationMetadata {
-  status: GenerationStatus;
+  status: 'not_started' | 'generating' | 'generated' | 'failed';
   provider?: string;
   model?: string;
   generatedAt?: Date;

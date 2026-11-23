@@ -43,10 +43,16 @@ test('accepts a bounded topic-specific simulator in a generated lesson', () => {
   const result = validateGeneratedLesson({ ...validLesson, simulator: {
     schemaVersion: 1, id: 'binary-search-interval', kind: 'algorithm-trace',
     title: 'Binary search interval trace', description: 'Follow the shrinking search interval.',
-    algorithm: 'binary-search', initialInput: '1, 3, 5, 7, 9', target: '7',
+    algorithm: 'binary-search', initialInput: '1, 3, 5, 7, 9', target: '7', objectiveIds: ['Understand the invariant'],
   } }, sections);
   assert.equal(result.lesson.simulator?.algorithm, 'binary-search');
   assert.equal(result.lesson.validation.status, 'unverified-draft');
+});
+
+test('rejects unknown or duplicate simulator objective references', () => {
+  const simulator = { schemaVersion: 1, id: 'binary-search-interval', kind: 'algorithm-trace', title: 'Binary search', description: 'Trace a sorted search.', algorithm: 'binary-search', initialInput: '1, 3, 5', target: '3' };
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...simulator, objectiveIds: ['not an objective'] } }, sections), /GENERATED_SIMULATOR_OBJECTIVE_BINDING_INVALID/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...simulator, objectiveIds: ['Understand the invariant', 'Understand the invariant'] } }, sections), /GENERATED_SIMULATOR_OBJECTIVE_BINDING_INVALID/);
 });
 
 test('rejects an unrelated or malformed generated simulator', () => {
