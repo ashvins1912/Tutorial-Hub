@@ -106,3 +106,49 @@ test('strings Java and Python examples execute against expected outputs', () => 
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('linked-list topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
+  assert.ok(lesson, 'linked-list lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'linked-list lesson requires substantive ' + field);
+  }
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /Floyd/.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('linked-list Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
+  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-linked-list-'));
+  try {
+    const javaSource = [
+      'public class LinkedListLessonExamples {',
+      ...javaExamples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'Node a = new Node(1), b = new Node(2), c = new Node(3);',
+      'a.next = b; b.next = c;',
+      'Node reversed = reverse(a);',
+      'if (reversed != c || reversed.next != b || b.next != a || a.next != null) throw new AssertionError("reverse links");',
+      'if (hasCycle(reversed)) throw new AssertionError("acyclic list");',
+      'Node x = new Node(7); x.next = x;',
+      'if (!hasCycle(x)) throw new AssertionError("self cycle");',
+      'Node p = new Node(4), q = new Node(5), r = new Node(6);',
+      'p.next = q; q.next = r; r.next = q;',
+      'if (!hasCycle(p)) throw new AssertionError("middle cycle");',
+      '}',
+      '}'
+    ].join('\n');
+    writeFileSync(join(directory, 'LinkedListLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['LinkedListLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['LinkedListLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
