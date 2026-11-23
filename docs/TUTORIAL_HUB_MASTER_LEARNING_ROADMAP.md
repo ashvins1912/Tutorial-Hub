@@ -622,3 +622,8 @@ This roadmap is the delivery plan. The following documents are the operational r
 - [Project README](../README.md) — setup, architecture, scripts, safety boundaries and contributor entry point.
 
 The standard defines **what good means**; the inventory records **what exists and what evidence is missing**; this roadmap defines **the order in which gaps should be closed**. Do not treat documentation completion as proof that application features or lessons have passed their quality gates.
+
+
+## 12. Domain-specific prediction simulators — implementation status (2026-11-24)
+
+Implemented in the domain-prediction increment: four deterministic scenario families (database query planning, system capacity, lost-update concurrency, and cloud pipeline security gates), a versioned lesson contract, objective binding validation, generation prompt guidance, predict-before-reveal feedback and focused tests. These fixtures are instructional models, not live infrastructure or database execution. Next acceptance work is UI-level keyboard/screen-reader/reduced-motion testing, domain-expert review of assumptions, and expansion only where a new scenario has a defensible model and deterministic fixtures.
