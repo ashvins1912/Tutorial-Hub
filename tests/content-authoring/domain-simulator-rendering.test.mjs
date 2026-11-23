@@ -23,7 +23,7 @@ test('domain simulator renders labeled controls, keyboard-native choices and acc
 
 test('simulator exposes explicit model and persistence boundaries', () => {
   const html = renderToStaticMarkup(React.createElement(DomainPredictionSimulator, { simulator }));
-  assert.match(html, /session-only practice evidence/);
+  assert.match(html, /separate simulator-completion evidence/);
   assert.match(html, /does not execute SQL/);
   assert.match(html, /Reduced-motion mode is respected/);
 });
