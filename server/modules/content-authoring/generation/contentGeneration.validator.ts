@@ -28,15 +28,15 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   if (raw.simulator !== undefined && raw.simulator !== null) {
     if (!raw.simulator || typeof raw.simulator !== 'object' || Array.isArray(raw.simulator)) throw new Error('GENERATED_SIMULATOR_INVALID');
     const candidate = raw.simulator as Record<string, unknown>;
-    if (!isText(candidate.id) || !isText(candidate.title) || candidate.kind !== 'algorithm-trace' || !['binary-search', 'bubble-sort'].includes(String(candidate.algorithm)) || !isText(candidate.initialInput)) throw new Error('GENERATED_SIMULATOR_INCOMPLETE');
+    if (candidate.schemaVersion !== 1 || !isText(candidate.id) || candidate.id.length > 80 || !isText(candidate.title) || !isText(candidate.description) || candidate.kind !== 'algorithm-trace' || !['binary-search', 'bubble-sort'].includes(String(candidate.algorithm)) || !isText(candidate.initialInput) || candidate.initialInput.length > 256) throw new Error('GENERATED_SIMULATOR_INCOMPLETE');
     const objectiveIds = asArray(candidate.objectiveIds);
     const availableObjectives = new Set(asArray(raw.learningObjectives).filter(isText));
     if (!objectiveIds.length || objectiveIds.some((id) => !isText(id) || !availableObjectives.has(id))) throw new Error('GENERATED_SIMULATOR_OBJECTIVES_REQUIRED');
     const simulatorValues = candidate.initialInput.split(',').map((value) => Number(value.trim()));
-    if (!simulatorValues.length || simulatorValues.length > 24 || simulatorValues.some((value) => !Number.isFinite(value))) throw new Error('GENERATED_SIMULATOR_INPUT_INVALID');
+    if (!simulatorValues.length || simulatorValues.length > 12 || simulatorValues.some((value) => !Number.isFinite(value))) throw new Error('GENERATED_SIMULATOR_INPUT_INVALID');
     if (candidate.algorithm === 'binary-search' && simulatorValues.some((value, index) => index > 0 && simulatorValues[index - 1] > value)) throw new Error('GENERATED_SIMULATOR_INPUT_UNSORTED');
     if (candidate.algorithm === 'binary-search' && (!isText(candidate.initialTarget) || !Number.isFinite(Number(candidate.initialTarget)))) throw new Error('GENERATED_SIMULATOR_TARGET_INVALID');
-    simulator = { id: candidate.id, title: candidate.title, kind: 'algorithm-trace', algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, ...(isText(candidate.initialTarget) ? { initialTarget: candidate.initialTarget } : {}), objectiveIds: objectiveIds as string[] };
+    simulator = { schemaVersion: 1, id: candidate.id, title: candidate.title, description: candidate.description, kind: 'algorithm-trace', algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, ...(isText(candidate.initialTarget) ? { initialTarget: candidate.initialTarget } : {}), objectiveIds: objectiveIds as string[] };
   }
   const sourceUrls = new Set((sourceText.match(/https?:\/\/[^\s)\]>]+/g) || []).map((url) => url.replace(/[.,;]+$/, '')));
   const candidateReferences = asArray(raw.references).filter((ref): ref is Record<string, unknown> => !!ref && typeof ref === 'object' && isText((ref as Record<string, unknown>).label) && isText((ref as Record<string, unknown>).url));
