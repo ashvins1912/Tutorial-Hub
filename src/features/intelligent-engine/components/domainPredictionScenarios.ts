@@ -1,130 +1,78 @@
 import type { DomainSimulatorScenario } from './domainSimulatorContract';
 
-export type DomainPrediction = {
-  prompt: string;
-  options: string[];
-  correctOption: string;
-  rationale: string;
+export type DomainScenarioInputs = {
+  database: { rowCount: number; selectivityPct: number; hasIndex: boolean; coveringIndex: boolean };
+  system: { incomingRps: number; gatewayCapacity: number; orderCapacity: number; inventoryCapacity: number };
+  concurrency: { initialBalance: number; firstWithdrawal: number; secondWithdrawal: number };
+  cloud: { secretDetected: boolean; testsPass: boolean; vulnerabilityScanPass: boolean; signatureValid: boolean };
 };
-export type DomainScenarioFrame = {
-  title: string;
-  detail: string;
-  metrics: Array<{ label: string; value: string }>;
-  prediction?: DomainPrediction;
+
+export const DEFAULT_DOMAIN_SCENARIO_INPUTS: DomainScenarioInputs = {
+  database: { rowCount: 1_000_000, selectivityPct: 0.2, hasIndex: true, coveringIndex: false },
+  system: { incomingRps: 1_200, gatewayCapacity: 2_000, orderCapacity: 1_000, inventoryCapacity: 700 },
+  concurrency: { initialBalance: 100, firstWithdrawal: 30, secondWithdrawal: 50 },
+  cloud: { secretDetected: true, testsPass: true, vulnerabilityScanPass: true, signatureValid: true },
 };
+
+export type DomainPrediction = { prompt: string; options: string[]; correctOption: string; rationale: string };
+export type DomainScenarioFrame = { title: string; detail: string; metrics: Array<{ label: string; value: string }>; prediction?: DomainPrediction };
 
 const checkpoint = (prompt: string, correctOption: string, alternatives: string[], rationale: string): DomainPrediction => ({
-  prompt,
-  options: [correctOption, ...alternatives].filter((value, index, all) => all.indexOf(value) === index),
-  correctOption,
-  rationale,
+  prompt, options: [correctOption, ...alternatives].filter((value, index, all) => all.indexOf(value) === index), correctOption, rationale,
 });
+const frame = (title: string, detail: string, metrics: DomainScenarioFrame['metrics'], prediction?: DomainPrediction): DomainScenarioFrame => ({ title, detail, metrics, ...(prediction ? { prediction } : {}) });
 
-export function buildDomainScenario(scenario: DomainSimulatorScenario): DomainScenarioFrame[] {
+export function buildDomainScenario(scenario: DomainSimulatorScenario, inputs: DomainScenarioInputs = DEFAULT_DOMAIN_SCENARIO_INPUTS): DomainScenarioFrame[] {
   switch (scenario) {
-    case 'database-query-plan':
+    case 'database-query-plan': {
+      const db = inputs.database;
+      const matchedRows = Math.max(0, Math.round(db.rowCount * db.selectivityPct / 100));
+      const useIndex = db.hasIndex && db.selectivityPct <= 5;
+      const accessPath = useIndex ? 'Index scan' : 'Sequential scan';
+      const heapWork = useIndex && !db.coveringIndex;
       return [
-        {
-          title: 'Read the query workload',
-          detail: 'The table has 1,000,000 rows. The predicate matches 0.2% of rows and a B-tree index exists on the filtered column.',
-          metrics: [{ label: 'Rows', value: '1,000,000' }, { label: 'Selectivity', value: '0.2%' }, { label: 'Index', value: 'B-tree available' }],
-          prediction: checkpoint('Which access path should the cost-based optimizer prefer for this selective predicate?', 'Index scan', ['Sequential scan', 'Full table sort', 'Nested-loop join'], 'A selective predicate can avoid reading most heap pages through the B-tree. The exact choice still depends on table statistics, correlation, cache state and the database cost model.'),
-        },
-        {
-          title: 'Choose the access path',
-          detail: 'The optimizer estimates about 2,000 matching rows. It chooses an index scan, then fetches the matching heap tuples.',
-          metrics: [{ label: 'Estimated rows', value: '2,000' }, { label: 'Chosen path', value: 'Index scan' }],
-          prediction: checkpoint('After locating matching index entries, what work remains before rows can be returned?', 'Fetch and recheck matching heap tuples', ['Read every table page', 'Build a hash table for a join', 'Write a WAL checkpoint'], 'A non-covering index points to heap tuples. Visibility checks and heap access may still be required.'),
-        },
-        {
-          title: 'Account for heap access',
-          detail: 'The plan visits matching heap pages and applies any remaining filter. A covering index could avoid some heap reads.',
-          metrics: [{ label: 'Heap fetches', value: 'Required for this plan' }, { label: 'Residual filter', value: 'Applied after fetch' }],
-          prediction: checkpoint('What change is most likely to make this query cheaper when the selected columns are also in the index?', 'Use a covering index where supported', ['Increase the table row count', 'Disable statistics collection', 'Force a full sequential scan'], 'A covering index can satisfy the projection from index entries and reduce heap visits, subject to visibility-map and engine-specific behavior.'),
-        },
-        {
-          title: 'Interpret the plan carefully',
-          detail: 'The index plan is a reasoned estimate, not a guarantee. If selectivity rises or random I/O becomes expensive, a sequential scan may win.',
-          metrics: [{ label: 'Decision', value: 'Cost-based, statistics-dependent' }, { label: 'Caveat', value: 'Validate with EXPLAIN ANALYZE' }],
-        },
+        frame('Read the query workload', `The table contains ${db.rowCount.toLocaleString()} rows; the predicate matches ${db.selectivityPct}% (${matchedRows.toLocaleString()} estimated rows). ${db.hasIndex ? 'A B-tree index is available.' : 'No usable index is available.'}`, [{ label: 'Table rows', value: db.rowCount.toLocaleString() }, { label: 'Selectivity', value: `${db.selectivityPct}%` }, { label: 'Estimated matches', value: matchedRows.toLocaleString() }, { label: 'Index', value: db.hasIndex ? 'Available' : 'Unavailable' }], checkpoint('Which access path is favored by this simplified selectivity model?', accessPath, [useIndex ? 'Sequential scan' : 'Index scan', 'Full table sort', 'Nested-loop join'], useIndex ? 'A selective predicate and available index make an index access path attractive in this simplified model. Real optimizers compare page costs, correlation, cache and statistics.' : 'Without a usable index or with a broad predicate, scanning the table can be cheaper than many scattered index lookups. Real optimizers use engine-specific cost estimates.')),
+        frame('Fetch the required row data', heapWork ? 'The index identifies matching tuple locations, but this query is not covered by the index. Heap access and visibility checks remain.' : db.coveringIndex && useIndex ? 'The selected columns are covered by the index, so the engine may avoid most heap visits (subject to visibility and engine rules).' : 'The sequential scan reads table pages and evaluates the predicate as it goes.', [{ label: 'Chosen path', value: accessPath }, { label: 'Heap tuple visits', value: heapWork ? 'Expected' : db.coveringIndex && useIndex ? 'Often reduced' : 'Part of table scan' }], checkpoint('What is the main benefit of a covering index for this projection?', db.coveringIndex ? 'The needed columns can be read from index entries' : 'Add the projected columns to the index to reduce heap visits', ['Increase the number of table rows', 'Disable statistics collection'], db.coveringIndex ? 'A covering index stores the projected values and may satisfy the query without fetching each heap tuple.' : 'A non-covering index still needs heap tuples. Including projected columns can reduce heap I/O, at the cost of larger index entries and write overhead.')),
+        frame('Evaluate the trade-off', 'Index scans trade fewer pages for index traversal and potentially random heap I/O. Sequential scans trade reading more pages for efficient sequential access.', [{ label: 'Plan', value: accessPath }, { label: 'Covering', value: db.coveringIndex ? 'Configured' : 'Not configured' }], checkpoint('Which evidence should decide whether this estimated plan is actually faster?', 'Compare EXPLAIN ANALYZE and representative workload measurements', ['Assume index scans are always faster', 'Use row count alone', 'Disable the query planner'], 'Actual execution time, buffers, row-estimate error, cache state and representative parameter values validate the plan.')),
+        frame('Interpret the plan carefully', 'This deterministic model teaches selectivity and heap-work trade-offs. It is not a database optimizer and does not execute SQL.', [{ label: 'Decision', value: accessPath }, { label: 'Model', value: 'Selectivity heuristic' }, { label: 'Verification', value: 'EXPLAIN (ANALYZE, BUFFERS)' }]),
       ];
-    case 'system-capacity':
+    }
+    case 'system-capacity': {
+      const sys = inputs.system;
+      const capacities = [{ name: 'API Gateway', value: sys.gatewayCapacity }, { name: 'Order Service', value: sys.orderCapacity }, { name: 'Inventory Service', value: sys.inventoryCapacity }];
+      const bottleneck = capacities.reduce((min, item) => item.value < min.value ? item : min);
+      const excess = Math.max(0, sys.incomingRps - bottleneck.value);
+      const stable = excess === 0;
       return [
-        {
-          title: 'Inject incoming traffic',
-          detail: 'A request path traverses API Gateway → Order Service → Inventory Service. Incoming load is 1,200 requests/second.',
-          metrics: [{ label: 'Incoming RPS', value: '1,200' }, { label: 'Gateway capacity', value: '2,000 RPS' }, { label: 'Order capacity', value: '1,000 RPS' }, { label: 'Inventory capacity', value: '700 RPS' }],
-          prediction: checkpoint('Which component becomes the first throughput bottleneck on this serial request path?', 'Inventory Service', ['API Gateway', 'Order Service', 'Database cache'], 'Inventory has the lowest stated service capacity (700 RPS), so it limits steady-state throughput before upstream components.'),
-        },
-        {
-          title: 'Propagate the capacity limit',
-          detail: 'The serial path cannot sustainably complete more requests than its lowest-capacity required dependency. Excess requests queue or fail.',
-          metrics: [{ label: 'Path capacity', value: '700 RPS' }, { label: 'Excess load', value: '500 RPS' }],
-          prediction: checkpoint('If traffic remains at 1,200 RPS and no buffering or shedding is added, what is the most likely immediate symptom?', 'Queue growth and rising latency at Inventory', ['Higher successful throughput than 1,200 RPS', 'Lower latency at every service', 'Automatic capacity increase'], 'Arrival rate exceeds service rate by 500 RPS. A finite queue eventually saturates; timeout and rejection behavior depends on configured limits.'),
-        },
-        {
-          title: 'Select a safe control',
-          detail: 'Apply bounded queues, deadlines, backpressure and load shedding. Scale the actual bottleneck or reduce its work.',
-          metrics: [{ label: 'Controls', value: 'Backpressure · deadlines · load shedding' }, { label: 'Scale target', value: 'Inventory dependency' }],
-          prediction: checkpoint('Which scaling action directly raises the current path ceiling?', 'Increase Inventory Service capacity', ['Add API Gateway replicas only', 'Increase client retry frequency', 'Remove request deadlines'], 'Scaling a non-bottleneck does not raise the minimum capacity of the serial path. Retries without budgets can amplify overload.'),
-        },
-        {
-          title: 'Verify the new operating point',
-          detail: 'Recalculate the path minimum after scaling, then load-test with realistic latency distributions, retries and failure rates.',
-          metrics: [{ label: 'Method', value: 'Bottleneck re-evaluation + load test' }, { label: 'Model limit', value: 'Steady-state serial capacity only' }],
-        },
+        frame('Inject traffic into the request path', `Requests traverse API Gateway → Order Service → Inventory Service. Offered traffic is ${sys.incomingRps.toLocaleString()} requests/second.`, [{ label: 'Incoming RPS', value: sys.incomingRps.toLocaleString() }, ...capacities.map((item) => ({ label: item.name, value: `${item.value.toLocaleString()} RPS` }))], checkpoint('Which dependency sets the steady-state ceiling for this serial path?', bottleneck.name, capacities.filter((item) => item.name !== bottleneck.name).map((item) => item.name), 'For a serial path, the minimum capacity among required dependencies bounds steady-state throughput in this simplified model.')),
+        frame('Propagate the capacity constraint', stable ? 'Offered traffic is within the smallest stated service capacity; this model predicts no sustained queue growth from throughput alone.' : `Arrival rate exceeds the path capacity by ${excess.toLocaleString()} RPS. A queue grows until bounded capacity, timeout or rejection behavior intervenes.`, [{ label: 'Path capacity', value: `${bottleneck.value.toLocaleString()} RPS` }, { label: 'Excess load', value: `${excess.toLocaleString()} RPS` }], checkpoint('What is the expected queue behavior at this offered load?', stable ? 'No sustained queue growth from capacity mismatch alone' : 'Queue depth and latency rise until backpressure or a limit intervenes', ['The path automatically exceeds its bottleneck capacity', 'Retries always reduce load'], 'When arrivals exceed service capacity, backlog grows. If arrivals remain below capacity, this simple steady-state model does not predict overload.')),
+        frame('Choose the scaling target', 'Scale the constrained dependency or reduce the work it performs. Scaling upstream services alone does not raise the serial path ceiling.', [{ label: 'Bottleneck', value: bottleneck.name }, { label: 'Scaling target', value: bottleneck.name }], checkpoint('Which single change directly raises the current path capacity?', `Increase ${bottleneck.name} capacity`, ['Scale only the API Gateway', 'Increase unbounded client retries'], 'Increasing capacity at a non-bottleneck does not change the minimum capacity. Retry budgets and load shedding prevent overload amplification.')),
+        frame('Validate with realistic traffic', 'Real distributed systems also need queueing distributions, fan-out, retries, deadlines, partial failures, autoscaling delays and load tests.', [{ label: 'Simplified path ceiling', value: `${bottleneck.value.toLocaleString()} RPS` }, { label: 'Bottleneck', value: bottleneck.name }, { label: 'Model boundary', value: 'Steady-state serial path' }]),
       ];
-    case 'concurrency-lost-update':
+    }
+    case 'concurrency-lost-update': {
+      const tx = inputs.concurrency;
+      const t1Value = tx.initialBalance - tx.firstWithdrawal;
+      const t2Value = tx.initialBalance - tx.secondWithdrawal;
+      const serialValue = tx.initialBalance - tx.firstWithdrawal - tx.secondWithdrawal;
       return [
-        {
-          title: 'Both transactions read the same value',
-          detail: 'Account balance starts at 100. T1 and T2 each read 100 before either write becomes visible.',
-          metrics: [{ label: 'Initial balance', value: '100' }, { label: 'T1 reads', value: '100' }, { label: 'T2 reads', value: '100' }],
-          prediction: checkpoint('T1 withdraws 30 and T2 withdraws 50 using read-modify-write. What value does T1 calculate locally?', '70', ['50', '20', '100'], 'T1 computes 100 − 30 = 70 from its own earlier read. T2 independently computes 50.'),
-        },
-        {
-          title: 'T1 writes its derived value',
-          detail: 'T1 stores 70. T2 still holds its stale local value 100 from the earlier read.',
-          metrics: [{ label: 'Stored balance', value: '70' }, { label: 'T2 local snapshot', value: '100' }],
-          prediction: checkpoint('If T2 now writes its previously calculated value, what will the stored balance become?', '50', ['20', '70', '150'], 'T2 overwrites 70 with 100 − 50 = 50. The update from T1 is lost.'),
-        },
-        {
-          title: 'Observe the lost update',
-          detail: 'The final value is 50, although the two withdrawals total 80 and the serially correct balance would be 20.',
-          metrics: [{ label: 'Actual final', value: '50' }, { label: 'Expected serial result', value: '20' }, { label: 'Lost amount', value: '30' }],
-          prediction: checkpoint('Which approach prevents this read-modify-write overwrite for a single account row?', 'Atomic UPDATE or row-level locking', ['Retry both stale writes unchanged', 'Use a longer client timeout', 'Read from a replica'], 'An atomic conditional update or correctly scoped row lock serializes the conflicting modification. Serializable isolation is another option with retry handling.'),
-        },
-        {
-          title: 'Choose a concurrency-safe design',
-          detail: 'Use an atomic balance update with a sufficient-funds predicate, or lock the row and handle serialization failures. Test retries for idempotency.',
-          metrics: [{ label: 'Safe pattern', value: 'Atomic update / lock / serializable retry' }, { label: 'Assumption', value: 'Single-row account invariant' }],
-        },
+        frame('Both transactions read the same value', `Initial balance is ${tx.initialBalance}. T1 and T2 both read ${tx.initialBalance} before either commits.`, [{ label: 'Initial balance', value: String(tx.initialBalance) }, { label: 'T1 withdrawal', value: String(tx.firstWithdrawal) }, { label: 'T2 withdrawal', value: String(tx.secondWithdrawal) }], checkpoint('What value does T1 calculate from its earlier read?', String(t1Value), [String(t2Value), String(tx.initialBalance), String(serialValue)], 'T1 independently computes initial balance minus its own withdrawal.')),
+        frame('T1 commits its value', `T1 writes ${t1Value}. T2 still holds its earlier snapshot and has independently calculated ${t2Value}.`, [{ label: 'Stored after T1', value: String(t1Value) }, { label: 'T2 stale calculation', value: String(t2Value) }], checkpoint('If T2 writes its stale read-modify-write result, what is stored?', String(t2Value), [String(serialValue), String(t1Value), String(tx.initialBalance)], 'T2 overwrites T1 with a value derived from the original balance. The first withdrawal is lost.')),
+        frame('Compare actual and serial outcomes', `The lost-update interleaving stores ${t2Value}; serial execution would produce ${serialValue}. The difference is ${t2Value - serialValue}.`, [{ label: 'Interleaved final', value: String(t2Value) }, { label: 'Serial expected', value: String(serialValue) }, { label: 'Lost update amount', value: String(t2Value - serialValue) }], checkpoint('Which technique prevents this stale overwrite?', 'Atomic conditional UPDATE or row-level locking', ['Retry stale writes unchanged', 'Read from a lagging replica', 'Increase client timeout'], 'An atomic update, correctly scoped lock or serializable transaction with retry handling protects the invariant.')),
+        frame('Choose a concurrency-safe design', 'Use atomic conditional updates, row-level locks or serializable isolation with bounded retries and idempotency. Validate the exact database isolation semantics.', [{ label: 'Invariant', value: 'No lost withdrawal' }, { label: 'Safe patterns', value: 'Atomic update · lock · serializable retry' }, { label: 'Model', value: 'Two-transaction schedule' }]),
       ];
-    case 'cloud-pipeline-gate':
+    }
+    case 'cloud-pipeline-gate': {
+      const cloud = inputs.cloud;
+      const firstOutcome = cloud.secretDetected ? 'Fail closed and block promotion' : 'Continue to build and test';
+      const secondOutcome = cloud.secretDetected ? 'Rotate the exposed credential before retry' : 'Keep the credential scan gate enabled';
+      const finalOutcome = cloud.testsPass && cloud.vulnerabilityScanPass && cloud.signatureValid ? 'Promote the signed, verified image digest' : 'Block promotion until every required gate passes';
       return [
-        {
-          title: 'Run source and build gates',
-          detail: 'A delivery pipeline performs secret scanning, build, unit/contract tests, vulnerability scanning, image signing and deployment promotion.',
-          metrics: [{ label: 'Pipeline stages', value: '6' }, { label: 'Current stage', value: 'Secret scan + build' }],
-          prediction: checkpoint('A committed credential is detected by the secret scanner. What should the pipeline do?', 'Fail closed and block promotion', ['Continue and warn only', 'Deploy, then rotate later', 'Skip all downstream checks'], 'A leaked credential is a security incident. Block the artifact, remove the secret from source and rotate the exposed credential.'),
-        },
-        {
-          title: 'Stop at the failed security gate',
-          detail: 'The artifact is not promoted. The secret must be removed and rotated; history remediation may also be required.',
-          metrics: [{ label: 'Gate', value: 'Secret scan' }, { label: 'Outcome', value: 'Blocked' }],
-          prediction: checkpoint('After removing the secret from the current commit, what else is required before retry?', 'Rotate the exposed credential', ['Only rename the environment variable', 'Disable secret scanning', 'Promote the existing artifact'], 'Removing a secret from the latest tree does not invalidate a credential that may already have been exposed.'),
-        },
-        {
-          title: 'Rebuild and verify the artifact',
-          detail: 'Run tests and vulnerability checks, produce an immutable image digest, then sign and attest that exact artifact.',
-          metrics: [{ label: 'Artifact identity', value: 'Immutable digest' }, { label: 'Evidence', value: 'Tests + scan + signature' }],
-          prediction: checkpoint('What should the deployment admission policy verify?', 'Signature and provenance for the exact image digest', ['Only a mutable image tag', 'The developer workstation hostname', 'That the pipeline had no warnings'], 'A signature and provenance bound to the immutable digest prevent substituting a different image after verification.'),
-        },
-        {
-          title: 'Promote only verified artifacts',
-          detail: 'Deploy through a controlled rollout, observe health and error budgets, and retain rollback capability.',
-          metrics: [{ label: 'Promotion', value: 'Verified digest only' }, { label: 'Rollout', value: 'Canary / progressive delivery' }],
-        },
+        frame('Inspect source before building', cloud.secretDetected ? 'The secret scanner detected a committed credential. The credential may already be exposed even if it is removed from the latest source tree.' : 'No committed secret was detected in this scan. Continue only through the remaining required checks.', [{ label: 'Secret detected', value: cloud.secretDetected ? 'Yes' : 'No' }, { label: 'Gate policy', value: 'Fail closed' }], checkpoint('What should happen when a credential is detected?', firstOutcome, [cloud.secretDetected ? 'Continue with a warning' : 'Deploy immediately', 'Disable secret scanning'], 'A detected credential blocks promotion. Remove it from source and rotate it because deleting it from the latest commit does not revoke an exposed secret.')),
+        frame('Resolve the security finding', cloud.secretDetected ? 'Remove the secret from source and history as appropriate, rotate the credential, then regenerate the artifact.' : 'Keep scanning active and ensure credentials are injected through approved secret management.', [{ label: 'Credential remediation', value: cloud.secretDetected ? 'Required' : 'No finding in this fixture' }], checkpoint('What is required after a credential exposure?', secondOutcome, ['Only rename the environment variable', 'Reuse the exposed credential', 'Disable the gate'], 'An exposed credential must be rotated or revoked. Source cleanup alone does not invalidate it.')),
+        frame('Verify build and artifact evidence', 'A release candidate needs successful tests, vulnerability policy checks and a signature/provenance statement bound to its immutable digest.', [{ label: 'Tests', value: cloud.testsPass ? 'Pass' : 'Fail' }, { label: 'Vulnerability scan', value: cloud.vulnerabilityScanPass ? 'Pass' : 'Fail' }, { label: 'Digest signature', value: cloud.signatureValid ? 'Valid' : 'Invalid' }], checkpoint('What should deployment admission verify?', finalOutcome, ['Only a mutable image tag', 'Only that a pipeline ran', 'The developer workstation name'], 'Promotion should verify all required gates and provenance for the exact immutable artifact digest.')),
+        frame('Promote only a verified artifact', 'Use a controlled rollout, observe service health and error budgets, and retain a tested rollback path. This fixture does not invoke a CI provider or cloud API.', [{ label: 'Promotion decision', value: finalOutcome.startsWith('Promote') ? 'Allowed by fixture' : 'Blocked by fixture' }, { label: 'Rollout', value: 'Canary / progressive delivery' }, { label: 'Rollback', value: 'Required' }]),
       ];
+    }
   }
 }
