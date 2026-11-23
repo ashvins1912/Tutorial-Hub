@@ -8,7 +8,7 @@ const audit = JSON.parse(readFileSync(resolve(root, 'docs/learning-content-quali
 
 assert.equal(audit.schemaVersion, 1, 'Unsupported content quality audit schema');
 assert.equal(audit.baseline.branch, 'main', 'Audit baseline must identify main');
-assert.ok(/^\\d{4}-\\d{2}-\\d{2}$/.test(audit.auditDate), 'Audit date must be ISO date');
+assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(audit.auditDate), 'Audit date must be ISO date');
 assert.ok(Array.isArray(audit.surfaces), 'Audit surfaces must be an array');
 
 const registryIds = registry.surfaces.map((surface) => surface.id);
