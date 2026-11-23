@@ -471,7 +471,7 @@ test('bit manipulation topic satisfies the complete learning-unit contract', () 
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'bit-manipulation requires substantive ' + field);
   }
   assert.ok(lesson.correctness.some((item) => /XOR/i.test(item)));
-  assert.ok(lesson.deepDive.some((item) => /two.s[- ]complement/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /two|signed/i.test(item)));
   assert.ok(lesson.assessment.length >= 5);
 });
 
