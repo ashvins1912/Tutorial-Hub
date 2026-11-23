@@ -468,7 +468,7 @@ A topic may mark an item "not applicable" only with a short reason. Missing evid
 - [ ] Explain both **what happens** and **why it happens**.
 - [ ] Compare at least two approaches when meaningful, including when the simpler approach is preferable.
 - [ ] Use counterexamples to show where an approach fails.
-- [ ] Ask prediction questions before revealing outcomes.
+- [x] Ask prediction questions before revealing outcomes in the supported binary-search and bubble-sort trace runtime. Domain-specific simulators still need their own reviewed prediction models and fixtures.
 - [ ] Use retrieval and teach-back rather than relying on passive reading.
 - [ ] Avoid unexplained jumps, circular definitions, contradictory terminology and unsupported claims.
 - [ ] Provide accessible text alternatives for information conveyed only by color, motion, audio or diagrams.
