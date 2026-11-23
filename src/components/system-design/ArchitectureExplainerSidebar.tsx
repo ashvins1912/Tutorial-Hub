@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { CopyButton } from '../ui';
+import { useAuth } from '../../auth/AuthContext';
 
 export type ArchitectureExplainFocus =
   | 'full-walkthrough'
@@ -198,6 +199,7 @@ export const ArchitectureExplainerSidebar: React.FC<ArchitectureExplainerSidebar
   requestTriggerCount,
 }) => {
   const prefersReducedMotion = useReducedMotion();
+  const { session } = useAuth();
   const [focus, setFocus] = useState<ArchitectureExplainFocus>('full-walkthrough');
   const [content, setContent] = useState<string>('');
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
@@ -223,7 +225,10 @@ export const ArchitectureExplainerSidebar: React.FC<ArchitectureExplainerSidebar
       try {
         const response = await fetch('/api/system-design/explain', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
           signal: controller.signal,
           body: JSON.stringify({
             architectureTitle: targetArch.architectureTitle,
@@ -303,7 +308,7 @@ export const ArchitectureExplainerSidebar: React.FC<ArchitectureExplainerSidebar
         }
       }
     },
-    []
+    [session?.access_token]
   );
 
   // Trigger generation whenever the user clicks the header "Explain Architecture" button
