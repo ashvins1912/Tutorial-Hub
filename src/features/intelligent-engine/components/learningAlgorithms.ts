@@ -49,3 +49,21 @@ export function parseInput(raw: string): number[] {
   if (values.length > 12) throw new Error('Use at most 12 values for a readable trace.');
   return values;
 }
+
+
+export type TracePrediction = { prompt: string; options: string[]; correctOption: string };
+
+export function buildTracePrediction(trace: TraceStep[], currentIndex: number): TracePrediction | null {
+  if (!Array.isArray(trace) || !Number.isInteger(currentIndex) || currentIndex < 0 || currentIndex >= trace.length - 1) return null;
+  const describe = (step: TraceStep) => (step.title + ': ' + step.explanation).slice(0, 180);
+  const correctOption = describe(trace[currentIndex + 1]);
+  const candidates = [...new Set(trace
+    .filter((_, index) => index !== currentIndex + 1)
+    .map(describe)
+    .filter((description) => description !== correctOption))].slice(0, 3);
+  if (!candidates.length) return null;
+  const options = [correctOption, ...candidates];
+  const rotation = currentIndex % options.length;
+  const rotated = [...options.slice(rotation), ...options.slice(0, rotation)];
+  return { prompt: 'What happens in the next transition?', options: rotated, correctOption };
+}
