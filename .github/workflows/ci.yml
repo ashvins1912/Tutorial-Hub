@@ -34,5 +34,7 @@ jobs:
         run: npm run test:dsa:arrays:01
       - name: Test Content Studio ingestion and classification
         run: npm run test:content-authoring
+      - name: Validate canonical learning surface inventory
+        run: npm run audit:learning-surfaces
       - name: Build frontend
         run: npm run build
