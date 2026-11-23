@@ -163,7 +163,115 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       {level:'Challenge',task:'Find cycle entry and merge two sorted lists.',goal:'Prove pointer alignment and preserve sorted order.'},
       {level:'Transfer',task:'Reverse nodes in groups of k.',goal:'Separate a complete group from the remaining suffix safely.'}
     ],
-    interviewChecks: ['Why does Floyd’s algorithm meet inside a cycle?', 'Why use a dummy node?', 'What is the difference between deleting a node and finding the node to delete?', 'How do you avoid losing the suffix while reversing?']
+    interviewChecks: ['Why does Floyd’s algorithm meet inside a cycle?', 'Why use a dummy node?', 'What is the difference between deleting a node and finding the node to delete?', 'How do you avoid losing the suffix while reversing?'],
+    learningOutcomes: [
+      'Model singly, doubly and circular linked lists using nodes and explicit reference invariants.',
+      'Derive the time cost of traversal, indexed access, insertion and deletion, distinguishing a known node from a searched-for position.',
+      'Implement traversal, insertion, deletion and reversal without losing references or introducing accidental cycles.',
+      'Use sentinel nodes to simplify head/tail boundary cases and merge operations.',
+      'Explain and implement fast/slow pointer techniques for middle nodes and Floyd cycle detection.',
+      'Compare linked lists with arrays and identify when a hash-map plus doubly linked list is useful.'
+    ],
+    prerequisites: [
+      'Understand object references, null, heap allocation and mutation in Java.',
+      'Be comfortable with loops, conditions and O(1)/O(n) complexity.',
+      'Review arrays to compare contiguous indexing with pointer traversal.',
+      'Know that two variables can refer to the same mutable node object.'
+    ],
+    deepDive: [
+      'A singly linked list node contains a value and one next reference. The head is the only entry point; the final node points to null. A list with no nodes has head = null.',
+      'A doubly linked list stores next and previous references. It supports local removal when a node reference is known, but every insertion/removal must update both directions consistently.',
+      'A circular list links the tail back to the head (or uses a sentinel). Traversal must stop by detecting a return to the start or by using a known size; waiting for null never terminates.',
+      'Array indexing is O(1) because the address is computed from a base and offset. Linked-list access at index i follows i links and is O(i); there is no constant-time random access.',
+      'Insertion after a known node is O(1): connect the new node to the old successor, then connect the predecessor to the new node. Searching for the predecessor remains O(n).',
+      'Deletion in a singly linked list usually requires the predecessor so it can bypass the removed node. A head deletion is special unless a dummy node is used. Copying the next value into a node is not a general substitute because it cannot delete the tail and changes node identity semantics.',
+      'A dummy/sentinel node is a permanent node before the logical head. It gives head insertion and deletion the same pointer-rewiring shape as interior operations. Do not expose the sentinel as data.',
+      'Iterative reversal maintains three references: prev is the reversed prefix, curr is the first unprocessed node, and next temporarily saves the remaining suffix before curr.next is overwritten.',
+      'Floyd cycle detection advances slow by one and fast by two. If a cycle exists, the relative speed is one node per iteration, so their distance modulo cycle length eventually becomes zero.',
+      'After a meeting, reset one pointer to head and move both one step at a time. Their distances to the cycle entry are congruent modulo the cycle length, so they meet at the entry.',
+      'For kth-from-end, a lead pointer advances k nodes before a follower starts. Maintaining a k-node gap makes the follower land at the required position when the lead reaches the end; define whether k is one-based.',
+      'Merging sorted lists uses a dummy tail. At each step, append the smaller current node; the chosen prefix remains sorted and contains the smallest items processed so far.',
+      'An LRU cache combines a hash map for O(1) average key lookup with a doubly linked list for O(1) removal and movement of a known node to the most-recently-used end.',
+      'Pointer algorithms should specify ownership and mutation. Reusing nodes is O(1) auxiliary space but mutates inputs; creating new nodes costs O(n) output storage and preserves the originals.'
+    ],
+    correctness: [
+      'Reversal invariant: prev is exactly the reversed prefix of the original list, curr is the first node of the untouched suffix, and no node is lost because next is saved before rewiring.',
+      'Each reversal iteration moves exactly one node from the untouched suffix to the front of the reversed prefix. When curr becomes null, prev is the complete reversed list.',
+      'Cycle detection: if a cycle has length L, fast gains one node per iteration relative to slow; the relative offset ranges modulo L and must eventually be zero.',
+      'Cycle-entry proof: after a meeting, the distance from head to entry and the distance from the meeting point to entry differ by a multiple of the cycle length; moving both pointers one step preserves alignment until entry.',
+      'Merge invariant: the output prefix is sorted and contains the smallest nodes among the prefixes consumed from both inputs; choosing the smaller head preserves sorted order.',
+      'Sentinel invariant: the sentinel always precedes the logical result, so updating tail.next never requires a separate empty-result branch.'
+    ],
+    implementationSteps: [
+      'Draw every node as a box and every reference as a directed arrow. Label head, tail, null and any sentinel.',
+      'Write down whether the operation mutates existing nodes or allocates new nodes; preserve node identity when required.',
+      'Before overwriting a next reference, save the successor if any unprocessed node remains reachable only through it.',
+      'For deletion, identify the predecessor and define behavior for empty list, head, tail and missing value.',
+      'For reversal, name prev, curr and next according to their invariant roles; advance only after the edge has been rewired.',
+      'For fast/slow loops, guard fast != null and fast.next != null before reading fast.next.next.',
+      'For cycle-entry logic, handle the no-cycle case before resetting pointers.',
+      'Test with null, singleton, two nodes, duplicates, tail operations, self-loop and a cycle beginning at the head or in the middle.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Iterative reversal and Floyd cycle detection', code: `static final class Node {
+    int value;
+    Node next;
+    Node(int value) { this.value = value; }
+}
+
+static Node reverse(Node head) {
+    Node previous = null;
+    Node current = head;
+    while (current != null) {
+        Node next = current.next; // save the untouched suffix
+        current.next = previous;  // reverse one edge
+        previous = current;
+        current = next;
+    }
+    return previous;
+}
+
+static boolean hasCycle(Node head) {
+    Node slow = head;
+    Node fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+        if (slow == fast) return true;
+    }
+    return false;
+}`, explanation: 'Reversal is O(n) time and O(1) auxiliary space; it mutates the original nodes. Floyd detection is O(n) time and O(1) space. The identity comparison is intentional: two references meet only when they point to the same node object.' }
+    ],
+    traceExercises: [
+      'Reverse A → B → C → null. After each iteration, draw prev, curr, next and all next arrows.',
+      'Run slow/fast on a five-node acyclic list. Record each pointer before and after every iteration and show why the null guard is required.',
+      'Create a cycle where node 4 points to node 2. Trace the meeting phase and then the reset-to-head phase until the entry is found.',
+      'Merge 1 → 4 → 7 with 2 → 3 → 8. Record the dummy tail after each selected node and verify the output prefix remains sorted.'
+    ],
+    realWorldApplications: [
+      'LRU caches use a hash map plus doubly linked list to support average O(1) lookup and recency updates.',
+      'Schedulers and round-robin processing can use circular linked structures when traversal repeatedly wraps around.',
+      'Memory allocators and free lists link reusable blocks without requiring contiguous storage.',
+      'Undo/redo histories can use doubly linked navigation between adjacent states.',
+      'Graph adjacency structures and intrusive lists use references when nodes participate in multiple relationships.'
+    ],
+    assessment: [
+      'Explain why inserting after a known node is O(1) but inserting at an arbitrary index is O(n).',
+      'Implement iterative reversal and state the loop invariant before the first iteration and after each iteration.',
+      'Prove Floyd meeting for a cycle of length L and derive the reset-to-head cycle-entry procedure.',
+      'Compare singly and doubly linked list deletion when the target node reference is already known.',
+      'Design a merge of two sorted lists and explain whether it reuses nodes or allocates new ones.',
+      'List the pointer updates required to move a node to the front of an LRU doubly linked list.',
+      'Test empty, singleton, two-node, duplicate-value, self-loop, head-cycle and middle-cycle cases.'
+    ],
+    revisionPrompts: [
+      'Draw a singly and doubly linked node from memory and label every reference.',
+      'Reconstruct the three-pointer reversal algorithm without looking at code.',
+      'Explain the fast/slow relative-speed argument using a cycle of length five.',
+      'After two days, implement cycle detection and cycle-entry lookup and test a self-loop.',
+      'After one week, compare array and linked-list operations with both asymptotic cost and memory-locality trade-offs.',
+      'Explain how a hash map plus doubly linked list gives an LRU cache O(1) average operations.'
+    ]
   },
   {
     id: 'strings', sourcePages: [2], title: '4. Strings', promise: 'Solve character, substring, palindrome, parsing and pattern-matching problems safely.',
