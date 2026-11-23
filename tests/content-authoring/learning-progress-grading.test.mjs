@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateQuizScore, calculateObjectiveResults, aggregateObjectiveMastery, buildObjectiveReviewPlan, buildAccessibleLessonFilter } from '../../server/routes/learningProgressRoutes.ts';
+import { calculateQuizScore, calculateObjectiveResults, aggregateObjectiveMastery, buildObjectiveReviewPlan, selectQuizQuestions, buildAccessibleLessonFilter } from '../../server/routes/learningProgressRoutes.ts';
 
 const quiz = [
   { correctAnswer: 'B' },
@@ -88,4 +88,28 @@ test('objective review queue uses the latest valid attempt and marks overdue rev
     { attemptedAt: '2026-11-01T12:00:00Z', objectiveResults: [{ objectiveId: 'A', correct: 0, total: 1 }] },
   ], now);
   assert.equal(due[0].status, 'due');
+});
+
+
+test('focused practice selects only valid, unique, bounded lesson question indexes', () => {
+  const selected = selectQuizQuestions(quiz, [1]);
+  assert.deepEqual(selected, { indexes: [1], questions: [quiz[1]] });
+  assert.deepEqual(selectQuizQuestions(quiz).indexes, [0, 1]);
+  assert.equal(selectQuizQuestions(quiz, []), null);
+  assert.equal(selectQuizQuestions(quiz, [0, 0]), null);
+  assert.equal(selectQuizQuestions(quiz, [2]), null);
+  assert.equal(selectQuizQuestions(quiz, ['1']), null);
+});
+
+test('focused practice grading scores the selected objective questions only', () => {
+  const selected = selectQuizQuestions([
+    { correctAnswer: 'B', objectiveIds: ['A'] },
+    { correctAnswer: 'C', objectiveIds: ['B'] },
+    { correctAnswer: 'D', objectiveIds: ['A'] },
+  ], [0, 2]);
+  assert.ok(selected);
+  assert.equal(calculateQuizScore(selected.questions, { '0': 'B', '1': 'D' }), 2);
+  assert.deepEqual(calculateObjectiveResults(selected.questions, { '0': 'B', '1': 'D' }), [
+    { objectiveId: 'A', correct: 2, total: 2, accuracy: 100 },
+  ]);
 });
