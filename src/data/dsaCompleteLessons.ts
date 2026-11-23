@@ -360,7 +360,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'queue-deep-dive',
     title: '16. Queue, Deque & Circular Queue',
-    sourcePages: [8],
+    sourcePages: [7],
     promise: 'Understand FIFO processing, queue implementations, circular buffers and when a deque is more useful than a basic queue.',
     mentalModel: 'A queue is a line with two controlled ends: new work joins at the rear and the oldest eligible work leaves at the front. The invariant is ordering by arrival, unless the problem explicitly defines priorities or both-end operations.',
     concepts: [
@@ -430,7 +430,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'sorting-algorithms',
     title: '17. Sorting Algorithms & Stability',
-    sourcePages: [14],
+    sourcePages: [13],
     promise: 'Compare elementary and efficient sorting methods by mechanics, stability, memory use and input characteristics.',
     mentalModel: 'Sorting is not just putting values in order. Each algorithm reduces disorder differently: exchange neighbours, select the next minimum, insert into a sorted prefix, divide and merge, partition around a pivot, or repeatedly extract from a heap. The right choice depends on input size, existing order, memory limits and stability requirements.',
     concepts: [
@@ -504,7 +504,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'searching-algorithms',
     title: '18. Searching: Linear, Binary & Boundaries',
-    sourcePages: [15],
+    sourcePages: [14],
     promise: 'Select a search method from ordering guarantees and reason precisely about loop boundaries and duplicates.',
     mentalModel: 'Searching eliminates candidates while preserving the possibility that the answer remains. Linear search removes one candidate at a time. Binary search removes roughly half only when ordering or a monotonic property justifies that elimination.',
     concepts: [
@@ -572,7 +572,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'binary-search-on-answer',
     title: '19. Binary Search on the Answer',
-    sourcePages: [16],
+    sourcePages: [15],
     promise: 'Turn optimisation problems into a monotonic yes/no decision and binary-search the smallest or largest feasible answer.',
     mentalModel: 'Do not binary-search the input array when the unknown is a numeric answer. Guess a candidate answer, ask whether it is feasible, and use the monotonic direction of feasibility to eliminate half of the answer range.',
     concepts: [
@@ -641,7 +641,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'bit-manipulation',
     title: '20. Bit Manipulation & Binary Tricks',
-    sourcePages: [17],
+    sourcePages: [16],
     promise: 'Reason about integer representations and use bitwise operations to encode flags, test parity and solve XOR-based problems.',
     mentalModel: 'An integer is represented by bits. Bitwise operations act on corresponding positions independently, so many operations become compact transformations of a fixed-width binary representation. Correctness depends on language integer width and signed-number rules.',
     concepts: [
