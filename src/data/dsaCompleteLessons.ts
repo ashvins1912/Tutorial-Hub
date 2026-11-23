@@ -355,7 +355,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       'Why mark a BFS cell visited when it is enqueued?',
       'How would you reduce the space of a grid DP to O(cols)?'
     ]
-  }
+  },
 
   {
     id: 'queue-deep-dive',
