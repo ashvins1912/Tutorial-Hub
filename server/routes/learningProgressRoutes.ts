@@ -21,13 +21,49 @@ async function findAccessibleLesson(lessonId: string, userId: string) {
   return ContentAuthoringJob.findOne(buildAccessibleLessonFilter(lessonId, userId)).select('generatedLesson.quiz').lean();
 }
 
+function isQuizAnswerCorrect(question: { correctAnswer: string | string[] }, answer: string) {
+  const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
+  const actual = answer.split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
+  return expected.length === actual.length && expected.every((value, index) => value === actual[index]);
+}
+
+export function calculateObjectiveResults(quiz: Array<{ correctAnswer: string | string[]; objectiveIds?: string[] }>, answers: Record<string, string>) {
+  const results = new Map<string, { objectiveId: string; correct: number; total: number; accuracy: number }>();
+  quiz.forEach((question, index) => {
+    const objectiveIds = Array.isArray(question.objectiveIds) ? [...new Set(question.objectiveIds.filter((id) => typeof id === 'string' && id.length > 0))] : [];
+    for (const objectiveId of objectiveIds) {
+      const current = results.get(objectiveId) || { objectiveId, correct: 0, total: 0, accuracy: 0 };
+      current.total += 1;
+      if (isQuizAnswerCorrect(question, answers[String(index)] || '')) current.correct += 1;
+      current.accuracy = Math.round((current.correct / current.total) * 100);
+      results.set(objectiveId, current);
+    }
+  });
+  return [...results.values()].sort((a, b) => a.objectiveId.localeCompare(b.objectiveId));
+}
+
+export function aggregateObjectiveMastery(history: Array<{ attemptedAt: Date | string; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number }> }>) {
+  const totals = new Map<string, { objectiveId: string; correct: number; total: number; attempts: number; lastAttemptAt: Date | string }>();
+  for (const attempt of history) {
+    for (const result of attempt.objectiveResults || []) {
+      if (!result || typeof result.objectiveId !== 'string' || !Number.isInteger(result.correct) || !Number.isInteger(result.total) || result.total < 1 || result.correct < 0 || result.correct > result.total) continue;
+      const current = totals.get(result.objectiveId) || { objectiveId: result.objectiveId, correct: 0, total: 0, attempts: 0, lastAttemptAt: attempt.attemptedAt };
+      current.correct += result.correct;
+      current.total += result.total;
+      current.attempts += 1;
+      current.lastAttemptAt = attempt.attemptedAt;
+      totals.set(result.objectiveId, current);
+    }
+  }
+  return [...totals.values()].map((item) => {
+    const accuracy = Math.round((item.correct / item.total) * 100);
+    return { ...item, accuracy, status: accuracy >= 80 ? 'mastered' as const : accuracy >= 50 ? 'developing' as const : 'needs-review' as const };
+  }).sort((a, b) => a.objectiveId.localeCompare(b.objectiveId));
+}
+
 export function calculateQuizScore(quiz: Array<{ correctAnswer: string | string[] }>, answers: Record<string, string>) {
   if (Object.keys(answers).length !== quiz.length || quiz.some((_, index) => typeof answers[String(index)] !== 'string')) return null;
-  return quiz.reduce((score, question, index) => {
-    const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
-    const actual = (answers[String(index)] || '').split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
-    return score + (expected.length === actual.length && expected.every((value, itemIndex) => value === actual[itemIndex]) ? 1 : 0);
-  }, 0);
+  return quiz.reduce((score, question, index) => score + (isQuizAnswerCorrect(question, answers[String(index)] || '') ? 1 : 0), 0);
 }
 
 function normalizeAnswers(value: unknown): Record<string, string> | null {
@@ -55,7 +91,8 @@ router.get('/:lessonId', async (req: Request, res: Response) => {
     accuracy: latestAttempt.accuracy,
     correctAnswers: lesson.generatedLesson.quiz.map((question: any) => question.correctAnswer),
   } : null;
-  return res.json({ progress: progress || null, grading });
+  const objectiveMastery = aggregateObjectiveMastery(progress?.quizHistory || []);
+  return res.json({ progress: progress || null, grading, objectiveMastery });
 });
 
 router.put('/:lessonId', async (req: Request, res: Response) => {
@@ -67,7 +104,8 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
   let quizAccuracy: number | null = null;
   let quizScore = 0;
-  let quizGrading: { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]> } | null = null;
+  let objectiveResults: ReturnType<typeof calculateObjectiveResults> = [];
+  let quizGrading: { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults: ReturnType<typeof calculateObjectiveResults> } | null = null;
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
   if (body.algorithm !== undefined) {
     if (!['binary-search', 'bubble-sort'].includes(body.algorithm)) return res.status(400).json({ code: 'INVALID_ALGORITHM' });
@@ -104,7 +142,8 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     update.quizTotal = quiz.length;
     update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
     update.lastAnswers = normalizedAnswers;
-    quizGrading = { score: quizScore, total: quiz.length, accuracy, correctAnswers: quiz.map((question: any) => question.correctAnswer) };
+    objectiveResults = calculateObjectiveResults(quiz, normalizedAnswers);
+    quizGrading = { score: quizScore, total: quiz.length, accuracy, correctAnswers: quiz.map((question: any) => question.correctAnswer), objectiveResults };
   }
   if (body.completedPracticeIds !== undefined) {
     if (!Array.isArray(body.completedPracticeIds) || body.completedPracticeIds.length > 100 || body.completedPracticeIds.some((id: unknown) => typeof id !== 'string' || id.length > 100)) {
@@ -116,14 +155,15 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (quizAccuracy !== null) {
     atomicUpdate.$inc = { attempts: 1 };
     atomicUpdate.$max = { bestScore: quizAccuracy };
-    atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date() }], $slice: -30 } };
+    atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date(), objectiveResults }], $slice: -30 } };
   }
   const progress = await LearningProgress.findOneAndUpdate(
     { userId: req.authUser!.id, lessonId: req.params.lessonId },
     atomicUpdate,
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   ).lean();
-  return res.json({ ok: true, progress, grading: quizGrading });
+  const objectiveMastery = aggregateObjectiveMastery(progress?.quizHistory || []);
+  return res.json({ ok: true, progress, grading: quizGrading ? { ...quizGrading, objectiveMastery } : null, objectiveMastery });
 });
 
 router.get('/', async (req: Request, res: Response) => {

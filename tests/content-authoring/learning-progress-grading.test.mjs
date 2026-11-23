@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateQuizScore, buildAccessibleLessonFilter } from '../../server/routes/learningProgressRoutes.ts';
+import { calculateQuizScore, calculateObjectiveResults, aggregateObjectiveMastery, buildAccessibleLessonFilter } from '../../server/routes/learningProgressRoutes.ts';
 
 const quiz = [
   { correctAnswer: 'B' },
@@ -23,5 +23,35 @@ test('learner access permits the owner or a published lesson, not another privat
   assert.deepEqual(filter.$or, [
     { ownerId: 'learner-456' },
     { publishedAt: { $type: 'date' } },
+  ]);
+});
+
+
+test('objective scoring attributes each question to its linked objectives', () => {
+  const objectiveQuiz = [
+    { correctAnswer: 'B', objectiveIds: ['Understand invariants', 'Trace binary search'] },
+    { correctAnswer: ['A', 'C'], objectiveIds: ['Trace binary search'] },
+    { correctAnswer: 'D' },
+  ];
+  assert.deepEqual(calculateObjectiveResults(objectiveQuiz, { '0': 'B', '1': 'A', '2': 'D' }), [
+    { objectiveId: 'Trace binary search', correct: 1, total: 2, accuracy: 50 },
+    { objectiveId: 'Understand invariants', correct: 1, total: 1, accuracy: 100 },
+  ]);
+});
+
+test('objective mastery aggregates evidence across attempts and assigns review status', () => {
+  const mastery = aggregateObjectiveMastery([
+    { attemptedAt: '2026-11-01T10:00:00Z', objectiveResults: [
+      { objectiveId: 'A', correct: 1, total: 2 },
+      { objectiveId: 'B', correct: 0, total: 1 },
+    ] },
+    { attemptedAt: '2026-11-02T10:00:00Z', objectiveResults: [
+      { objectiveId: 'A', correct: 2, total: 2 },
+      { objectiveId: 'B', correct: 1, total: 1 },
+    ] },
+  ]);
+  assert.deepEqual(mastery.map(({ objectiveId, correct, total, attempts, accuracy, status }) => ({ objectiveId, correct, total, attempts, accuracy, status })), [
+    { objectiveId: 'A', correct: 3, total: 4, attempts: 2, accuracy: 75, status: 'developing' },
+    { objectiveId: 'B', correct: 1, total: 2, attempts: 2, accuracy: 50, status: 'developing' },
   ]);
 });

@@ -5,7 +5,8 @@ import { binarySearchTrace, bubbleSortTrace, parseInput } from './learningAlgori
 import type { LessonSimulator } from './lessonSimulatorContract';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string; objectiveIds?: string[] };
-type QuizGrading = { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]> };
+type ObjectiveMastery = { objectiveId: string; correct: number; total: number; attempts: number; accuracy: number; status: 'mastered' | 'developing' | 'needs-review'; lastAttemptAt: string };
+type QuizGrading = { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy: number }>; objectiveMastery?: ObjectiveMastery[] };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 
 export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[]; simulator?: LessonSimulator }) {
@@ -21,20 +22,22 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const [completedPracticeIds, setCompletedPracticeIds] = useState<string[]>([]);
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
   const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
+  const [objectiveMastery, setObjectiveMastery] = useState<ObjectiveMastery[]>([]);
 
   useEffect(() => {
     let active = true;
     setProgressReady(false);
     setProgressStatus('Loading saved progress…');
     setAlgorithm(simulator?.algorithm || 'binary-search'); setRawValues(simulator?.initialInput || ''); setTarget(simulator?.target || ''); setTraceIndex(0);
-    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null);
+    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null); setObjectiveMastery([]);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
         if (!response.ok) throw new Error(response.status === 503 ? 'Database persistence is unavailable.' : 'Could not load saved progress.');
-        const payload = await response.json() as { progress?: { algorithm?: string; input?: string; target?: string; currentStep?: number; attempts?: number; lastScore?: number | null; bestScore?: number; masteryLevel?: string; lastAnswers?: Record<string, string>; completedPracticeIds?: string[] } | null; grading?: QuizGrading | null };
+        const payload = await response.json() as { progress?: { algorithm?: string; input?: string; target?: string; currentStep?: number; attempts?: number; lastScore?: number | null; bestScore?: number; masteryLevel?: string; lastAnswers?: Record<string, string>; completedPracticeIds?: string[] } | null; grading?: QuizGrading | null; objectiveMastery?: ObjectiveMastery[] };
         if (!active) return;
         const saved = payload.progress;
         setQuizGrading(payload.grading || null);
+        setObjectiveMastery(payload.objectiveMastery || []);
         if (saved) {
           if (simulator && saved.algorithm === simulator.algorithm) {
             setAlgorithm(simulator.algorithm);
@@ -105,9 +108,10 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
     try {
       const response = await apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quizAttempt: { total: quiz.length, answers } }) });
       if (!response.ok) throw new Error('Quiz progress could not be saved.');
-      const payload = await response.json() as { progress?: { attempts?: number; bestScore?: number; masteryLevel?: string }; grading?: QuizGrading | null };
+      const payload = await response.json() as { progress?: { attempts?: number; bestScore?: number; masteryLevel?: string }; grading?: QuizGrading | null; objectiveMastery?: ObjectiveMastery[] };
       if (!payload.grading) throw new Error('The server did not return verified quiz feedback.');
       setQuizGrading(payload.grading);
+      setObjectiveMastery(payload.objectiveMastery || payload.grading.objectiveMastery || []);
       setAttempts(payload.progress?.attempts ?? attempts + 1);
       setMasterySummary({ bestScore: payload.progress?.bestScore ?? accuracy, masteryLevel: payload.progress?.masteryLevel ?? nextLevel });
       setProgressStatus('Quiz result saved');
@@ -131,6 +135,8 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
       {quiz.map((question, index) => <fieldset key={index} disabled={submitted} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">{index + 1}. {question.question}</legend>{question.objectiveIds?.length ? <p className="text-[10px] text-sky-700 dark:text-sky-300">Assesses: {question.objectiveIds.join(' · ')}</p> : null}{question.options.map((option, optionIndex) => { const multi = Array.isArray(question.correctAnswer) && question.correctAnswer.length > 1; const selectedOptions = (answers[index] || '').split('|').filter(Boolean); return <label key={optionIndex} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type={multi ? 'checkbox' : 'radio'} name={`quiz-${jobId}-${index}`} checked={selectedOptions.includes(option)} onChange={() => setAnswers((currentAnswers) => { const current = (currentAnswers[index] || '').split('|').filter(Boolean); const next = multi ? (current.includes(option) ? current.filter((value) => value !== option) : [...current, option]) : [option]; return { ...currentAnswers, [index]: next.join('|') }; })} className="mt-0.5"/>{option}</label>; })}{submitted && <div className="rounded bg-slate-50 dark:bg-slate-950 p-2 text-[11px]"><strong>{isCorrect(question, answers[index] || '', index) ? 'Correct' : 'Review this answer'}</strong><p className="mt-1 text-slate-500">Answer: {(() => { const answer = quizGrading?.correctAnswers[index] ?? question.correctAnswer; return Array.isArray(answer) ? answer.join(', ') : answer || 'Verified after submission'; })()}. {question.explanation}</p></div>}</fieldset>)}
       {!submitted ? <button type="button" disabled={quiz.some((_, index) => !answers[index])} onClick={submitQuiz} className="rounded-lg bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">Submit answers</button> : <div className="space-y-2"><p className="text-sm font-semibold">Score: {score} / {quiz.length} ({accuracy}%)</p><p className="text-xs text-slate-500">Suggested next difficulty: <strong className="capitalize">{nextLevel}</strong>. {accuracy >= 80 ? 'Move to a harder practice set.' : accuracy >= 50 ? 'Review missed explanations, then try an intermediate set.' : 'Revisit the lesson fundamentals before retrying.'}</p><button type="button" onClick={() => { setAnswers({}); setSubmitted(false); setQuizGrading(null); void apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resetQuiz: true }) }).then((response) => { if (!response.ok) throw new Error('Reset failed'); setProgressStatus('Ready for another attempt'); }).catch(() => setProgressStatus('Quiz reset locally; saved history remains unchanged')); }} className="rounded-lg border px-4 py-2 text-xs">Retry quiz</button></div>}
     </div>}
+
+    {objectiveMastery.length > 0 && <section className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3" aria-label="Learning objective mastery"><div><h4 className="text-sm font-semibold">Objective mastery</h4><p className="mt-1 text-[11px] text-slate-500">Based on verified quiz attempts, combined across your recent history.</p></div><div className="space-y-3">{objectiveMastery.map((item) => <div key={item.objectiveId} className="space-y-1.5"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-medium">{item.objectiveId}</span><span className="text-[10px] capitalize text-slate-500">{item.status.replace('-', ' ')} · {item.accuracy}% ({item.correct}/{item.total})</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-sky-600" style={{ width: `${item.accuracy}%` }}/></div><p className="text-[10px] text-slate-400">Evidence from {item.attempts} attempt{item.attempts === 1 ? '' : 's'}</p></div>)}</div></section>}
 
     {practiceTasks.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2"><h4 className="text-sm font-semibold">Practice checklist</h4>{practiceTasks.map((task, index) => <div key={index} className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={completedPracticeIds.includes("task-" + index)} onChange={(event) => setCompletedPracticeIds((currentIds) => event.target.checked ? [...currentIds, "task-" + index] : currentIds.filter((id) => id !== "task-" + index))}/>{task.title}</label><p className="mt-2 text-xs text-slate-500">{task.instructions}</p><p className="mt-1 text-xs text-slate-500">Expected outcome: {task.expectedOutcome}</p></div>)}</div>}
     <CodeExecutionLab />
