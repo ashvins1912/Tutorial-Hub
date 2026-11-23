@@ -254,3 +254,12 @@ known_gaps: []
 ```
 
 This inventory schema should become machine-readable in a later implementation after the full path mapping has been reviewed. Do not fabricate owners, quality states or verification evidence.
+
+
+## 9. Application-wide architecture review update — 2026-11-23
+
+The current application-wide review is documented in [APPLICATION_WIDE_SENIOR_ARCHITECT_REVIEW.md](APPLICATION_WIDE_SENIOR_ARCHITECT_REVIEW.md). It was performed against commit `3d6a109a24ac741daec3b74869c54ed84c5c6958` and adds domain-by-domain content depth guidance, architecture boundaries, risks, and a phased preservation-first implementation plan.
+
+The reviewed tree contains 452 tracked files: 351 under `src/`, 57 under `server/`, 17 under `docs/`, and 14 under `tests/`, plus root/configuration files. The root README is present in this tree. These counts describe repository inventory, not manual test coverage.
+
+The review identifies two high-priority trust-boundary items for follow-up verification: the content-bootstrap push route is mounted without visible route-level authentication in the inspected module, and the pair-programming WebSocket accepts client-supplied identity without a visible authenticated handshake/room authorization. It also calls out quiz answer-release policy and quiz-score-based mastery semantics. These are review findings from static inspection and require targeted tests and remediation before production reliance; they are not claims that an exploit has been exercised.
