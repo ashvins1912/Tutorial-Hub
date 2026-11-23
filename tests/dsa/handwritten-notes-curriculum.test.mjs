@@ -8,6 +8,9 @@ const required = [
   ['searching-algorithms', 14],
   ['binary-search-on-answer', 15],
   ['bit-manipulation', 16],
+  ['hash-set', 9],
+  ['hash-map', 10],
+  ['fast-slow-pointers', 12],
 ];
 
 test('handwritten-notes topics are integrated with source page references', () => {
