@@ -597,7 +597,8 @@ The first inventory implementation is now included in this review branch:
 - `docs/learning-surface-registry.json` maps all 21 values in the typed `TopView` union to representative components, canonical data files, API route modules and test files.
 - `scripts/validate-learning-surface-registry.mjs` verifies exact `TopView` coverage, duplicate IDs, required metadata, explicit `inventory`/`not_assessed` states and existence of every referenced path.
 - `npm run audit:learning-surfaces` exposes the validator and CI runs it before the frontend build.
-- All 11 currently tracked test files are enumerated in the registry's global test inventory.
+- All 11 baseline test files plus the new DSA inventory integrity test (12 total) are enumerated in the registry's global test inventory.
+- `tests/dsa/master-interview-inventory.test.mjs` checks 293 records, 22 topics, topic-scoped slug/title uniqueness, five-stage blueprint presence and explicit non-official/non-verified evidence boundaries. CI runs it through `npm run test:dsa:inventory`.
 
 This closes the first navigation-level mapping gap, not the complete feature audit. Individual nested lessons/problems, visualizer fixtures, persistence models, prerequisite edges, owners, and per-domain quality evidence remain P0 work. The validator checks path integrity and ID coverage; it does not certify the correctness or completeness of any lesson.
 
