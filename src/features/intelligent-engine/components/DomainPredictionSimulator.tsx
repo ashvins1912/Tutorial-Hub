@@ -6,13 +6,13 @@ export function DomainPredictionSimulator({ simulator }: { simulator: DomainLess
   const frames = useMemo(() => buildDomainScenario(simulator.scenario), [simulator.scenario]);
   const [step, setStep] = useState(0);
   const [choice, setChoice] = useState('');
-  const [feedback, setFeedback] = useState<{ correct: boolean; expected: string; rationale: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ correct: boolean; answer: string; expected: string; rationale: string } | null>(null);
   const frame = frames[step];
   const prediction = frame?.prediction;
 
   const advance = () => {
     if (!prediction || !choice) return;
-    setFeedback({ correct: choice === prediction.correctOption, expected: prediction.correctOption, rationale: prediction.rationale });
+    setFeedback({ correct: choice === prediction.correctOption, answer: choice, expected: prediction.correctOption, rationale: prediction.rationale });
     setChoice('');
     setStep((current) => Math.min(current + 1, frames.length - 1));
   };
@@ -33,7 +33,7 @@ export function DomainPredictionSimulator({ simulator }: { simulator: DomainLess
     </div>
     {feedback && <div role="status" className={`rounded-lg p-3 text-xs ${feedback.correct ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200' : 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'}`}>
       <strong>{feedback.correct ? 'Correct prediction' : 'Review the domain outcome'}</strong>
-      <p className="mt-1">Expected: {feedback.expected}</p>
+      <p className="mt-1">Your prediction: {feedback.answer}</p><p className="mt-1">Expected: {feedback.expected}</p>
       <p className="mt-1">{feedback.rationale}</p>
     </div>}
     {prediction ? <fieldset className="space-y-2 rounded-lg border border-indigo-200 p-3 dark:border-indigo-900">
