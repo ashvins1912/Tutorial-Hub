@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import { requireAuth } from '../middleware/requireAuth';
+import { consumeSystemDesignAiRequest } from '../services/systemDesignAiRateLimit';
 
 const router = Router();
 
@@ -94,7 +96,17 @@ function formatGeminiError(err: unknown): { status: number; message: string } {
  * Streams a text-based, step-by-step architectural logic walkthrough via Server-Sent Events (SSE)
  * using @google/genai (gemini-4-hydrogen) strictly on the server.
  */
-router.post('/explain', async (req, res) => {
+router.post('/explain', requireAuth, async (req, res) => {
+  try {
+    const rate = await consumeSystemDesignAiRequest(req.authUser!.id);
+    if (!rate.allowed) {
+      res.set('Retry-After', String(rate.retryAfterSeconds));
+      return res.status(429).json({ code: 'SYSTEM_DESIGN_AI_RATE_LIMITED', error: 'AI walkthrough limit reached. Please retry shortly.' });
+    }
+  } catch {
+    return res.status(503).json({ code: 'SYSTEM_DESIGN_AI_RATE_LIMIT_UNAVAILABLE', error: 'AI walkthroughs are temporarily unavailable. Please retry shortly.' });
+  }
+
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     res.status(503).json({
