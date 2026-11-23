@@ -503,3 +503,46 @@ test('bit manipulation Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('greedy topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'greedy');
+  assert.ok(lesson, 'greedy lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 2 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'greedy requires substantive ' + field);
+  }
+  assert.ok(lesson.correctness.some((item) => /exchange/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /counterexample/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('greedy Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'greedy');
+  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-greedy-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class GreedyLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'List<Interval> intervals = List.of(new Interval(1, 3), new Interval(2, 4), new Interval(3, 5), new Interval(0, 7), new Interval(5, 6));',
+      'if (maximumCompatibleIntervals(intervals) != 3) throw new AssertionError("interval scheduling");',
+      'if (!canReachEnd(new int[]{2, 3, 1, 1, 4})) throw new AssertionError("reachable");',
+      'if (canReachEnd(new int[]{3, 2, 1, 0, 4})) throw new AssertionError("unreachable");',
+      'if (!canReachEnd(new int[]{Integer.MAX_VALUE})) throw new AssertionError("single element");',
+      'if (canReachEnd(new int[]{})) throw new AssertionError("empty jumps");',
+      '}',
+      '}'
+    ].join(String.fromCharCode(10));
+    writeFileSync(join(directory, 'GreedyLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['GreedyLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['GreedyLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
