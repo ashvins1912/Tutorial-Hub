@@ -288,3 +288,45 @@ test('set and map Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('heap topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
+  assert.ok(lesson, 'heap lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 2 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'heap lesson requires substantive ' + field);
+  }
+  assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /heapify/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('heap Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
+  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class HeapLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'int[] top = topKLargest(new int[]{4, 1, 9, 2, 8, 3}, 3);',
+      'Arrays.sort(top);',
+      'if (!Arrays.equals(top, new int[]{4, 8, 9})) throw new AssertionError("top k");',
+      'if (!Arrays.equals(mergeKSorted(new int[][]{{1, 4, 9}, {1, 3, 8}, {2, 6}}), new int[]{1, 1, 2, 3, 4, 6, 8, 9})) throw new AssertionError("k-way merge");',
+      'if (!Arrays.equals(mergeKSorted(new int[][]{{}, {1}, {}}), new int[]{1})) throw new AssertionError("empty sources");',
+      '}',
+      '}'
+    ].join('\\n');
+    writeFileSync(join(directory, 'HeapLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['HeapLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['HeapLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
