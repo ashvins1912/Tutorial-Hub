@@ -612,6 +612,9 @@ Existing lessons already cover the remaining major note topics; the next DSA pas
 
 ## 14. Canonical companion documents
 
+- [DSA Topic Completeness and Enhancement Plan](DSA_TOPIC_COMPLETENESS_AND_ENHANCEMENT_PLAN.md) — the source-aligned, 21-part definition of a complete DSA learning unit and phased rollout.
+
+
 This roadmap is the delivery plan. The following documents are the operational references and must be kept aligned:
 
 - [Perfect Learning Platform Standard](PERFECT_LEARNING_PLATFORM_STANDARD.md) — normative acceptance contract for lessons, visualization, implementation, assessment, mastery, accessibility, security and release.
