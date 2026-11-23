@@ -129,7 +129,8 @@ The roadmap is a completion target, not a claim that every topic is already comp
 | Topic | Content contract | Executable examples | Current status |
 |---|---|---|---|
 | Arrays | Outcomes, prerequisites, deep dive, invariants, implementation guide, traces, applications, assessment and revision | Java 21 and Python 3 examples executed in CI | Reference pilot implemented; CI verified |
-| Strings | Character model, Unicode caveats, frequency methods, windows, KMP, correctness invariants, traces, applications and revision | Java 21 anagram/KMP examples and Python 3 palindrome example executed in CI | Second topic implementation added; awaiting CI |
+| Strings | Character model, Unicode caveats, frequency methods, windows, KMP, correctness invariants, traces, applications and revision | Java 21 anagram/KMP examples and Python 3 palindrome example | Implemented; executable test harness added; CI fixes in progress |
+| Linked List | Node/reference model, operation costs, sentinel nodes, reversal, Floyd cycle proof, merge, LRU, traces and assessment | Java 21 reversal and cycle-detection examples with pointer-identity assertions | Third topic implementation added; awaiting latest CI |
 | Remaining PDF topics | Must satisfy all applicable sections, not just inventory presence | Must compile/run with asserted outputs and edge cases | Planned; not yet complete |
 
 A topic must not be labelled complete merely because it has a title, concept list, practice inventory or source-page mapping. Update this table only when the corresponding CI and review evidence exists. Keep learner mastery separate from content completeness: repository tests validate authored material, not an individual learner's ability to transfer the skill.
