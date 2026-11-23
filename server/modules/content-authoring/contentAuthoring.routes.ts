@@ -7,6 +7,7 @@ import { analyzeContent, normalizeUpload } from './contentAuthoring.service';
 import type { LearningSection } from './contentAuthoring.types';
 import { generateLearningDraft } from './generation/contentGeneration.service';
 import { sanitizePublishedLesson } from './publishedLessonSanitizer';
+export { sanitizePublishedLesson } from './publishedLessonSanitizer';
 
 const router = express.Router();
 const authorIds = new Set((process.env.CONTENT_AUTHOR_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean));
