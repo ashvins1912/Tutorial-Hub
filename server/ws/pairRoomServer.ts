@@ -58,7 +58,7 @@ function getPairAuthClient() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } });
 }
 
-function rejectUpgrade(socket: import('net').Socket, status: number, message: string) {
+function rejectUpgrade(socket: import('stream').Duplex, status: number, message: string) {
   if (!socket.destroyed) {
     socket.write('HTTP/1.1 ' + status + ' ' + message + '\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
     socket.destroy();
