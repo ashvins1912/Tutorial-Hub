@@ -16,7 +16,7 @@ export interface DsaLesson {
 
 export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
-    id: 'foundation', title: '1. Foundation', promise: 'Build the reasoning tools used by every data structure and algorithm.',
+    id: 'foundation', sourcePages: [1], title: '1. Foundation', promise: 'Build the reasoning tools used by every data structure and algorithm.',
     mentalModel: 'An algorithm is a precise plan. Data structures decide how information is stored; algorithms decide how that information is processed. Before coding, translate the problem into inputs, outputs, constraints, invariants and edge cases.',
     concepts: [
       'Problem decomposition: restate the task, identify input/output, constraints, assumptions and examples.',
@@ -44,7 +44,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['Why is binary search logarithmic?', 'What is the difference between O(n) auxiliary space and O(n) total space?', 'How do you prove a loop invariant?', 'When can average-case hash lookup degrade?']
   },
   {
-    id: 'arrays', title: '2. Arrays', promise: 'Master indexed storage, traversal, in-place transformations and range-query patterns.',
+    id: 'arrays', sourcePages: [1], title: '2. Arrays', promise: 'Master indexed storage, traversal, in-place transformations and range-query patterns.',
     mentalModel: 'An array is a row of indexed cells. Random access is cheap because the address of an element can be calculated directly; inserting in the middle is expensive because later elements may need to shift.',
     concepts: ['Static arrays vs dynamic arrays and amortized resizing.', 'Traversal, indexing, update, insertion and deletion costs.', 'Subarray (contiguous) vs subsequence (order-preserving, gaps allowed) vs subset.', 'In-place mutation, read/write pointers and stable compaction.', 'Sorting, frequency tables, hash maps and prefix aggregates.', '2D arrays: row/column indexing, bounds and coordinate transforms.', 'Range sums, prefix sums, difference arrays and prefix XOR.', 'Array invariants: processed prefix, unprocessed suffix and write boundary.'],
     recognition: ['The prompt says contiguous range, subarray, in-place, rotate, partition or range query.', 'You need many indexed reads or one-pass processing.', 'Repeated range sums or range updates appear.', 'Constraints rule out checking every pair or every subarray.'],
@@ -62,7 +62,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['Why is dynamic-array append amortized O(1)?', 'When is a prefix sum insufficient?', 'How do you preserve unread elements during compaction?', 'What changes when values can be negative?']
   },
   {
-    id: 'linked-list', title: '3. Linked List', promise: 'Reason confidently about nodes, references, pointer rewiring, cycles and list transformations.',
+    id: 'linked-list', sourcePages: [11], title: '3. Linked List', promise: 'Reason confidently about nodes, references, pointer rewiring, cycles and list transformations.',
     mentalModel: 'A linked list is a chain of nodes. Each node stores a value and a reference to the next node. You do not jump to index i; you follow links. The key skill is preserving references while rewiring edges.',
     concepts: ['Singly vs doubly linked lists; head, tail and null termination.', 'Traversal and why indexed access is O(n).', 'Insertion/deletion after a known node vs searching for a node.', 'Dummy/sentinel nodes to remove head special cases.', 'Reverse iteratively and recursively.', 'Fast/slow pointers for middle and cycle detection.', 'Floyd cycle entry derivation.', 'Merge two sorted lists; split with slow/fast pointers.', 'LRU cache connection: hash map + doubly linked list.'],
     recognition: ['The input is a node head and asks to reverse, merge, partition or detect a cycle.', 'Frequent insert/delete operations occur when the node is already known.', 'You need the middle, kth-from-end or cycle entry.'],
@@ -80,7 +80,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['Why does Floyd’s algorithm meet inside a cycle?', 'Why use a dummy node?', 'What is the difference between deleting a node and finding the node to delete?', 'How do you avoid losing the suffix while reversing?']
   },
   {
-    id: 'strings', title: '4. Strings', promise: 'Solve character, substring, palindrome, parsing and pattern-matching problems safely.',
+    id: 'strings', sourcePages: [2], title: '4. Strings', promise: 'Solve character, substring, palindrome, parsing and pattern-matching problems safely.',
     mentalModel: 'A string is a sequence of symbols. Many languages treat strings as immutable, so repeated concatenation can copy data. Decide whether the task concerns bytes, code units, Unicode code points or user-perceived grapheme clusters.',
     concepts: ['String immutability and efficient builders/buffers.', 'Character arrays, frequency arrays and hash maps.', 'ASCII assumptions vs Unicode and normalization.', 'Substring vs subsequence.', 'Palindrome checks with two pointers and frequency parity.', 'Anagrams and canonical representations.', 'Parsing, tokenization and delimiter handling.', 'Naive matching, KMP prefix function, Z algorithm and rolling hash (advanced).'],
     recognition: ['The task mentions anagram, palindrome, substring, subsequence, pattern match or character counts.', 'You need to compare two strings under reordering or normalization.', 'A naive repeated substring search is too slow.'],
@@ -98,7 +98,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['When is a frequency array preferable to sorting?', 'What does KMP remember after a mismatch?', 'Why can string concatenation become quadratic?', 'What does “character” mean in the chosen language?']
   },
   {
-    id: 'stacks-queues', title: '5. Stack and Queues', promise: 'Use LIFO/FIFO order, monotonic structures and deques to process sequences and frontiers.',
+    id: 'stacks-queues', sourcePages: [6, 7], title: '5. Stack and Queues', promise: 'Use LIFO/FIFO order, monotonic structures and deques to process sequences and frontiers.',
     mentalModel: 'A stack processes the most recently added item first (LIFO); a queue processes the earliest item first (FIFO). A deque supports both ends. A monotonic stack/deque keeps candidates in sorted order so dominated candidates can be discarded.',
     concepts: ['Stack operations push/pop/peek and balanced delimiters.', 'Queue operations enqueue/dequeue and circular-array implementation.', 'Deque and sliding-window extrema.', 'Monotonic increasing/decreasing stack.', 'Next greater/smaller element, stock span and histogram area.', 'BFS queue frontier and level boundaries.', 'Amortized proof: each item enters and leaves a monotonic structure at most once.'],
     recognition: ['Nested structure or undo/history suggests stack.', 'First-in-first-out processing or level traversal suggests queue.', 'Next greater/smaller or contribution boundaries suggest monotonic stack.', 'Window maximum/minimum suggests monotonic deque.'],
@@ -116,7 +116,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['Why is a monotonic stack linear overall?', 'Why store indices in a sliding-window deque?', 'What is the equality rule for duplicate heights?', 'How does a two-stack queue achieve amortized O(1)?']
   },
   {
-    id: 'binary-search', title: '6. Binary Search Algorithm', promise: 'Search sorted data and monotonic answer spaces with explicit invariants.',
+    id: 'binary-search', sourcePages: [14], title: '6. Binary Search Algorithm', promise: 'Search sorted data and monotonic answer spaces with explicit invariants.',
     mentalModel: 'Binary search works when the search space is ordered and each comparison lets you discard a half that cannot contain the answer. It is not merely “use mid”; the invariant and boundary convention define correctness.',
     concepts: ['Exact search in sorted arrays.', 'Lower bound: first index with a[i] ≥ target; upper bound: first index with a[i] > target.', 'First/last occurrence and insertion position.', 'Rotated sorted arrays and identifying the sorted half.', 'Binary search on answer using a monotonic feasible predicate.', 'Integer overflow-safe midpoint and termination.', 'Unknown-size/exponential search and floating-point tolerance.'],
     recognition: ['Input is sorted or a predicate changes monotonically from false to true.', 'Need first/last position, minimum feasible capacity or maximum feasible rate.', 'A brute-force answer scan can be replaced by a feasibility test.'],
@@ -134,7 +134,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What exactly does lower_bound return?', 'Why does the answer-space predicate need monotonicity?', 'How do you prevent an infinite loop?', 'What changes when duplicates exist in a rotated array?']
   },
   {
-    id: 'two-pointers-window', title: '7. Two Pointers & Sliding Window', promise: 'Exploit order and contiguous ranges without repeatedly rescanning data.',
+    id: 'two-pointers-window', sourcePages: [3, 4, 12], title: '7. Two Pointers & Sliding Window', promise: 'Exploit order and contiguous ranges without repeatedly rescanning data.',
     mentalModel: 'Two pointers coordinate positions. Sliding window is a special two-pointer technique for a contiguous interval whose state can be updated as its boundaries move. Pointer movement must be justified by a property, not guessed.',
     concepts: ['Opposite-direction pointers on sorted arrays and palindromes.', 'Same-direction read/write pointers for compaction and partition.', 'Fast/slow pointers for cycles and middle positions.', 'Fixed-size sliding windows.', 'Variable-size windows with a validity invariant.', 'Frequency maps for distinct-count and anagram windows.', 'At-most K transformation to exactly K = atMost(K) − atMost(K−1).', 'Prefix sums or other methods when negative values invalidate greedy shrinking.'],
     recognition: ['Sorted pair/triplet sum, palindrome, in-place removal or partition.', 'Longest/shortest contiguous substring/subarray with a maintainable constraint.', 'A range expands on the right and can be repaired by moving the left boundary.'],
@@ -152,7 +152,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What property makes pointer movement safe?', 'Why does a positive-number sum window shrink correctly?', 'How do you count exactly K distinct values?', 'When is sorting incompatible with the problem?']
   },
   {
-    id: 'binary-tree', title: '8. Binary Tree', promise: 'Master recursive structure, iterative traversals, level order, paths and tree construction.',
+    id: 'binary-tree', sourcePages: [17], title: '8. Binary Tree', promise: 'Master recursive structure, iterative traversals, level order, paths and tree construction.',
     mentalModel: 'A binary tree is a node with up to two child trees. Many tree algorithms are recursive because a subtree is itself a tree. Decide whether information flows top-down (carry state) or bottom-up (return an aggregate).',
     concepts: ['Root, leaf, depth, height, subtree and balanced tree.', 'Preorder, inorder, postorder and level-order BFS.', 'Recursive DFS and iterative stack traversals.', 'Height, diameter, balance and maximum path sum.', 'Root-to-leaf path, path sum and path construction.', 'Lowest common ancestor.', 'Build tree from traversal pairs with index maps.', 'Serialize/deserialize and null markers.', 'Morris traversal concept and O(1) auxiliary traversal.'],
     recognition: ['The input is a root node and asks about paths, depth, subtree or ancestors.', 'A result depends on child subtree results.', 'Level-by-level output or minimum edge distance is required.'],
@@ -170,7 +170,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What is the recursive contract?', 'Why can diameter require a global answer?', 'What is the difference between depth and height?', 'When is BFS preferable to DFS?']
   },
   {
-    id: 'bst', title: '9. Binary Search Tree', promise: 'Use ordered tree invariants for search, insertion, deletion and order statistics.',
+    id: 'bst', sourcePages: [18], title: '9. Binary Search Tree', promise: 'Use ordered tree invariants for search, insertion, deletion and order statistics.',
     mentalModel: 'A BST maintains a global ordering: every key in a node’s left subtree is smaller and every key in its right subtree is larger (or follows a clearly defined duplicate policy). Inorder traversal therefore produces sorted order.',
     concepts: ['BST invariant and duplicate-key policy.', 'Search and insertion.', 'Deletion: leaf, one child, two children using successor/predecessor.', 'Validate BST using lower/upper bounds.', 'Inorder traversal, kth smallest/largest.', 'Predecessor and successor.', 'Balanced BSTs: AVL and Red-Black tree concepts.', 'BST vs heap vs hash map use cases.'],
     recognition: ['Need ordered membership, predecessor/successor or kth smallest.', 'Input is a BST and asks for range or sorted traversal.', 'Need dynamic insert/delete while retaining order.'],
@@ -188,7 +188,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['Why are local parent-child checks insufficient?', 'What is the inorder successor?', 'What is the worst-case height?', 'When would a heap be a better fit?']
   },
   {
-    id: 'heap', title: '10. Heap', promise: 'Use priority queues for repeated extrema, Top K, scheduling and K-way merge.',
+    id: 'heap', sourcePages: [8], title: '10. Heap', promise: 'Use priority queues for repeated extrema, Top K, scheduling and K-way merge.',
     mentalModel: 'A binary heap is a complete binary tree stored compactly in an array. The heap property guarantees the root is the minimum (min-heap) or maximum (max-heap), but the rest of the array is not fully sorted.',
     concepts: ['Complete binary tree and array index formulas.', 'Min-heap vs max-heap.', 'Sift-up and sift-down.', 'Insert, peek and extract.', 'Bottom-up heapify is O(n).', 'Top K largest/smallest and bounded heaps.', 'K-way merge with one candidate per sorted source.', 'Two heaps for running median.', 'Lazy deletion and stale heap entries.'],
     recognition: ['Repeatedly need the next smallest/largest item.', 'Need Top K without sorting everything.', 'Merge K sorted lists or streams.', 'Need a dynamic median or priority scheduling.'],
@@ -224,7 +224,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What is the complete state?', 'Why must you undo a choice?', 'When is duplicate skipping safe?', 'What is the difference between pruning and memoization?']
   },
   {
-    id: 'greedy', title: '12. Greedy Algorithm', promise: 'Recognise when local decisions can be proven to produce a global optimum.',
+    id: 'greedy', sourcePages: [5], title: '12. Greedy Algorithm', promise: 'Recognise when local decisions can be proven to produce a global optimum.',
     mentalModel: 'A greedy algorithm commits to a locally attractive choice and does not reconsider it. This is powerful only when the problem has a structure that makes the choice safe. A plausible heuristic is not a proof.',
     concepts: ['Greedy-choice property and optimal substructure.', 'Exchange argument: transform an optimal solution to include the greedy choice.', 'Stays-ahead proof and cut property.', 'Interval scheduling by earliest finish.', 'Minimum platforms/meeting rooms via event ordering.', 'Jump Game reachability.', 'Huffman coding.', 'Greedy vs DP: coin systems and counterexamples.', 'Tie-breaking and sorting invariants.'],
     recognition: ['The task asks for a maximum number of compatible intervals or minimum resources.', 'A sorted order may make one decision dominate alternatives.', 'A local choice can be exchanged into an optimal solution without worsening it.'],
@@ -242,7 +242,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What is the greedy-choice property?', 'Give an exchange argument.', 'Why does earliest finish work for interval scheduling?', 'How do you know DP is needed instead?']
   },
   {
-    id: 'dynamic-programming', title: '13. Dynamic Programming', promise: 'Turn repeated recursive subproblems into a precise state and recurrence.',
+    id: 'dynamic-programming', sourcePages: [20], title: '13. Dynamic Programming', promise: 'Turn repeated recursive subproblems into a precise state and recurrence.',
     mentalModel: 'DP is systematic reuse of answers to overlapping subproblems. The central work is not filling a table; it is defining a state that contains exactly the information needed to make future decisions.',
     concepts: ['Overlapping subproblems and optimal substructure.', 'SRTBOT: state, recurrence, base case, order, answer, time.', 'Memoization (top-down) vs tabulation (bottom-up).', '1D DP: Fibonacci, climbing stairs, house robber.', 'Grid DP: paths, obstacles and minimum cost.', 'Knapsack: 0/1 vs unbounded; loop direction matters.', 'Subset sum, partition and coin change.', 'String DP: LCS, edit distance, LIS and palindromes.', 'Interval DP and tree DP.', 'State compression, bitmask DP and optimization.'],
     recognition: ['The problem asks count/minimum/maximum over repeated choices.', 'Recursive branches revisit the same parameter combinations.', 'A solution depends on smaller prefixes, capacities, intervals or subtrees.', 'Greedy choices fail but optimal substructure exists.'],
@@ -260,7 +260,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['What information does your state represent?', 'Why are the subproblems overlapping?', 'Why is the evaluation order valid?', 'Why does 0/1 knapsack iterate capacity downward?', 'What makes knapsack pseudo-polynomial?']
   },
   {
-    id: 'graphs', title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
+    id: 'graphs', sourcePages: [19], title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
     mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
     concepts: ['Directed/undirected, weighted/unweighted, cyclic/acyclic, connected/disconnected.', 'Adjacency list vs adjacency matrix; edge list.', 'BFS for unweighted shortest paths and multi-source traversal.', 'DFS for components, cycle detection and finishing order.', 'Grid-to-graph modelling and state-expanded BFS.', 'Topological sorting with Kahn or DFS; DAG dependency order.', 'Union-Find with path compression and union by size/rank.', 'Dijkstra for non-negative weights; Bellman-Ford for negative edges.', 'Floyd-Warshall for all-pairs shortest paths.', 'Minimum spanning tree: Kruskal and Prim.', 'SCC, bridges and articulation points (advanced).'],
     recognition: ['The prompt describes networks, dependencies, routes, transformations or reachability.', 'Need minimum number of edges in an unweighted graph.', 'Need a valid dependency order or detect a cycle.', 'Need repeated connectivity merges or minimum-cost connection.', 'Edge weights determine shortest-path algorithm choice.'],
@@ -278,7 +278,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     interviewChecks: ['When does BFS give shortest paths?', 'Why can Dijkstra fail with negative edges?', 'How does Kahn detect a cycle?', 'What does DSU represent?', 'How is an MST different from a shortest-path tree?']
   },
   {
-    id: 'two-dimensional-arrays', title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
+    id: 'two-dimensional-arrays', sourcePages: [1], title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
     mentalModel: 'A matrix is a grid addressed by (row, column). Most bugs come from mixing row and column counts, inconsistent boundaries, or assuming the matrix is square. Treat a cell as a graph vertex when movement and reachability matter; treat a rectangle as a range when aggregation matters.',
     concepts: [
       'Representation: int[][], rows = matrix.length, columns = rows == 0 ? 0 : matrix[0].length; rectangular and ragged arrays are different contracts.',
