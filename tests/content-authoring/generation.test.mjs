@@ -77,5 +77,7 @@ test('keeps a topic-specific simulator only when it has objective bindings', () 
 
 test('rejects simulator contracts without objective links or with unsupported algorithms', () => {
   assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, objectiveIds: [] } }, sections), /GENERATED_SIMULATOR_OBJECTIVES_REQUIRED/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, objectiveIds: ['unmapped-objective'] } }, sections), /GENERATED_SIMULATOR_OBJECTIVES_REQUIRED/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, initialInput: '2, 8, 4' } }, sections), /GENERATED_SIMULATOR_INPUT_UNSORTED/);
   assert.throws(() => validateGeneratedLesson({ ...validLesson, simulator: { ...validLesson.simulator, algorithm: 'random-demo' } }, sections), /GENERATED_SIMULATOR_INCOMPLETE/);
 });
