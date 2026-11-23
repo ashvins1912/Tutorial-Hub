@@ -188,7 +188,7 @@ test('stack and queue Java examples execute against expected outputs', () => {
       'if (!Arrays.equals(slidingMaximum(new int[]{5, 5, 4}, 2), new int[]{5, 5})) throw new AssertionError("duplicate maxima");',
       '}',
       '}'
-    ].join(\n);
+    ].join('\\n');
     writeFileSync(join(directory, 'StackQueueLessonExamples.java'), javaSource);
     const compile = spawnSync('javac', ['StackQueueLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
