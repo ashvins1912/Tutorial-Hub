@@ -29,7 +29,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
     setProgressReady(false);
     setProgressStatus('Loading saved progress…');
     setAlgorithm(simulator?.algorithm || 'binary-search'); setRawValues(simulator?.initialInput || ''); setTarget(simulator?.target || ''); setTraceIndex(0);
-    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null);
+    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null); setObjectiveMastery([]);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
         if (!response.ok) throw new Error(response.status === 503 ? 'Database persistence is unavailable.' : 'Could not load saved progress.');
