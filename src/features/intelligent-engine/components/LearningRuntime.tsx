@@ -9,9 +9,9 @@ type QuizGrading = { score: number; total: number; accuracy: number; correctAnsw
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 
 export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[]; simulator?: LessonSimulator }) {
-  const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>('binary-search');
-  const [rawValues, setRawValues] = useState('2, 5, 8, 12, 16, 23, 38');
-  const [target, setTarget] = useState('16');
+  const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>(simulator?.algorithm || 'binary-search');
+  const [rawValues, setRawValues] = useState(simulator?.initialInput || '');
+  const [target, setTarget] = useState(simulator?.target || '');
   const [traceIndex, setTraceIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -36,9 +36,11 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
         const saved = payload.progress;
         setQuizGrading(payload.grading || null);
         if (saved) {
-          if (saved.algorithm === 'binary-search' || saved.algorithm === 'bubble-sort') setAlgorithm(saved.algorithm);
-          if (typeof saved.input === 'string') setRawValues(saved.input);
-          if (typeof saved.target === 'string') setTarget(saved.target);
+          if (simulator && saved.algorithm === simulator.algorithm) {
+            setAlgorithm(simulator.algorithm);
+            if (typeof saved.input === 'string') setRawValues(saved.input);
+            if (typeof saved.target === 'string') setTarget(saved.target);
+          }
           setTraceIndex(typeof saved.currentStep === 'number' ? saved.currentStep : 0);
           setAttempts(saved.attempts || 0);
           setAnswers(saved.lastAnswers || {});
