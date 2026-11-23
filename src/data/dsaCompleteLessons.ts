@@ -363,7 +363,7 @@ static boolean hasCycle(Node head) {
     return pi;
 }
 
-static List<Integer> kmpMatches(String text, String pattern) {
+static int[] kmpMatches(String text, String pattern) {
     List<Integer> matches = new ArrayList<>();
     if (pattern.isEmpty()) {
         for (int i = 0; i <= text.length(); i++) matches.add(i);
