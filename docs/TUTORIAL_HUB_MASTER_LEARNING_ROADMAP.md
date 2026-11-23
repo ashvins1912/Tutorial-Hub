@@ -590,7 +590,18 @@ Every topic release should be accompanied by a review record containing:
 This sign-off record is the evidence that a topic meets the platform's definition of quality—not the presence of a lesson page or a completion badge.
 
 
-## 12. Canonical companion documents
+## 12. P0.1 implementation update — machine-checkable surface inventory
+
+The first inventory implementation is now included in this review branch:
+
+- `docs/learning-surface-registry.json` maps all 21 values in the typed `TopView` union to representative components, canonical data files, API route modules and test files.
+- `scripts/validate-learning-surface-registry.mjs` verifies exact `TopView` coverage, duplicate IDs, required metadata, explicit `inventory`/`not_assessed` states and existence of every referenced path.
+- `npm run audit:learning-surfaces` exposes the validator and CI runs it before the frontend build.
+- All 11 currently tracked test files are enumerated in the registry's global test inventory.
+
+This closes the first navigation-level mapping gap, not the complete feature audit. Individual nested lessons/problems, visualizer fixtures, persistence models, prerequisite edges, owners, and per-domain quality evidence remain P0 work. The validator checks path integrity and ID coverage; it does not certify the correctness or completeness of any lesson.
+
+## 13. Canonical companion documents
 
 This roadmap is the delivery plan. The following documents are the operational references and must be kept aligned:
 
