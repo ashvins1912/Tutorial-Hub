@@ -91,7 +91,7 @@ test('strings Java and Python examples execute against expected outputs', () => 
       'if (!Arrays.equals(kmpMatches("abc", ""), new int[]{0, 1, 2, 3})) throw new AssertionError("empty pattern");',
       '}',
       '}'
-    ].join('\\n');
+    ].join('\n');
     writeFileSync(join(directory, 'StringLessonExamples.java'), javaSource);
     const compile = spawnSync('javac', ['StringLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
