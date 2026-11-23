@@ -1,6 +1,7 @@
 export interface DsaLesson {
   id: string;
   title: string;
+  sourcePages?: number[];
   promise: string;
   mentalModel: string;
   concepts: string[];
@@ -355,6 +356,361 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       'How would you reduce the space of a grid DP to O(cols)?'
     ]
   }
+
+  {
+    id: 'queue-deep-dive',
+    title: '16. Queue, Deque & Circular Queue',
+    sourcePages: [8],
+    promise: 'Understand FIFO processing, queue implementations, circular buffers and when a deque is more useful than a basic queue.',
+    mentalModel: 'A queue is a line with two controlled ends: new work joins at the rear and the oldest eligible work leaves at the front. The invariant is ordering by arrival, unless the problem explicitly defines priorities or both-end operations.',
+    concepts: [
+      'FIFO means first-in, first-out: enqueue adds at the rear; dequeue removes from the front; peek reads the front without removing it.',
+      'An array queue with a moving front index avoids shifting every remaining element after dequeue, but needs compaction or a circular-buffer strategy to reuse freed slots.',
+      'A circular queue treats a fixed array as a ring. Advance an index with (index + 1) % capacity; track size explicitly or reserve one empty slot to distinguish full from empty.',
+      'A linked-list queue keeps head and tail references: enqueue at tail and dequeue at head are O(1) when both references are maintained.',
+      'A deque supports insertion and removal at both ends; it is useful for sliding-window maximum, 0-1 BFS and monotonic queue patterns.',
+      'A priority queue is not FIFO: removal follows priority ordering and is commonly implemented with a heap.',
+      'Breadth-first search uses a FIFO queue so nodes are processed in nondecreasing distance in an unweighted graph.',
+      'In Java, ArrayDeque is a strong default for ordinary queue/deque operations; PriorityQueue is for priority ordering.'
+    ],
+    recognition: [
+      'The prompt says process tasks in arrival order, level by level, or in waves.',
+      'You need the shortest number of edges in an unweighted graph: use BFS with a queue.',
+      'A fixed-capacity producer/consumer buffer must reuse storage without shifting elements.',
+      'A sliding-window maximum needs to add at the right and discard expired candidates from the left.',
+      'The problem requires both-end operations; consider a deque rather than forcing a plain queue.'
+    ],
+    method: [
+      'Define the queue contract: which end receives, which end removes, whether capacity is bounded and what empty/full behavior means.',
+      'Choose an implementation from the required operations: ArrayDeque, linked list, circular array or heap for priority order.',
+      'For a circular array, maintain head and size. The rear insertion slot is (head + size) % capacity; after removal, head becomes (head + 1) % capacity.',
+      'Check empty and full before mutating state. Decide whether invalid operations return a sentinel, throw, or are prevented by the caller.',
+      'For BFS, mark a vertex visited when it is enqueued—not when dequeued—to prevent duplicate queue entries.',
+      'For a monotonic deque, remove dominated elements from the back, then expired indices from the front, and read the best candidate at the front.'
+    ],
+    workedExample: [
+      'Circular queue, capacity 4: enqueue A, B, C. The logical order is [A,B,C], head=0 and size=3.',
+      'Dequeue A: return A, set head=(0+1)%4=1 and size=2. The freed physical slot at index 0 can be reused.',
+      'Enqueue D and E: D uses (1+2)%4=3; E uses (1+3)%4=0. The physical array wrapped, but logical order is [B,C,D,E].',
+      'The queue is full because size=4. Dequeue B moves head to 2; enqueue F uses (2+3)%4=1. Logical order becomes [C,D,E,F].',
+      'Invariant: the queue contains exactly size elements, and the element at (head+i)%capacity is the i-th logical element for 0 <= i < size.'
+    ],
+    complexity: [
+      'ArrayDeque or linked-list enqueue, dequeue and peek: O(1) amortized/constant under the usual implementation contract.',
+      'Circular-array enqueue and dequeue: O(1); storage O(capacity).',
+      'A naive array queue that shifts all remaining elements on dequeue has O(n) dequeue cost.',
+      'Priority queue offer and poll: O(log n); peek: O(1); bottom-up heap construction: O(n).',
+      'BFS with adjacency lists: O(V+E) time and O(V) auxiliary space including visited state and queue.'
+    ],
+    pitfalls: [
+      'Confusing a queue with a priority queue; FIFO order and priority order are different contracts.',
+      'Using array remove-at-zero repeatedly and accidentally making dequeue O(n).',
+      'Failing to distinguish empty from full in a circular buffer when head equals tail; track size or reserve a slot.',
+      'Forgetting modulo wraparound or mishandling negative remainder values.',
+      'Marking BFS nodes visited only after dequeue, which allows duplicate enqueues.',
+      'Removing the wrong end of a deque in a monotonic-queue solution.',
+      'Assuming ordinary BFS gives shortest paths in weighted graphs with differing edge weights.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Implement a queue with enqueue, dequeue, peek, isEmpty and size using a linked list.', goal: 'Maintain head and tail correctly, including empty and one-element transitions.' },
+      { level: 'Core', task: 'Implement a circular queue with a fixed array and wraparound indices.', goal: 'Prove the head/size invariant and handle full and empty boundaries.' },
+      { level: 'Core', task: 'Binary Tree Level Order Traversal and Number of Recent Calls.', goal: 'Use FIFO order to process levels or a rolling time window.' },
+      { level: 'Challenge', task: 'Sliding Window Maximum with a deque.', goal: 'Maintain decreasing candidate values and expire indices safely.' },
+      { level: 'Transfer', task: 'Compare BFS, 0-1 BFS and Dijkstra on graphs with different edge-weight assumptions.', goal: 'Choose the frontier data structure from the edge-weight model.' }
+    ],
+    interviewChecks: [
+      'Why is ArrayDeque generally preferred over repeatedly removing index zero from an array-backed list?',
+      'How do you distinguish full and empty states in a circular queue?',
+      'Why should BFS mark a node visited when it is enqueued?',
+      'When is a deque required instead of a normal queue?',
+      'Why does ordinary BFS not guarantee shortest weighted paths when edge weights differ?',
+      'What invariant proves circular queue order after wraparound?'
+    ]
+  },
+  {
+    id: 'sorting-algorithms',
+    title: '17. Sorting Algorithms & Stability',
+    sourcePages: [14],
+    promise: 'Compare elementary and efficient sorting methods by mechanics, stability, memory use and input characteristics.',
+    mentalModel: 'Sorting is not just putting values in order. Each algorithm reduces disorder differently: exchange neighbours, select the next minimum, insert into a sorted prefix, divide and merge, partition around a pivot, or repeatedly extract from a heap. The right choice depends on input size, existing order, memory limits and stability requirements.',
+    concepts: [
+      'Bubble sort compares adjacent elements and swaps an out-of-order pair; after each pass, the largest remaining value reaches its final position.',
+      'Selection sort finds the minimum in the unsorted suffix and places it next; it performs O(n²) comparisons but only O(n) swaps.',
+      'Insertion sort grows a sorted prefix by shifting larger values right and inserting the next key; it is adaptive on small or nearly sorted inputs.',
+      'Merge sort divides the array, recursively sorts both halves and merges them; its time is O(n log n) and array implementation usually needs O(n) auxiliary space.',
+      'Quick sort partitions around a pivot and recursively sorts the partitions; average time is O(n log n), worst case O(n²).',
+      'Heap sort builds a heap and repeatedly extracts the maximum or minimum; it gives O(n log n) worst-case time with O(1) auxiliary array space in an in-place implementation.',
+      'Stability preserves the relative order of records with equal keys. This matters when sorting structured records by multiple keys.',
+      'In-place describes auxiliary storage, not whether the algorithm mutates input. State the convention when comparing implementations.',
+      'Comparison sorts have an Ω(n log n) lower bound in the general comparison model; non-comparison methods rely on assumptions about key representation.'
+    ],
+    recognition: [
+      'Small input or nearly sorted input can make insertion sort a practical choice.',
+      'A guaranteed O(n log n) upper bound is needed and extra memory is acceptable: consider merge sort.',
+      'Worst-case O(n log n) with in-place array storage is important: consider heap sort.',
+      'Average speed and practical cache behavior matter, and pivot strategy can be controlled: consider quick sort.',
+      'Equal-key record order must be retained: choose a stable implementation or add an explicit tie-break key.',
+      'The task asks for only the k smallest/largest values; a heap or selection approach may avoid fully sorting all n values.'
+    ],
+    method: [
+      'Clarify ascending/descending order, duplicate handling, stability requirements, mutation constraints and whether input may already be partially sorted.',
+      'Use the simplest correct baseline, then compare its growth rate with the input constraint.',
+      'For bubble, selection and insertion, trace the sorted and unsorted regions after each outer iteration.',
+      'For merge sort, prove each recursive half is sorted before merging and that merge chooses the smallest remaining head.',
+      'For quick sort, state the exact partition invariant and ensure recursive ranges strictly shrink.',
+      'For heap sort, verify the heap invariant after every extraction and distinguish zero-based child indices 2*i+1 and 2*i+2.',
+      'Benchmark only after correctness tests; compare random, sorted, reverse-sorted, duplicate-heavy and nearly sorted inputs.'
+    ],
+    workedExample: [
+      'Insertion sort on [5,2,4,1]: start with sorted prefix [5]. Insert 2 by shifting 5 right, giving [2,5,4,1].',
+      'Insert 4: shift 5 right and place 4, giving [2,4,5,1]. Insert 1: shift 5, 4 and 2, giving [1,2,4,5].',
+      'Invariant after pass i: positions 0 through i are sorted and contain exactly the original first i+1 values.',
+      'For merge sort, [5,2] becomes [2,5] and [4,1] becomes [1,4]; merging the sorted halves produces [1,2,4,5].',
+      'For quick sort, do not assume a pivot gives balanced partitions. A pivot that repeatedly leaves one empty side causes recursion depth O(n).'
+    ],
+    complexity: [
+      'Bubble sort: O(n²) average/worst; O(n) best with early exit; O(1) auxiliary space; stable if equal items are not swapped.',
+      'Selection sort: O(n²) comparisons in all cases; O(1) auxiliary space; typically unstable.',
+      'Insertion sort: O(n²) average/worst and O(n) best on sorted input; O(1) auxiliary space; stable if equal items are not shifted past.',
+      'Merge sort: O(n log n) best/average/worst; O(n) auxiliary array space; stable with left-first tie handling.',
+      'Quick sort: O(n log n) average, O(n²) worst; recursion stack O(log n) average and O(n) worst; not generally stable.',
+      'Heap sort: O(n log n) best/average/worst; O(1) auxiliary array space for iterative in-place heap sort; unstable.'
+    ],
+    pitfalls: [
+      'Calling an algorithm stable without checking how equal keys are handled in the implementation.',
+      'Assuming quick sort is always O(n log n); adversarial pivots can produce O(n²).',
+      'Forgetting to advance one side correctly while merging two sorted halves.',
+      'Changing stability with careless <= versus < comparisons in insertion or merge logic.',
+      'Building a heap by repeated insertion when bottom-up heapify can be O(n).',
+      'Ignoring allocation, cache locality, recursion depth and input distribution when comparing algorithms.',
+      'Calling an algorithm O(1) space while omitting its recursion stack or temporary arrays.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Trace bubble, selection and insertion sort on the same short array.', goal: 'Identify each algorithm’s sorted region and comparison/swap behavior.' },
+      { level: 'Core', task: 'Implement insertion sort and merge sort in Java.', goal: 'Preserve stability and test empty, singleton, duplicate and sorted inputs.' },
+      { level: 'Core', task: 'Implement quick sort with a documented partition invariant.', goal: 'Handle duplicates and ensure recursive ranges shrink.' },
+      { level: 'Challenge', task: 'Implement heap sort and compare it with merge sort.', goal: 'Prove heap restoration after extraction and account for memory.' },
+      { level: 'Transfer', task: 'Sort records by two keys while preserving original order for equal keys.', goal: 'Explain when stability is required and how stable multi-key ordering works.' }
+    ],
+    interviewChecks: [
+      'Why is insertion sort often effective on nearly sorted data?',
+      'Which listed algorithms are stable in their standard forms, and which implementation details matter?',
+      'Why can quick sort degrade to O(n²)?',
+      'How does bottom-up heap construction achieve O(n)?',
+      'When would you choose merge sort over heap sort?',
+      'What assumptions are behind the comparison-sorting lower bound?'
+    ]
+  },
+  {
+    id: 'searching-algorithms',
+    title: '18. Searching: Linear, Binary & Boundaries',
+    sourcePages: [15],
+    promise: 'Select a search method from ordering guarantees and reason precisely about loop boundaries and duplicates.',
+    mentalModel: 'Searching eliminates candidates while preserving the possibility that the answer remains. Linear search removes one candidate at a time. Binary search removes roughly half only when ordering or a monotonic property justifies that elimination.',
+    concepts: [
+      'Linear search checks candidates sequentially and works on unsorted collections; scanning left to right returns the first matching index.',
+      'Binary search requires a sorted range or monotonic predicate. Its O(log n) time comes from halving the remaining candidate interval.',
+      'Closed interval [low,high] and half-open interval [low,high) are both valid; mixing update rules causes off-by-one bugs.',
+      'For a closed interval, use while (low <= high), discard mid with low=mid+1 or high=mid-1, and compute mid as low+(high-low)/2.',
+      'Lower bound finds the first index with value >= target; upper bound finds the first index with value > target. Their difference counts duplicates.',
+      'An arbitrary-match search and a first-occurrence search are different contracts; duplicates require an explicit boundary search.',
+      'Binary search over an answer space is related but distinct: it searches a monotonic feasibility predicate rather than array values.'
+    ],
+    recognition: [
+      'The collection is unsorted and modest in size: linear search is simple and correct.',
+      'The collection is sorted and supports random access: binary search reduces comparisons to O(log n).',
+      'The task asks for first/last occurrence, insertion position or count of a value in sorted data.',
+      'A predicate changes once from false to true or true to false across an ordered domain.',
+      'A linked list lacks O(1) random access, so textbook array binary search does not provide its usual O(log n) total time.'
+    ],
+    method: [
+      'Write the exact contract: any match, first match, last match, lower bound, upper bound or insertion position.',
+      'Choose one interval convention and write its invariant before coding.',
+      'For a closed interval, initialise high=n-1; while low<=high; after a non-answer mid, remove it with mid+1 or mid-1.',
+      'For lower bound, if a[mid]>=target, move high left; otherwise move low right.',
+      'For upper bound, move high left only when a[mid]>target; otherwise move low right.',
+      'Test empty, one-element, target below minimum, target above maximum, all-equal, duplicates at both ends and absent target.'
+    ],
+    workedExample: [
+      'Find first occurrence of 4 in [1,2,4,4,4,7,9]. Start low=0, high=6 and candidate=-1.',
+      'mid=3 gives 4: record candidate=3 and continue left with high=2. mid=1 gives 2: move low=2. mid=2 gives 4: update candidate=2 and continue left.',
+      'The loop ends with candidate=2. The search returns the leftmost matching index, not merely any occurrence.',
+      'Lower bound can return n when every element is smaller than target; do not index the array without checking that boundary.'
+    ],
+    complexity: [
+      'Linear search: O(n) worst-case time and O(1) auxiliary space.',
+      'Binary search on a random-access sorted array: O(log n) time and O(1) iterative auxiliary space.',
+      'Recursive binary search: O(log n) call-stack space.',
+      'Lower bound and upper bound each take O(log n); counting duplicates by their difference remains O(log n).',
+      'Sorting an unsorted array solely for one search usually costs O(n log n); linear search may be better unless repeated queries justify preprocessing.'
+    ],
+    pitfalls: [
+      'Using binary search without a sorted array or monotonic predicate.',
+      'Mixing closed and half-open interval conditions or updates.',
+      'Using mid=(low+high)/2 where the sum can overflow; prefer low+(high-low)/2.',
+      'Returning immediately on equality when the task asks for first or last occurrence.',
+      'Reading a[mid] when low==n after a lower-bound search.',
+      'Assuming binary search on a linked list is O(log n) when reaching each midpoint requires traversal.',
+      'Sorting once for a single query without accounting for preprocessing cost.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Implement linear search and iterative binary search.', goal: 'State preconditions and test missing targets and boundary indices.' },
+      { level: 'Core', task: 'Find First and Last Position of Element in Sorted Array.', goal: 'Implement two boundary searches rather than relying on an arbitrary match.' },
+      { level: 'Core', task: 'Search Insert Position and Count Occurrences in a Sorted Array.', goal: 'Use lower bound and upper bound consistently.' },
+      { level: 'Challenge', task: 'Search in Rotated Sorted Array and Find Minimum in Rotated Sorted Array.', goal: 'Identify which half retains a sorted-order invariant.' },
+      { level: 'Transfer', task: 'Search a 2D matrix under two different ordering guarantees.', goal: 'Choose flattened binary search only for globally sorted row-major order; use staircase search for row/column monotonicity.' }
+    ],
+    interviewChecks: [
+      'What is the invariant of your chosen binary-search interval?',
+      'How do lower bound and upper bound differ?',
+      'Why can binary search return n as a valid insertion position?',
+      'When is sorting before searching worthwhile?',
+      'Why is binary search not automatically O(log n) on a linked list?',
+      'How would you prove that each loop iteration strictly shrinks the candidate interval?'
+    ]
+  },
+  {
+    id: 'binary-search-on-answer',
+    title: '19. Binary Search on the Answer',
+    sourcePages: [16],
+    promise: 'Turn optimisation problems into a monotonic yes/no decision and binary-search the smallest or largest feasible answer.',
+    mentalModel: 'Do not binary-search the input array when the unknown is a numeric answer. Guess a candidate answer, ask whether it is feasible, and use the monotonic direction of feasibility to eliminate half of the answer range.',
+    concepts: [
+      'A feasibility function answers whether a candidate capacity, speed, time, distance or threshold satisfies every constraint.',
+      'For minimisation, feasible answers often form a suffix: once a capacity is large enough, every larger capacity remains feasible. Search for first true.',
+      'For maximisation, feasible answers often form a prefix: once a value is too large, every larger value remains infeasible. Search for last true.',
+      'The search interval must be a proven lower and upper bound on the answer, not guessed constants.',
+      'The feasibility check must be correct and usually cheaper than enumerating every possible answer.',
+      'Total complexity is O(log R * C), where R is answer-range width and C is the cost of one feasibility check.',
+      'Integer arithmetic matters: use overflow-safe midpoint formulas and safe ceiling division.'
+    ],
+    recognition: [
+      'The question asks for minimum capacity, minimum speed, minimum time or maximum achievable threshold.',
+      'A candidate answer can be validated by a greedy or counting simulation.',
+      'If answer x is feasible, every answer greater than x is also feasible (or the reverse direction is provable).',
+      'Brute force tries every integer answer, while a feasibility check can evaluate one candidate efficiently.'
+    ],
+    method: [
+      'Define the answer variable and whether the task is first-true (minimise) or last-true (maximise).',
+      'Prove monotonicity: explain why feasibility at x implies feasibility for all larger or smaller values.',
+      'Derive low and high from constraints. For capacity, low can be max(item) and high can be sum(items).',
+      'Write a pure can(mid) function that simulates the candidate without mutating shared input.',
+      'Use a first-true or last-true binary-search template with a clear invariant and termination condition.',
+      'Validate the returned boundary by checking the candidate and its adjacent integer when possible.'
+    ],
+    workedExample: [
+      'Minimum ship capacity: weights=[1,2,3,4,5], D=3. Lower bound=max(weights)=5; upper bound=sum(weights)=15.',
+      'For capacity 9, greedy packing gives [1,2,3] then [4,5], so 2 days are needed and 9 is feasible.',
+      'For capacity 6, packing gives [1,2,3], [4], [5], so 3 days are needed and 6 is feasible.',
+      'For capacity 5, packing gives [1,2], [3], [4], [5], so 4 days are needed and 5 is infeasible.',
+      'Feasibility is monotonic: increasing capacity cannot increase required days. The smallest feasible capacity is 6.',
+      'A check starts a new day only when currentLoad+weight exceeds capacity; preserve input order because shipment order is part of the constraint.'
+    ],
+    complexity: [
+      'Let R=high-low+1 and C be feasibility-check cost. Binary search performs O(log R) checks, for O(C log R) total time.',
+      'Shipping capacity: O(n log(sum(weights)-max(weights)+1)) time and O(1) extra space.',
+      'Minimum eating speed: O(n log(maxPile)) time when each check sums required hours over n piles.',
+      'Maximum minimum distance: sorting costs O(n log n), each greedy feasibility check O(n), and answer search O(log R).',
+      'Use long for sums or products when constraints can exceed 32-bit integer range.'
+    ],
+    pitfalls: [
+      'Failing to prove monotonicity; a binary-search template cannot rescue a non-monotonic predicate.',
+      'Choosing low=0 when zero is impossible, or choosing high without proving it is a safe bound.',
+      'Returning the last midpoint instead of the first feasible boundary for minimisation.',
+      'Writing a feasibility check that changes input or carries state between calls.',
+      'Using floor division where ceiling division is required.',
+      'Overflow in sum bounds, products or midpoint calculation.',
+      'Sorting inside every feasibility call when one pre-sort is enough.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Implement first-true and last-true binary search over a monotonic boolean predicate.', goal: 'Make the boundary invariant explicit and handle all-false/all-true ranges.' },
+      { level: 'Core', task: 'Koko Eating Bananas and Capacity To Ship Packages Within D Days.', goal: 'Derive bounds and implement a linear feasibility check.' },
+      { level: 'Core', task: 'Minimum Number of Days to Make m Bouquets.', goal: 'Convert a threshold into a count of consecutive feasible groups.' },
+      { level: 'Challenge', task: 'Aggressive Cows / maximise minimum distance.', goal: 'Sort once and use a greedy placement feasibility predicate.' },
+      { level: 'Transfer', task: 'Find the smallest threshold that satisfies a custom resource budget.', goal: 'Define monotonic predicate, prove direction and derive safe numeric bounds.' }
+    ],
+    interviewChecks: [
+      'What exactly is being binary-searched: input values or a candidate answer?',
+      'Prove why feasibility is monotonic for the problem you selected.',
+      'How do you derive tight safe low and high bounds?',
+      'Why is the answer returned by first-true different from the final midpoint?',
+      'What is the cost of one feasibility check and the total complexity?',
+      'Which intermediate values need 64-bit arithmetic?'
+    ]
+  },
+  {
+    id: 'bit-manipulation',
+    title: '20. Bit Manipulation & Binary Tricks',
+    sourcePages: [17],
+    promise: 'Reason about integer representations and use bitwise operations to encode flags, test parity and solve XOR-based problems.',
+    mentalModel: 'An integer is represented by bits. Bitwise operations act on corresponding positions independently, so many operations become compact transformations of a fixed-width binary representation. Correctness depends on language integer width and signed-number rules.',
+    concepts: [
+      'AND (&) keeps a bit set only when both inputs have it; OR (|) sets a bit when either input has it; XOR (^) sets a bit when inputs differ.',
+      'NOT (~) flips every bit in the fixed-width representation. For signed two’s-complement integers, ~x equals -x-1.',
+      'Left shift (x << k) moves bits toward higher positions; right-shift behavior for negative values differs by language and operator.',
+      'Check bit k with (x & (1 << k)) != 0; set with x | (1 << k); clear with x & ~(1 << k); toggle with x ^ (1 << k).',
+      'The least significant set bit is isolated by x & -x for two’s-complement integer arithmetic, subject to width and overflow semantics.',
+      'For nonnegative x, x & (x-1) removes its lowest set bit. Repeating this counts set bits in O(number of set bits).',
+      'A positive power of two has exactly one set bit, so x>0 && (x & (x-1))==0.',
+      'XOR is associative and commutative, with x^x=0 and x^0=x. This explains single-number patterns when other values occur in pairs.',
+      'A bitmask can represent a subset of a small universe: bit i indicates whether item i is selected. This enables compact subset DP.'
+    ],
+    recognition: [
+      'The task asks for parity, a power-of-two check, set-bit count or a particular bit flag.',
+      'Every value appears twice except one, or pairs cancel under XOR.',
+      'A small set of boolean features must be represented compactly as a mask.',
+      'The problem asks for all subsets of n small-indexed elements and bitmask DP may be feasible.',
+      'A repeated operation removes the lowest set bit or extracts a power-of-two factor.'
+    ],
+    method: [
+      'Write the integer width and signedness assumption. Do not reason about an abstract infinite bit string when the language uses fixed-width integers.',
+      'Convert a small example to binary and label bit positions from zero at the least significant bit.',
+      'Apply the truth table for AND, OR and XOR one position at a time.',
+      'For a bit test, build the mask with a sufficiently wide type before shifting; in Java use 1L when the target bit may exceed int width.',
+      'For XOR cancellation, group equal values and apply x^x=0; verify that input multiplicities match the proof.',
+      'For subset masks, define the mapping from element index to bit position and check maximum n against type width.',
+      'Test zero, negative values, the highest supported bit and shift counts at or beyond type width according to the language contract.'
+    ],
+    workedExample: [
+      'Set x=10, binary 1010. The lowest set bit is 0010; x & -x isolates 0010.',
+      'Clear the lowest set bit: 1010 & 1001 = 1000. The number of set bits falls from two to one.',
+      'Check bit 3: 1010 & 1000 = 1000, so bit 3 is set. Toggle bit 1: 1010 ^ 0010 = 1000.',
+      'Single number: [4,1,2,1,2]. XOR all values: 4^1^2^1^2 = 4 because equal pairs cancel.',
+      'Power of two: 8 is 1000 and 8&(8-1)=1000&0111=0; 10 is 1010 and 10&9=1010&1001=1000, not zero.'
+    ],
+    complexity: [
+      'A fixed number of bitwise operations on a machine integer is O(1) time and O(1) extra space.',
+      'Brian Kernighan set-bit counting runs O(k), where k is number of set bits; a fixed-width loop is O(W).',
+      'XOR single-number scan: O(n) time and O(1) extra space.',
+      'Enumerating all subsets by masks takes O(2^n) masks; processing each mask can add another O(n) factor.',
+      'Bitmask DP commonly uses O(2^n) states, with transition cost depending on candidates per state.'
+    ],
+    pitfalls: [
+      'Confusing logical operators (&&, ||) with bitwise operators (&, |).',
+      'Using 1 << k when k may reach or exceed the width of a 32-bit int; use an appropriate wider type and validate shift counts.',
+      'Assuming bitwise NOT produces a nonnegative value; signed fixed-width integers use two’s-complement representation.',
+      'Applying XOR cancellation when values do not have the required multiplicities.',
+      'Forgetting that Java right shift >> sign-extends while >>> zero-fills; other languages have their own signed-shift rules.',
+      'Using a bitmask for a universe too large for the chosen integer type; use a bit set or another representation.',
+      'Treating negative integers as if they had a finite, language-independent binary representation.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Check, set, clear and toggle the k-th bit of an integer.', goal: 'Draw the mask and verify the operation on positive and zero values.' },
+      { level: 'Core', task: 'Single Number, Number of 1 Bits and Power of Two.', goal: 'Derive each solution from XOR or lowest-set-bit identities.' },
+      { level: 'Core', task: 'Counting Bits for every value from 0 to n.', goal: 'Relate bit counts using x&(x-1) or x>>1.' },
+      { level: 'Challenge', task: 'Single Number II and Single Number III.', goal: 'Use bit counts or a separating XOR bit and state multiplicity assumptions.' },
+      { level: 'Transfer', task: 'Represent a small feature set as a bitmask and enumerate all subsets.', goal: 'Define index-to-bit mapping and justify the 2^n state space.' }
+    ],
+    interviewChecks: [
+      'Why does x&(x-1) remove exactly one set bit?',
+      'Why does XOR cancel duplicate pairs?',
+      'What is the difference between checking, setting, clearing and toggling a bit?',
+      'Why must type width be considered before shifting?',
+      'When is bitmask DP practical and when does 2^n become too large?',
+      'What changes when the input integer is negative?'
+    ]
+  },
+
 ];
 
 export const DSA_LESSON_STEPS = [
