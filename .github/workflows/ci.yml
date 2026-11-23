@@ -42,6 +42,8 @@ jobs:
         run: npm run test:content-bootstrap-security
       - name: Test System Design AI security policy
         run: npm run test:system-design-ai-security
+      - name: Test solver endpoint security policy
+        run: npm run test:solver-endpoint-security
       - name: Verify the canonical 293-question DSA inventory and blueprint boundaries
         run: npm run test:dsa:inventory
       - name: Validate canonical learning surface inventory
