@@ -64,6 +64,7 @@ export function DomainPredictionSimulator({ simulator, onComplete }: { simulator
       </div>
       <p className="mt-1 text-xs text-slate-500">{simulator.description}</p>
       <p className="mt-1 text-[10px] text-slate-500">Objective links: {simulator.objectiveIds.join(' · ')}</p>
+      <p className="mt-1 text-[10px] text-slate-500">Simulator completion is recorded separately; prediction correctness does not count toward quiz mastery.</p>
       <ScenarioControls scenario={simulator.scenario} inputs={inputs} onChange={(next) => { setInputs(next); resetSession(); }}/>
     </header>
     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-950">
