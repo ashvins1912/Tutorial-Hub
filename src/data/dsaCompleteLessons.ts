@@ -711,6 +711,216 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     ]
   },
 
+
+  {
+    id: 'hash-set',
+    title: '21. Set & Hash Set',
+    sourcePages: [9],
+    promise: 'Use uniqueness and membership checks to remove duplicate work and turn repeated linear scans into expected constant-time lookups.',
+    mentalModel: 'A set stores membership, not positions or duplicate counts. Think of it as a collection of keys where each key is either present or absent. A hash set uses a hash function to choose a bucket, then resolves collisions while preserving the set contract.',
+    concepts: [
+      'A mathematical set contains unique elements; adding an existing element leaves the set unchanged.',
+      'Hashing maps a key to a hash code and then to a bucket index. A hash code is not a unique identifier; distinct keys may collide.',
+      'A hash set must use equality as well as hashing. Equal keys must have equal hash codes, and collisions must be resolved by the implementation.',
+      'Average add, remove and contains are expected O(1) under a suitable hash distribution; worst-case behavior can degrade when collisions are severe.',
+      'A tree-based set maintains sorted order and commonly provides O(log n) add, remove and lookup; it is not interchangeable with a hash set when ordering matters.',
+      'Set algebra includes union, intersection, difference and symmetric difference; many interview problems use these ideas implicitly.',
+      'Deduplication preserves one representative per equality class. If original order must be preserved, choose an insertion-ordered set or a separate output list.',
+      'For pair-sum and complement problems, a set can answer whether the needed counterpart has already appeared.'
+    ],
+    recognition: [
+      'The task asks whether an element has appeared before or whether a collection contains duplicates.',
+      'You need fast membership checks while scanning a sequence.',
+      'The output should contain unique values or distinct intersections.',
+      'A brute-force nested loop repeatedly checks whether a value exists in a growing collection.',
+      'The problem asks for a longest sequence or chain where membership, not sorted position, is the key operation.'
+    ],
+    method: [
+      'Identify the equality key: the full value, a normalized string, a tuple or a derived property.',
+      'Choose hash set when ordering is irrelevant; choose a sorted set when ordered traversal or predecessor/successor queries are required.',
+      'For a one-pass duplicate check, add each value and stop when add reports it was already present (or when contains is true).',
+      'For pair-sum, decide whether to check the complement before inserting the current value so an element is not reused unless allowed.',
+      'For intersection, iterate the smaller set or input and test membership in the other set.',
+      'State expected versus worst-case complexity and account for O(n) additional storage.'
+    ],
+    workedExample: [
+      'Input [4,1,2,1,3,4]. Start with empty set {}.',
+      'Read 4: it is absent, insert it -> {4}. Read 1 -> {4,1}. Read 2 -> {4,1,2}.',
+      'Read the second 1: it is already present, so a duplicate is found immediately.',
+      'For unique output while preserving first-seen order, append only when set.add(value) returns true; output is [4,1,2,3].',
+      'For two-sum, with target 9 and values [2,7], when 7 arrives the set contains 2, so complement 9-7=2 is found.'
+    ],
+    complexity: [
+      'HashSet add, remove and contains: expected O(1), worst-case can degrade with pathological collisions.',
+      'Building a set from n values: expected O(n) time and O(n) space.',
+      'Set intersection by scanning the smaller set and probing the larger: expected O(min(n,m)) time after both sets exist.',
+      'TreeSet add, remove and contains: O(log n); sorted traversal O(n).',
+      'Deduplication of n items with a hash set: expected O(n) time and O(n) additional space.'
+    ],
+    pitfalls: [
+      'Assuming hash codes are unique or comparing hash codes instead of using equality.',
+      'Using mutable objects as hash keys and then changing fields that affect equals/hashCode after insertion.',
+      'Relying on iteration order from a hash set when the language/library does not guarantee it.',
+      'Forgetting that case normalization or whitespace normalization changes the equality definition.',
+      'Using a set when multiplicity matters; a frequency map is required when counts affect the answer.',
+      'Claiming strict O(1) worst-case complexity instead of expected/amortized behavior.',
+      'In pair-sum, inserting before checking can accidentally allow an element to pair with itself when that is disallowed.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Contains Duplicate and Remove Duplicates from an Array.', goal: 'Explain why membership is the key operation and state the extra-space cost.' },
+      { level: 'Core', task: 'Intersection of Two Arrays and Happy Number.', goal: 'Use membership to detect overlap or repeated states.' },
+      { level: 'Core', task: 'Longest Consecutive Sequence.', goal: 'Start a run only when its predecessor is absent and avoid sorting.' },
+      { level: 'Challenge', task: 'Two Sum with a one-pass hash set/map strategy.', goal: 'Prove the scan order avoids reusing the same index.' },
+      { level: 'Transfer', task: 'Deduplicate records by a normalized composite key while preserving first-seen order.', goal: 'Define equality and choose a collection that satisfies output-order requirements.' }
+    ],
+    interviewChecks: [
+      'Why is a hash set expected O(1), not guaranteed O(1) worst case?',
+      'Why must equal objects have equal hash codes?',
+      'When would a TreeSet be better than a HashSet?',
+      'How do you preserve input order while deduplicating?',
+      'Why is a frequency map required instead of a set for some anagram problems?',
+      'How do you avoid pairing an element with itself in a one-pass complement search?'
+    ]
+  },
+  {
+    id: 'hash-map',
+    title: '22. Map & Hash Map',
+    sourcePages: [10],
+    promise: 'Model key-to-value relationships and use frequency, index and grouping maps to solve counting and lookup problems.',
+    mentalModel: 'A map stores an association: for a key, remember the value that answers a later question. The key defines identity; the value stores information such as a count, last-seen index, accumulated sum or grouped records.',
+    concepts: [
+      'A map stores key-value pairs with unique keys. Inserting an existing key replaces its previous value unless the operation explicitly accumulates.',
+      'Frequency maps count occurrences: increment with getOrDefault(key,0)+1 or an equivalent language idiom.',
+      'Index maps store where a value was last seen; this supports duplicate-distance and prefix-sum lookup patterns.',
+      'Grouping maps associate each key with a collection of values, such as grouping words by a normalized anagram signature.',
+      'Hash maps use hashing and equality for expected O(1) put/get/remove; tree maps keep keys ordered with O(log n) operations.',
+      'A map is not automatically safe for concurrent mutation. Choose concurrent collections or external synchronization when multiple threads write.',
+      'Prefix-sum plus map transforms subarray-sum counting into a lookup of how many previous prefixes equal currentPrefix-target.',
+      'For two-sum, store value -> index and check the complement before inserting the current value to prevent reusing the same element.'
+    ],
+    recognition: [
+      'The problem asks for counts, frequencies, first/last occurrence or a mapping from one representation to another.',
+      'You need to group records by a derived key.',
+      'A repeated linear search asks whether a previous prefix, complement or state has occurred.',
+      'The result depends on how many times a key appears, not merely whether it exists.',
+      'You need to remember the latest index or accumulated state while scanning once.'
+    ],
+    method: [
+      'Define the key precisely and ensure it is immutable or has stable equality/hash behavior.',
+      'Decide what the value represents: count, index, sum, list, state or another aggregate.',
+      'Choose update semantics: overwrite, increment, append, keep earliest, keep latest or merge.',
+      'For one-pass complement lookup, query before inserting the current item when same-index reuse is invalid.',
+      'For prefix sums, seed the map with prefix 0 occurring once before scanning so subarrays beginning at index 0 are counted.',
+      'Use long for prefix sums and counts when constraints can exceed 32-bit ranges; use a sorted map only when key order is required.'
+    ],
+    workedExample: [
+      'Frequency count for [a,b,a,c,b,a]: start {}. Read a -> {a:1}; b -> {a:1,b:1}; a -> {a:2,b:1}.',
+      'Continue c, b, a -> {a:3,b:2,c:1}. The map records multiplicity that a set would discard.',
+      'Two Sum on [2,7,11,15], target 9: at index 0 store 2->0. At index 1, complement 2 exists, so return [0,1].',
+      'Subarray sum k: keep prefix frequency map {0:1}. For each current prefix p, add freq[p-k] to answer, then increment freq[p].',
+      'The order matters: query the previous prefix count before recording the current prefix so only earlier positions are used.'
+    ],
+    complexity: [
+      'HashMap put, get and remove: expected O(1), with collision-dependent worst-case behavior.',
+      'Frequency map for n values: expected O(n) time and O(u) space, where u is the number of distinct keys.',
+      'Grouping n records: expected O(n) map operations plus the cost of building and storing each group.',
+      'Prefix-sum frequency counting: expected O(n) time and O(n) space.',
+      'TreeMap lookup/update: O(log u) when ordered key traversal is required.'
+    ],
+    pitfalls: [
+      'Using put when the intended operation is increment or merge, silently overwriting earlier counts.',
+      'Confusing containsKey with a null value when null values are allowed by the chosen map.',
+      'Forgetting to seed prefix-sum frequency with 0 -> 1.',
+      'Updating the map before querying it in a one-pass pair problem and accidentally reusing the current element.',
+      'Using int for prefix sums when values and n can overflow it.',
+      'Choosing a map without defining what duplicate keys mean.',
+      'Mutating a key object after insertion so its hash/equality behavior changes.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Valid Anagram and First Unique Character in a String.', goal: 'Build and compare frequency maps with explicit count updates.' },
+      { level: 'Core', task: 'Two Sum and Ransom Note.', goal: 'Use complement lookup and decrementing frequency counts.' },
+      { level: 'Core', task: 'Group Anagrams and Top K Frequent Elements.', goal: 'Choose stable grouping keys and combine maps with heaps or buckets.' },
+      { level: 'Challenge', task: 'Subarray Sum Equals K.', goal: 'Derive prefix-sum frequency counting and handle zero-prefix initialization.' },
+      { level: 'Transfer', task: 'Find the longest interval satisfying a custom prefix-difference condition.', goal: 'Choose whether the map should store frequency, earliest index or latest index.' }
+    ],
+    interviewChecks: [
+      'When is a map required where a set is insufficient?',
+      'What is the difference between overwriting a key and incrementing its count?',
+      'Why is the initial prefix-sum entry 0 -> 1 required?',
+      'Why should Two Sum check the complement before inserting the current value?',
+      'When would you choose a TreeMap over a HashMap?',
+      'What happens if a mutable key changes after insertion?'
+    ]
+  },
+  {
+    id: 'fast-slow-pointers',
+    title: '23. Fast & Slow Pointers',
+    sourcePages: [12],
+    promise: 'Use pointers moving at different speeds to detect cycles, locate midpoints and reason about linked-list structure in constant extra space.',
+    mentalModel: 'Two pointers share a traversal but advance at different rates. Their relative motion reveals structure: if a cycle exists, the faster pointer eventually catches the slower one; in a linear list, the fast pointer reaches the end first.',
+    concepts: [
+      'Slow pointer advances one node per iteration; fast pointer advances two. Always check fast and fast.next before dereferencing fast.next.next.',
+      'In an acyclic list, fast reaches null (or its next reaches null); slow is then at or near the midpoint depending on list length and loop condition.',
+      'In a cyclic list, the relative speed is one node per iteration. The pointers move around a finite cycle, so they eventually meet.',
+      'Floyd cycle detection uses O(1) extra space and O(n) time; a visited set is simpler but needs O(n) extra space.',
+      'After a meeting inside a cycle, reset one pointer to head and move both one step at a time; their next meeting identifies the cycle entry under Floyd’s assumptions.',
+      'For even-length lists, define whether the desired middle is the first or second middle; the loop condition determines the result.',
+      'Fast/slow pointers also help with palindrome linked lists when combined with reversing the second half and restoring the list afterward.'
+    ],
+    recognition: [
+      'The input is a linked list and asks whether a cycle exists or where it begins.',
+      'The task asks for the middle node in one pass without computing length first.',
+      'The prompt asks for a constant-extra-space solution instead of a visited set.',
+      'A repeated next-pointer function forms a sequence that may eventually repeat a state.',
+      'A palindrome-list check needs the midpoint and a reversed second half.'
+    ],
+    method: [
+      'Draw a small odd-length list and an even-length list, then decide which middle node the problem expects.',
+      'Before each iteration, ensure fast and fast.next are non-null before advancing fast by two.',
+      'For cycle detection, advance slow once and fast twice; compare node identity, not node values.',
+      'For cycle entry, after the meeting reset one pointer to head and advance both one step; explain the distance relationship in the proof.',
+      'For palindrome checking, find the midpoint, reverse the second half, compare corresponding values and restore the original links if mutation is not allowed.',
+      'Test empty, one-node, two-node, odd-length, even-length, self-loop and cycle-at-head inputs.'
+    ],
+    workedExample: [
+      'Acyclic list 1->2->3->4->5: start slow=1, fast=1. After one iteration slow=2 and fast=3; after two, slow=3 and fast=5; fast.next is null, so slow is the middle.',
+      'Cycle list 1->2->3->4->5->3: slow advances 1 edge per round and fast 2. Their relative gap changes by one edge each round around the 3-node cycle, so they eventually meet.',
+      'For cycle entry, let the non-cycle distance be μ and cycle length λ. At a meeting, the fast pointer has travelled twice the slow distance; resetting one pointer to head and moving both one step makes them meet after μ steps.',
+      'For [1,2,3,2,1], find the middle, reverse the second half and compare 1 with 1, then 2 with 2. Restore links if the caller expects the original list.'
+    ],
+    complexity: [
+      'Cycle detection: O(n) time and O(1) auxiliary space.',
+      'Finding the middle node: O(n) time and O(1) auxiliary space.',
+      'Finding cycle entry after detection: O(n) additional time and O(1) space.',
+      'Palindrome linked-list check: O(n) time and O(1) auxiliary space when reversing the second half in place.',
+      'A visited-set cycle check is O(n) expected time and O(n) extra space.'
+    ],
+    pitfalls: [
+      'Dereferencing fast.next.next without first checking fast and fast.next.',
+      'Comparing node values instead of node identity for cycle detection.',
+      'Using the wrong loop condition and returning the wrong middle for even-length lists.',
+      'Forgetting to restore the second half after a palindrome check when mutation is not allowed.',
+      'Assuming fast/slow pointers work on arbitrary arrays without a defined next-state function.',
+      'Applying Floyd’s cycle-entry reset proof without using the standard one-step/two-step speed relationship.',
+      'Failing to handle an empty list or a one-node self-cycle.'
+    ],
+    practice: [
+      { level: 'Warm-up', task: 'Find the middle of a linked list for odd and even lengths.', goal: 'State which middle is returned and justify the loop condition.' },
+      { level: 'Core', task: 'Linked List Cycle and Linked List Cycle II.', goal: 'Detect a meeting and derive the cycle entry location.' },
+      { level: 'Core', task: 'Palindrome Linked List.', goal: 'Combine midpoint detection, second-half reversal and restoration.' },
+      { level: 'Challenge', task: 'Find the duplicate number using the array as a next-pointer function.', goal: 'Map values to next indices and apply cycle detection under problem constraints.' },
+      { level: 'Transfer', task: 'Analyse a custom deterministic state-transition function for a repeated state.', goal: 'Identify the cycle assumptions and determine whether Floyd’s algorithm applies.' }
+    ],
+    interviewChecks: [
+      'Why do fast and slow pointers eventually meet inside a cycle?',
+      'How do you choose the loop condition for first-middle versus second-middle?',
+      'Why compare node references instead of values?',
+      'Explain the cycle-entry reset step using μ and λ.',
+      'How can you check a linked-list palindrome with O(1) extra space?',
+      'When would a visited set be a better engineering choice despite using more memory?'
+    ]
+  },
+
 ];
 
 export const DSA_LESSON_STEPS = [
