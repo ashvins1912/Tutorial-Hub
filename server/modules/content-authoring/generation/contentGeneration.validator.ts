@@ -24,6 +24,16 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   const quiz = asArray(raw.quiz);
   const practiceTasks = asArray(raw.practiceTasks);
   const warnings: string[] = [];
+  let simulator: GeneratedLesson['simulator'];
+  if (raw.simulator !== undefined && raw.simulator !== null) {
+    if (!raw.simulator || typeof raw.simulator !== 'object' || Array.isArray(raw.simulator)) throw new Error('GENERATED_SIMULATOR_INVALID');
+    const candidate = raw.simulator as Record<string, unknown>;
+    if (!isText(candidate.id) || !isText(candidate.title) || candidate.kind !== 'algorithm-trace' || !['binary-search', 'bubble-sort'].includes(String(candidate.algorithm)) || !isText(candidate.initialInput)) throw new Error('GENERATED_SIMULATOR_INCOMPLETE');
+    const objectiveIds = asArray(candidate.objectiveIds);
+    if (!objectiveIds.length || objectiveIds.some((id) => !isText(id))) throw new Error('GENERATED_SIMULATOR_OBJECTIVES_REQUIRED');
+    if (candidate.algorithm === 'binary-search' && candidate.initialTarget !== undefined && !isText(candidate.initialTarget)) throw new Error('GENERATED_SIMULATOR_TARGET_INVALID');
+    simulator = { id: candidate.id, title: candidate.title, kind: 'algorithm-trace', algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, ...(isText(candidate.initialTarget) ? { initialTarget: candidate.initialTarget } : {}), objectiveIds: objectiveIds as string[] };
+  }
   const sourceUrls = new Set((sourceText.match(/https?:\/\/[^\s)\]>]+/g) || []).map((url) => url.replace(/[.,;]+$/, '')));
   const candidateReferences = asArray(raw.references).filter((ref): ref is Record<string, unknown> => !!ref && typeof ref === 'object' && isText((ref as Record<string, unknown>).label) && isText((ref as Record<string, unknown>).url));
   const allowedReferences = candidateReferences.filter((ref) => sourceUrls.has(String(ref.url).replace(/[.,;]+$/, '')));
@@ -51,6 +61,7 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     visualizations: visualizations as GeneratedLesson['visualizations'],
     quiz: quiz as GeneratedLesson['quiz'],
     practiceTasks: practiceTasks as GeneratedLesson['practiceTasks'],
+    ...(simulator ? { simulator } : {}),
     references: allowedReferences.map((ref) => ({ label: String(ref.label), url: String(ref.url), suppliedByUser: true })),
     qualityNotes: asArray(raw.qualityNotes).filter(isText),
     validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and quiz structure checked'], warnings },
