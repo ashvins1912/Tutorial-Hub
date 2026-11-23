@@ -23,7 +23,8 @@
     "tests/content-authoring/published-lesson-security.test.mjs",
     "tests/content-authoring/visualization-renderer.test.mjs",
     "tests/dsa/arrays-batch-01.test.mjs",
-    "tests/dsa/master-interview-inventory.test.mjs"
+    "tests/dsa/master-interview-inventory.test.mjs",
+    "tests/content-authoring/lesson-markdown.test.mjs"
   ],
   "surfaces": [
     {
