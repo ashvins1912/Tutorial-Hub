@@ -10,6 +10,7 @@ type QuizQuestion = { question: string; options: string[]; correctAnswer?: strin
 type ObjectiveMastery = { objectiveId: string; correct: number; total: number; attempts: number; accuracy: number; status: 'mastered' | 'developing' | 'needs-review'; lastAttemptAt: string };
 type QuizGrading = { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy: number }>; objectiveMastery?: ObjectiveMastery[] };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
+type SimulatorHistoryItem = { simulatorId: string; scenario: string; answeredPredictions: number; completedAt: string };
 
 export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, domainSimulator }: { jobId: string; quiz: QuizQuestion[]; practiceTasks?: PracticeTask[]; simulator?: LessonSimulator; domainSimulator?: DomainLessonSimulator }) {
   const [algorithm, setAlgorithm] = useState<'binary-search' | 'bubble-sort'>(simulator?.algorithm || 'binary-search');
@@ -25,6 +26,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, do
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
   const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
   const [objectiveMastery, setObjectiveMastery] = useState<ObjectiveMastery[]>([]);
+  const [simulatorHistory, setSimulatorHistory] = useState<SimulatorHistoryItem[]>([]);
   const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);
   const [predictionChoice, setPredictionChoice] = useState('');
   const [predictionFeedback, setPredictionFeedback] = useState<{ answer: string; correct: boolean; expected: string } | null>(null);
@@ -34,15 +36,16 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, do
     setProgressReady(false);
     setProgressStatus('Loading saved progress…');
     setAlgorithm(simulator?.algorithm || 'binary-search'); setRawValues(simulator?.initialInput || ''); setTarget(simulator?.target || ''); setTraceIndex(0);
-    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null); setObjectiveMastery([]); setFocusedObjectiveId(null); setPredictionChoice(''); setPredictionFeedback(null);
+    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null); setObjectiveMastery([]); setSimulatorHistory([]); setFocusedObjectiveId(null); setPredictionChoice(''); setPredictionFeedback(null);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
         if (!response.ok) throw new Error(response.status === 503 ? 'Database persistence is unavailable.' : 'Could not load saved progress.');
-        const payload = await response.json() as { progress?: { algorithm?: string; input?: string; target?: string; currentStep?: number; attempts?: number; lastScore?: number | null; bestScore?: number; masteryLevel?: string; lastAnswers?: Record<string, string>; completedPracticeIds?: string[] } | null; grading?: QuizGrading | null; objectiveMastery?: ObjectiveMastery[] };
+        const payload = await response.json() as { progress?: { algorithm?: string; input?: string; target?: string; currentStep?: number; attempts?: number; lastScore?: number | null; bestScore?: number; masteryLevel?: string; lastAnswers?: Record<string, string>; completedPracticeIds?: string[]; simulatorHistory?: SimulatorHistoryItem[] } | null; grading?: QuizGrading | null; objectiveMastery?: ObjectiveMastery[] };
         if (!active) return;
         const saved = payload.progress;
         setQuizGrading(payload.grading || null);
         setObjectiveMastery(payload.objectiveMastery || []);
+        setSimulatorHistory(saved?.simulatorHistory || []);
         if (saved) {
           if (simulator && saved.algorithm === simulator.algorithm) {
             setAlgorithm(simulator.algorithm);
@@ -102,6 +105,23 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, do
     return () => clearTimeout(timer);
   }, [progressReady, jobId, algorithm, rawValues, target, traceIndex, completedPracticeIds, simulator?.id]);
 
+  const recordDomainSimulatorCompletion = async (attempt: { simulatorId: string; scenario: DomainLessonSimulator['scenario']; answeredPredictions: number }) => {
+    try {
+      const response = await apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ simulatorCompletion: { ...attempt, completed: true } }),
+      });
+      if (!response.ok) throw new Error('Simulator completion could not be saved.');
+      const payload = await response.json() as { simulatorHistory?: SimulatorHistoryItem[] };
+      setSimulatorHistory(payload.simulatorHistory || []);
+      setProgressStatus('Simulator completion saved separately from quiz mastery');
+      return true;
+    } catch {
+      setProgressStatus('Simulator completion was not saved. Check your connection and retry.');
+      return false;
+    }
+  };
+
   const isCorrect = (question: QuizQuestion, answer: string, index: number) => {
     const correctAnswer = quizGrading?.correctAnswers[index] ?? question.correctAnswer;
     if (!correctAnswer) return false;
@@ -128,7 +148,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, do
   };
 
   return <section className="space-y-4" aria-label="Interactive learning runtime">
-    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"><span>{progressStatus}</span>{masterySummary && <span>Best score: {masterySummary.bestScore}% · Mastery: <strong className="capitalize">{masterySummary.masteryLevel}</strong></span>}</div>
+    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"><span>{progressStatus}</span>{simulatorHistory.length > 0 && <span>Completed simulator sessions: {simulatorHistory.length}</span>}{masterySummary && <span>Best score: {masterySummary.bestScore}% · Mastery: <strong className="capitalize">{masterySummary.masteryLevel}</strong></span>}</div>
     {simulator && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3" data-simulator-id={simulator.id}>
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">{simulator.title}</h4><p className="text-[11px] text-slate-500">{simulator.description}</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">{algorithm === 'binary-search' ? 'Binary search trace' : 'Bubble sort trace'}</span></div>
       <label className="block text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); setPredictionChoice(''); setPredictionFeedback(null); }} /></label>
@@ -141,7 +161,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator, do
         <div className="flex flex-wrap items-center gap-2"><button type="button" className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40" disabled={traceIndex === 0} onClick={() => { setTraceIndex((value) => value - 1); setPredictionChoice(''); setPredictionFeedback(null); }}>Previous</button><button type="button" className="rounded-lg bg-sky-600 px-3 py-2 text-xs text-white disabled:opacity-40" disabled={traceIndex >= trace.length - 1 || Boolean(prediction && !predictionChoice)} onClick={() => { if (prediction && predictionChoice) setPredictionFeedback({ answer: predictionChoice, correct: predictionChoice === prediction.correctOption, expected: prediction.correctOption }); else setPredictionFeedback(null); setPredictionChoice(''); setTraceIndex((value) => value + 1); }}> {prediction ? 'Reveal next step' : 'Next step'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={() => { setTraceIndex(0); setPredictionChoice(''); setPredictionFeedback(null); }}>Reset</button><span className="ml-auto text-[10px] text-slate-500">Step {traceIndex + 1} / {trace.length}</span></div>
       </>}
     </div>}
-    {domainSimulator && <DomainPredictionSimulator key={`${domainSimulator.id}:${domainSimulator.scenario}`} simulator={domainSimulator}/>}
+    {domainSimulator && <DomainPredictionSimulator key={`${domainSimulator.id}:${domainSimulator.scenario}`} simulator={domainSimulator} onComplete={recordDomainSimulatorCompletion}/>}
     {quiz.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">Adaptive knowledge check</h4><p className="text-[11px] text-slate-500">Submit your choices to see explanations and a suggested next difficulty.</p></div><span className="text-[10px] text-slate-500">{attempts} attempt{attempts === 1 ? '' : 's'}</span></div>
       {focusedObjectiveId && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sky-50 dark:bg-sky-950/40 p-2"><span className="text-[11px] text-sky-800 dark:text-sky-200">Focused practice: {focusedObjectiveId}</span><button type="button" className="text-[11px] underline" onClick={() => { setFocusedObjectiveId(null); setAnswers({}); setSubmitted(false); setQuizGrading(null); }}>Return to full quiz</button></div>}
