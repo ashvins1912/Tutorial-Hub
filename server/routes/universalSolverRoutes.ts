@@ -814,7 +814,7 @@ router.get('/saved-problems', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/saved-problems', async (req, res) => {
+router.post('/saved-problems', requireAuth, async (req, res) => {
   const actor = extractAuthenticatedActor(req);
   const body = (req.body ?? {}) as Record<string, unknown>;
   const title = String(body.title ?? '').trim();
@@ -845,7 +845,7 @@ router.post('/saved-problems', async (req, res) => {
   }
 });
 
-router.delete('/saved-problems/:id', async (req, res) => {
+router.delete('/saved-problems/:id', requireAuth, async (req, res) => {
   const actor = extractAuthenticatedActor(req);
   const { id } = req.params;
   try {
