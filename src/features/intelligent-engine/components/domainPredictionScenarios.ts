@@ -18,7 +18,7 @@ export type DomainPrediction = { prompt: string; options: string[]; correctOptio
 export type DomainScenarioFrame = { title: string; detail: string; metrics: Array<{ label: string; value: string }>; prediction?: DomainPrediction };
 
 const checkpoint = (prompt: string, correctOption: string, alternatives: string[], rationale: string): DomainPrediction => ({
-  prompt, options: [correctOption, ...alternatives].filter((value, index, all) => all.indexOf(value) === index), correctOption, rationale,
+  prompt, options: [correctOption, ...alternatives, 'The current state never changes', 'Skip the required validation step'].filter((value, index, all) => all.indexOf(value) === index).slice(0, 4), correctOption, rationale,
 });
 const frame = (title: string, detail: string, metrics: DomainScenarioFrame['metrics'], prediction?: DomainPrediction): DomainScenarioFrame => ({ title, detail, metrics, ...(prediction ? { prediction } : {}) });
 
