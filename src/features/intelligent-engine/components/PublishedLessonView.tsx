@@ -26,6 +26,8 @@ export function PublishedLessonView({ lessonId }: { lessonId: string }) {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setError('');
+    setLesson(null);
     apiFetch(`/api/authoring/published/${encodeURIComponent(lessonId)}`)
       .then(async (response) => {
         const payload = await response.json() as { lesson?: PublishedLesson; message?: string; code?: string };
