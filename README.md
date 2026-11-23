@@ -110,8 +110,9 @@ Do not paste secrets into issues, PRs, source files or client-side variables. Le
 | `npm run test:dsa:arrays:01` | Run verified DSA arrays batch 01 tests |
 | `npm run test:content-authoring` | Run content-authoring and learning-runtime tests |
 | `npm run audit:learning-surfaces` | Validate all typed TopView IDs and referenced registry paths |
+| `npm run test:dsa:inventory` | Verify the 293-question inventory, unique topic IDs/slugs and honest blueprint evidence states |
 
-CI currently runs type-check, the arrays batch test, content-authoring test suite, learning-surface inventory validation and production build. Do not assume that this proves all curriculum entries or all visualizers are verified.
+CI currently runs type-check, the arrays batch test, content-authoring tests, the DSA inventory integrity test, learning-surface inventory validation and production build. Do not assume that this proves all curriculum entries or all visualizers are verified.
 
 ## API overview
 
