@@ -437,7 +437,128 @@ static int[] kmpMatches(String text, String pattern) {
       {level:'Challenge',task:'Largest rectangle in histogram.',goal:'Use previous/next smaller boundaries.'},
       {level:'Transfer',task:'Maximum of every window of size k.',goal:'Use index deque with expiry and domination.'}
     ],
-    interviewChecks: ['Why is a monotonic stack linear overall?', 'Why store indices in a sliding-window deque?', 'What is the equality rule for duplicate heights?', 'How does a two-stack queue achieve amortized O(1)?']
+    interviewChecks: ['Why is a monotonic stack linear overall?', 'Why store indices in a sliding-window deque?', 'What is the equality rule for duplicate heights?', 'How does a two-stack queue achieve amortized O(1)?'],
+    learningOutcomes: [
+      'Choose stack, queue or deque based on the required processing order and end operations.',
+      'Implement delimiter validation and queue-via-two-stacks with clear empty-state behavior.',
+      'Derive monotonic stack direction and strictness from the exact next-greater/smaller requirement.',
+      'Use index deques for sliding-window extrema with expiry and duplicate handling.',
+      'Prove linear total work by accounting for each index entering and leaving a monotonic structure at most once.',
+      'Explain queue frontiers in BFS and why adjacency-list BFS costs O(V+E).'
+    ],
+    prerequisites: [
+      'Understand arrays, indices and dynamic collections.',
+      'Be comfortable with loops, nested conditions and amortized versus worst-case cost.',
+      'Know graph vertices and edges before using queues for BFS.',
+      'Understand how a stack differs from a queue in removal order.'
+    ],
+    deepDive: [
+      'A stack is LIFO: the last inserted item is the first removed. Push and pop occur at one end. A queue is FIFO: enqueue at the back and dequeue at the front. A deque supports insertion and removal at both ends.',
+      'Array-backed stacks use a size/top index. A queue should use head and tail indices or a circular buffer; removing index zero from a dynamic array shifts remaining items and can make repeated dequeue quadratic.',
+      'A circular queue maps logical positions to physical positions with modulo capacity. Track size explicitly or reserve one slot to distinguish full from empty; document which convention is used.',
+      'For balanced delimiters, push opening tokens. A closing token is valid only if the stack is nonempty and its top is the matching opener. At end, the stack must be empty. This catches premature closes and unclosed opens.',
+      'A queue implemented with two stacks has input and output stacks. Push only to input. When output is empty, transfer all input items; this reverses their order so the oldest item becomes the output top.',
+      'The two-stack queue has O(1) amortized dequeue: each item is pushed to input once, transferred once, and popped from output once. A single operation can cost O(n), so do not describe each dequeue as worst-case O(1).',
+      'A monotonic stack stores unresolved indices whose values are increasing or decreasing. When a new value resolves older candidates, pop them and record the answer. The stack invariant depends on whether the task asks for greater, greater-or-equal, smaller or smaller-or-equal.',
+      'Strict versus non-strict comparisons determine duplicate behavior. For next strictly greater, pop while top value < current; equal values remain unresolved. For next greater-or-equal, pop while top value <= current.',
+      'A sliding-window maximum deque stores indices in decreasing value order. Before inserting i, remove expired indices from the front; remove dominated values from the back; then append i. The front is the maximum index/value candidate.',
+      'Each index enters a monotonic stack/deque once and leaves at most once. Although a while loop is nested inside a for loop, aggregate pushes and pops are O(n), not O(n²).',
+      'For histogram area, each bar is popped when a smaller bar establishes its right boundary; the new stack top gives its left boundary. Width is right - left - 1. Equal-height policy must be consistent to avoid missing maximal spans.',
+      'BFS uses a FIFO queue to process vertices in nondecreasing distance from the source in an unweighted graph. Mark vertices visited when enqueued to prevent duplicate queue entries and repeated work.'
+    ],
+    correctness: [
+      'Delimiter invariant: after processing each prefix, the stack contains exactly the unmatched opening delimiters in their nesting order. A mismatched close proves the prefix invalid; an empty final stack proves all opens matched.',
+      'Two-stack queue invariant: output stack, from top downward, contains the oldest queued elements; input stack contains newer elements. Transfer occurs only when output is empty, preserving FIFO order.',
+      'Monotonic next-greater invariant: indices in the stack are unresolved and their values are monotonic. When current value pops an index, current is the first qualifying value to its right because every intervening value was too small to pop it earlier.',
+      'Sliding-window deque invariant: indices are increasing, all indices are inside the current window, and values are decreasing from front to back. Therefore the front is the maximum of the window.',
+      'Amortized bound: every index is pushed once and popped no more than once; total stack/deque mutations are bounded by 2n, proving O(n) aggregate time.',
+      'BFS invariant: when a vertex is dequeued, its recorded distance is the shortest path length from the source in an unweighted graph because vertices are processed by nondecreasing frontier distance.'
+    ],
+    implementationSteps: [
+      'Write down the required removal order (LIFO, FIFO or either end) before choosing the data structure.',
+      'Define empty and full behavior for bounded array implementations; avoid ambiguous head/tail conventions.',
+      'For delimiter validation, map each closer to its exact opener and reject unknown tokens if the input grammar requires it.',
+      'For a two-stack queue, transfer input to output only when output is empty.',
+      'For monotonic structures, state the invariant and decide whether equal values should remain or be removed.',
+      'Store indices when answers depend on positions, window expiry or widths; store values only when position is irrelevant.',
+      'For sliding windows, expire from the front before reading the answer and remove dominated candidates from the back before appending.',
+      'For BFS, mark visited at enqueue time and test disconnected graphs, self-loops and duplicate edges.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Queue implemented with two stacks', code: `static final class TwoStackQueue {
+    private final Deque<Integer> incoming = new ArrayDeque<>();
+    private final Deque<Integer> outgoing = new ArrayDeque<>();
+
+    void offer(int value) {
+        incoming.push(value);
+    }
+
+    int poll() {
+        moveIfNeeded();
+        if (outgoing.isEmpty()) throw new NoSuchElementException("queue is empty");
+        return outgoing.pop();
+    }
+
+    private void moveIfNeeded() {
+        if (outgoing.isEmpty()) {
+            while (!incoming.isEmpty()) outgoing.push(incoming.pop());
+        }
+    }
+
+    boolean isEmpty() {
+        return incoming.isEmpty() && outgoing.isEmpty();
+    }
+}`, explanation: 'Offer is O(1). Poll is O(1) amortized and O(n) worst-case for the transfer operation. Each element crosses from incoming to outgoing at most once.' },
+      { language: 'Java 21', title: 'Sliding-window maximum with an index deque', code: `static int[] slidingMaximum(int[] values, int k) {
+    if (k <= 0 || k > values.length) throw new IllegalArgumentException("invalid window");
+    int[] answer = new int[values.length - k + 1];
+    Deque<Integer> candidates = new ArrayDeque<>();
+
+    for (int right = 0; right < values.length; right++) {
+        int left = right - k + 1;
+        while (!candidates.isEmpty() && candidates.peekFirst() < left) {
+            candidates.removeFirst();
+        }
+        while (!candidates.isEmpty()
+                && values[candidates.peekLast()] <= values[right]) {
+            candidates.removeLast();
+        }
+        candidates.addLast(right);
+        if (left >= 0) answer[left] = values[candidates.peekFirst()];
+    }
+    return answer;
+}`, explanation: 'Indices increase from front to back and their values decrease. Expiry removes indices left of the current window; removing <= values from the back keeps the newest equal maximum. O(n) time and O(k) auxiliary space.' }
+    ],
+    traceExercises: [
+      'Queue trace: enqueue 1, 2, 3; dequeue twice; enqueue 4; dequeue twice. Show both internal stacks after every operation.',
+      'Next-greater trace: [2, 1, 2, 4, 3]. Show stack indices and which answer is assigned on every pop.',
+      'Window maximum trace: [1, 3, -1, -3, 5, 3, 6, 7], k=3. Record expired indices and back removals for each right endpoint.',
+      'Duplicate trace: [5, 5, 4], k=2. Explain why <= removes the older equal candidate without changing the maximum.'
+    ],
+    realWorldApplications: [
+      'Call stacks and undo histories naturally follow LIFO order.',
+      'Task queues and message brokers process work in FIFO order when fairness/order matters.',
+      'BFS queues support shortest-hop routing and level-order exploration.',
+      'Monotonic deques support rolling maximum/minimum metrics in telemetry and time-series processing.',
+      'Expression parsers use stacks to validate nesting and evaluate postfix expressions.'
+    ],
+    assessment: [
+      'Implement balanced-parentheses validation and explain the stack contents after every input prefix.',
+      'Prove the two-stack queue preserves FIFO order and state worst-case versus amortized operation costs.',
+      'For next strictly greater element, explain why the comparison is < rather than <=.',
+      'Implement sliding-window maximum using indices and prove the front is always the maximum.',
+      'Derive the O(n) aggregate bound for a monotonic stack despite a nested while loop.',
+      'Explain why marking BFS vertices visited at enqueue time prevents duplicate processing.',
+      'Test empty input, invalid k, all-equal values, increasing/decreasing arrays and duplicate candidates.'
+    ],
+    revisionPrompts: [
+      'From memory, distinguish stack, queue and deque with one operation sequence each.',
+      'Draw both stacks after a sequence of queue operations and explain the transfer rule.',
+      'Re-derive the monotonic-deque invariant for a maximum window.',
+      'After two days, solve next-greater and histogram-area problems, stating the equality policy.',
+      'After one week, explain the aggregate 2n push/pop argument without saying “the loop is obviously linear”.',
+      'Implement BFS and sliding-window maximum without notes and test duplicates and boundary windows.'
+    ]
   },
   {
     id: 'binary-search', sourcePages: [14], title: '6. Binary Search Algorithm', promise: 'Search sorted data and monotonic answer spaces with explicit invariants.',
