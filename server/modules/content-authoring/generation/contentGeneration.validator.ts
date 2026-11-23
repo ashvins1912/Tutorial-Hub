@@ -53,9 +53,10 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     if (candidate.algorithm === 'binary-search' && (!isText(candidate.target) || !Number.isFinite(Number(candidate.target)))) throw new Error('GENERATED_SIMULATOR_TARGET_REQUIRED');
     if (candidate.algorithm === 'binary-search' && values.some((value, index) => index > 0 && values[index - 1] > value)) throw new Error('GENERATED_SIMULATOR_INPUT_MUST_BE_SORTED');
     const objectiveIds = asArray(candidate.objectiveIds);
+    const validObjectiveIds = objectiveIds.filter(isText);
     const availableObjectives = new Set(asArray(raw.learningObjectives).filter(isText));
-    if (!objectiveIds.length || objectiveIds.length > 12 || objectiveIds.some((id) => !isText(id) || id.length > 120) || new Set(objectiveIds).size !== objectiveIds.length || objectiveIds.some((id) => !availableObjectives.has(id))) throw new Error('GENERATED_SIMULATOR_OBJECTIVE_BINDING_INVALID');
-    simulator = { schemaVersion: 1, id: candidate.id, kind: 'algorithm-trace', title: candidate.title, description: candidate.description, algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, objectiveIds: objectiveIds as string[], ...(typeof candidate.target === 'string' ? { target: candidate.target } : {}) };
+    if (!validObjectiveIds.length || validObjectiveIds.length !== objectiveIds.length || validObjectiveIds.length > 12 || validObjectiveIds.some((id) => id.length > 120) || new Set(validObjectiveIds).size !== validObjectiveIds.length || validObjectiveIds.some((id) => !availableObjectives.has(id))) throw new Error('GENERATED_SIMULATOR_OBJECTIVE_BINDING_INVALID');
+    simulator = { schemaVersion: 1, id: candidate.id, kind: 'algorithm-trace', title: candidate.title, description: candidate.description, algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, objectiveIds: validObjectiveIds, ...(typeof candidate.target === 'string' ? { target: candidate.target } : {}) };
   }
   const lesson: GeneratedLesson = {
     schemaVersion: '1.0',
