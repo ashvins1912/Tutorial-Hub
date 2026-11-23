@@ -230,7 +230,7 @@ test('heap Java examples execute against expected outputs', () => {
       'if (!Arrays.equals(mergeKSorted(new int[][]{{}, {2}, {}}), new int[]{2})) throw new AssertionError("empty sources");',
       '}',
       '}'
-    ].join('\n');
+    ].join(String.fromCharCode(10));
     writeFileSync(join(directory, 'HeapLessonExamples.java'), javaSource);
     const compile = spawnSync('javac', ['HeapLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
@@ -320,7 +320,7 @@ test('heap Java examples execute against expected outputs', () => {
       'if (!Arrays.equals(mergeKSorted(new int[][]{{}, {1}, {}}), new int[]{1})) throw new AssertionError("empty sources");',
       '}',
       '}'
-    ].join('\\n');
+    ].join(String.fromCharCode(10));
     writeFileSync(join(directory, 'HeapLessonExamples.java'), javaSource);
     const compile = spawnSync('javac', ['HeapLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
