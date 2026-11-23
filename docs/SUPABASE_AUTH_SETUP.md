@@ -32,6 +32,9 @@ Set these on the `tutorial-hub` Web Service:
 | `VITE_SUPABASE_ANON_KEY` | Browser Supabase client; available at build time |
 | `SUPABASE_URL` | Server-side token verification |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side token verification only; secret |
+| `CONTENT_BOOTSTRAP_ADMIN_USER_IDS` | Comma-separated Supabase user UUIDs permitted to publish canonical platform bundles; required for `POST /api/content-bootstrap/push` |
+
+Use Supabase user UUIDs, not email addresses, in `CONTENT_BOOTSTRAP_ADMIN_USER_IDS`. Keep this separate from `CONTENT_AUTHOR_USER_IDS`: lesson-author access does not grant platform-wide content publishing rights. If the admin allowlist is unset, publishing fails closed with HTTP 503; signed-in users outside the allowlist receive HTTP 403.
 | `MONGODB_URI` | Persist account and learning profile documents |
 | `GEMINI_API_KEY` | Optional Gemini-powered features |
 | `NODE_ENV` | Set to `production` |

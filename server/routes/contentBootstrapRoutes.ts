@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
+import { requireAuth } from '../middleware/requireAuth';
 import {
   pullPlatformContentFromDb,
   pullSingleContentBundleFromDb,
@@ -10,6 +11,35 @@ import {
 } from '../../src/data/canonicalDataRegistry';
 
 const router = Router();
+
+/**
+ * Publishing canonical platform bundles is an administrative operation.
+ * The allowlist is deliberately separate from CONTENT_AUTHOR_USER_IDS:
+ * authoring lessons must not implicitly grant permission to overwrite the
+ * platform-wide canonical content store.
+ */
+export function isContentBootstrapAdmin(userId: string | undefined, configuredIds = process.env.CONTENT_BOOTSTRAP_ADMIN_USER_IDS || ''): boolean {
+  if (!userId) return false;
+  const allowedIds = new Set(configuredIds.split(',').map((id) => id.trim()).filter(Boolean));
+  return allowedIds.has(userId);
+}
+
+export function requireContentBootstrapAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.authUser) {
+    return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'Sign in to publish platform content.' });
+  }
+  const configuredIds = process.env.CONTENT_BOOTSTRAP_ADMIN_USER_IDS || '';
+  if (!configuredIds.trim()) {
+    return res.status(503).json({
+      code: 'CONTENT_BOOTSTRAP_ADMIN_NOT_CONFIGURED',
+      message: 'Platform content publishing is disabled until CONTENT_BOOTSTRAP_ADMIN_USER_IDS is configured.',
+    });
+  }
+  if (!isContentBootstrapAdmin(req.authUser.id, configuredIds)) {
+    return res.status(403).json({ code: 'CONTENT_BOOTSTRAP_ADMIN_REQUIRED', message: 'You are not authorized to publish platform-wide content.' });
+  }
+  return next();
+}
 
 function parsePullOverride(raw: unknown): boolean | undefined {
   if (typeof raw !== 'string') return undefined;
@@ -71,7 +101,7 @@ router.get('/', async (req, res) => {
  * Pushes all 25 canonical platform collections (or optional `keys[]` subset)
  * into MongoDB (or server in-memory snapshot store).
  */
-router.post('/push', async (req, res) => {
+router.post('/push', requireAuth, requireContentBootstrapAdmin, async (req, res) => {
   try {
     const force = Boolean(req.body?.force);
     const rawKeys = Array.isArray(req.body?.keys) ? req.body.keys : undefined;
