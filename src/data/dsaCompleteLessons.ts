@@ -648,7 +648,128 @@ static int[] kmpMatches(String text, String pattern) {
       {level:'Challenge',task:'Find median from a data stream.',goal:'Balance max-heap lower half and min-heap upper half.'},
       {level:'Transfer',task:'Design a scheduler with priorities and cancellations.',goal:'Use tie-breakers and lazy invalidation.'}
     ],
-    interviewChecks: ['Why is heapify O(n)?', 'Why does Top K largest use a min-heap?', 'What information belongs in a K-way merge heap entry?', 'Why is a heap not a sorted array?']
+    interviewChecks: ['Why is heapify O(n)?', 'Why does Top K largest use a min-heap?', 'What information belongs in a K-way merge heap entry?', 'Why is a heap not a sorted array?'],
+    learningOutcomes: [
+      'Explain the complete-tree shape property and min/max heap-order property separately.',
+      'Derive parent/child array indices and trace sift-up and sift-down operations.',
+      'Distinguish O(n) bottom-up heap construction from n repeated O(log n) insertions.',
+      'Choose heap orientation and capacity for Top K largest/smallest problems.',
+      'Design K-way merge and running-median solutions using explicit heap entry metadata.',
+      'Handle ties, stale entries and unsupported arbitrary deletion safely.'
+    ],
+    prerequisites: [
+      'Understand binary trees, array indexing and complete binary trees.',
+      'Know logarithms and why the height of a complete binary tree is O(log n).',
+      'Be comfortable with sorting and asymptotic comparison.',
+      'Understand comparator ordering and stable tie-breaker requirements.'
+    ],
+    deepDive: [
+      'A binary heap is a complete binary tree: every level except possibly the last is full, and the last level fills from left to right. This shape allows compact array storage without explicit child references.',
+      'For zero-based array index i, left child is 2i+1, right child is 2i+2 and parent is floor((i-1)/2) for i>0. These formulas describe shape, not priority ordering.',
+      'A min-heap guarantees parent <= children, so the minimum is at index 0. A max-heap reverses the comparison. Siblings and different subtrees are not globally sorted.',
+      'Sift-up repairs a newly appended leaf by swapping it with its parent while it violates heap order. At most the tree height swaps occur, so insert is O(log n).',
+      'Sift-down repairs a root after extraction by swapping with the better child (smaller for min-heap, larger for max-heap) until heap order is restored. Extract is O(log n).',
+      'Bottom-up heapify starts at the last internal node and sifts down in reverse level order. Most nodes are near leaves and move only a few levels; summing height-weighted work gives O(n), not O(n log n).',
+      'For Top K largest, a min-heap of size K keeps the weakest retained item at the root. A new item replaces it only when larger. For Top K smallest, use a max-heap of size K.',
+      'A K-way merge heap stores one current candidate per nonempty sorted source. After removing the smallest candidate, advance only its source and insert its next item. With K sources and N total items, work is O(N log K).',
+      'Running median uses a max-heap for the lower half and a min-heap for the upper half. Keep sizes equal or lower size one larger; the median is read from the roots.',
+      'PriorityQueue does not support efficient arbitrary removal by value. Lazy deletion stores invalidation/version metadata and discards stale roots when they reach the top; periodic rebuilds may be needed if stale entries grow without bound.',
+      'Equal priorities need a deterministic tie-breaker when reproducible order matters. A tuple such as (priority, sequenceNumber, payload) prevents accidental comparison of payload objects.',
+      'Heap operations are logarithmic in heap size, not in the number of distinct priorities. If all priorities are equal, shape and ordering still follow the same heap operations.'
+    ],
+    correctness: [
+      'Sift-up invariant: the subtree rooted at the inserted node is heap-ordered except possibly along its path to the root; swapping with a violating parent moves the only possible violation upward.',
+      'Sift-down invariant: before each iteration, all subtrees below the current node satisfy heap order; selecting the better child ensures the swap restores the parent relation at the previous position.',
+      'Top K invariant: after processing each input prefix, the bounded min-heap contains the K largest values seen so far (or all seen values when fewer than K exist). Its root is the smallest retained value.',
+      'K-way merge invariant: the heap contains the smallest not-yet-emitted item from each nonempty source. Therefore its root is the globally smallest remaining item.',
+      'Running-median invariant: every value in lower heap is <= every value in upper heap, and heap sizes differ by at most one. Root(s) therefore identify the median.',
+      'Heapify correctness follows because children are already heap-ordered when a parent is sifted down in reverse level order; after processing all internal nodes, the entire tree satisfies heap order.'
+    ],
+    implementationSteps: [
+      'Specify min-heap or max-heap in terms of the item that must be extracted first.',
+      'Write the zero-based index formulas and verify them on a small array before implementing custom heap logic.',
+      'For insertion, append then sift up; for extraction, save root, move last item to root, remove last slot and sift down.',
+      'When implementing sift-down, compare both existing children and swap with the better child, not simply the left child.',
+      'For Top K, cap heap size at K and explain why the root is the weakest retained candidate.',
+      'For K-way merge, store source index and next position with each heap entry.',
+      'For duplicate priorities, define a deterministic tie-breaker if order matters.',
+      'Test empty heap, singleton, duplicate priorities, ascending/descending input, K=1, K=n and invalid K.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Top K largest values with a bounded min-heap', code: `static int[] topKLargest(int[] values, int k) {
+    if (k < 0 || k > values.length) throw new IllegalArgumentException("invalid k");
+    if (k == 0) return new int[0];
+
+    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+    for (int value : values) {
+        if (minHeap.size() < k) {
+            minHeap.offer(value);
+        } else if (value > minHeap.peek()) {
+            minHeap.poll();
+            minHeap.offer(value);
+        }
+    }
+    return minHeap.stream().mapToInt(Integer::intValue).toArray();
+}`, explanation: 'The min-heap root is the smallest of the retained K candidates. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space. Returned order is heap iteration order, not sorted order.' },
+      { language: 'Java 21', title: 'Merge K sorted arrays', code: `record Entry(int value, int source, int index) {}
+
+static int[] mergeKSorted(int[][] arrays) {
+    PriorityQueue<Entry> heap = new PriorityQueue<>(
+        Comparator.comparingInt(Entry::value)
+                  .thenComparingInt(Entry::source)
+    );
+    int total = 0;
+    for (int source = 0; source < arrays.length; source++) {
+        total += arrays[source].length;
+        if (arrays[source].length > 0) {
+            heap.offer(new Entry(arrays[source][0], source, 0));
+        }
+    }
+
+    int[] merged = new int[total];
+    int out = 0;
+    while (!heap.isEmpty()) {
+        Entry smallest = heap.poll();
+        merged[out++] = smallest.value();
+        int nextIndex = smallest.index() + 1;
+        int[] source = arrays[smallest.source()];
+        if (nextIndex < source.length) {
+            heap.offer(new Entry(source[nextIndex], smallest.source(), nextIndex));
+        }
+    }
+    return merged;
+}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' }
+    ],
+    traceExercises: [
+      'Insert 7, 3, 9, 1, 6 into a min-heap. Draw the array after each append and sift-up.',
+      'Extract twice from [1, 3, 6, 7, 9]. Show the replacement root and each sift-down choice.',
+      'For Top 3 largest in [4, 1, 9, 2, 8, 3], record the heap after each processed value and explain every rejection.',
+      'Merge [1, 4, 9], [1, 3, 8], [2, 6]. Record heap entries as (value, source, index) after every extraction.'
+    ],
+    realWorldApplications: [
+      'Operating-system and application schedulers select the next task by priority.',
+      'Streaming analytics maintain Top K items without sorting the entire history.',
+      'Search engines and recommendation systems merge ranked result streams.',
+      'Event simulation uses a min-heap ordered by next event time.',
+      'Monitoring systems compute running medians from latency and metric streams.'
+    ],
+    assessment: [
+      'Prove bottom-up heapify is O(n) using the number of nodes at each height.',
+      'Explain why a heap array is not sorted and identify the only guaranteed extremum.',
+      'Implement Top K largest and justify min-heap orientation and bounded size.',
+      'Design K-way merge and explain why only one candidate per source is sufficient.',
+      'State and maintain the two-heap invariant for a running median.',
+      'Explain how lazy deletion works and when stale heap entries may become a memory issue.',
+      'Test duplicates, empty sources, one source, invalid K and all-equal priorities.'
+    ],
+    revisionPrompts: [
+      'Write parent/left/right index formulas from memory and derive them from a tree level.',
+      'Trace sift-up and sift-down on a five-element heap.',
+      'Re-derive the O(n) heapify argument by summing nodes weighted by height.',
+      'After two days, implement Top K largest and explain why the root is the weakest retained value.',
+      'After one week, solve K-way merge and running median while stating their invariants.',
+      'Explain the difference between heap order and total sorted order in one minute.'
+    ]
   },
   {
     id: 'backtracking', title: '11. Backtracking', promise: 'Explore combinatorial choices systematically and prune only when safe.',
