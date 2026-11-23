@@ -82,15 +82,9 @@ export interface GeneratedLessonSimulator {
   target?: string;
   objectiveIds: string[];
 }
-export interface GeneratedDomainLessonSimulator {
-  schemaVersion: 1;
-  id: string;
-  kind: 'domain-prediction';
-  scenario: 'database-query-plan' | 'system-capacity' | 'concurrency-lost-update' | 'cloud-pipeline-gate';
-  title: string;
-  description: string;
-  objectiveIds: string[];
-}
+import type { DomainLessonSimulator } from '../../../shared/domainSimulatorContract';
+
+export type GeneratedDomainLessonSimulator = DomainLessonSimulator;
 export interface GeneratedLesson {
   schemaVersion: '1.0';
   title: string;
