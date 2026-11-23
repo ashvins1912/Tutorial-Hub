@@ -15,7 +15,8 @@ const validLesson = {
   modules: sections.map((section) => ({ sectionId: section.id, title: section.title, purpose: section.purpose, contentMarkdown: 'Detailed explanation of the topic.', keyPoints: ['Maintain a valid search interval'], reasoningSteps: ['Compare the middle element'], workedExamples: [], codeExamples: [] })),
   visualizations: [{ id: 'flow', title: 'Search interval', type: 'mermaid', description: 'Interval narrowing', source: 'flowchart TD\n A-->B' }],
   quiz: [{ question: 'What does the invariant represent?', type: 'single-choice', options: ['A valid interval', 'A random index'], correctAnswer: 'A valid interval', explanation: 'The invariant preserves the target if it exists.', difficulty: 'beginner' }],
-  practiceTasks: [{ title: 'Trace a search', instructions: 'Trace target 7 in a sorted list.', expectedOutcome: 'Show interval updates.', difficulty: 'beginner' }],\n  simulator: { id: 'binary-search-trace', title: 'Binary search trace', kind: 'algorithm-trace', algorithm: 'binary-search', initialInput: '2, 5, 8, 12, 16, 23, 38', initialTarget: '16', objectiveIds: ['Understand the invariant'] },
+  practiceTasks: [{ title: 'Trace a search', instructions: 'Trace target 7 in a sorted list.', expectedOutcome: 'Show interval updates.', difficulty: 'beginner' }],
+  simulator: { id: 'binary-search-trace', title: 'Binary search trace', kind: 'algorithm-trace', algorithm: 'binary-search', initialInput: '2, 5, 8, 12, 16, 23, 38', initialTarget: '16', objectiveIds: ['Understand the invariant'] },
   references: [], qualityNotes: ['Review the example against the source.'],
 };
 
