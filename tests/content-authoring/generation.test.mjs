@@ -14,7 +14,7 @@ const validLesson = {
   learningObjectives: ['Understand the invariant'],
   modules: sections.map((section) => ({ sectionId: section.id, title: section.title, purpose: section.purpose, contentMarkdown: 'Detailed explanation of the topic.', keyPoints: ['Maintain a valid search interval'], reasoningSteps: ['Compare the middle element'], workedExamples: [], codeExamples: [] })),
   visualizations: [{ id: 'flow', title: 'Search interval', type: 'mermaid', description: 'Interval narrowing', source: 'flowchart TD\n A-->B' }],
-  quiz: [{ question: 'What does the invariant represent?', type: 'single-choice', options: ['A valid interval', 'A random index'], correctAnswer: 'A valid interval', explanation: 'The invariant preserves the target if it exists.', difficulty: 'beginner' }],
+  quiz: [{ question: 'What does the invariant represent?', type: 'single-choice', options: ['A valid interval', 'A random index'], correctAnswer: 'A valid interval', explanation: 'The invariant preserves the target if it exists.', difficulty: 'beginner', objectiveIds: ['Understand the invariant'] }],
   practiceTasks: [{ title: 'Trace a search', instructions: 'Trace target 7 in a sorted list.', expectedOutcome: 'Show interval updates.', difficulty: 'beginner' }],
   references: [], qualityNotes: ['Review the example against the source.'],
 };
@@ -24,6 +24,8 @@ test('builds subject-specific prompts and treats uploaded text as reference data
   assert.match(prompt, /algorithmic problem solving/i);
   assert.match(prompt, /untrusted reference data/i);
   assert.match(prompt, /Ignore prior instructions/);
+  assert.match(prompt, /objectiveIds/);
+  assert.match(prompt, /Every quiz question must assess at least one explicit learning objective/);
   assert.match(prompt, /sectionId/);
 });
 
@@ -32,6 +34,13 @@ test('validates complete required section coverage and visualizations', () => {
   assert.equal(result.lesson.validation.status, 'unverified-draft');
   assert.equal(result.lesson.modules.length, 2);
   assert.equal(result.warnings.length, 0);
+});
+
+test('rejects quiz questions without valid objective bindings', () => {
+  const base = validLesson.quiz[0];
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, quiz: [{ ...base, objectiveIds: [] }] }, sections), /GENERATED_QUIZ_OBJECTIVE_BINDING_INVALID/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, quiz: [{ ...base, objectiveIds: ['not an objective'] }] }, sections), /GENERATED_QUIZ_OBJECTIVE_BINDING_INVALID/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, quiz: [{ ...base, objectiveIds: ['Understand the invariant', 'Understand the invariant'] }] }, sections), /GENERATED_QUIZ_OBJECTIVE_BINDING_INVALID/);
 });
 
 test('rejects generated content that omits a required section', () => {
