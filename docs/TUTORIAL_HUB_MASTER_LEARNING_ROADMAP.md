@@ -627,3 +627,17 @@ The standard defines **what good means**; the inventory records **what exists an
 ## 12. Domain-specific prediction simulators — implementation status (2026-11-24)
 
 Implemented in the domain-prediction increment: four deterministic scenario families (database query planning, system capacity, lost-update concurrency, and cloud pipeline security gates), a versioned lesson contract, objective binding validation, generation prompt guidance, predict-before-reveal feedback and focused tests. These fixtures are instructional models, not live infrastructure or database execution. Next acceptance work is UI-level keyboard/screen-reader/reduced-motion testing, domain-expert review of assumptions, and expansion only where a new scenario has a defensible model and deterministic fixtures.
+
+
+## 13. Consolidated domain simulator quality and evidence increment (2026-11-24)
+
+Implemented in one branch: canonical shared simulator contract, generation/server/browser validation, publication sanitization tests, parameterized database/system-capacity/concurrency/cloud scenarios, tested session transitions, keyboard-first controls and accessible status/progress semantics. Simulator completion is persisted in a bounded `simulatorHistory` separate from quiz attempts and mastery; the server validates the published lesson's simulator identity and records only completion plus answered checkpoint count. This is completion telemetry, not correctness or mastery evidence.
+
+### Remaining acceptance work
+
+1. Manually review keyboard navigation, screen-reader announcements, zoom and mobile layouts across supported devices.
+2. Have domain reviewers validate all model assumptions and add engine/version-specific fixtures where required.
+3. Map existing published lessons to relevant simulator configurations through reviewed content updates; do not auto-attach unrelated simulators.
+4. Integrate the existing system-design traffic engine through a typed adapter and add queueing/fan-out/retry scenarios with verified expected outcomes.
+5. Add reviewed scenario adapters for database EXPLAIN, transaction isolation and cloud-provider policy only if execution remains safely sandboxed and explicitly approved.
+6. Keep simulator completion separate from quiz mastery, code verification, transfer and retained-learning evidence.
