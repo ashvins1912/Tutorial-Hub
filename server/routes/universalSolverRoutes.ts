@@ -636,6 +636,7 @@ export interface SolverLibraryRecord {
 }
 
 const memSavedProblems = new Map<string, SolverLibraryRecord>();
+const memSharedProblemUpvotes = new Map<string, Set<string>>();
 const memSharedProblems = new Map<string, SolverLibraryRecord>([
   [
     'sh-lru-cache-core',
@@ -973,9 +974,17 @@ router.post('/shared-problems/:id/upvote', requireAuth, async (req, res) => {
       res.status(404).json({ error: 'Shared problem not found.' });
       return;
     }
-    const next = { ...existing, upvotes: existing.upvotes + 1 };
-    memSharedProblems.set(id, next);
-    res.json({ problem: next });
+    const voterId = req.authUser!.id;
+    const voters = memSharedProblemUpvotes.get(id) ?? new Set<string>();
+    if (!voters.has(voterId)) {
+      voters.add(voterId);
+      memSharedProblemUpvotes.set(id, voters);
+      const next = { ...existing, upvotes: existing.upvotes + 1 };
+      memSharedProblems.set(id, next);
+      res.json({ problem: next });
+      return;
+    }
+    res.json({ problem: existing });
   } catch (err) {
     res.status(500).json({
       error: err instanceof Error ? err.message : 'Failed to upvote shared problem.',
