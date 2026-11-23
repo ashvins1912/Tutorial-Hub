@@ -2322,6 +2322,112 @@ static boolean hasPairWithSum(int[] values, int target) {
       'Explain the cycle-entry reset step using μ and λ.',
       'How can you check a linked-list palindrome with O(1) extra space?',
       'When would a visited set be a better engineering choice despite using more memory?'
+    ],
+    learningOutcomes: [
+      'Choose loop conditions for first-middle or second-middle behavior on odd and even linked lists.',
+      'Implement Floyd cycle detection and cycle-entry lookup using node identity.',
+      'Prove why relative speed guarantees a meeting and derive the reset-to-head entry procedure.',
+      'Use fast/slow pointers for palindrome checks while preserving or restoring list structure.',
+      'Recognize when Floyd applies to a deterministic next-state function and when a visited set is preferable.',
+      'State O(n) time and O(1) auxiliary-space bounds and handle all boundary shapes.'
+    ],
+    prerequisites: [
+      'Understand singly linked-list nodes and reference identity.',
+      'Know null checks and safe pointer traversal.',
+      'Review linked-list reversal and pointer invariants.',
+      'Understand modular distance around a finite cycle.'
+    ],
+    deepDive: [
+      'Slow advances one edge and fast advances two. In an acyclic list, fast reaches the end first; in a cycle, the relative speed is one edge per round.',
+      'Once both pointers are inside a cycle of length λ, their relative offset changes by one modulo λ each iteration. It must eventually become zero, so they meet.',
+      'Let μ be the distance from head to cycle entry and λ the cycle length. At a meeting, fast has travelled twice slow’s distance, so the difference in travelled distance is a multiple of λ.',
+      'After a meeting, reset one pointer to head and move both one edge per iteration. The distance relationship modulo λ makes them meet at the cycle entry after μ steps.',
+      'Middle-node selection depends on the loop condition. while(fast!=null && fast.next!=null) with slow one/fast two returns the second middle for even length; stricter alternatives return the first.',
+      'For a palindrome check, reverse the second half, compare values, then restore the reversed half if callers expect the list unchanged. A temporary mutation must be documented.',
+      'Floyd can also detect cycles in a deterministic function f(state) when each state has exactly one next state and the state space is finite. It does not directly apply to branching transitions.',
+      'Cycle detection compares references, not node values. Two distinct nodes can carry equal values without being the same point in the cycle.',
+      'A visited set can be clearer and can identify the repeated state directly, but uses O(n) memory. Floyd trades implementation subtlety for O(1) auxiliary space.',
+      'The total traversal is linear: the meeting phase and entry phase each advance pointers at most proportional to the non-cycle prefix plus cycle length.'
+    ],
+    correctness: [
+      'Meeting proof: inside a cycle of length λ, fast gains one position per iteration relative to slow. Modular positions must coincide within at most λ iterations.',
+      'Entry proof: if slow has travelled t edges at meeting, fast has travelled 2t; their distance difference t is a multiple of λ. Resetting one pointer to head aligns both distances to the entry modulo λ.',
+      'Second-middle invariant: after each iteration slow advances one node and fast two; when fast cannot advance two more, slow has advanced floor(n/2) steps, landing at the second middle for even n.',
+      'Palindrome comparison correctness: reversing the second half pairs nodes from opposite ends; equality of every corresponding value establishes palindrome symmetry.',
+      'Restoration correctness: reversing the same second-half segment again restores the original next links after comparison.',
+      'Identity correctness: cycle meeting is a property of pointer location, so reference equality is required even when node values repeat.'
+    ],
+    implementationSteps: [
+      'Choose and document first-middle or second-middle behavior for even-length input.',
+      'Guard fast and fast.next before advancing fast by two.',
+      'Compare node references with ==, never values, for cycle detection.',
+      'For entry lookup, run the standard reset-to-head phase only after a meeting has been found.',
+      'For palindrome checks, define the second-half start and whether the original list must be restored.',
+      'Save or reconnect links carefully when reversing the second half.',
+      'For state-transition cycles, verify the next-state function is deterministic and the state space is finite.',
+      'Test null, singleton, two nodes, odd/even length, self-loop, head cycle and middle cycle.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Find cycle entry and second middle', code: `static final class Node {
+    int value;
+    Node next;
+    Node(int value) { this.value = value; }
+}
+
+static Node cycleEntry(Node head) {
+    Node slow = head, fast = head;
+    do {
+        if (fast == null || fast.next == null) return null;
+        slow = slow.next;
+        fast = fast.next.next;
+    } while (slow != fast);
+
+    Node fromHead = head;
+    while (fromHead != slow) {
+        fromHead = fromHead.next;
+        slow = slow.next;
+    }
+    return fromHead;
+}
+
+static Node secondMiddle(Node head) {
+    Node slow = head, fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+    }
+    return slow;
+}`, explanation: 'Cycle entry uses reference identity and O(1) auxiliary space. secondMiddle returns the second of two middle nodes for even-length lists; for odd length it returns the unique middle. Both run in O(n) time.' }
+    ],
+    traceExercises: [
+      'Trace slow and fast on 1→2→3→4→5→null and identify the returned middle.',
+      'Trace the meeting and reset phases for 1→2→3→4→5→3. Label μ and λ.',
+      'Compare first-middle and second-middle loop conditions on a four-node list.',
+      'Reverse and restore the second half of [1,2,3,2,1], showing every changed next reference.'
+    ],
+    realWorldApplications: [
+      'Detecting loops in linked data structures and pointer-based workflows.',
+      'Finding repeated states in deterministic simulations or functional state transitions.',
+      'Identifying duplicate-number cycles when problem constraints define an index transition.',
+      'Validating linked-list structures in memory and data-processing systems.',
+      'Palindrome checks and midpoint-based divide-and-conquer list operations.'
+    ],
+    assessment: [
+      'Prove Floyd’s meeting phase using relative speed and cycle length.',
+      'Derive the cycle-entry reset step using μ and λ.',
+      'Implement first-middle and second-middle variants and explain their even-length behavior.',
+      'Explain why node identity, not value equality, is required.',
+      'Design a palindrome-list check and restore the original links.',
+      'State the deterministic-transition assumptions required for Floyd’s algorithm.',
+      'Compare Floyd with a visited set by memory, clarity and information returned.'
+    ],
+    revisionPrompts: [
+      'Draw a cycle and label μ, λ, slow distance and fast distance.',
+      'Re-derive the reset-to-head argument without notes.',
+      'Write the null guard for fast-pointer advancement from memory.',
+      'After two days, implement cycle entry and test a self-loop and a middle cycle.',
+      'After one week, implement palindrome checking and verify the list is restored.',
+      'Explain when Floyd is invalid because a state can have multiple successors.'
     ]
   },
 
