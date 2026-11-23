@@ -32,7 +32,25 @@ export function QuickRevisionHub() {
   const [notesByProblem, setNotesByProblem] = useState<Record<string, string>>({});
   const [notesLoaded, setNotesLoaded] = useState(false);
   const [noteDirty, setNoteDirty] = useState(false);
+  const [reviewQueue, setReviewQueue] = useState<Array<{ objectiveId: string; lessonId: string; accuracy: number; intervalDays: number; dueAt: string; status: 'due' | 'scheduled' }>>([]);
+  const [reviewSummary, setReviewSummary] = useState<{ dueReviews: number; scheduledReviews: number } | null>(null);
+  const [reviewQueueStatus, setReviewQueueStatus] = useState('Loading your review schedule…');
 
+  useEffect(() => {
+    let active = true;
+    apiFetch('/api/learning-progress')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Your spaced-revision schedule is unavailable.');
+        const payload = await response.json() as { objectiveReviewQueue?: Array<{ objectiveId: string; lessonId: string; accuracy: number; intervalDays: number; dueAt: string; status: 'due' | 'scheduled' }>; summary?: { dueReviews: number; scheduledReviews: number } };
+        if (!active) return;
+        const queue = payload.objectiveReviewQueue || [];
+        setReviewQueue(queue.sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime()));
+        setReviewSummary(payload.summary || null);
+        setReviewQueueStatus(queue.length ? 'Review schedule ready' : 'Complete an objective-linked quiz to create your first review schedule');
+      })
+      .catch((error) => { if (active) setReviewQueueStatus(error instanceof Error ? error.message : 'Review schedule unavailable'); });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     let active = true;
     apiFetch('/api/cognitive/notes')
@@ -95,6 +113,14 @@ export function QuickRevisionHub() {
 
   return (
     <div className="space-y-8">
+      <section className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-5 space-y-3" aria-label="Spaced revision queue">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div><p className="text-xs font-mono text-sky-600 dark:text-sky-400">SPACED RETRIEVAL</p><h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Your objective review queue</h2><p className="text-[11px] text-slate-500">{reviewQueueStatus}</p></div>
+          {reviewSummary && <div className="flex gap-3 text-xs"><span><strong className="text-amber-600">{reviewSummary.dueReviews}</strong> due</span><span><strong>{reviewSummary.scheduledReviews}</strong> scheduled</span></div>}
+        </div>
+        {reviewQueue.length > 0 && <div className="grid grid-cols-1 md:grid-cols-2 gap-2">{reviewQueue.slice(0, 8).map((item) => <div key={item.lessonId + item.objectiveId} className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-xs font-semibold truncate">{item.objectiveId}</p><p className="text-[10px] text-slate-500">Lesson {item.lessonId.slice(-8)} · Last accuracy {item.accuracy}%</p></div><div className="text-right shrink-0"><span className={item.status === "due" ? "text-[10px] font-semibold text-amber-600" : "text-[10px] font-semibold text-emerald-600"}>{item.status === "due" ? "Due now" : "Scheduled"}</span><p className="text-[10px] text-slate-500">{new Date(item.dueAt).toLocaleDateString()}</p></div></div>)}</div>}
+        {reviewQueue.length > 8 && <p className="text-[10px] text-slate-500">Showing 8 of {reviewQueue.length} objectives. The schedule uses your latest verified attempt for each objective.</p>}
+      </section>
       {/* The Mental Shift & Why It Gets Easier */}
       <section className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 space-y-5">
         <div>
