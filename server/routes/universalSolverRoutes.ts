@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { Router, type Request } from 'express';
+import { requireAuth } from '../middleware/requireAuth';
 import { GoogleGenAI, Type } from '@google/genai';
 import { isMongoConnected } from '../db/connectMongo';
 import {
@@ -669,36 +670,18 @@ const memSharedProblems = new Map<string, SolverLibraryRecord>([
   ],
 ]);
 
-function extractOptionalActor(req: Request): { userId: string; email: string; authorName: string } {
-  const auth = req.headers.authorization;
-  if (auth && auth.startsWith('Bearer ')) {
-    const token = auth.slice(7).trim();
-    const parts = token.split('.');
-    if (parts.length >= 2) {
-      try {
-        const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as {
-          sub?: string;
-          email?: string;
-          user_metadata?: { full_name?: string };
-        };
-        if (claims.sub) {
-          const fallbackName = claims.email ? claims.email.split('@')[0] : 'Learner';
-          return {
-            userId: claims.sub,
-            email: claims.email ?? '',
-            authorName: claims.user_metadata?.full_name || fallbackName,
-          };
-        }
-      } catch {
-        // ignore invalid JWT payload and fall back
-      }
-    }
+function extractAuthenticatedActor(req: Request): { userId: string; email: string; authorName: string } {
+  const user = req.authUser;
+  if (!user?.id) {
+    throw new Error('Authenticated user context is required for solver library operations.');
   }
-  const clientHint = typeof req.headers['x-learner-id'] === 'string' ? req.headers['x-learner-id'].trim() : '';
+  const fallbackName = user.email ? user.email.split('@')[0] : 'Learner';
+  const metadata = user.userMetadata ?? {};
+  const fullName = typeof metadata.full_name === 'string' ? metadata.full_name : '';
   return {
-    userId: clientHint || 'guest-learner',
-    email: '',
-    authorName: 'Community Learner',
+    userId: user.id,
+    email: user.email ?? '',
+    authorName: fullName.trim().slice(0, 60) || fallbackName,
   };
 }
 
@@ -789,8 +772,8 @@ function serializeDoc(doc: Record<string, unknown>): SolverLibraryRecord {
   };
 }
 
-router.get('/saved-problems', async (req, res) => {
-  const actor = extractOptionalActor(req);
+router.get('/saved-problems', requireAuth, async (req, res) => {
+  const actor = extractAuthenticatedActor(req);
   try {
     if (isMongoConnected()) {
       const docs = await SolverSharedProblem.find({
@@ -816,8 +799,8 @@ router.get('/saved-problems', async (req, res) => {
   }
 });
 
-router.post('/saved-problems', async (req, res) => {
-  const actor = extractOptionalActor(req);
+router.post('/saved-problems', requireAuth, async (req, res) => {
+  const actor = extractAuthenticatedActor(req);
   const body = (req.body ?? {}) as Record<string, unknown>;
   const title = String(body.title ?? '').trim();
   const statement = String(body.statement ?? '').trim();
@@ -847,8 +830,8 @@ router.post('/saved-problems', async (req, res) => {
   }
 });
 
-router.delete('/saved-problems/:id', async (req, res) => {
-  const actor = extractOptionalActor(req);
+router.delete('/saved-problems/:id', requireAuth, async (req, res) => {
+  const actor = extractAuthenticatedActor(req);
   const { id } = req.params;
   try {
     if (isMongoConnected()) {
@@ -919,8 +902,8 @@ router.get('/shared-problems/:id', async (req, res) => {
   }
 });
 
-router.post('/shared-problems', async (req, res) => {
-  const actor = extractOptionalActor(req);
+router.post('/shared-problems', requireAuth, async (req, res) => {
+  const actor = extractAuthenticatedActor(req);
   const body = (req.body ?? {}) as Record<string, unknown>;
   const title = String(body.title ?? '').trim();
   const statement = String(body.statement ?? '').trim();
@@ -950,17 +933,23 @@ router.post('/shared-problems', async (req, res) => {
   }
 });
 
-router.post('/shared-problems/:id/upvote', async (req, res) => {
+router.post('/shared-problems/:id/upvote', requireAuth, async (req, res) => {
+  const userId = req.authUser!.id;
   const { id } = req.params;
   try {
     if (isMongoConnected()) {
       const updated = await SolverSharedProblem.findOneAndUpdate(
-        { publicId: id, visibility: 'shared' },
-        { $inc: { upvotes: 1 } },
+        { publicId: id, visibility: 'shared', upvotedBy: { $ne: userId } },
+        { $inc: { upvotes: 1 }, $addToSet: { upvotedBy: userId } },
         { new: true }
       ).lean();
       if (!updated) {
-        res.status(404).json({ error: 'Shared problem not found.' });
+        const existing = await SolverSharedProblem.findOne({ publicId: id, visibility: 'shared' }).lean();
+        if (!existing) {
+          res.status(404).json({ error: 'Shared problem not found.' });
+          return;
+        }
+        res.json({ problem: serializeDoc(existing as unknown as Record<string, unknown>), alreadyUpvoted: true });
         return;
       }
       res.json({ problem: serializeDoc(updated as unknown as Record<string, unknown>) });
@@ -971,7 +960,12 @@ router.post('/shared-problems/:id/upvote', async (req, res) => {
       res.status(404).json({ error: 'Shared problem not found.' });
       return;
     }
-    const next = { ...existing, upvotes: existing.upvotes + 1 };
+    const alreadyUpvoted = Array.isArray((existing as any).upvotedBy) && (existing as any).upvotedBy.includes(userId);
+    if (alreadyUpvoted) {
+      res.json({ problem: existing, alreadyUpvoted: true });
+      return;
+    }
+    const next = { ...existing, upvotes: existing.upvotes + 1, upvotedBy: [...(((existing as any).upvotedBy ?? []) as string[]), userId] };
     memSharedProblems.set(id, next);
     res.json({ problem: next });
   } catch (err) {
