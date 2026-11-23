@@ -367,7 +367,7 @@ static List<Integer> kmpMatches(String text, String pattern) {
     List<Integer> matches = new ArrayList<>();
     if (pattern.isEmpty()) {
         for (int i = 0; i <= text.length(); i++) matches.add(i);
-        return matches;
+        return matches.stream().mapToInt(Integer::intValue).toArray();
     }
     int[] pi = prefixFunction(pattern);
     for (int i = 0, j = 0; i < text.length(); i++) {
