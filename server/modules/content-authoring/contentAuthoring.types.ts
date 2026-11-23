@@ -1,6 +1,8 @@
 export type ContentDomain = 'DSA' | 'MACHINE_LEARNING' | 'AI' | 'DATABASE' | 'SYSTEM_DESIGN' | 'SOFTWARE_ENGINEERING' | 'GENERAL';
 export type ContentKind = 'algorithm' | 'coding_problem' | 'concept' | 'model' | 'architecture' | 'database_concept' | 'case_study' | 'tutorial' | 'question_bank' | 'custom';
 export type ContentLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert' | 'undetermined';
+export type AuthoringStatus = 'uploaded' | 'analyzed' | 'review_required' | 'failed';
+export type GenerationStatus = 'not_started' | 'generating' | 'generated' | 'failed';
 
 export interface LearningSection {
   id: string;
