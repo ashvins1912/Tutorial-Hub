@@ -171,7 +171,13 @@ Run `npm run audit:learning-surfaces` to validate that:
 
 This is the first navigation-surface layer of the inventory. Nested routes, individual lessons/problems, visualizer fixtures, persistence models, prerequisite edges, owners and quality evidence still require their own cataloguing.
 
-## 6. Evidence-backed gaps and risks
+## 6. DSA handwritten notes source coverage
+
+The uploaded 20-page `DSA Handwritten notes .pdf` is now a source-aligned reference for the Complete DSA Academy. It has 19 subject pages after the cover/title sequence and covers arrays, strings, sliding window, two pointers, greedy, stack, queue, heap, set/hash set, map/hash map, linked list, fast/slow pointers, sorting, searching, binary search on answer, bit manipulation, binary tree, BST, graph and dynamic programming. The eight new focused lessons cite their source pages directly in the learner UI: queue (PDF p.7), set/hash set (p.9), map/hash map (p.10), fast/slow pointers (p.12), sorting (p.13), searching (p.14), binary search on answer (p.15), and bit manipulation (p.16). Page references are the PDF's one-based page numbers.
+
+The source is used as a curriculum outline and explanation reference, not as an automatic correctness oracle. Existing content is retained where the academy already covers a subject; the expansion adds focused modules where a merged lesson or missing dedicated lesson limited depth. The notes' brief code fragments and complexity tables still require independent review against language semantics and edge cases before any topic is marked verified.
+
+## 7. Evidence-backed gaps and risks
 
 These are gaps in evidence, governance or repository discoverability. They are not assertions that a feature is broken.
 

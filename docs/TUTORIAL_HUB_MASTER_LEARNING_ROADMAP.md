@@ -602,7 +602,15 @@ The first inventory implementation is now included in this review branch:
 
 This closes the first navigation-level mapping gap, not the complete feature audit. Individual nested lessons/problems, visualizer fixtures, persistence models, prerequisite edges, owners, and per-domain quality evidence remain P0 work. The validator checks path integrity and ID coverage; it does not certify the correctness or completeness of any lesson.
 
-## 13. Canonical companion documents
+## 13. DSA source integration — handwritten notes PDF
+
+The 20-page handwritten DSA notes PDF is now used as an explicit source for the Complete DSA Academy. Its sequence covers arrays, strings, sliding window, two pointers, greedy, stack, queue, heap, set/hash set, map/hash map, linked list, fast/slow pointers, sorting, searching, binary search on answer, bit manipulation, binary tree, BST, graph and dynamic programming.
+
+The first curriculum expansion adds eight focused modules for queue/deque/circular queue, set/hash set, map/hash map, fast/slow pointers, sorting algorithms and stability, searching and boundary search, binary search on a monotonic answer predicate, and bit manipulation. Each new module includes a mental model, recognition signals, derivation steps, worked traces, complexity, pitfalls, a Warm-up/Core/Challenge/Transfer practice ladder and interview checks. The lesson UI displays the exact source PDF page for these additions.
+
+Existing lessons already cover the remaining major note topics; the next DSA pass should deepen those existing lessons rather than create duplicate modules. In particular, compare every handwritten page against the existing lesson and problem inventory, then add missing traces, implementation variants and tests. The new source-page test protects the eight added modules and their content contract; it does not claim all handwritten-note topics are fully verified.
+
+## 14. Canonical companion documents
 
 This roadmap is the delivery plan. The following documents are the operational references and must be kept aligned:
 
