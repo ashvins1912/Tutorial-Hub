@@ -592,3 +592,22 @@ test('fast and slow Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('every complete DSA lesson has the full learning-unit structure', () => {
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  assert.ok(DSA_COMPLETE_LESSONS.length >= 20, 'the academy should expose at least twenty DSA learning modules');
+  for (const lesson of DSA_COMPLETE_LESSONS) {
+    for (const field of required) {
+      assert.ok(Array.isArray(lesson[field]) && lesson[field].length > 0,
+        lesson.id + ' must provide ' + field);
+    }
+    assert.ok(lesson.learningOutcomes.length >= 4, lesson.id + ' needs measurable outcomes');
+    assert.ok(lesson.prerequisites.length >= 2, lesson.id + ' needs a prerequisite bridge');
+    assert.ok(lesson.deepDive.length >= 4, lesson.id + ' needs substantive explanation');
+    assert.ok(lesson.correctness.length >= 2, lesson.id + ' needs correctness reasoning');
+    assert.ok(lesson.traceExercises.length >= 2, lesson.id + ' needs trace exercises');
+    assert.ok(lesson.assessment.length >= 3, lesson.id + ' needs outcome assessment');
+    assert.ok(lesson.revisionPrompts.length >= 2, lesson.id + ' needs retention prompts');
+  }
+});
