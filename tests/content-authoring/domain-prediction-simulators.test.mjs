@@ -74,3 +74,14 @@ test('cloud pipeline blocks when any required evidence gate fails', () => {
   const frames = buildDomainScenario('cloud-pipeline-gate', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, cloud: { secretDetected: false, testsPass: true, vulnerabilityScanPass: false, signatureValid: true } });
   assert.equal(frames[3].metrics.find((metric) => metric.label === 'Promotion decision')?.value, 'Blocked by fixture');
 });
+
+test('system design model identifies tied bottlenecks instead of choosing one arbitrarily', () => {
+  const frames = buildDomainScenario('system-capacity', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, system: { incomingRps: 1_000, gatewayCapacity: 500, orderCapacity: 500, inventoryCapacity: 900 } });
+  assert.equal(frames[0].prediction.correctOption, 'API Gateway + Order Service');
+  assert.ok(frames[0].prediction.options.length >= 2);
+});
+
+test('covering-index assumption changes the remaining heap-fetch explanation', () => {
+  const frames = buildDomainScenario('database-query-plan', { ...DEFAULT_DOMAIN_SCENARIO_INPUTS, database: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.database, coveringIndex: true } });
+  assert.match(frames[1].detail, /avoid most heap visits/);
+});
