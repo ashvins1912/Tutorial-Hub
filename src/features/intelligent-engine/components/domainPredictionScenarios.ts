@@ -1,4 +1,6 @@
 import type { DomainSimulatorScenario } from './domainSimulatorContract';
+import { runSimulationTick } from '@/engine/simulationEngine';
+import type { ComponentCategory, ComponentType, SystemEdge, SystemNode } from '@/types/system';
 
 export type DomainScenarioInputs = {
   database: { rowCount: number; selectivityPct: number; hasIndex: boolean; coveringIndex: boolean };
@@ -21,6 +23,34 @@ const checkpoint = (prompt: string, correctOption: string, alternatives: string[
   prompt, options: [correctOption, ...alternatives, 'The current state never changes', 'Skip the required validation step'].filter((value, index, all) => all.indexOf(value) === index).slice(0, 4), correctOption, rationale,
 });
 const frame = (title: string, detail: string, metrics: DomainScenarioFrame['metrics'], prediction?: DomainPrediction): DomainScenarioFrame => ({ title, detail, metrics, ...(prediction ? { prediction } : {}) });
+const emptyNodeMetrics = { incomingRps: 0, processedRps: 0, droppedRps: 0, currentLatencyMs: 0, cpuUsagePercent: 0, errorRatePercent: 0, cacheAbsorbedRps: 0, isOverloaded: false };
+const emptyPayload = { statusCode: 200, statusText: 'OK', headers: {}, body: {} };
+function capacityNode(id: string, label: string, componentType: ComponentType, category: ComponentCategory, capacity: number): SystemNode {
+  return {
+    id, type: 'systemNode', position: { x: 0, y: 0 },
+    data: {
+      componentType, category, label, subtitle: 'Deterministic learning scenario', status: 'ONLINE',
+      config: { replicas: 1, maxRpsPerReplica: capacity, baseLatencyMs: 12 },
+      metrics: { ...emptyNodeMetrics },
+      impact: { whyAdded: 'Represents a required serial dependency in the teaching scenario.', latencyImpact: 'Adds one service hop.', throughputImpact: 'Constrains the path at its configured capacity.', availabilityImpact: 'An unavailable required dependency interrupts the path.', bestPractices: ['Measure saturation', 'Use bounded queues and deadlines'] },
+      mockPayloads: { successResponse: emptyPayload, degradedResponse: { ...emptyPayload, statusCode: 206, statusText: 'Degraded' }, errorResponse: { ...emptyPayload, statusCode: 503, statusText: 'Unavailable' } },
+    },
+  } as SystemNode;
+}
+function capacityEdge(id: string, source: string, target: string): SystemEdge {
+  return { id, source, target, type: 'default', data: { activeRps: 0, droppedRps: 0, packetSpeedMs: 0, healthColor: '#475569', status: 'IDLE' } } as SystemEdge;
+}
+function simulateCapacityPath(sys: DomainScenarioInputs['system']) {
+  const nodes = [
+    capacityNode('client', 'Client', 'client', 'entry', 1_000_000),
+    capacityNode('gateway', 'API Gateway', 'api_gateway', 'security', sys.gatewayCapacity),
+    capacityNode('orders', 'Order Service', 'app_server', 'compute', sys.orderCapacity),
+    capacityNode('inventory', 'Inventory Service', 'app_server', 'compute', sys.inventoryCapacity),
+  ];
+  const edges = [capacityEdge('client-gateway', 'client', 'gateway'), capacityEdge('gateway-orders', 'gateway', 'orders'), capacityEdge('orders-inventory', 'orders', 'inventory')];
+  return runSimulationTick(nodes, edges, sys.incomingRps, 1);
+}
+
 
 export function buildDomainScenario(scenario: DomainSimulatorScenario, inputs: DomainScenarioInputs = DEFAULT_DOMAIN_SCENARIO_INPUTS): DomainScenarioFrame[] {
   switch (scenario) {
@@ -44,13 +74,15 @@ export function buildDomainScenario(scenario: DomainSimulatorScenario, inputs: D
       const bottlenecks = capacities.filter((item) => item.value === minimumCapacity);
       const bottleneck = bottlenecks[0];
       const bottleneckLabel = bottlenecks.length === capacities.length ? 'All three services' : bottlenecks.map((item) => item.name).join(' + ');
-      const excess = Math.max(0, sys.incomingRps - bottleneck.value);
+      const simulation = simulateCapacityPath(sys);
+      const excess = simulation.summary.totalDroppedRps;
       const stable = excess === 0;
+      const nodeMetrics = new Map(simulation.nodes.map((node) => [node.id, node.data.metrics]));
       return [
-        frame('Inject traffic into the request path', `Requests traverse API Gateway → Order Service → Inventory Service. Offered traffic is ${sys.incomingRps.toLocaleString()} requests/second.`, [{ label: 'Incoming RPS', value: sys.incomingRps.toLocaleString() }, ...capacities.map((item) => ({ label: item.name, value: `${item.value.toLocaleString()} RPS` }))], checkpoint('Which dependency set the steady-state ceiling for this serial path?', bottleneckLabel, capacities.filter((item) => item.value > minimumCapacity).map((item) => item.name), 'For a serial path, the minimum capacity among required dependencies bounds steady-state throughput in this simplified model.')),
-        frame('Propagate the capacity constraint', stable ? 'Offered traffic is within the smallest stated service capacity; this model predicts no sustained queue growth from throughput alone.' : `Arrival rate exceeds the path capacity by ${excess.toLocaleString()} RPS. A queue grows until bounded capacity, timeout or rejection behavior intervenes.`, [{ label: 'Path capacity', value: `${bottleneck.value.toLocaleString()} RPS` }, { label: 'Excess load', value: `${excess.toLocaleString()} RPS` }], checkpoint('What is the expected queue behavior at this offered load?', stable ? 'No sustained queue growth from capacity mismatch alone' : 'Queue depth and latency rise until backpressure or a limit intervenes', ['The path automatically exceeds its bottleneck capacity', 'Retries always reduce load'], 'When arrivals exceed service capacity, backlog grows. If arrivals remain below capacity, this simple steady-state model does not predict overload.')),
+        frame('Inject traffic into the request path', `Requests traverse API Gateway → Order Service → Inventory Service. Offered traffic is ${sys.incomingRps.toLocaleString()} requests/second.`, [{ label: 'Incoming RPS', value: sys.incomingRps.toLocaleString() }, ...capacities.map((item) => ({ label: item.name, value: `${item.value.toLocaleString()} RPS · ${(nodeMetrics.get(item.name === 'API Gateway' ? 'gateway' : item.name === 'Order Service' ? 'orders' : 'inventory')?.processedRps || 0).toLocaleString()} processed` }))], checkpoint('Which dependency set the steady-state ceiling for this serial path?', bottleneckLabel, capacities.filter((item) => item.value > minimumCapacity).map((item) => item.name), 'For a serial path, the minimum capacity among required dependencies bounds steady-state throughput in this simplified model.')),
+        frame('Propagate the capacity constraint', stable ? 'Offered traffic is within the smallest stated service capacity; this model predicts no sustained queue growth from throughput alone.' : `The existing traffic engine reports ${excess.toLocaleString()} dropped RPS across the path. The first constrained dependency sheds load; downstream services receive the reduced flow.`, [{ label: 'Path capacity', value: `${bottleneck.value.toLocaleString()} RPS` }, { label: 'Dropped RPS (engine)', value: `${excess.toLocaleString()} RPS` }, { label: 'Overloaded services', value: String(simulation.summary.overloadedCount) }, { label: 'Average hop latency', value: `${simulation.summary.avgLatencyMs} ms` }], checkpoint('What does the capacity engine predict for this offered load?', stable ? 'All offered traffic is delivered by the modeled path' : 'Some requests are dropped at saturated services', ['The path automatically exceeds its bottleneck capacity', 'Retries always reduce load'], 'The existing runSimulationTick engine propagates request rates through the serial DAG and calculates per-node drops and latency. Queue depth is not directly modeled by this engine.')),
         frame('Choose the scaling target', 'Scale the constrained dependency or reduce the work it performs. Scaling upstream services alone does not raise the serial path ceiling.', [{ label: 'Bottleneck', value: bottleneckLabel }, { label: 'Scaling target', value: bottleneckLabel }], checkpoint('Which single change directly raises the current path capacity?', `Increase capacity of ${bottleneckLabel}`, ['Scale only the API Gateway', 'Increase unbounded client retries'], 'Increasing capacity at a non-bottleneck does not change the minimum capacity. Retry budgets and load shedding prevent overload amplification.')),
-        frame('Validate with realistic traffic', 'Real distributed systems also need queueing distributions, fan-out, retries, deadlines, partial failures, autoscaling delays and load tests.', [{ label: 'Simplified path ceiling', value: `${bottleneck.value.toLocaleString()} RPS` }, { label: 'Bottleneck', value: bottleneckLabel }, { label: 'Model boundary', value: 'Steady-state serial path' }]),
+        frame('Validate with realistic traffic', 'This lesson adapter reuses the existing system-design traffic engine for deterministic DAG propagation. Real distributed systems also need queueing distributions, fan-out, retries, deadlines, partial failures, autoscaling delays and load tests.', [{ label: 'Simplified path ceiling', value: `${bottleneck.value.toLocaleString()} RPS` }, { label: 'Bottleneck', value: bottleneckLabel }, { label: 'Model boundary', value: 'DAG traffic tick; no queue-depth model' }]),
       ];
     }
     case 'concurrency-lost-update': {
