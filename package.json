@@ -19,7 +19,8 @@
     "test:content-bootstrap-security": "node --import tsx --test tests/content-bootstrap-security.test.mjs",
     "test:system-design-ai-security": "node --import tsx --test tests/system-design-ai-security.test.mjs",
     "test:solver-endpoint-security": "node --import tsx --test tests/solver-endpoint-security.test.mjs",
-    "audit:learning-content": "node scripts/validate-learning-content-quality-audit.mjs"
+    "audit:learning-content": "node scripts/validate-learning-content-quality-audit.mjs",
+    "audit:topic-inventory": "node scripts/audit-topic-content-inventory.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
