@@ -97,6 +97,7 @@ test('focused practice selects only valid, unique, bounded lesson question index
   assert.deepEqual(selectQuizQuestions(quiz).indexes, [0, 1]);
   assert.equal(selectQuizQuestions(quiz, []), null);
   assert.equal(selectQuizQuestions(quiz, [0, 0]), null);
+  assert.equal(selectQuizQuestions(quiz, [1, 0]), null);
   assert.equal(selectQuizQuestions(quiz, [2]), null);
   assert.equal(selectQuizQuestions(quiz, ['1']), null);
 });
