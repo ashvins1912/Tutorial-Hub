@@ -56,3 +56,53 @@ test('arrays Java and Python examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('strings topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'strings');
+  assert.ok(lesson, 'strings lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'strings lesson requires substantive ' + field);
+  }
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
+  assert.ok(lesson.deepDive.some((item) => /KMP/.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /Unicode/.test(item)));
+  assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('strings Java and Python examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'strings');
+  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-strings-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class StringLessonExamples {',
+      ...javaExamples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'if (!areAnagrams("listen", "silent")) throw new AssertionError("anagram true");',
+      'if (areAnagrams("listen", "silence")) throw new AssertionError("anagram false");',
+      'if (!Arrays.equals(kmpMatches("ababcabcabababd", "ababd"), new int[]{10})) throw new AssertionError("KMP match");',
+      'if (!Arrays.equals(kmpMatches("aaaa", "aa"), new int[]{0, 1, 2})) throw new AssertionError("overlapping matches");',
+      'if (!Arrays.equals(kmpMatches("abc", ""), new int[]{0, 1, 2, 3})) throw new AssertionError("empty pattern");',
+      '}',
+      '}'
+    ].join('\\n');
+    writeFileSync(join(directory, 'StringLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['StringLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['StringLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+
+    const pythonSource = pythonExample.code + '\\nassert is_ascii_alphanumeric_palindrome("A man, a plan, a canal: Panama")\\nassert not is_ascii_alphanumeric_palindrome("race a car")\\nassert is_ascii_alphanumeric_palindrome("")\\n';
+    writeFileSync(join(directory, 'string_lesson_examples.py'), pythonSource);
+    const python = spawnSync('python', ['string_lesson_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
