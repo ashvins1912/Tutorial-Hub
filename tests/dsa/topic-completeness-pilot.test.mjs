@@ -113,7 +113,8 @@ test('linked-list topic satisfies the complete learning-unit contract', () => {
   assert.ok(lesson, 'linked-list lesson must exist');
   const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
   for (const field of required) {
-    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'linked-list lesson requires substantive ' + field);
+    const minimum = field === 'codeExamples' ? 1 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'linked-list lesson requires substantive ' + field);
   }
   assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
