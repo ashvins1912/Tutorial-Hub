@@ -24,7 +24,7 @@ async function findAccessibleLesson(lessonId: string, userId: string) {
 export function selectQuizQuestions<T>(quiz: T[], requestedIndexes?: unknown): { questions: T[]; indexes: number[] } | null {
   if (!Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40) return null;
   const indexes = requestedIndexes === undefined ? quiz.map((_, index) => index) : requestedIndexes;
-  if (!Array.isArray(indexes) || indexes.length < 1 || indexes.length > quiz.length || indexes.some((index) => !Number.isInteger(index) || index < 0 || index >= quiz.length) || new Set(indexes).size !== indexes.length) return null;
+  if (!Array.isArray(indexes) || indexes.length < 1 || indexes.length > quiz.length || indexes.some((index, position) => !Number.isInteger(index) || index < 0 || index >= quiz.length || (position > 0 && index <= indexes[position - 1])) || new Set(indexes).size !== indexes.length) return null;
   return { indexes, questions: indexes.map((index) => quiz[index]) };
 }
 
