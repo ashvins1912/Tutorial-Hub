@@ -13,6 +13,9 @@ import {
   type LangDfdNode,
   type LangTrack,
 } from '../../data/languagesTutorialData';
+import { buildLanguageFlowMermaidDfd } from '../../utils/studioMermaidBuilders';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { CopyButton, SegmentedTabBar } from '../ui';
 
 interface LanguageVisualAnimatorProps {
@@ -503,6 +506,33 @@ export function LanguageVisualAnimator({
           </div>
         </div>
       </section>
+
+      {/* Rendered Step-Highlighted Mermaid.js Runtime DFD + Live Execution Traffic */}
+      {(() => {
+        const langHighlightedMermaid = buildLanguageFlowMermaidDfd(
+          flow,
+          currentStep.activeNodeIds
+        );
+        const langBaseMermaid = buildLanguageFlowMermaidDfd(flow, []);
+        return (
+          <div className="space-y-4">
+            <FlightMermaidViewer
+              title={`${flow.title} — Runtime & Memory Architecture DFD (Mermaid.js)`}
+              subtitle="Live step-highlighted Mermaid flow showing stack frames, heap allocation, threads/event loop, and I/O handoffs."
+              mermaidCode={langHighlightedMermaid}
+              trafficDomain="system-design"
+              compact
+            />
+            <LiveTrafficFlowSimulator
+              mermaidCode={langBaseMermaid}
+              mermaidTitle={`${flow.title} Runtime Pipeline`}
+              domain="system-design"
+              compact
+              heading={`Live Runtime Execution & Memory Traffic — ${flow.title}`}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

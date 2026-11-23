@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  Activity,
   ArrowLeft,
   ArrowRight,
   Bookmark,
@@ -7,7 +8,11 @@ import {
   CalendarClock,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Code2,
   Copy,
+  Cpu,
   FlaskConical,
   HelpCircle,
   Layers,
@@ -20,11 +25,18 @@ import {
   TOTAL_AI_QUIZZES,
   type AiPhaseId,
 } from '../data/aiEngineeringData';
+import {
+  AI_PATTERN_DEEP_SPECS,
+  AI_PHASE_DEEP_SPECS,
+  buildAiPhaseMermaidDfd,
+} from '../data/aiStudioDeepEnrichmentData';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { AiDfdVisualizer as AiDfdVisualizerBase } from './AiDfdVisualizer';
+import { FlightMermaidViewer } from './flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from './shared/LiveTrafficFlowSimulator';
 import { withStudioBoundary } from './hoc';
-import { SegmentedTabBar } from './ui';
+import { CopyButton, SegmentedTabBar } from './ui';
 import { TopicBridgeBar } from './shared/TopicBridgeBar';
 
 const AiDfdVisualizer = withStudioBoundary(AiDfdVisualizerBase, {
@@ -63,6 +75,8 @@ export function AiEngineeringStudio() {
   const [plannerOpen, setPlannerOpen] = useState(false);
   const [pace, setPace] = useState<RoadmapPace>('fast-3m');
   const [dailyHours, setDailyHours] = useState<number>(2);
+  const [showHeaderTraffic, setShowHeaderTraffic] = useState(false);
+  const [expandedPatternId, setExpandedPatternId] = useState<string | null>(null);
 
   const safeProgress: AiEngineeringProgress = {
     completedPhases: Array.isArray(progress?.completedPhases) ? progress.completedPhases : [],
@@ -89,6 +103,8 @@ export function AiEngineeringStudio() {
   const activePhaseIndex = AI_ENGINEERING_PHASES.findIndex((p) => p.id === activePhaseId);
   const activePhase = AI_ENGINEERING_PHASES[activePhaseIndex] ?? AI_ENGINEERING_PHASES[0];
   const isPhaseCompleted = completedPhaseSet.has(activePhase.id);
+  const activePhaseMermaid = useMemo(() => buildAiPhaseMermaidDfd(activePhase), [activePhase]);
+  const phaseDeepSpec = AI_PHASE_DEEP_SPECS[activePhase.id];
 
   const handleInspectNode = useCallback(
     (nodeId: string) => {
@@ -244,16 +260,43 @@ export function AiEngineeringStudio() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setPlannerOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors whitespace-nowrap"
-            >
-              <CalendarClock className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-              {plannerOpen ? 'Hide Study Timeline' : 'Customize Study Timeline (3m / 6m)'}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHeaderTraffic((v) => !v)}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border text-xs font-semibold transition-colors whitespace-nowrap ${
+                  showHeaderTraffic
+                    ? 'border-sky-600 bg-sky-600 text-white'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-sky-500'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+                {showHeaderTraffic ? 'Hide Live AI Traffic' : 'Live AI Pipeline Traffic'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlannerOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors whitespace-nowrap"
+              >
+                <CalendarClock className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                {plannerOpen ? 'Hide Study Timeline' : 'Customize Study Timeline (3m / 6m)'}
+              </button>
+            </div>
           </div>
         </div>
+
+        {showHeaderTraffic && (
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+            <LiveTrafficFlowSimulator
+              mermaidCode={activePhaseMermaid}
+              mermaidTitle={`${activePhase.shortTitle} AI Pipeline`}
+              domain="system-design"
+              allowPresetSwitcher
+              compact
+              heading={`Live AI Pipeline Traffic Simulator — ${activePhase.dfdTitle}`}
+            />
+          </div>
+        )}
 
         {/* Interactive Study Timeline Calculator (3-Month vs 6-Month + Daily Study Hours) */}
         {plannerOpen && (
@@ -462,9 +505,33 @@ export function AiEngineeringStudio() {
         </div>
       </section>
 
-      {/* TAB 1: Simple English Ontology + Clickable DFD Pipeline */}
+      {/* TAB 1: Simple English Ontology + Clickable DFD Pipeline + Mermaid & Live Traffic */}
       {activeTab === 'ontology-dfd' && (
         <div className="space-y-6">
+          {/* Complete Phase Formal Definition & Architecture Blueprint */}
+          {phaseDeepSpec && (
+            <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-mono font-semibold text-sky-700 dark:text-sky-400">
+                <Cpu className="w-3.5 h-3.5" aria-hidden="true" />
+                Complete Phase Architecture Definition &amp; Production Mechanics
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 text-xs leading-5">
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3.5 space-y-1">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">Formal Definition</div>
+                  <p className="text-slate-700 dark:text-slate-300">{phaseDeepSpec.formalDefinition}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3.5 space-y-1">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">System Architecture Flow</div>
+                  <p className="text-slate-700 dark:text-slate-300">{phaseDeepSpec.architectureBlueprint}</p>
+                </div>
+                <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 p-3.5 space-y-1">
+                  <div className="font-semibold text-amber-800 dark:text-amber-300">Primary Bottleneck &amp; Mitigation</div>
+                  <p className="text-slate-700 dark:text-slate-300">{phaseDeepSpec.keyBottleneckAndMitigation}</p>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* Ontology Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {activePhase.ontology.map((concept, idx) => (
@@ -505,6 +572,24 @@ export function AiEngineeringStudio() {
             edges={activePhase.dfdEdges}
             inspectedNodeIds={safeProgress.inspectedNodes}
             onInspectNode={handleInspectNode}
+          />
+
+          {/* Rendered Mermaid.js Architecture & Data Flow Diagram */}
+          <FlightMermaidViewer
+            title={`${activePhase.dfdTitle} — Architecture & DFD (Mermaid.js)`}
+            subtitle="Live Mermaid.js flow generated from this phase's pipeline contract with 1-click Live Traffic Flow and source view."
+            mermaidCode={activePhaseMermaid}
+            trafficDomain="system-design"
+            compact
+          />
+
+          {/* Synchronized Live Traffic Packet Simulation for this AI Phase */}
+          <LiveTrafficFlowSimulator
+            mermaidCode={activePhaseMermaid}
+            mermaidTitle={`${activePhase.dfdTitle} Live Pipeline`}
+            domain="system-design"
+            compact
+            heading={`Live Data & Request Flow Simulation — ${activePhase.dfdTitle}`}
           />
         </div>
       )}
@@ -562,10 +647,14 @@ export function AiEngineeringStudio() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredPatterns.map((pat) => {
                 const isSaved = bookmarkSet.has(pat.id);
+                const deepSpec = AI_PATTERN_DEEP_SPECS[pat.id];
+                const isExpanded = expandedPatternId === pat.id;
                 return (
                   <article
                     key={pat.id}
-                    className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 flex flex-col justify-between"
+                    className={`rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 flex flex-col justify-between ${
+                      isExpanded ? 'md:col-span-2 border-sky-400 dark:border-sky-600' : ''
+                    }`}
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
@@ -599,6 +688,13 @@ export function AiEngineeringStudio() {
                         </button>
                       </div>
 
+                      {deepSpec && (
+                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 text-xs text-slate-700 dark:text-slate-300 leading-5">
+                          <strong className="text-slate-900 dark:text-slate-100">Formal Definition: </strong>
+                          {deepSpec.formalDefinition}
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-2 text-xs border-y border-slate-100 dark:border-slate-800 py-2.5">
                         <div>
                           <div className="text-slate-500 dark:text-slate-400">Training Cost</div>
@@ -630,12 +726,75 @@ export function AiEngineeringStudio() {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-                      Key tuning knob:{' '}
-                      <span className="font-mono text-slate-800 dark:text-slate-200">
-                        {pat.keyHyperparameter}
-                      </span>
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <div>
+                        Key tuning knob:{' '}
+                        <span className="font-mono text-slate-800 dark:text-slate-200">
+                          {pat.keyHyperparameter}
+                        </span>
+                      </div>
+                      {deepSpec && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedPatternId(isExpanded ? null : pat.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 font-semibold hover:border-sky-500 transition-colors whitespace-nowrap"
+                        >
+                          <Code2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          {isExpanded ? 'Hide Code, DFD & Live Traffic' : 'Code, Mermaid DFD & Live Traffic'}
+                          {isExpanded ? (
+                            <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                          )}
+                        </button>
+                      )}
                     </div>
+
+                    {/* Expanded Deep Algorithm Code + Implementation Walkthrough + Mermaid DFD + Live Traffic */}
+                    {isExpanded && deepSpec && (
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                          <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden">
+                            <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800 bg-slate-900">
+                              <span className="text-[11px] font-mono text-slate-300">
+                                Reference Algorithm Code ({deepSpec.algorithmLanguage})
+                              </span>
+                              <CopyButton text={deepSpec.algorithmCode} label="Copy Code" copiedLabel="Copied" size="xs" />
+                            </div>
+                            <pre className="p-3.5 text-xs font-mono text-sky-200 leading-5 overflow-x-auto">
+                              {deepSpec.algorithmCode}
+                            </pre>
+                          </div>
+
+                          <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-2">
+                            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                              Deep Implementation Walkthrough
+                            </div>
+                            <ol className="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-5 list-decimal list-inside">
+                              {deepSpec.implementationSteps.map((step) => (
+                                <li key={step}>{step}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        </div>
+
+                        <FlightMermaidViewer
+                          title={`${pat.name} — Algorithm Data Flow Diagram (Mermaid.js)`}
+                          subtitle="Data flow across tensors, indexes, weights, and guardrails for this algorithm."
+                          mermaidCode={deepSpec.mermaidDfd}
+                          trafficDomain="system-design"
+                          compact
+                        />
+
+                        <LiveTrafficFlowSimulator
+                          mermaidCode={deepSpec.mermaidDfd}
+                          mermaidTitle={`${pat.name} Execution Pipeline`}
+                          domain="system-design"
+                          compact
+                          heading={`Live Execution & Traffic Flow — ${pat.name}`}
+                        />
+                      </div>
+                    )}
                   </article>
                 );
               })}

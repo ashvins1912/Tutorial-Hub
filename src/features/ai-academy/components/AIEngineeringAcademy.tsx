@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, Code2, Compass, GraduationCap, Lightbulb, ListChecks, Play, RotateCcw, Search, Target } from 'lucide-react';
+import { Activity, BookOpen, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, Code2, Compass, GraduationCap, Lightbulb, ListChecks, Pause, Play, RotateCcw, Search, SkipBack, SkipForward, Target } from 'lucide-react';
 import { AI_ENGINEERING_CURRICULUM, getAcademyCounts, type AcademyLesson } from '../data/aiEngineeringCurriculum';
+import { buildAcademyLessonMermaidDfd } from '../../../data/aiStudioDeepEnrichmentData';
 import { apiFetch } from '../../../lib/apiFetch';
+import { FlightMermaidViewer } from '../../../components/flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../../../components/shared/LiveTrafficFlowSimulator';
 import { SegmentedTabBar } from '../../../components/ui';
 
 type Tab = 'learn' | 'visual' | 'code' | 'quiz' | 'project';
@@ -22,6 +25,8 @@ export function AIEngineeringAcademy() {
   const [search, setSearch] = useState('');
   const [expandedModules, setExpandedModules] = useState<string[]>(['python']);
   const [activeStep, setActiveStep] = useState(0);
+  const [isPlayingFlow, setIsPlayingFlow] = useState(false);
+  const [showHeaderTraffic, setShowHeaderTraffic] = useState(false);
   const [answer, setAnswer] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -60,10 +65,34 @@ export function AIEngineeringAcademy() {
     lessons: module.lessons.filter((item) => `${item.title} ${item.why} ${module.title}`.toLowerCase().includes(search.toLowerCase()))
   })).filter((module) => module.lessons.length > 0), [phase, search]);
 
+  const lessonBaseMermaid = useMemo(() => buildAcademyLessonMermaidDfd(lesson, null), [lesson]);
+  const lessonHighlightedMermaid = useMemo(
+    () => buildAcademyLessonMermaidDfd(lesson, activeStep),
+    [lesson, activeStep]
+  );
+
+  useEffect(() => {
+    if (!isPlayingFlow || lesson.steps.length <= 1) return;
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setInterval(() => {
+      setActiveStep((prev) => {
+        if (prev + 1 >= lesson.steps.length) {
+          setIsPlayingFlow(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, prefersReduced ? 3200 : 2100);
+    return () => window.clearInterval(timer);
+  }, [isPlayingFlow, lesson.steps.length]);
+
   const selectLesson = (next: AcademyLesson) => {
     setLessonId(next.id);
     setTab('learn');
     setActiveStep(0);
+    setIsPlayingFlow(false);
     setAnswer(null);
     setSubmitted(false);
     setQuizResult(null);
@@ -121,9 +150,35 @@ export function AIEngineeringAcademy() {
               <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-3 col-span-2 sm:col-span-1"><div className="text-xl font-bold">{counts.lessons}</div><div className="text-[11px] text-slate-500">Detailed lessons</div></div>
             </div>
           </div>
-          <div className="mt-3 text-xs text-slate-500" role="status">{progressStatus}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs text-slate-500" role="status">{progressStatus}</div>
+            <button
+              type="button"
+              onClick={() => setShowHeaderTraffic((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                showHeaderTraffic
+                  ? 'border-sky-600 bg-sky-600 text-white'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-sky-500'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" aria-hidden="true" />
+              {showHeaderTraffic ? 'Hide Live AI Traffic' : 'Live Lesson Traffic Simulator'}
+            </button>
+          </div>
+          {showHeaderTraffic && (
+            <div className="mt-4">
+              <LiveTrafficFlowSimulator
+                mermaidCode={lessonBaseMermaid}
+                mermaidTitle={`${lesson.title} Pipeline`}
+                domain="system-design"
+                allowPresetSwitcher
+                compact
+                heading={`Live AI Academy Traffic Flow — ${lesson.title}`}
+              />
+            </div>
+          )}
           <div className="mt-5 rounded-xl bg-slate-100 dark:bg-slate-800 p-3">
-            <div className="flex justify-between text-xs font-semibold mb-2"><span>Learning progress</span><span>{progress.completed.length}/{total} lessons · {completion}%</span></div>
+            <div className="flex justify-between text-xs font-semibold mb-2"><span>Learning progress</span><span className="font-mono tabular-nums">{progress.completed.length}/{total} lessons · {completion}%</span></div>
             <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"><div className="h-full bg-sky-600 rounded-full transition-all" style={{ width: `${completion}%` }}/></div>
           </div>
         </section>
@@ -178,22 +233,59 @@ export function AIEngineeringAcademy() {
               </div>
 
               {tab === 'learn' && <div className="mt-5 space-y-4">
-                <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900 p-4"><div className="text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300 mb-1">Why this matters</div><p className="text-sm leading-6">{lesson.why}</p></div>
+                <div className="rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900 p-4"><div className="text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300 mb-1">Complete Definition &amp; Why This Matters</div><p className="text-sm leading-6">{lesson.why}</p></div>
                 <div><h3 className="font-bold text-sm flex items-center gap-2"><Lightbulb className="w-4 h-4 text-amber-500"/>Simple mental model</h3><p className="text-sm text-slate-600 dark:text-slate-300 leading-6 mt-2">{lesson.analogy}</p></div>
-                <div><h3 className="font-bold text-sm">How it actually works</h3><p className="text-sm text-slate-600 dark:text-slate-300 leading-7 mt-2 whitespace-pre-line">{lesson.explanation}</p></div>
+                <div><h3 className="font-bold text-sm">Deep Architecture &amp; Implementation Mechanics</h3><p className="text-sm text-slate-600 dark:text-slate-300 leading-7 mt-2 whitespace-pre-line">{lesson.explanation}</p></div>
+                <FlightMermaidViewer
+                  title={`${lesson.title} — Architecture & Data Flow Diagram (Mermaid.js)`}
+                  subtitle="Interactive Mermaid DFD showing inputs, processing stages, outputs, and failure guardrails. Click 'Live Traffic Flow' to animate packets."
+                  mermaidCode={lessonBaseMermaid}
+                  trafficDomain="system-design"
+                  compact
+                />
                 <div><h3 className="font-bold text-sm mb-2">Remember these rules</h3><ul className="space-y-2">{lesson.keyPoints.map((point) => <li key={point} className="flex gap-2 text-sm text-slate-600 dark:text-slate-300 leading-6"><span className="text-sky-600">•</span>{point}</li>)}</ul></div>
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4"><h3 className="font-bold text-sm mb-2">Worked example</h3><p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{lesson.workedExample}</p></div>
                 <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900 p-4"><h3 className="font-bold text-sm mb-2">Common mistakes</h3><ul className="list-disc pl-5 text-sm space-y-1 text-slate-700 dark:text-slate-300">{lesson.pitfalls.map((item) => <li key={item}>{item}</li>)}</ul></div>
               </div>}
 
-              {tab === 'visual' && <div className="mt-5 space-y-3">
-                <p className="text-sm text-slate-600 dark:text-slate-300">Select each stage to inspect what enters, what leaves and what can go wrong. This is an interactive pipeline model, not a static screenshot.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">{lesson.steps.map((step,index) => <button key={step.title} type="button" onClick={() => setActiveStep(index)} className={`text-left rounded-xl border p-3 ${activeStep === index ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40' : 'border-slate-200 dark:border-slate-700'}`}><div className="text-[10px] font-bold text-slate-500">STEP {index+1}</div><div className="text-sm font-semibold mt-1">{step.title}</div><div className="text-xs text-slate-500 mt-1 leading-5">{step.detail}</div></button>)}</div>
-                <div className="flex justify-center"><Play className="w-4 h-4 text-sky-600"/></div>
-                <div className="rounded-xl border border-sky-200 dark:border-sky-900 p-4 space-y-3"><div className="font-bold">{lesson.steps[activeStep]?.title}</div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><div><div className="text-[10px] font-bold uppercase text-slate-500">Input</div><p className="text-sm mt-1">{lesson.steps[activeStep]?.input}</p></div><div><div className="text-[10px] font-bold uppercase text-slate-500">Output</div><p className="text-sm mt-1">{lesson.steps[activeStep]?.output}</p></div><div><div className="text-[10px] font-bold uppercase text-rose-600">Failure mode</div><p className="text-sm mt-1">{lesson.steps[activeStep]?.failure}</p></div></div><div className="flex justify-between"><button type="button" onClick={() => setActiveStep((s) => Math.max(0,s-1))} disabled={activeStep===0} className="text-xs font-semibold disabled:opacity-30">← Previous</button><span className="text-[11px] text-slate-500">{activeStep+1} / {lesson.steps.length}</span><button type="button" onClick={() => setActiveStep((s) => Math.min(lesson.steps.length-1,s+1))} disabled={activeStep===lesson.steps.length-1} className="text-xs font-semibold disabled:opacity-30">Next →</button></div></div>
+              {tab === 'visual' && <div className="mt-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">Animate or click any stage to trace inputs, outputs, failure guardrails, Mermaid DFD highlighting, and live packet traffic.</p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeStep >= lesson.steps.length - 1) setActiveStep(0);
+                        setIsPlayingFlow((v) => !v);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap"
+                    >
+                      {isPlayingFlow ? <><Pause className="w-3.5 h-3.5"/> Pause</> : <><Play className="w-3.5 h-3.5"/> {activeStep >= lesson.steps.length - 1 ? 'Replay' : 'Animate Flow'}</>}
+                    </button>
+                    <button type="button" onClick={() => { setIsPlayingFlow(false); setActiveStep((s) => Math.max(0, s - 1)); }} disabled={activeStep === 0} aria-label="Previous step" className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35"><SkipBack className="w-3.5 h-3.5"/></button>
+                    <button type="button" onClick={() => { setIsPlayingFlow(false); setActiveStep((s) => Math.min(lesson.steps.length - 1, s + 1)); }} disabled={activeStep >= lesson.steps.length - 1} aria-label="Next step" className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-35"><SkipForward className="w-3.5 h-3.5"/></button>
+                    <button type="button" onClick={() => { setIsPlayingFlow(false); setActiveStep(0); }} aria-label="Reset step" className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700"><RotateCcw className="w-3.5 h-3.5"/></button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">{lesson.steps.map((step,index) => <button key={step.title} type="button" onClick={() => { setIsPlayingFlow(false); setActiveStep(index); }} className={`text-left rounded-xl border p-3 transition-colors ${activeStep === index ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40' : index < activeStep ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-slate-200 dark:border-slate-700'}`}><div className="text-[10px] font-mono font-bold text-slate-500">STEP 0{index+1}</div><div className="text-sm font-semibold mt-1">{step.title}</div><div className="text-xs text-slate-500 mt-1 leading-5">{step.detail}</div></button>)}</div>
+                <FlightMermaidViewer
+                  title={`Step 0${activeStep + 1}: ${lesson.steps[activeStep]?.title ?? lesson.title}`}
+                  subtitle="Blue = active execution stage · Green = completed stages · Dashed edge = failure mode guardrail."
+                  mermaidCode={lessonHighlightedMermaid}
+                  trafficDomain="system-design"
+                  compact
+                />
+                <div className="rounded-xl border border-sky-200 dark:border-sky-900 p-4 space-y-3"><div className="font-bold">{lesson.steps[activeStep]?.title}</div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><div><div className="text-[10px] font-bold uppercase text-slate-500">Input</div><p className="text-sm mt-1">{lesson.steps[activeStep]?.input}</p></div><div><div className="text-[10px] font-bold uppercase text-slate-500">Output</div><p className="text-sm mt-1">{lesson.steps[activeStep]?.output}</p></div><div><div className="text-[10px] font-bold uppercase text-rose-600">Failure mode</div><p className="text-sm mt-1">{lesson.steps[activeStep]?.failure}</p></div></div><div className="flex justify-between"><button type="button" onClick={() => { setIsPlayingFlow(false); setActiveStep((s) => Math.max(0,s-1)); }} disabled={activeStep===0} className="text-xs font-semibold disabled:opacity-30">← Previous</button><span className="text-[11px] font-mono tabular-nums text-slate-500">{activeStep+1} / {lesson.steps.length}</span><button type="button" onClick={() => { setIsPlayingFlow(false); setActiveStep((s) => Math.min(lesson.steps.length-1,s+1)); }} disabled={activeStep===lesson.steps.length-1} className="text-xs font-semibold disabled:opacity-30">Next →</button></div></div>
+                <LiveTrafficFlowSimulator
+                  mermaidCode={lessonBaseMermaid}
+                  mermaidTitle={`${lesson.title} Live Pipeline`}
+                  domain="system-design"
+                  compact
+                  heading={`Live Traffic & Data Propagation — ${lesson.title}`}
+                />
               </div>}
 
-              {tab === 'code' && <div className="mt-5 space-y-3"><div className="flex items-center justify-between gap-2"><div><h3 className="font-bold text-sm">Implementation example</h3><p className="text-xs text-slate-500 mt-1">Read, run and modify this in a Python notebook. The academy does not execute untrusted code in the browser.</p></div><button type="button" onClick={() => { void navigator.clipboard?.writeText(lesson.code).then(() => setCopied(true)).catch(() => setCopied(false)); }} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-semibold">{copied ? 'Copied' : 'Copy code'}</button></div><pre className="overflow-x-auto rounded-xl bg-slate-950 text-slate-100 p-4 text-xs leading-6"><code>{lesson.code}</code></pre><div className="rounded-lg bg-slate-100 dark:bg-slate-800 p-3 text-xs text-slate-600 dark:text-slate-300">Suggested free environment: Google Colab or Kaggle Notebooks. Install only the libraries used in the lesson.</div></div>}
+              {tab === 'code' && <div className="mt-5 space-y-4"><div className="flex items-center justify-between gap-2"><div><h3 className="font-bold text-sm">Implementation example</h3><p className="text-xs text-slate-500 mt-1">Read, run and modify this in a Python notebook. The academy does not execute untrusted code in the browser.</p></div><button type="button" onClick={() => { void navigator.clipboard?.writeText(lesson.code).then(() => setCopied(true)).catch(() => setCopied(false)); }} className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-semibold">{copied ? 'Copied' : 'Copy code'}</button></div><pre className="overflow-x-auto rounded-xl bg-slate-950 text-slate-100 p-4 text-xs leading-6"><code>{lesson.code}</code></pre><div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-4 space-y-2.5"><div className="text-xs font-bold text-slate-900 dark:text-slate-100">Deep Step-by-Step Implementation Breakdown</div><ol className="space-y-2 text-xs text-slate-700 dark:text-slate-300 leading-5">{lesson.steps.map((st, idx) => <li key={st.title} className="flex items-start gap-2"><span className="font-mono font-bold text-sky-700 dark:text-sky-400 shrink-0">0{idx + 1}.</span><span><strong className="text-slate-900 dark:text-slate-100">{st.title}:</strong> {st.detail} (<span className="font-mono">{st.input} → {st.output}</span>)</span></li>)}</ol></div><div className="rounded-lg bg-slate-100 dark:bg-slate-800 p-3 text-xs text-slate-600 dark:text-slate-300">Suggested free environment: Google Colab or Kaggle Notebooks. Install only the libraries used in the lesson.</div></div>}
 
               {tab === 'quiz' && <div className="mt-5 max-w-3xl space-y-4"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:text-sky-300"><ListChecks className="w-4 h-4"/> Check your reasoning</div><h3 className="text-base font-semibold leading-7">{lesson.question.prompt}</h3><div className="space-y-2">{lesson.question.options.map((option,index) => <button key={option} type="button" disabled={submitted} onClick={() => setAnswer(index)} className={`w-full text-left rounded-lg border p-3 text-sm ${submitted && quizResult === true && index === answer ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : answer === index ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}>{String.fromCharCode(65+index)}. {option}</button>)}</div><button type="button" disabled={answer===null || submitted} onClick={submitQuiz} className="rounded-lg bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 px-4 py-2.5 text-xs font-bold disabled:opacity-40">Submit answer</button>{submitted && <div className={`rounded-xl p-4 text-sm leading-6 ${quizResult ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30'}`}><div className="font-bold mb-1">{quizResult ? 'Correct — verified by the server.' : 'Not quite. Review the explanation.'}</div>{lesson.question.explanation}</div>}</div>}
 

@@ -9,6 +9,9 @@ import {
   Network,
 } from 'lucide-react';
 import { usePatternForgeStore } from '../../store/usePatternForgeStore';
+import { buildDataStructureArchMermaidDfd } from '../../utils/studioMermaidBuilders';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 
 export type ArchitectureDiagramId =
   | 'segment-tree'
@@ -935,6 +938,29 @@ export function ArchitectureVisualizer({
           </aside>
         </section>
       )}
+
+      {/* Rendered Mermaid.js Data Structure DFD + Live Query/Update Traffic Simulator */}
+      {(() => {
+        const archMermaid = buildDataStructureArchMermaidDfd(spec.title, spec.nodes);
+        return (
+          <div className="space-y-4">
+            <FlightMermaidViewer
+              title={`${spec.title} — Structural Data Flow Diagram (Mermaid.js)`}
+              subtitle="End-to-end traversal, propagation, and pruning flow across internal structural layers."
+              mermaidCode={archMermaid}
+              trafficDomain="system-design"
+              compact
+            />
+            <LiveTrafficFlowSimulator
+              mermaidCode={archMermaid}
+              mermaidTitle={`${spec.shortName} Query & Update Flow`}
+              domain="system-design"
+              compact
+              heading={`Live Query & Update Traffic Simulation — ${spec.title}`}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

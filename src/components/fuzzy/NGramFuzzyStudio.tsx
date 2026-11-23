@@ -12,6 +12,9 @@ import { NGramVisualStage } from './NGramVisualStage';
 import { ProductSearchCaseStudy as ProductSearchCaseStudyBase } from './ProductSearchCaseStudy';
 import { PruningLogicSimulator as PruningLogicSimulatorBase } from './PruningLogicSimulator';
 import { FuzzyCurriculumTrack as FuzzyCurriculumTrackBase } from './FuzzyCurriculumTrack';
+import { buildNGramAlgoMermaidDfd } from '../../utils/studioMermaidBuilders';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 const ProductSearchCaseStudy = withStudioBoundary(ProductSearchCaseStudyBase, {
@@ -538,6 +541,29 @@ export function NGramFuzzyStudio() {
               </ul>
             </div>
           </section>
+
+          {/* Rendered Mermaid.js Search & Pruning DFD + Live Query Traffic Simulator */}
+          {(() => {
+            const ngramMermaid = buildNGramAlgoMermaidDfd(algorithm);
+            return (
+              <div className="space-y-4">
+                <FlightMermaidViewer
+                  title={`${algorithm.name} — Execution & Pruning Pipeline DFD (Mermaid.js)`}
+                  subtitle="Step-by-step data flow from raw query strings through tokenization, candidate pruning, and similarity scoring."
+                  mermaidCode={ngramMermaid}
+                  trafficDomain="system-design"
+                  compact
+                />
+                <LiveTrafficFlowSimulator
+                  mermaidCode={ngramMermaid}
+                  mermaidTitle={`${algorithm.name} Query Pipeline`}
+                  domain="system-design"
+                  compact
+                  heading={`Live Fuzzy Search Query Traffic — ${algorithm.name}`}
+                />
+              </div>
+            );
+          })()}
         </>
       )}
 

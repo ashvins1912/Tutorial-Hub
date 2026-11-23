@@ -21,6 +21,9 @@ import type { OodConcept, OodTrackId } from '../data/ood/oodTypes';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { OodAnimationStage as OodAnimationStageBase } from './OodAnimationStage';
+import { buildOodConceptMermaidDfd } from '../utils/studioMermaidBuilders';
+import { FlightMermaidViewer } from './flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from './shared/LiveTrafficFlowSimulator';
 import { withStudioBoundary } from './hoc';
 import { SegmentedTabBar } from './ui';
 import { TopicBridgeBar } from './shared/TopicBridgeBar';
@@ -493,6 +496,29 @@ export function OodPrinciplesStudio() {
           {activeTab === 'visual' && (
             <div className="space-y-5">
               <OodAnimationStage concept={activeConcept} />
+
+              {/* Rendered Mermaid.js Object & Architecture DFD + Live Dispatch Traffic */}
+              {(() => {
+                const oodMermaid = buildOodConceptMermaidDfd(activeConcept);
+                return (
+                  <div className="space-y-4">
+                    <FlightMermaidViewer
+                      title={`${activeConcept.shortTitle} — Architecture & Interaction DFD (Mermaid.js)`}
+                      subtitle="Class contracts, object delegation, and clean dependency inversion rendered as an interactive Mermaid flow."
+                      mermaidCode={oodMermaid}
+                      trafficDomain="system-design"
+                      compact
+                    />
+                    <LiveTrafficFlowSimulator
+                      mermaidCode={oodMermaid}
+                      mermaidTitle={`${activeConcept.shortTitle} Call Flow`}
+                      domain="system-design"
+                      compact
+                      heading={`Live Call & Object Dispatch Simulation — ${activeConcept.shortTitle}`}
+                    />
+                  </div>
+                );
+              })()}
 
               {/* Why It Matters */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-2">

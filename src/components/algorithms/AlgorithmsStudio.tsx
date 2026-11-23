@@ -56,6 +56,9 @@ import { MasteryReviewPanel } from '../shared/MasteryReviewPanel';
 import { CategoryMasteryHeatmap } from './CategoryMasteryHeatmap';
 import { getAlgorithmLogicBoard } from '../../data/algorithmLogicBoards';
 import { LogicBoardMathCard } from '../shared/LogicBoardMathCard';
+import { buildAlgorithmFlowMermaidDfd } from '../../utils/studioMermaidBuilders';
+import { FlightMermaidViewer } from '../flight/FlightMermaidViewer';
+import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { useAsyncCatalog } from '../../hooks/useAsyncCatalog';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
@@ -990,6 +993,32 @@ export function AlgorithmsStudio({
               onSelectAlgorithm={handleSelectAlgorithm}
               onSelectTopic={onOpenCurriculumTopic}
             />
+
+            {/* Rendered Algorithm Data-Flow Diagram (Mermaid.js) + Live Traffic Simulation */}
+            {(() => {
+              const algoMermaid = buildAlgorithmFlowMermaidDfd(
+                algorithm,
+                flowStages.map((s) => ({ stage: s.title, detail: s.summary }))
+              );
+              return (
+                <div className="space-y-4">
+                  <FlightMermaidViewer
+                    title={`${algorithm.name} — Execution Pipeline & Data Flow (Mermaid.js)`}
+                    subtitle="Visualizing preconditions, data-structure setup, core state transitions, and output verification."
+                    mermaidCode={algoMermaid}
+                    trafficDomain="system-design"
+                    compact
+                  />
+                  <LiveTrafficFlowSimulator
+                    mermaidCode={algoMermaid}
+                    mermaidTitle={`${algorithm.name} Execution Pipeline`}
+                    domain="system-design"
+                    compact
+                    heading={`Live Algorithmic Data Flow Simulation — ${algorithm.name}`}
+                  />
+                </div>
+              );
+            })()}
 
             {tutorGuide && (
               <div className="pt-5 border-t border-slate-200 dark:border-slate-800 space-y-4">
