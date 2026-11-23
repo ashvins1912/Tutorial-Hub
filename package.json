@@ -16,7 +16,8 @@
     "test:dsa:inventory": "node --import tsx tests/dsa/master-interview-inventory.test.mjs",
     "test:dsa:handwritten": "node --import tsx --test tests/dsa/handwritten-notes-curriculum.test.mjs",
     "test:dsa:completeness-pilot": "node --import tsx --test tests/dsa/topic-completeness-pilot.test.mjs",
-    "test:content-bootstrap-security": "node --import tsx --test tests/content-bootstrap-security.test.mjs"
+    "test:content-bootstrap-security": "node --import tsx --test tests/content-bootstrap-security.test.mjs",
+    "test:solver-endpoint-security": "node --import tsx --test tests/solver-endpoint-security.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
