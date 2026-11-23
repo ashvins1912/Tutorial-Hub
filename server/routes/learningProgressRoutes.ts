@@ -103,11 +103,13 @@ router.get('/:lessonId', async (req: Request, res: Response) => {
   if (!lesson) return res.status(404).json({ code: 'LESSON_NOT_FOUND' });
   const progress = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).lean();
   const latestAttempt = progress?.quizHistory?.[progress.quizHistory.length - 1];
-  const grading = latestAttempt && Array.isArray(lesson.generatedLesson?.quiz) ? {
+  const latestIndexes = latestAttempt?.questionIndexes || [];
+  const isRestorableFullAttempt = !latestIndexes.length || latestIndexes.length === lesson.generatedLesson?.quiz?.length;
+  const grading = latestAttempt && isRestorableFullAttempt && Array.isArray(lesson.generatedLesson?.quiz) ? {
     score: latestAttempt.score,
     total: latestAttempt.total,
     accuracy: latestAttempt.accuracy,
-    correctAnswers: (latestAttempt.questionIndexes?.length ? latestAttempt.questionIndexes.map((index: number) => lesson.generatedLesson.quiz[index]?.correctAnswer).filter((answer: unknown) => answer !== undefined) : lesson.generatedLesson.quiz.map((question: any) => question.correctAnswer)),
+    correctAnswers: latestIndexes.length ? latestIndexes.map((index: number) => lesson.generatedLesson.quiz[index]?.correctAnswer).filter((answer: unknown) => answer !== undefined) : lesson.generatedLesson.quiz.map((question: any) => question.correctAnswer),
   } : null;
   const objectiveMastery = aggregateObjectiveMastery(progress?.quizHistory || []);
   return res.json({ progress: progress || null, grading, objectiveMastery });
@@ -122,6 +124,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   const update: Record<string, unknown> = { lastAccessedAt: new Date() };
   let quizAccuracy: number | null = null;
   let quizScore = 0;
+  let isFullQuizAttempt = false;
   let objectiveResults: ReturnType<typeof calculateObjectiveResults> = [];
   let quizGrading: { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults: ReturnType<typeof calculateObjectiveResults> } | null = null;
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
@@ -148,6 +151,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     const selectedIndexes: number[] = attempt.questionIndexes === undefined ? quiz.map((_: unknown, index: number) => index) : attempt.questionIndexes;
     if (!Array.isArray(selectedIndexes) || selectedIndexes.length < 1 || selectedIndexes.length > quiz.length || selectedIndexes.some((index: unknown) => !Number.isInteger(index) || (index as number) < 0 || (index as number) >= quiz.length) || new Set(selectedIndexes).size !== selectedIndexes.length || attempt.total !== selectedIndexes.length) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
     const selectedQuiz = selectedIndexes.map((index) => quiz[index]);
+    isFullQuizAttempt = selectedIndexes.length === quiz.length;
     const normalizedAnswers = normalizeAnswers(attempt.answers);
     if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
     const calculatedScore = calculateQuizScore(selectedQuiz, normalizedAnswers);
@@ -157,10 +161,12 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     const previous = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).select('bestScore').lean();
     const bestAccuracy = Math.max(previous?.bestScore || 0, accuracy);
     quizAccuracy = accuracy;
-    update.lastScore = accuracy;
-    update.quizTotal = selectedQuiz.length;
-    update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
-    update.lastAnswers = normalizedAnswers;
+    if (isFullQuizAttempt) {
+      update.lastScore = accuracy;
+      update.quizTotal = selectedQuiz.length;
+      update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
+      update.lastAnswers = normalizedAnswers;
+    }
     objectiveResults = calculateObjectiveResults(selectedQuiz, normalizedAnswers);
     quizGrading = { score: quizScore, total: selectedQuiz.length, accuracy, correctAnswers: selectedQuiz.map((question: any) => question.correctAnswer), objectiveResults };
   }
@@ -173,7 +179,7 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   const atomicUpdate: Record<string, unknown> = { $set: update, $setOnInsert: { userId: req.authUser!.id, lessonId: req.params.lessonId } };
   if (quizAccuracy !== null) {
     atomicUpdate.$inc = { attempts: 1 };
-    atomicUpdate.$max = { bestScore: quizAccuracy };
+    if (isFullQuizAttempt) atomicUpdate.$max = { bestScore: quizAccuracy };
     atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date(), objectiveResults, questionIndexes: body.quizAttempt.questionIndexes || lesson.generatedLesson!.quiz.map((_: unknown, index: number) => index) }], $slice: -30 } };
   }
   const progress = await LearningProgress.findOneAndUpdate(
