@@ -205,7 +205,8 @@ router.get('/', async (req: Request, res: Response) => {
   const totalLessons = records.length;
   const masteredLessons = records.filter((item) => item.masteryLevel === 'advanced').length;
   const averageScore = totalLessons ? Math.round(records.reduce((sum, item) => sum + (item.bestScore || 0), 0) / totalLessons) : 0;
-  const objectiveReviewQueue = records.flatMap((record) => buildObjectiveReviewPlan(record.quizHistory || []).map((item) => ({ ...item, lessonId: record.lessonId })));\n  const dueReviews = objectiveReviewQueue.filter((item) => item.status === 'due');\n  return res.json({ progress: records, objectiveReviewQueue, summary: { totalLessons, masteredLessons, averageScore, dueReviews: dueReviews.length, scheduledReviews: objectiveReviewQueue.length - dueReviews.length } });
+  const objectiveReviewQueue = records.flatMap((record) => buildObjectiveReviewPlan(record.quizHistory || []).map((item) => ({ ...item, lessonId: record.lessonId }))); 
+  const dueReviews = objectiveReviewQueue.filter((item) => item.status === 'due');\n  return res.json({ progress: records, objectiveReviewQueue, summary: { totalLessons, masteredLessons, averageScore, dueReviews: dueReviews.length, scheduledReviews: objectiveReviewQueue.length - dueReviews.length } });
 });
 
 export default router;
