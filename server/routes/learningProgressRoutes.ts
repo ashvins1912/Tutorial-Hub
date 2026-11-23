@@ -144,15 +144,16 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   if (body.quizAttempt !== undefined) {
     const attempt = body.quizAttempt;
     const quiz = lesson.generatedLesson?.quiz;
-    if (!attempt || !Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40 || attempt.total !== quiz.length) {
-      return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
-    }
+    if (!attempt || !Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
+    const selectedIndexes: number[] = attempt.questionIndexes === undefined ? quiz.map((_: unknown, index: number) => index) : attempt.questionIndexes;
+    if (!Array.isArray(selectedIndexes) || selectedIndexes.length < 1 || selectedIndexes.length > quiz.length || selectedIndexes.some((index: unknown) => !Number.isInteger(index) || (index as number) < 0 || (index as number) >= quiz.length) || new Set(selectedIndexes).size !== selectedIndexes.length || attempt.total !== selectedIndexes.length) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
+    const selectedQuiz = selectedIndexes.map((index) => quiz[index]);
     const normalizedAnswers = normalizeAnswers(attempt.answers);
     if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
-    const calculatedScore = calculateQuizScore(quiz, normalizedAnswers);
+    const calculatedScore = calculateQuizScore(selectedQuiz, normalizedAnswers);
     if (calculatedScore === null) return res.status(400).json({ code: 'QUIZ_ANSWERS_INCOMPLETE' });
     quizScore = calculatedScore;
-    const accuracy = Math.round((quizScore / quiz.length) * 100);
+    const accuracy = Math.round((quizScore / selectedQuiz.length) * 100);
     const previous = await LearningProgress.findOne({ userId: req.authUser!.id, lessonId: req.params.lessonId }).select('bestScore').lean();
     const bestAccuracy = Math.max(previous?.bestScore || 0, accuracy);
     quizAccuracy = accuracy;
@@ -160,8 +161,8 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     update.quizTotal = selectedQuiz.length;
     update.masteryLevel = bestAccuracy >= 80 ? 'advanced' : bestAccuracy >= 50 ? 'intermediate' : 'beginner';
     update.lastAnswers = normalizedAnswers;
-    objectiveResults = calculateObjectiveResults(quiz, normalizedAnswers);
-    quizGrading = { score: quizScore, total: quiz.length, accuracy, correctAnswers: quiz.map((question: any) => question.correctAnswer), objectiveResults };
+    objectiveResults = calculateObjectiveResults(selectedQuiz, normalizedAnswers);
+    quizGrading = { score: quizScore, total: selectedQuiz.length, accuracy, correctAnswers: selectedQuiz.map((question: any) => question.correctAnswer), objectiveResults };
   }
   if (body.completedPracticeIds !== undefined) {
     if (!Array.isArray(body.completedPracticeIds) || body.completedPracticeIds.length > 100 || body.completedPracticeIds.some((id: unknown) => typeof id !== 'string' || id.length > 100)) {
