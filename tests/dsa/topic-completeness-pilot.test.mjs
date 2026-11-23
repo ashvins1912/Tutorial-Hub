@@ -153,3 +153,48 @@ test('linked-list Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('stack and queue topic satisfies the complete learning-unit contract', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  assert.ok(lesson, 'stack and queue lesson must exist');
+  const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+  for (const field of required) {
+    const minimum = field === 'codeExamples' ? 2 : 3;
+    assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'stack/queue lesson requires substantive ' + field);
+  }
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+  assert.ok(lesson.deepDive.some((item) => /amortized/i.test(item)));
+  assert.ok(lesson.assessment.length >= 5);
+});
+
+test('stack and queue Java examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-stack-queue-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class StackQueueLessonExamples {',
+      ...javaExamples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'TwoStackQueue queue = new TwoStackQueue();',
+      'queue.offer(1); queue.offer(2); queue.offer(3);',
+      'if (queue.poll() != 1 || queue.poll() != 2) throw new AssertionError("FIFO order");',
+      'queue.offer(4);',
+      'if (queue.poll() != 3 || queue.poll() != 4 || !queue.isEmpty()) throw new AssertionError("queue transfer");',
+      'if (!Arrays.equals(slidingMaximum(new int[]{1, 3, -1, -3, 5, 3, 6, 7}, 3), new int[]{3, 3, 5, 5, 6, 7})) throw new AssertionError("window maximum");',
+      'if (!Arrays.equals(slidingMaximum(new int[]{5, 5, 4}, 2), new int[]{5, 5})) throw new AssertionError("duplicate maxima");',
+      '}',
+      '}'
+    ].join(\n);
+    writeFileSync(join(directory, 'StackQueueLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['StackQueueLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['StackQueueLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
