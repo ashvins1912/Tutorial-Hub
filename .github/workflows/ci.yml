@@ -38,6 +38,8 @@ jobs:
         run: npm run test:dsa:arrays:01
       - name: Test Content Studio ingestion and classification
         run: npm run test:content-authoring
+      - name: Test solver library authentication boundaries
+        run: npm run test:solver-library-auth
       - name: Test canonical content publishing authorization
         run: npm run test:content-bootstrap-security
       - name: Verify the canonical 293-question DSA inventory and blueprint boundaries
