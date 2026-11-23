@@ -11,6 +11,7 @@ export interface ILearningProgress extends Document {
   currentStep: number;
   attempts: number;
   quizHistory: Array<{ score: number; total: number; accuracy: number; attemptedAt: Date; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy: number }>; questionIndexes?: number[] }>;
+  simulatorHistory: Array<{ simulatorId: string; scenario: string; answeredPredictions: number; completedAt: Date }>;
   bestScore: number;
   lastScore: number | null;
   quizTotal: number;
@@ -36,6 +37,13 @@ const QuizAttemptSchema = new Schema({
   questionIndexes: { type: [Number], default: [] },
 }, { _id: false });
 
+const SimulatorCompletionSchema = new Schema({
+  simulatorId: { type: String, required: true, maxlength: 80 },
+  scenario: { type: String, enum: ['database-query-plan', 'system-capacity', 'concurrency-lost-update', 'cloud-pipeline-gate'], required: true },
+  answeredPredictions: { type: Number, required: true, min: 1, max: 12 },
+  completedAt: { type: Date, required: true },
+}, { _id: false });
+
 const LearningProgressSchema = new Schema<ILearningProgress>({
   userId: { type: String, required: true },
   lessonId: { type: String, required: true },
@@ -45,6 +53,7 @@ const LearningProgressSchema = new Schema<ILearningProgress>({
   currentStep: { type: Number, min: 0, max: 100, default: 0 },
   attempts: { type: Number, min: 0, default: 0 },
   quizHistory: { type: [QuizAttemptSchema], default: [] },
+  simulatorHistory: { type: [SimulatorCompletionSchema], default: [] },
   bestScore: { type: Number, min: 0, max: 100, default: 0 },
   lastScore: { type: Number, min: 0, max: 100, default: null },
   quizTotal: { type: Number, min: 0, default: 0 },
