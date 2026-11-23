@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../../lib/apiFetch';
 import { CodeExecutionLab } from './CodeExecutionLab';
-import { binarySearchTrace, bubbleSortTrace, parseInput } from './learningAlgorithms';
+import { binarySearchTrace, bubbleSortTrace, buildTracePrediction, parseInput } from './learningAlgorithms';
 import type { LessonSimulator } from './lessonSimulatorContract';
 
 type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string; objectiveIds?: string[] };
@@ -23,14 +23,14 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
   const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
   const [objectiveMastery, setObjectiveMastery] = useState<ObjectiveMastery[]>([]);
-  const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);
+  const [focusedObjectiveId, setFocusedObjectiveId] = useState<string | null>(null);\n  const [predictionChoice, setPredictionChoice] = useState('');\n  const [predictionFeedback, setPredictionFeedback] = useState<{ answer: string; correct: boolean; expected: string } | null>(null);
 
   useEffect(() => {
     let active = true;
     setProgressReady(false);
     setProgressStatus('Loading saved progress…');
     setAlgorithm(simulator?.algorithm || 'binary-search'); setRawValues(simulator?.initialInput || ''); setTarget(simulator?.target || ''); setTraceIndex(0);
-    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null); setObjectiveMastery([]); setFocusedObjectiveId(null);
+    setAttempts(0); setAnswers({}); setSubmitted(false); setCompletedPracticeIds([]); setMasterySummary(null); setQuizGrading(null); setObjectiveMastery([]); setFocusedObjectiveId(null); setPredictionChoice(''); setPredictionFeedback(null);
     apiFetch('/api/learning-progress/' + encodeURIComponent(jobId))
       .then(async (response) => {
         if (!response.ok) throw new Error(response.status === 503 ? 'Database persistence is unavailable.' : 'Could not load saved progress.');
@@ -80,7 +80,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const score = quizGrading?.score ?? localScore;
   const accuracy = quizGrading?.accuracy ?? (activeQuizItems.length ? Math.round((score / activeQuizItems.length) * 100) : 0);
   const nextLevel = accuracy >= 80 ? 'advanced' : accuracy >= 50 ? 'intermediate' : 'beginner';
-  const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };
+  const current = trace[Math.min(traceIndex, Math.max(0, trace.length - 1))] || { title: '', explanation: '', values: [], active: [], variables: {} };\n  const prediction = buildTracePrediction(trace, traceIndex);
   useEffect(() => { if (trace.length && traceIndex >= trace.length) setTraceIndex(trace.length - 1); }, [trace.length, traceIndex]);
   useEffect(() => {
     if (!progressReady || !simulator) return;
@@ -126,12 +126,14 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
     <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"><span>{progressStatus}</span>{masterySummary && <span>Best score: {masterySummary.bestScore}% · Mastery: <strong className="capitalize">{masterySummary.masteryLevel}</strong></span>}</div>
     {simulator && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3" data-simulator-id={simulator.id}>
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">{simulator.title}</h4><p className="text-[11px] text-slate-500">{simulator.description}</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">{algorithm === 'binary-search' ? 'Binary search trace' : 'Bubble sort trace'}</span></div>
-      <label className="block text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); }} /></label>
-      {algorithm === 'binary-search' && <label className="block text-[11px] text-slate-500">Target value<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={target} onChange={(event) => { setTarget(event.target.value); setTraceIndex(0); }} /></label>}
+      <label className="block text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); setPredictionChoice(''); setPredictionFeedback(null); }} /></label>
+      {algorithm === 'binary-search' && <label className="block text-[11px] text-slate-500">Target value<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={target} onChange={(event) => { setTarget(event.target.value); setTraceIndex(0); setPredictionChoice(''); setPredictionFeedback(null); }} /></label>}
       {!trace.length ? <p role="alert" className="text-xs text-rose-600">Check the input. Binary search requires sorted ascending values.</p> : <>
         <div className="flex flex-wrap gap-1.5 overflow-x-auto py-1">{current.values.map((value, index) => <div key={index} className={`min-w-9 rounded-lg border px-2 py-2 text-center text-xs font-semibold ${current.active.includes(index) ? 'border-sky-500 bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-100' : 'border-slate-200 dark:border-slate-700'}`}><span className="block text-[9px] font-normal text-slate-500">{index}</span>{value}</div>)}</div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3"><strong className="text-xs">{current.title}</strong><p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{current.explanation}</p><div className="mt-2 flex flex-wrap gap-2">{Object.entries(current.variables).map(([key, value]) => <span key={key} className="rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-1 text-[10px]"><b>{key}</b>: {value}</span>)}</div></div>
-        <div className="flex flex-wrap items-center gap-2"><button type="button" className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40" disabled={traceIndex === 0} onClick={() => setTraceIndex((value) => value - 1)}>Previous</button><button type="button" className="rounded-lg bg-sky-600 px-3 py-2 text-xs text-white disabled:opacity-40" disabled={traceIndex >= trace.length - 1} onClick={() => setTraceIndex((value) => value + 1)}>Next step</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={() => setTraceIndex(0)}>Reset</button><span className="ml-auto text-[10px] text-slate-500">Step {traceIndex + 1} / {trace.length}</span></div>
+        {predictionFeedback && <div className={`rounded-lg p-3 text-xs ${predictionFeedback.correct ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200' : 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200'}`} role="status"><strong>{predictionFeedback.correct ? 'Good prediction.' : 'Compare your prediction with the actual transition.'}</strong><p className="mt-1">Your choice: {predictionFeedback.answer}</p><p className="mt-1">Actual next step: {predictionFeedback.expected}</p></div>}
+        {prediction && <fieldset className="rounded-lg border border-sky-200 dark:border-sky-900 p-3 space-y-2"><legend className="px-1 text-xs font-semibold">Predict before revealing</legend><p className="text-xs text-slate-600 dark:text-slate-300">{prediction.prompt}</p>{prediction.options.map((option) => <label key={option} className="flex items-start gap-2 text-[11px] text-slate-600 dark:text-slate-300"><input type="radio" name={`trace-prediction-${jobId}-${traceIndex}`} checked={predictionChoice === option} onChange={() => setPredictionChoice(option)} className="mt-0.5"/><span>{option}</span></label>)}</fieldset>}
+        <div className="flex flex-wrap items-center gap-2"><button type="button" className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40" disabled={traceIndex === 0} onClick={() => { setTraceIndex((value) => value - 1); setPredictionChoice(''); setPredictionFeedback(null); }}>Previous</button><button type="button" className="rounded-lg bg-sky-600 px-3 py-2 text-xs text-white disabled:opacity-40" disabled={traceIndex >= trace.length - 1 || Boolean(prediction && !predictionChoice)} onClick={() => { if (prediction && predictionChoice) setPredictionFeedback({ answer: predictionChoice, correct: predictionChoice === prediction.correctOption, expected: prediction.correctOption }); else setPredictionFeedback(null); setPredictionChoice(''); setTraceIndex((value) => value + 1); }}> {prediction ? 'Reveal next step' : 'Next step'}</button><button type="button" className="rounded-lg border px-3 py-2 text-xs" onClick={() => { setTraceIndex(0); setPredictionChoice(''); setPredictionFeedback(null); }}>Reset</button><span className="ml-auto text-[10px] text-slate-500">Step {traceIndex + 1} / {trace.length}</span></div>
       </>}
     </div>}
     {quiz.length > 0 && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
