@@ -5,7 +5,7 @@ import { VisualizationRenderer, type LessonVisual } from './VisualizationRendere
 import { LessonMarkdown } from './LessonMarkdown';
 import { validateLessonSimulator, type LessonSimulator } from './lessonSimulatorContract';
 
-type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string };
+type QuizQuestion = { question: string; options: string[]; correctAnswer?: string | string[]; explanation: string; objectiveIds?: string[] };
 type PracticeTask = { title: string; instructions: string; expectedOutcome: string };
 type PublishedLesson = {
   title: string;
