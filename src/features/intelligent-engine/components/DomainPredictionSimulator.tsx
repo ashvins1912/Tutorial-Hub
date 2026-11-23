@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { buildDomainScenario, DEFAULT_DOMAIN_SCENARIO_INPUTS, type DomainScenarioInputs } from './domainPredictionScenarios';
 import { chooseDomainPrediction, createDomainSimulatorSession, previousDomainStep, revealDomainPrediction } from './domainSimulatorSession';
 import type { DomainLessonSimulator } from './domainSimulatorContract';
@@ -40,8 +40,10 @@ function ScenarioControls({ scenario, inputs, onChange }: { scenario: DomainLess
   </details>;
 }
 
-export function DomainPredictionSimulator({ simulator }: { simulator: DomainLessonSimulator }) {
+export function DomainPredictionSimulator({ simulator, onComplete }: { simulator: DomainLessonSimulator; onComplete?: (attempt: { simulatorId: string; scenario: DomainLessonSimulator['scenario']; answeredPredictions: number }) => Promise<boolean> }) {
   const [session, setSession] = useState(createDomainSimulatorSession);
+  const completionSent = useRef(false);
+  const [completionStatus, setCompletionStatus] = useState('');
   const [inputs, setInputs] = useState<DomainScenarioInputs>(() => ({
     database: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.database },
     system: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.system },
@@ -51,8 +53,8 @@ export function DomainPredictionSimulator({ simulator }: { simulator: DomainLess
   const frames = useMemo(() => buildDomainScenario(simulator.scenario, inputs), [simulator.scenario, inputs]);
   const frame = frames[session.step];
   const prediction = frame?.prediction;
-  const completed = session.step === frames.length - 1;
-  const reset = () => { setSession(createDomainSimulatorSession()); setInputs({ database: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.database }, system: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.system }, concurrency: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.concurrency }, cloud: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.cloud } }); };
+  const resetSession = () => { completionSent.current = false; setCompletionStatus(''); setSession(createDomainSimulatorSession()); };
+  const reset = () => { resetSession(); setInputs({ database: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.database }, system: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.system }, concurrency: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.concurrency }, cloud: { ...DEFAULT_DOMAIN_SCENARIO_INPUTS.cloud } }); };
 
   return <section className="space-y-3 rounded-xl border border-indigo-200 bg-white p-4 dark:border-indigo-900 dark:bg-slate-900" data-domain-simulator={simulator.id} aria-labelledby={`domain-simulator-title-${simulator.id}`}>
     <header>
@@ -62,7 +64,7 @@ export function DomainPredictionSimulator({ simulator }: { simulator: DomainLess
       </div>
       <p className="mt-1 text-xs text-slate-500">{simulator.description}</p>
       <p className="mt-1 text-[10px] text-slate-500">Objective links: {simulator.objectiveIds.join(' · ')}</p>
-      <ScenarioControls scenario={simulator.scenario} inputs={inputs} onChange={(next) => { setInputs(next); setSession(createDomainSimulatorSession()); }}/>
+      <ScenarioControls scenario={simulator.scenario} inputs={inputs} onChange={(next) => { setInputs(next); resetSession(); }}/>
     </header>
     <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-950">
       <div className="flex items-center justify-between gap-2"><strong className="text-xs">{frame.title}</strong><span className="text-[10px] text-slate-500">Step {session.step + 1} / {frames.length}</span></div>
@@ -82,10 +84,10 @@ export function DomainPredictionSimulator({ simulator }: { simulator: DomainLess
         <input type="radio" name={`domain-prediction-${simulator.id}-${session.step}`} checked={session.choice === option} onChange={() => setSession((current) => chooseDomainPrediction(current, option))} className="mt-0.5 size-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"/>
         <span>{String.fromCharCode(65 + index)}. {option}</span>
       </label>)}
-    </fieldset> : <div role="status" className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"><strong>Scenario complete.</strong> You answered {session.answeredPredictions} prediction checkpoints and got {session.correctPredictions} correct. This is session-only practice evidence, not quiz mastery.</div>}
+    </fieldset> : <div role="status" className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"><strong>Scenario complete.</strong> You answered {session.answeredPredictions} prediction checkpoints and got {session.correctPredictions} correct. This is separate simulator-completion evidence, not quiz mastery. {completionStatus}</div>}
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" disabled={session.step === 0} onClick={() => setSession(previousDomainStep)}>Previous</button>
-      {prediction && <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" disabled={!session.choice} onClick={() => setSession((current) => revealDomainPrediction(current, prediction, frames.length - 1))}>Check prediction & reveal</button>}
+      {prediction && <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" disabled={!session.choice} onClick={async () => { const next = revealDomainPrediction(session, prediction, frames.length - 1); setSession(next); if (next.step === frames.length - 1 && !completionSent.current) { completionSent.current = true; if (onComplete) { const saved = await onComplete({ simulatorId: simulator.id, scenario: simulator.scenario, answeredPredictions: next.answeredPredictions }); setCompletionStatus(saved ? 'Completion saved to your account progress.' : 'Completion could not be saved. You can retry by resetting the scenario.'); } } }}>Check prediction & reveal</button>}
       <button type="button" className="rounded-lg border px-3 py-2 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" onClick={reset}>Reset scenario</button>
     </div>
     <p className="text-[10px] text-slate-500">Deterministic teaching model. It does not execute SQL, schedule real threads, provision cloud resources or replace production measurements. Reduced-motion mode is respected because the scenario uses no forced animation.</p>
