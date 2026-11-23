@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { Router, type Request } from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
 import { isMongoConnected } from '../db/connectMongo';
+import { requireAuth } from '../middleware/requireAuth';
+import { consumeSolverEndpointRequest } from '../services/solverEndpointRateLimit';
 import {
   SolverSharedProblem,
   type SolverSourcePlatform,
@@ -455,7 +457,16 @@ async function fetchGeeksForGeeksBySlug(
  * Body: { url: string }
  * Pulls a real LeetCode or GeeksforGeeks problem statement, examples, constraints, and topics.
  */
-router.post('/fetch-url', async (req, res) => {
+router.post('/fetch-url', requireAuth, async (req, res) => {
+  try {
+    const rate = await consumeSolverEndpointRequest(req.authUser!.id, 'fetch-url');
+    if (!rate.allowed) {
+      res.set('Retry-After', String(rate.retryAfterSeconds));
+      return res.status(429).json({ code: 'SOLVER_FETCH_RATE_LIMITED', error: 'Problem import limit reached. Please retry shortly.' });
+    }
+  } catch {
+    return res.status(503).json({ code: 'SOLVER_RATE_LIMIT_UNAVAILABLE', error: 'Problem import is temporarily unavailable.' });
+  }
   const rawUrl = typeof req.body?.url === 'string' ? req.body.url.slice(0, 500) : '';
   const hintPlatform =
     req.body?.platform === 'LeetCode' || req.body?.platform === 'GeeksforGeeks'
@@ -494,7 +505,16 @@ router.post('/fetch-url', async (req, res) => {
  * Optional server-side Gemini Deep Logic Coach & Optimal Algorithm Producer.
  * Uses @google/genai with gemini-4-hydrogen strictly on the server.
  */
-router.post('/ai-coach', async (req, res) => {
+router.post('/ai-coach', requireAuth, async (req, res) => {
+  try {
+    const rate = await consumeSolverEndpointRequest(req.authUser!.id, 'ai-coach');
+    if (!rate.allowed) {
+      res.set('Retry-After', String(rate.retryAfterSeconds));
+      return res.status(429).json({ code: 'SOLVER_AI_RATE_LIMITED', error: 'AI coach limit reached. Please retry shortly.' });
+    }
+  } catch {
+    return res.status(503).json({ code: 'SOLVER_RATE_LIMIT_UNAVAILABLE', error: 'AI coaching is temporarily unavailable.' });
+  }
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     res.status(503).json({
@@ -616,6 +636,7 @@ export interface SolverLibraryRecord {
 }
 
 const memSavedProblems = new Map<string, SolverLibraryRecord>();
+const memSharedProblemUpvotes = new Map<string, Set<string>>();
 const memSharedProblems = new Map<string, SolverLibraryRecord>([
   [
     'sh-lru-cache-core',
@@ -669,37 +690,14 @@ const memSharedProblems = new Map<string, SolverLibraryRecord>([
   ],
 ]);
 
-function extractOptionalActor(req: Request): { userId: string; email: string; authorName: string } {
-  const auth = req.headers.authorization;
-  if (auth && auth.startsWith('Bearer ')) {
-    const token = auth.slice(7).trim();
-    const parts = token.split('.');
-    if (parts.length >= 2) {
-      try {
-        const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as {
-          sub?: string;
-          email?: string;
-          user_metadata?: { full_name?: string };
-        };
-        if (claims.sub) {
-          const fallbackName = claims.email ? claims.email.split('@')[0] : 'Learner';
-          return {
-            userId: claims.sub,
-            email: claims.email ?? '',
-            authorName: claims.user_metadata?.full_name || fallbackName,
-          };
-        }
-      } catch {
-        // ignore invalid JWT payload and fall back
-      }
-    }
-  }
-  const clientHint = typeof req.headers['x-learner-id'] === 'string' ? req.headers['x-learner-id'].trim() : '';
-  return {
-    userId: clientHint || 'guest-learner',
-    email: '',
-    authorName: 'Community Learner',
-  };
+function extractAuthenticatedActor(req: Request): { userId: string; email: string; authorName: string } {
+  const authUser = req.authUser;
+  if (!authUser?.id) throw new Error('Verified authentication context is required.');
+  const email = (authUser.email ?? '').trim().toLowerCase();
+  const metadata = authUser.userMetadata ?? {};
+  const fullName = typeof metadata.full_name === 'string' ? metadata.full_name.trim() : '';
+  const fallbackName = email ? email.split('@')[0] : 'Learner';
+  return { userId: authUser.id, email, authorName: fullName || fallbackName };
 }
 
 function sanitizeLibraryPayload(
@@ -789,8 +787,8 @@ function serializeDoc(doc: Record<string, unknown>): SolverLibraryRecord {
   };
 }
 
-router.get('/saved-problems', async (req, res) => {
-  const actor = extractOptionalActor(req);
+router.get('/saved-problems', requireAuth, async (req, res) => {
+  const actor = extractAuthenticatedActor(req);
   try {
     if (isMongoConnected()) {
       const docs = await SolverSharedProblem.find({
@@ -817,7 +815,7 @@ router.get('/saved-problems', async (req, res) => {
 });
 
 router.post('/saved-problems', async (req, res) => {
-  const actor = extractOptionalActor(req);
+  const actor = extractAuthenticatedActor(req);
   const body = (req.body ?? {}) as Record<string, unknown>;
   const title = String(body.title ?? '').trim();
   const statement = String(body.statement ?? '').trim();
@@ -848,7 +846,7 @@ router.post('/saved-problems', async (req, res) => {
 });
 
 router.delete('/saved-problems/:id', async (req, res) => {
-  const actor = extractOptionalActor(req);
+  const actor = extractAuthenticatedActor(req);
   const { id } = req.params;
   try {
     if (isMongoConnected()) {
@@ -919,8 +917,8 @@ router.get('/shared-problems/:id', async (req, res) => {
   }
 });
 
-router.post('/shared-problems', async (req, res) => {
-  const actor = extractOptionalActor(req);
+router.post('/shared-problems', requireAuth, async (req, res) => {
+  const actor = extractAuthenticatedActor(req);
   const body = (req.body ?? {}) as Record<string, unknown>;
   const title = String(body.title ?? '').trim();
   const statement = String(body.statement ?? '').trim();
@@ -950,20 +948,25 @@ router.post('/shared-problems', async (req, res) => {
   }
 });
 
-router.post('/shared-problems/:id/upvote', async (req, res) => {
+router.post('/shared-problems/:id/upvote', requireAuth, async (req, res) => {
   const { id } = req.params;
   try {
     if (isMongoConnected()) {
       const updated = await SolverSharedProblem.findOneAndUpdate(
-        { publicId: id, visibility: 'shared' },
-        { $inc: { upvotes: 1 } },
+        { publicId: id, visibility: 'shared', upvotedBy: { $ne: req.authUser!.id } },
+        { $addToSet: { upvotedBy: req.authUser!.id }, $inc: { upvotes: 1 } },
         { new: true }
       ).lean();
-      if (!updated) {
+      if (updated) {
+        res.json({ problem: serializeDoc(updated as unknown as Record<string, unknown>) });
+        return;
+      }
+      const existing = await SolverSharedProblem.findOne({ publicId: id, visibility: 'shared' }).lean();
+      if (!existing) {
         res.status(404).json({ error: 'Shared problem not found.' });
         return;
       }
-      res.json({ problem: serializeDoc(updated as unknown as Record<string, unknown>) });
+      res.json({ problem: serializeDoc(existing as unknown as Record<string, unknown>) });
       return;
     }
     const existing = memSharedProblems.get(id);
@@ -971,9 +974,17 @@ router.post('/shared-problems/:id/upvote', async (req, res) => {
       res.status(404).json({ error: 'Shared problem not found.' });
       return;
     }
-    const next = { ...existing, upvotes: existing.upvotes + 1 };
-    memSharedProblems.set(id, next);
-    res.json({ problem: next });
+    const voterId = req.authUser!.id;
+    const voters = memSharedProblemUpvotes.get(id) ?? new Set<string>();
+    if (!voters.has(voterId)) {
+      voters.add(voterId);
+      memSharedProblemUpvotes.set(id, voters);
+      const next = { ...existing, upvotes: existing.upvotes + 1 };
+      memSharedProblems.set(id, next);
+      res.json({ problem: next });
+      return;
+    }
+    res.json({ problem: existing });
   } catch (err) {
     res.status(500).json({
       error: err instanceof Error ? err.message : 'Failed to upvote shared problem.',
