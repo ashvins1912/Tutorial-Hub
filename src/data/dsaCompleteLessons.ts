@@ -1065,6 +1065,103 @@ static int[] mergeKSorted(int[][] arrays) {
       'How does bottom-up heap construction achieve O(n)?',
       'When would you choose merge sort over heap sort?',
       'What assumptions are behind the comparison-sorting lower bound?'
+    ],
+    learningOutcomes: [
+      'Compare bubble, selection, insertion, merge, quick and heap sort by time, memory, stability and adaptiveness.',
+      'Explain stability using records with equal keys and identify the exact comparison rule that preserves it.',
+      'Trace sorted-region and partition invariants for elementary and divide-and-conquer sorts.',
+      'Derive merge sort O(n log n) and quick sort average/worst-case bounds.',
+      'Choose an algorithm based on constraints rather than memorizing a single “best sort”.',
+      'Account for recursion stack, temporary arrays, mutation and comparison-model assumptions.'
+    ],
+    prerequisites: [
+      'Understand arrays, indexing, loops and recursion.',
+      'Know logarithms and recurrence intuition for divide-and-conquer algorithms.',
+      'Understand comparator ordering and duplicate keys.',
+      'Review heap shape/order before heap sort.'
+    ],
+    deepDive: [
+      'Bubble sort repeatedly swaps adjacent inversions; after pass p, the largest p values are fixed at the right. An early-exit flag makes already sorted input O(n), but average and worst cases remain O(n²).',
+      'Selection sort scans the unsorted suffix for its minimum and performs at most n-1 swaps. It still performs O(n²) comparisons even on sorted input and is generally unstable because a long-distance swap can reorder equal records.',
+      'Insertion sort maintains a sorted prefix. It shifts only values greater than the inserted key, so equal values retain order. Its work is proportional to the number of inversions and is excellent for small or nearly sorted arrays.',
+      'Merge sort divides until single-element ranges, then merges two sorted halves. At each recursion level total merge work is O(n), and there are O(log n) levels, giving O(n log n) time and O(n) auxiliary array space.',
+      'A stable merge chooses from the left half when keys compare equal. Choosing from the right on equality can reverse the original relative order of equal-key records.',
+      'Quick sort partitions around a pivot. Average partition balance yields O(n log n), but repeated highly unbalanced partitions produce O(n²) time and O(n) recursion depth. Duplicate-heavy input benefits from three-way partitioning.',
+      'Heap sort first builds a heap and then repeatedly moves the root to its final array position. It gives O(n log n) worst-case time and O(1) auxiliary array space when implemented iteratively, but is not stable.',
+      'The comparison-sorting Ω(n log n) lower bound applies to general comparison-based sorting of distinct keys. Counting/radix methods can beat it only by using assumptions about key representation and range.',
+      'In-place and stable are independent properties. A stable algorithm may need O(n) temporary storage; an in-place algorithm may reorder equal keys.',
+      'Library sort implementations may use hybrid strategies and implementation-specific guarantees. When relying on a library, distinguish the documented contract from a textbook algorithm’s mechanics.'
+    ],
+    correctness: [
+      'Insertion invariant: before inserting index i, the prefix [0,i) is sorted and contains exactly the original first i elements; shifting larger values and placing the key preserves that property.',
+      'Merge invariant: before each merge step, the output prefix contains the smallest consumed elements from both halves in sorted order; selecting the smaller current head preserves sortedness.',
+      'Stable-merge invariant: when equal keys are available from both halves, taking the left item first preserves their original cross-half order.',
+      'Quick-sort partition invariant: after partitioning, every item in the left region satisfies the pivot-side relation and every item in the right region satisfies the opposite relation; recursive ranges exclude the settled pivot region.',
+      'Heap-sort invariant: the suffix beyond the active heap boundary is in final sorted order, and the active prefix satisfies heap order before the next extraction.',
+      'Termination: each recursive sort call operates on strictly smaller ranges; each merge consumes one item from a half on every iteration.'
+    ],
+    implementationSteps: [
+      'Record whether input may be mutated, whether stability is required and whether auxiliary memory is limited.',
+      'Choose a simple baseline and estimate n² versus n log n work for the actual constraints.',
+      'For insertion sort, shift only strictly greater elements to preserve equal-key order.',
+      'For merge sort, use half-open ranges [left,right), ensure each recursive call shrinks and take from the left on ties.',
+      'For quick sort, document the partition convention and test duplicate-heavy and adversarial pivot inputs.',
+      'For heap sort, verify the active heap boundary and sift-down child selection.',
+      'Include recursion stack and temporary buffers in space analysis.',
+      'Test empty, singleton, sorted, reverse-sorted, all-equal, duplicate-heavy and extreme-value arrays.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Stable merge sort for integer arrays', code: `static void stableMergeSort(int[] values) {
+    if (values.length < 2) return;
+    int[] buffer = new int[values.length];
+    mergeSort(values, buffer, 0, values.length);
+}
+
+static void mergeSort(int[] values, int[] buffer, int left, int right) {
+    if (right - left < 2) return;
+    int middle = left + (right - left) / 2;
+    mergeSort(values, buffer, left, middle);
+    mergeSort(values, buffer, middle, right);
+
+    int i = left, j = middle, out = left;
+    while (i < middle && j < right) {
+        if (values[i] <= values[j]) buffer[out++] = values[i++];
+        else buffer[out++] = values[j++];
+    }
+    while (i < middle) buffer[out++] = values[i++];
+    while (j < right) buffer[out++] = values[j++];
+    System.arraycopy(buffer, left, values, left, right - left);
+}`, explanation: 'Half-open ranges avoid ambiguous endpoints. Taking from the left on equality is the stability rule. O(n log n) time, O(n) buffer and O(log n) recursion stack.' }
+    ],
+    traceExercises: [
+      'Insertion trace: [5,2,4,1]. Show the sorted prefix and every shift after each pass.',
+      'Merge trace: merge [2,5,7] and [1,5,8]. Show the output and explain which 5 is copied first for stability.',
+      'Quick-sort trace: use a pivot on [3,3,3,3]. Explain how a two-way partition can degrade and why three-way partition helps.',
+      'Heap-sort trace: show the active heap and sorted suffix after each root extraction.'
+    ],
+    realWorldApplications: [
+      'Stable multi-key sorting of records, such as sorting employees by department and then preserving salary order.',
+      'Database query engines choose sort strategies based on memory, input order and external-storage constraints.',
+      'Small nearly sorted batches benefit from insertion-style algorithms.',
+      'External merge sort processes datasets larger than memory using sorted runs and sequential merging.',
+      'Top-K tasks often use heaps or selection instead of fully sorting every item.'
+    ],
+    assessment: [
+      'Compare all six listed algorithms by best, average and worst time, auxiliary space and stability.',
+      'Prove the insertion-sort prefix invariant and explain why shifting only greater elements preserves stability.',
+      'Derive merge sort O(n log n) time and identify its auxiliary storage.',
+      'Give a quick-sort input/pivot pattern that produces O(n²) work.',
+      'Explain why heap sort is in-place but unstable.',
+      'State the assumptions behind the comparison-sorting lower bound and when non-comparison sorts differ.',
+      'Write tests that detect instability in a record-sorting implementation.'
+    ],
+    revisionPrompts: [
+      'Draw the sorted/unsorted regions for bubble, selection and insertion sort from memory.',
+      'Re-derive the merge recurrence and the left-first tie rule.',
+      'Explain quick-sort worst case and heap-sort memory trade-off without notes.',
+      'After two days, implement stable merge sort and test duplicate records.',
+      'After one week, choose a sort for three scenarios and defend the choice using constraints.',
+      'Explain why “in-place” does not imply “stable”.'
     ]
   },
   {
@@ -1133,6 +1230,107 @@ static int[] mergeKSorted(int[][] arrays) {
       'When is sorting before searching worthwhile?',
       'Why is binary search not automatically O(log n) on a linked list?',
       'How would you prove that each loop iteration strictly shrinks the candidate interval?'
+    ],
+    learningOutcomes: [
+      'Choose linear or binary search based on ordering, access pattern and preprocessing cost.',
+      'Implement lower bound and upper bound with a consistent half-open interval invariant.',
+      'Derive first occurrence, insertion position and duplicate count from boundary searches.',
+      'Prove binary search terminates because the candidate interval strictly shrinks.',
+      'Avoid overflow and out-of-range access in midpoint and boundary calculations.',
+      'Explain why random access is part of the usual O(log n) binary-search cost.'
+    ],
+    prerequisites: [
+      'Understand sorted arrays, array indices and half-open intervals.',
+      'Know loop invariants and logarithmic growth.',
+      'Be comfortable with duplicates and insertion positions.',
+      'Review binary search on answer for monotonic predicates over non-array domains.'
+    ],
+    deepDive: [
+      'Linear search needs no ordering and checks at most n values. It is often the best choice for a single lookup in an unsorted collection because sorting first would add O(n log n) preprocessing.',
+      'Binary search works because sorted order or a monotonic predicate lets one comparison eliminate an entire half of the remaining candidates.',
+      'For a half-open interval [low,high), maintain that the answer boundary is within the interval or at high; initialise [0,n), compute mid=low+(high-low)/2 and continue while low<high.',
+      'Lower bound is the first index i where a[i]>=target. If a[mid]>=target, the boundary is at mid or earlier, so high=mid; otherwise it is after mid, so low=mid+1.',
+      'Upper bound is the first index i where a[i]>target. Its comparison differs only at equality: equal values remain on the left side of the candidate boundary.',
+      'The number of occurrences of target in sorted data is upperBound(target)-lowerBound(target). Either boundary may equal n, which is a valid insertion position but not a valid array index.',
+      'A closed interval [low,high] is also valid, but its loop condition and updates differ. Do not mix high=mid with a closed interval when mid may not move.',
+      'Midpoint low+(high-low)/2 avoids overflow from low+high when indices are large. In languages with unsigned or unusual integer semantics, still verify the chosen type.',
+      'Binary search on a linked list does not achieve the usual O(log n) time because finding each midpoint requires traversal. The random-access array assumption is essential.',
+      'Repeated queries on unsorted data may justify sorting once and then using binary search; include O(n log n) preprocessing and any mapping needed to recover original indices.',
+      'Rotated-array search works by identifying which half is sorted, then checking whether the target lies within that half’s value range. Duplicates can make the sorted half ambiguous and degrade worst-case time.',
+      'A monotonic predicate search uses the same boundary mechanics but the predicate, not array equality, defines the first true/false boundary.'
+    ],
+    correctness: [
+      'Lower-bound invariant: all indices below low have values < target; all indices at or above high have values >= target. The first qualifying index remains inside [low,high).',
+      'Upper-bound invariant: all indices below low have values <= target; all indices at or above high have values > target.',
+      'Each iteration sets either low=mid+1 or high=mid, strictly reducing the half-open interval while preserving the boundary.',
+      'When low==high, the interval is empty and that index is the unique boundary satisfying the invariant.',
+      'Occurrence-count correctness follows because matching values occupy the contiguous sorted range [lowerBound,upperBound).',
+      'The algorithm never reads outside the array because mid is computed only while low<high and high<=n; a returned n is handled as a boundary, not dereferenced.'
+    ],
+    implementationSteps: [
+      'Write the result contract first: any index, first index, last index, lower bound, upper bound or count.',
+      'Choose half-open [low,high) and initialise low=0, high=n.',
+      'Compute mid as low+(high-low)/2.',
+      'For lower bound, move high=mid when a[mid]>=target; otherwise move low=mid+1.',
+      'For upper bound, move high=mid when a[mid]>target; otherwise move low=mid+1.',
+      'Return the boundary even when it equals n; check before indexing it.',
+      'For a single unsorted query, compare linear scan cost with sorting plus binary search.',
+      'Test empty, singleton, all-equal, duplicates, absent targets and targets outside the data range.'
+    ],
+    codeExamples: [
+      { language: 'Java 21', title: 'Lower bound, upper bound and occurrence count', code: `static int lowerBound(int[] values, int target) {
+    int low = 0, high = values.length;
+    while (low < high) {
+        int mid = low + (high - low) / 2;
+        if (values[mid] >= target) high = mid;
+        else low = mid + 1;
+    }
+    return low;
+}
+
+static int upperBound(int[] values, int target) {
+    int low = 0, high = values.length;
+    while (low < high) {
+        int mid = low + (high - low) / 2;
+        if (values[mid] > target) high = mid;
+        else low = mid + 1;
+    }
+    return low;
+}
+
+static int countOccurrences(int[] values, int target) {
+    return upperBound(values, target) - lowerBound(values, target);
+}`, explanation: 'Both searches use half-open [low,high) and return a boundary in [0,n], including n. Each iteration halves the interval, giving O(log n) time and O(1) auxiliary space.' }
+    ],
+    traceExercises: [
+      'Lower-bound trace: [1,2,4,4,4,7,9], target=4. Record low, high and mid until convergence.',
+      'Upper-bound trace: use the same array and target. Identify the exact comparison that differs.',
+      'Boundary trace: search for 10 in [1,2,4]. Explain why returning 3 is valid but reading values[3] is not.',
+      'Preprocessing decision: compare one linear query with 1000 queries on an initially unsorted array; include sorting cost.'
+    ],
+    realWorldApplications: [
+      'Database indexes locate the first key at or above a requested value.',
+      'Autocomplete finds the range of sorted terms sharing a prefix.',
+      'Scheduling and capacity planning find insertion positions in sorted timelines.',
+      'Version and release selection find the first compatible build under a monotonic constraint.',
+      'Time-series analysis locates the first sample at or after a timestamp.'
+    ],
+    assessment: [
+      'Implement lower bound and upper bound and explain their different equality comparisons.',
+      'Prove both interval invariants and show that each loop iteration strictly shrinks the range.',
+      'Explain why n is a valid boundary result and how callers must guard it.',
+      'Compare one linear lookup against sorting plus repeated binary searches.',
+      'Explain why binary search on a linked list does not provide O(log n) total time.',
+      'Derive duplicate count from the two boundary positions.',
+      'Test empty arrays, all-equal arrays, missing targets and extreme index arithmetic.'
+    ],
+    revisionPrompts: [
+      'Write lower-bound and upper-bound invariants from memory.',
+      'Explain the half-open interval and why high begins at n.',
+      'After two days, implement first/last occurrence and count duplicates.',
+      'After one week, compare binary search on a sorted array with searching a linked list.',
+      'Derive the O(log n) bound from repeated halving.',
+      'Explain how a monotonic predicate turns the same boundary search into answer-space search.'
     ]
   },
   {
