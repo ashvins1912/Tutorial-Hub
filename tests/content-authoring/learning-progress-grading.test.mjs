@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateQuizScore, calculateObjectiveResults, aggregateObjectiveMastery, buildAccessibleLessonFilter } from '../../server/routes/learningProgressRoutes.ts';
+import { calculateQuizScore, calculateObjectiveResults, aggregateObjectiveMastery, buildObjectiveReviewPlan, buildAccessibleLessonFilter } from '../../server/routes/learningProgressRoutes.ts';
 
 const quiz = [
   { correctAnswer: 'B' },
@@ -54,4 +54,38 @@ test('objective mastery aggregates evidence across attempts and assigns review s
     { objectiveId: 'A', correct: 3, total: 4, attempts: 2, accuracy: 75, status: 'developing' },
     { objectiveId: 'B', correct: 1, total: 2, attempts: 2, accuracy: 50, status: 'developing' },
   ]);
+});
+
+
+test('objective review scheduling uses performance-based spaced intervals', () => {
+  const now = new Date('2026-11-24T12:00:00Z');
+  const history = [{
+    attemptedAt: '2026-11-24T12:00:00Z',
+    objectiveResults: [
+      { objectiveId: 'weak', correct: 0, total: 2 },
+      { objectiveId: 'developing', correct: 3, total: 4 },
+      { objectiveId: 'strong', correct: 4, total: 4 },
+    ],
+  }];
+  const plan = buildObjectiveReviewPlan(history, now);
+  assert.deepEqual(plan.map(({ objectiveId, intervalDays, status }) => ({ objectiveId, intervalDays, status })), [
+    { objectiveId: 'weak', intervalDays: 1, status: 'scheduled' },
+    { objectiveId: 'developing', intervalDays: 3, status: 'scheduled' },
+    { objectiveId: 'strong', intervalDays: 14, status: 'scheduled' },
+  ]);
+});
+
+test('objective review queue uses the latest valid attempt and marks overdue reviews', () => {
+  const now = new Date('2026-11-24T12:00:00Z');
+  const plan = buildObjectiveReviewPlan([
+    { attemptedAt: '2026-11-01T12:00:00Z', objectiveResults: [{ objectiveId: 'A', correct: 0, total: 1 }] },
+    { attemptedAt: '2026-11-23T12:00:00Z', objectiveResults: [{ objectiveId: 'A', correct: 1, total: 1 }] },
+  ], now);
+  assert.equal(plan.length, 1);
+  assert.equal(plan[0].intervalDays, 14);
+  assert.equal(plan[0].status, 'scheduled');
+  const due = buildObjectiveReviewPlan([
+    { attemptedAt: '2026-11-01T12:00:00Z', objectiveResults: [{ objectiveId: 'A', correct: 0, total: 1 }] },
+  ], now);
+  assert.equal(due[0].status, 'due');
 });
