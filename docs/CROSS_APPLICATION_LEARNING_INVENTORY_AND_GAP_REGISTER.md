@@ -115,4 +115,4 @@ Do not upgrade evidence states based only on rendering, page opens, self-atteste
 - Added keyboard-native inputs, visible focus treatment, progress semantics, live feedback and no forced motion.
 - Added authenticated simulator completion history as a separate bounded record. It stores completion and answered-checkpoint count only; it does not store or trust client-reported correctness and does not change quiz mastery.
 - Added server validation that completion IDs/scenarios match the published lesson contract and its current objective references.
-- Remaining: manual screen-reader/mobile review, domain-expert review of fixture assumptions, lesson-by-lesson configuration migration, and adapter integration with the existing system-design engine.
+- Remaining: manual screen-reader/mobile review, domain-expert review of fixture assumptions, lesson-by-lesson configuration migration, and queue-depth/fan-out/retry engine extensions.
