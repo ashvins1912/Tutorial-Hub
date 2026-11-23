@@ -16,6 +16,21 @@ const sources = [
   { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringCurriculum.ts' },
   { surfaceId: 'workspace', path: 'src/features/topics/data/curriculumIndex.ts' },
   { surfaceId: 'workspace', path: 'src/data/dsaCompleteLessons.ts' },
+  { surfaceId: 'fuzzy-search', path: 'src/data/ngramTaxonomyPart1.ts' },
+  { surfaceId: 'fuzzy-search', path: 'src/data/ngramTaxonomyPart2.ts' },
+  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringDeepDiveLessons.ts' },
+  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringExtraLessons.ts' },
+  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringRagSystems.ts' },
+  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringMcpSystems.ts' },
+  { surfaceId: 'languages', path: 'src/data/javaToPythonThinkingData.ts' },
+  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsFoundations.ts' },
+  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsIntermediate.ts' },
+  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsAdvanced.ts' },
+  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsAppliedFuzzy.ts' },
+  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsRecursionBacktrackingSorting.ts' },
+  { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterCorePack.ts' },
+  { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterAdvancedPack.ts' },
+  { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterSystemsPack.ts' },
 ];
 
 const stringValue = (node) => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text : undefined;
