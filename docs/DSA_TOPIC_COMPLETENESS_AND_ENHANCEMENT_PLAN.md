@@ -128,11 +128,28 @@ The roadmap is a completion target, not a claim that every topic is already comp
 
 | Topic | Content contract | Executable examples | Current status |
 |---|---|---|---|
-| Arrays | Outcomes, prerequisites, deep dive, invariants, implementation guide, traces, applications, assessment and revision | Java 21 and Python 3 examples executed in CI | Reference pilot implemented; CI verified |
-| Strings | Character model, Unicode caveats, frequency methods, windows, KMP, correctness invariants, traces, applications and revision | Java 21 anagram/KMP examples and Python 3 palindrome example | Implemented; executable test harness added; CI fixes in progress |
-| Linked List | Node/reference model, operation costs, sentinel nodes, reversal, Floyd cycle proof, merge, LRU, traces and assessment | Java 21 reversal and cycle-detection examples with pointer-identity assertions | Implemented; execution test added; latest CI fixes pending |
-| Stack and Queue | LIFO/FIFO/deque model, circular buffers, two-stack queue proof, monotonic stack/deque invariants, BFS, traces and assessment | Java 21 two-stack queue and sliding-window maximum examples | Implemented; execution tests added; latest CI validation underway |
-| Heap | Complete-tree/index model, sift operations, O(n) heapify proof, Top K, K-way merge, running median, lazy deletion and assessment | Java 21 bounded Top K and K-way merge examples | Fifth topic implementation added; awaiting CI |
-| Remaining PDF topics | Must satisfy all applicable sections, not just inventory presence | Must compile/run with asserted outputs and edge cases | Planned; not yet complete |
+| Foundations | Outcomes, prerequisites, complexity, invariants, testing, integer safety, examples and revision | Java 21 linear-search invariant example | Expanded; all-topic contract test added |
+| Arrays | Memory model, operations, prefix/difference arrays, compaction, overflow, traces and assessment | Java 21 and Python 3 examples | Expanded pilot; executable CI checks |
+| Strings | Character model, Unicode caveats, frequency methods, windows, KMP and correctness proofs | Java 21 anagram/KMP and Python 3 palindrome | Expanded; executable CI checks |
+| Linked List | Node/reference model, operation costs, sentinels, reversal, Floyd cycle proof, merge and LRU | Java 21 reversal and cycle detection | Expanded; executable CI checks |
+| Stack & Queue | LIFO/FIFO/deque, circular buffers, two-stack queue, monotonic structures and BFS | Java 21 queue and sliding-window maximum | Expanded; executable CI checks |
+| Set & Map | Equality/hash contract, set algebra, frequency/index/group maps, Two Sum and prefix-frequency proof | Java 21 deduplication, pair existence, Two Sum and subarray sum | Expanded; executable CI checks |
+| Heap | Complete-tree/index model, sift, O(n) heapify proof, Top K, K-way merge and running median | Java 21 Top K and K-way merge | Expanded; executable CI checks |
+| Searching & Binary Search | Exact/boundary search, interval invariants, monotonic answer search and complexity | Java 21 lower bound | Expanded; all-topic contract test |
+| Two Pointers & Sliding Window | Pointer/window invariants, recognition, proofs, traces and applications | Existing examples plus structured practice | Expanded; all-topic contract test |
+| Sorting | Stability, comparison, sorting families, complexity and selection rationale | Existing examples plus structured practice | Expanded; all-topic contract test |
+| Greedy | Feasibility, exchange/stays-ahead reasoning, counterexamples and algorithm selection | Existing examples plus structured practice | Expanded; all-topic contract test |
+| Bit Manipulation | Bit representation, masks, signedness, shifts, XOR and overflow cautions | Existing examples plus structured practice | Expanded; all-topic contract test |
+| Binary Tree | Traversals, recursion contracts, height/diameter, paths, BFS and complexity | Java 21 height/diameter | Expanded; all-topic contract test |
+| BST | Global ordering, validation, deletion, order statistics and skew/balance | Java 21 global-bound validation | Expanded; all-topic contract test |
+| Backtracking | State, choices, undo, duplicate handling, pruning proof and output complexity | Java 21 subset generation | Expanded; all-topic contract test |
+| Graphs | Representation, BFS/DFS, topo sort, DSU, shortest paths and MST selection | Java 21 BFS distances | Expanded; all-topic contract test |
+| 2D Arrays & Matrix | Dimensions, transforms, search guarantees, prefix sums and grid modeling | Java 21 2D prefix sums | Expanded; all-topic contract test |
+| Dynamic Programming | State sufficiency, recurrence, base cases, order, proof and space compression | Java 21 0/1 knapsack | Expanded; all-topic contract test |
+| Queue Deep Dive | Circular-buffer invariant, FIFO, deque, BFS and edge behavior | Java 21 circular queue | Expanded; all-topic contract test |
+| Fast & Slow Pointers | Relative-speed reasoning, cycle entry, middle and linked-list applications | Existing examples plus structured practice | Expanded; all-topic contract test |
+| Binary Search on Answer | Monotonic feasibility, boundary search, proof and complexity | Existing examples plus structured practice | Expanded; all-topic contract test |
+| Interview problem inventory | Map problems to outcomes, patterns, difficulty and transfer goals | Inventory integrity checks | Alignment/review remains a separate rollout task |
+
 
 A topic must not be labelled complete merely because it has a title, concept list, practice inventory or source-page mapping. Update this table only when the corresponding CI and review evidence exists. Keep learner mastery separate from content completeness: repository tests validate authored material, not an individual learner's ability to transfer the skill.
