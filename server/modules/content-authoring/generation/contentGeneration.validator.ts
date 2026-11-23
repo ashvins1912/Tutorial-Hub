@@ -1,5 +1,5 @@
 import type { GeneratedLesson, LearningSection } from '../contentAuthoring.types';
-import { validateDomainLessonSimulator } from '../../../shared/domainSimulatorContract';
+import { validateDomainLessonSimulator } from '../../../../shared/domainSimulatorContract';
 
 const isText = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
