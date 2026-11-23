@@ -33,10 +33,12 @@ import {
 } from '../../data/dbCompleteObjectsAndSchemaData';
 import { DATA_ENG_AI_DB_TOPICS } from '../../data/dataEngAndAiDbData';
 import { DB_NAMED_ALGORITHMS } from '../../data/dbNamedAlgorithmsArchitectureData';
+import { DB_DEEP_GAP_VISUAL_TOPICS } from '../../data/dbDeepGapVisualTopicsData';
 import { useAccountState } from '../../hooks/useAccountState';
 import { withStudioBoundary } from '../hoc';
 import { SegmentedTabBar } from '../ui';
 import { DbNamedAlgorithmsMermaidLab } from './DbNamedAlgorithmsMermaidLab';
+import { DbDeepGapsVisualLab } from './DbDeepGapsVisualLab';
 import { DataEngAndAiDatabasesLab } from './DataEngAndAiDatabasesLab';
 import { VectorSimilaritySearchLab } from './VectorSimilaritySearchLab';
 import { OptimisticVsPessimisticLockLab } from './OptimisticVsPessimisticLockLab';
@@ -58,6 +60,7 @@ import { TopicBridgeBar } from '../shared/TopicBridgeBar';
 
 type DbStudioTab =
   | 'db-algorithms-mermaid'
+  | 'db-deep-gaps'
   | 'vector-search'
   | 'locking-sim'
   | 'arch-comparison'
@@ -97,6 +100,9 @@ const BoundedDbNamedAlgorithmsMermaidLab = withStudioBoundary(
     studioName: 'Named Database Algorithms & Mermaid Flow Encyclopedia',
   }
 );
+const BoundedDbDeepGapsVisualLab = withStudioBoundary(DbDeepGapsVisualLab, {
+  studioName: 'Production Database Deep-Gaps Visual Simulator',
+});
 const BoundedVectorSimilaritySearchLab = withStudioBoundary(VectorSimilaritySearchLab, {
   studioName: 'Vector Similarity Search (HNSW & IVF) Lab',
 });
@@ -353,6 +359,13 @@ export function DatabaseInternalsStudio() {
                 icon: GitBranch,
               },
               {
+                id: 'db-deep-gaps',
+                label: 'Production Deep Gaps & Animations',
+                shortLabel: 'DB Deep Gaps',
+                count: DB_DEEP_GAP_VISUAL_TOPICS.length,
+                icon: PlayCircle,
+              },
+              {
                 id: 'vector-search',
                 label: 'Vector Search (HNSW & IVF)',
                 shortLabel: 'HNSW / IVF',
@@ -464,6 +477,7 @@ export function DatabaseInternalsStudio() {
 
       {/* Active Studio Workspace (Every Inner Panel Isolated by withStudioBoundary HOC) */}
       {activeTab === 'db-algorithms-mermaid' && <BoundedDbNamedAlgorithmsMermaidLab />}
+      {activeTab === 'db-deep-gaps' && <BoundedDbDeepGapsVisualLab />}
       {activeTab === 'vector-search' && <BoundedVectorSimilaritySearchLab />}
       {activeTab === 'locking-sim' && <BoundedOptimisticVsPessimisticLockLab />}
       {activeTab === 'arch-comparison' && <BoundedOltpVsOlapArchitectureLab />}

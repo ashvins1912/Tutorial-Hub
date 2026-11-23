@@ -1,4 +1,5 @@
 import { COMPONENT_CATALOG_MAP } from './componentCatalog';
+import { REAL_WORLD_PLAYGROUND_BLUEPRINTS } from './realWorldPlaygroundBlueprints';
 import {
   createEmptyMetrics,
   type ComponentType,
@@ -1433,6 +1434,7 @@ export const BLUEPRINTS: Record<string, SystemBlueprint> = {
       { source: 'sz-app', target: 'sz-mon' },
     ],
   ),
+  ...REAL_WORLD_PLAYGROUND_BLUEPRINTS,
 };
 
 export const BLUEPRINT_LIST: SystemBlueprint[] = Object.values(BLUEPRINTS);

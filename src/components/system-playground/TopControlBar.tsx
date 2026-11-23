@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Activity,
   BookOpen,
+  FileText,
   Maximize2,
   Minimize2,
   PanelLeft,
@@ -21,6 +22,8 @@ interface TopControlBarProps {
   onToggleMobilePalette: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  showExplanation: boolean;
+  onToggleExplanation: () => void;
 }
 
 // Logarithmic mapping so slider moves smoothly across 100 RPS -> 1,000,000 RPS
@@ -47,6 +50,8 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
   onToggleMobilePalette,
   isFullscreen,
   onToggleFullscreen,
+  showExplanation,
+  onToggleExplanation,
 }) => {
   const { data: BLUEPRINT_LIST } = useAsyncCatalog('system-design-blueprints');
   const activeBlueprintId = useSystemStore((s) => s.activeBlueprintId);
@@ -102,30 +107,50 @@ export const TopControlBar: React.FC<TopControlBarProps> = ({
               if (val === '__blank__') onClearCanvas();
               else onSelectBlueprint(val);
             }}
-            className="max-w-[235px] sm:max-w-[280px] rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-sky-500"
+            className="max-w-[235px] sm:max-w-[290px] rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-sky-500"
           >
-            {BLUEPRINT_LIST.map((bp) => (
-              <option key={bp.id} value={bp.id}>
-                {bp.name}
-              </option>
-            ))}
-            <option value="__blank__">Blank Canvas (Start From Scratch)</option>
+            <optgroup label={`Real-World System Blueprints (${BLUEPRINT_LIST.length})`}>
+              {BLUEPRINT_LIST.map((bp) => (
+                <option key={bp.id} value={bp.id}>
+                  {bp.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Custom Topology">
+              <option value="__blank__">Blank Canvas (Start From Scratch)</option>
+            </optgroup>
           </select>
 
           {activeBlueprintId && (
-            <button
-              type="button"
-              onClick={() => setShowWalkthrough(!showWalkthrough)}
-              title="Toggle architectural walkthrough guide"
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                showWalkthrough
-                  ? 'border-sky-500/60 bg-sky-500/15 text-sky-300'
-                  : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-500'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Guide</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setShowWalkthrough(!showWalkthrough)}
+                title="Toggle step-by-step tier walkthrough"
+                className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  showWalkthrough
+                    ? 'border-sky-500/60 bg-sky-500/15 text-sky-300'
+                    : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-500'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Guide</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onToggleExplanation}
+                title="Open complete architecture explanation, scale math, algorithms & chaos playbook"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  showExplanation
+                    ? 'border-emerald-500/70 bg-emerald-500/15 text-emerald-300'
+                    : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-sky-500 hover:text-white'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Architecture Spec</span>
+              </button>
+            </>
           )}
         </div>
       </div>

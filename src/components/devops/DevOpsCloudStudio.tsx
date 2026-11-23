@@ -33,9 +33,16 @@ import { FramerCicdPacketAnimator } from './FramerCicdPacketAnimator';
 import { InteractiveAwsVsInHousePlayground } from './InteractiveAwsVsInHousePlayground';
 import { MermaidLevel1DfdViewer } from './MermaidLevel1DfdViewer';
 import { CloudDevCompleteTutorial } from './CloudDevCompleteTutorial';
+import { DEVOPS_CLOUD_DEEP_TOPICS } from '../../data/devopsCloudDeepGapsData';
+import { DevOpsCloudDeepVisualLab } from './DevOpsCloudDeepVisualLab';
+
+const BoundedDevOpsCloudDeepVisualLab = withStudioBoundary(DevOpsCloudDeepVisualLab, {
+  studioName: 'DevOps & Cloud Deep Visual Learning Lab',
+});
 
 type StudioTab =
   | 'dev-tutorials'
+  | 'deep-visual-gaps'
   | 'playground'
   | 'simulators'
   | 'sdlc-pipeline'
@@ -618,6 +625,10 @@ const DevOpsCloudStudioInner: React.FC = () => {
         onChange={setActiveTab}
         tabs={[
           { id: 'dev-tutorials', label: 'Docker · K8s · AWS · GCP' },
+          {
+            id: 'deep-visual-gaps',
+            label: `Cloud & K8s Deep Visual Lab (${DEVOPS_CLOUD_DEEP_TOPICS.length})`,
+          },
           { id: 'playground', label: 'Virtual Playground' },
           { id: 'simulators', label: '5 Live Simulators & CLI' },
           { id: 'sdlc-pipeline', label: 'Sec 1: SDLC Pipeline (6)' },
@@ -629,6 +640,9 @@ const DevOpsCloudStudioInner: React.FC = () => {
 
       {/* Complete Developer Tutorial: Docker, Kubernetes, AWS & GCP */}
       {activeTab === 'dev-tutorials' && <CloudDevCompleteTutorial />}
+
+      {/* Enriched DevOps & Cloud Deep Visual Learning Lab (8 Production Gap Modules) */}
+      {activeTab === 'deep-visual-gaps' && <BoundedDevOpsCloudDeepVisualLab />}
 
       {/* TAB 0: Interactive Virtual DevOps Automation & Deployment Playground */}
       {activeTab === 'playground' && (
