@@ -21,6 +21,13 @@ async function findAccessibleLesson(lessonId: string, userId: string) {
   return ContentAuthoringJob.findOne(buildAccessibleLessonFilter(lessonId, userId)).select('generatedLesson.quiz').lean();
 }
 
+export function selectQuizQuestions<T>(quiz: T[], requestedIndexes?: unknown): { questions: T[]; indexes: number[] } | null {
+  if (!Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40) return null;
+  const indexes = requestedIndexes === undefined ? quiz.map((_, index) => index) : requestedIndexes;
+  if (!Array.isArray(indexes) || indexes.length < 1 || indexes.length > quiz.length || indexes.some((index) => !Number.isInteger(index) || index < 0 || index >= quiz.length) || new Set(indexes).size !== indexes.length) return null;
+  return { indexes, questions: indexes.map((index) => quiz[index]) };
+}
+
 function isQuizAnswerCorrect(question: { correctAnswer: string | string[] }, answer: string) {
   const expected = (Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer]).map((value) => String(value).trim().toLowerCase()).sort();
   const actual = answer.split('|').filter(Boolean).map((value) => value.trim().toLowerCase()).sort();
@@ -148,9 +155,10 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     const attempt = body.quizAttempt;
     const quiz = lesson.generatedLesson?.quiz;
     if (!attempt || !Array.isArray(quiz) || quiz.length < 1 || quiz.length > 40) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
-    const selectedIndexes: number[] = attempt.questionIndexes === undefined ? quiz.map((_: unknown, index: number) => index) : attempt.questionIndexes;
-    if (!Array.isArray(selectedIndexes) || selectedIndexes.length < 1 || selectedIndexes.length > quiz.length || selectedIndexes.some((index: unknown) => !Number.isInteger(index) || (index as number) < 0 || (index as number) >= quiz.length) || new Set(selectedIndexes).size !== selectedIndexes.length || attempt.total !== selectedIndexes.length) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
-    const selectedQuiz = selectedIndexes.map((index) => quiz[index]);
+    const selection = selectQuizQuestions(quiz, attempt.questionIndexes);
+    if (!selection || attempt.total !== selection.questions.length) return res.status(400).json({ code: 'INVALID_QUIZ_ATTEMPT' });
+    const selectedIndexes = selection.indexes;
+    const selectedQuiz = selection.questions;
     isFullQuizAttempt = selectedIndexes.length === quiz.length;
     const normalizedAnswers = normalizeAnswers(attempt.answers);
     if (!normalizedAnswers) return res.status(400).json({ code: 'INVALID_QUIZ_ANSWERS' });
