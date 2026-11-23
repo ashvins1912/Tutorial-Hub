@@ -240,3 +240,51 @@ test('heap Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('set and map topics satisfy the complete learning-unit contract', () => {
+  for (const id of ['hash-set', 'hash-map']) {
+    const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === id);
+    assert.ok(lesson, id + ' lesson must exist');
+    const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+    for (const field of required) {
+      const minimum = field === 'codeExamples' ? 1 : 3;
+      assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, id + ' lesson requires substantive ' + field);
+    }
+    assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+    assert.ok(lesson.assessment.length >= 5);
+  }
+});
+
+test('set and map Java examples execute against expected outputs', () => {
+  const setLesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'hash-set');
+  const mapLesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'hash-map');
+  const examples = [...setLesson.codeExamples, ...mapLesson.codeExamples]
+    .filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-set-map-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class SetMapLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'if (!Arrays.equals(uniqueInFirstSeenOrder(new int[]{4, 1, 2, 1, 3, 4}), new int[]{4, 1, 2, 3})) throw new AssertionError("stable unique");',
+      'if (!hasPairWithSum(new int[]{2, 7, 11}, 9)) throw new AssertionError("pair exists");',
+      'if (hasPairWithSum(new int[]{4}, 8)) throw new AssertionError("same index cannot pair");',
+      'if (countSubarraysWithSum(new int[]{1, 1, 1}, 2) != 2L) throw new AssertionError("prefix count");',
+      'if (countSubarraysWithSum(new int[]{0, 0}, 0) != 3L) throw new AssertionError("zero prefix count");',
+      'if (countSubarraysWithSum(new int[]{1, -1, 1}, 1) != 3L) throw new AssertionError("negative values");',
+      'if (!Arrays.equals(twoSum(new int[]{2, 7, 11, 15}, 9), new int[]{0, 1})) throw new AssertionError("two sum indices");',
+      'if (!Arrays.equals(twoSum(new int[]{3, 3}, 6), new int[]{0, 1})) throw new AssertionError("duplicate two sum");',
+      '}',
+      '}'
+    ].join('\\n');
+    writeFileSync(join(directory, 'SetMapLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['SetMapLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['SetMapLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
