@@ -638,6 +638,6 @@ Implemented in one branch: canonical shared simulator contract, generation/serve
 1. Manually review keyboard navigation, screen-reader announcements, zoom and mobile layouts across supported devices.
 2. Have domain reviewers validate all model assumptions and add engine/version-specific fixtures where required.
 3. Map existing published lessons to relevant simulator configurations through reviewed content updates; do not auto-attach unrelated simulators.
-4. Integrate the existing system-design traffic engine through a typed adapter and add queueing/fan-out/retry scenarios with verified expected outcomes.
+4. Extend the existing system-design traffic engine with queue-depth/fan-out/retry models and verified expected outcomes; the current domain lesson adapter already reuses its DAG traffic tick.
 5. Add reviewed scenario adapters for database EXPLAIN, transaction isolation and cloud-provider policy only if execution remains safely sandboxed and explicitly approved.
 6. Keep simulator completion separate from quiz mastery, code verification, transfer and retained-learning evidence.
