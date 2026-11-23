@@ -6,6 +6,7 @@ import { ContentAuthoringJob } from './ContentAuthoringJob';
 import { analyzeContent, normalizeUpload } from './contentAuthoring.service';
 import type { LearningSection } from './contentAuthoring.types';
 import { generateLearningDraft } from './generation/contentGeneration.service';
+import { sanitizePublishedLesson } from './publishedLessonSanitizer';
 
 const router = express.Router();
 const authorIds = new Set((process.env.CONTENT_AUTHOR_USER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean));
@@ -15,18 +16,6 @@ function requireContentAuthor(req: Request, res: Response, next: express.NextFun
   if (!authorIds.size) return res.status(503).json({ code: 'CONTENT_AUTHORING_NOT_CONFIGURED', message: 'Content Studio author access is not configured. Add authorized Supabase user IDs to CONTENT_AUTHOR_USER_IDS.' });
   if (!authorIds.has(req.authUser.id)) return res.status(403).json({ code: 'CONTENT_AUTHOR_REQUIRED', message: 'Your account is not authorized to create or publish learning content.' });
   return next();
-}
-
-export function sanitizePublishedLesson(lesson: Record<string, any>) {
-  return {
-    ...lesson,
-    quiz: Array.isArray(lesson.quiz) ? lesson.quiz.map((question: any) => ({
-      question: question.question,
-      options: question.options,
-      explanation: question.explanation,
-      objectiveIds: Array.isArray(question.objectiveIds) ? question.objectiveIds.filter((id: unknown) => typeof id === 'string') : [],
-    })) : [],
-  };
 }
 
 const templates: Record<string, { fileName: string; mimeType: string; content: string }> = {
