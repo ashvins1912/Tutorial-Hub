@@ -32,7 +32,7 @@ test('concurrency scenario demonstrates a lost update and safe correction', () =
   const frames = buildDomainScenario('concurrency-lost-update');
   assert.equal(frames[2].metrics.find((metric) => metric.label === 'Interleaved final')?.value, '50');
   assert.equal(frames[2].metrics.find((metric) => metric.label === 'Serial expected')?.value, '20');
-  assert.equal(frames[2].prediction.correctOption, 'Atomic UPDATE or row-level locking');
+  assert.equal(frames[2].prediction.correctOption, 'Atomic conditional UPDATE or row-level locking');
 });
 
 test('cloud scenario blocks promotion when a secret is exposed', () => {
