@@ -1,4 +1,5 @@
 import type { GeneratedLesson, LearningSection } from '../contentAuthoring.types';
+import { validateDomainLessonSimulator } from '../../../../shared/domainSimulatorContract';
 
 const isText = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
@@ -67,13 +68,14 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   if (raw.domainSimulator !== undefined && raw.domainSimulator !== null) {
     if (!raw.domainSimulator || typeof raw.domainSimulator !== 'object' || Array.isArray(raw.domainSimulator)) throw new Error('GENERATED_DOMAIN_SIMULATOR_INVALID');
     const candidate = raw.domainSimulator as Record<string, unknown>;
-    const supportedScenarios = ['database-query-plan', 'system-capacity', 'concurrency-lost-update', 'cloud-pipeline-gate'];
-    if (candidate.schemaVersion !== 1 || candidate.kind !== 'domain-prediction' || !isText(candidate.id) || candidate.id.length > 80 || !isText(candidate.title) || candidate.title.length > 120 || !isText(candidate.description) || candidate.description.length > 400 || !supportedScenarios.includes(String(candidate.scenario))) throw new Error('GENERATED_DOMAIN_SIMULATOR_INVALID');
     const objectiveIds = asArray(candidate.objectiveIds);
     const validObjectiveIds = objectiveIds.filter(isText);
-    const availableObjectives = new Set(asArray(raw.learningObjectives).filter(isText));
-    if (!validObjectiveIds.length || validObjectiveIds.length !== objectiveIds.length || validObjectiveIds.length > 12 || validObjectiveIds.some((id) => id.length > 120) || new Set(validObjectiveIds).size !== validObjectiveIds.length || validObjectiveIds.some((id) => !availableObjectives.has(id))) throw new Error('GENERATED_DOMAIN_SIMULATOR_OBJECTIVE_BINDING_INVALID');
-    domainSimulator = { schemaVersion: 1, id: candidate.id, kind: 'domain-prediction', scenario: candidate.scenario as NonNullable<GeneratedLesson['domainSimulator']>['scenario'], title: candidate.title, description: candidate.description, objectiveIds: validObjectiveIds };
+    const availableObjectives = asArray(raw.learningObjectives).filter(isText);
+    domainSimulator = validateDomainLessonSimulator(candidate, availableObjectives) || undefined;
+    if (!domainSimulator) {
+      const invalidObjectiveBinding = !validObjectiveIds.length || validObjectiveIds.length !== objectiveIds.length || validObjectiveIds.some((id) => id.length > 120) || new Set(validObjectiveIds).size !== validObjectiveIds.length || validObjectiveIds.some((id) => !availableObjectives.includes(id));
+      throw new Error(invalidObjectiveBinding ? 'GENERATED_DOMAIN_SIMULATOR_OBJECTIVE_BINDING_INVALID' : 'GENERATED_DOMAIN_SIMULATOR_INVALID');
+    }
   }
   const lesson: GeneratedLesson = {
     schemaVersion: '1.0',

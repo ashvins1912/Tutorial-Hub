@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/requireAuth';
 import { isMongoConnected } from '../db/connectMongo';
 import { LearningProgress } from '../models/LearningProgress';
 import { ContentAuthoringJob } from '../modules/content-authoring/ContentAuthoringJob';
+import { normalizeSimulatorCompletion } from './simulatorProgress';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -18,7 +19,7 @@ export function buildAccessibleLessonFilter(lessonId: string, userId: string) {
 
 async function findAccessibleLesson(lessonId: string, userId: string) {
   if (!validLessonId(lessonId)) return null;
-  return ContentAuthoringJob.findOne(buildAccessibleLessonFilter(lessonId, userId)).select('generatedLesson.quiz').lean();
+  return ContentAuthoringJob.findOne(buildAccessibleLessonFilter(lessonId, userId)).select('generatedLesson.quiz generatedLesson.domainSimulator generatedLesson.learningObjectives').lean();
 }
 
 export function selectQuizQuestions<T>(quiz: T[], requestedIndexes?: unknown): { questions: T[]; indexes: number[] } | null {
@@ -134,6 +135,11 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
   let isFullQuizAttempt = false;
   let objectiveResults: ReturnType<typeof calculateObjectiveResults> = [];
   let quizGrading: { score: number; total: number; accuracy: number; correctAnswers: Array<string | string[]>; objectiveResults: ReturnType<typeof calculateObjectiveResults> } | null = null;
+  let simulatorCompletion: ReturnType<typeof normalizeSimulatorCompletion> = null;
+  if (body.simulatorCompletion !== undefined) {
+    simulatorCompletion = normalizeSimulatorCompletion(body.simulatorCompletion, lesson.generatedLesson?.domainSimulator, lesson.generatedLesson?.learningObjectives || []);
+    if (!simulatorCompletion) return res.status(400).json({ code: 'INVALID_SIMULATOR_COMPLETION' });
+  }
   if (body.resetQuiz === true) { update.lastScore = null; update.lastAnswers = {}; }
   if (body.algorithm !== undefined) {
     if (!['binary-search', 'bubble-sort'].includes(body.algorithm)) return res.status(400).json({ code: 'INVALID_ALGORITHM' });
@@ -185,18 +191,23 @@ router.put('/:lessonId', async (req: Request, res: Response) => {
     update.completedPracticeIds = [...new Set(body.completedPracticeIds)];
   }
   const atomicUpdate: Record<string, unknown> = { $set: update, $setOnInsert: { userId: req.authUser!.id, lessonId: req.params.lessonId } };
+  const pushUpdates: Record<string, unknown> = {};
   if (quizAccuracy !== null) {
     atomicUpdate.$inc = { attempts: 1 };
     if (isFullQuizAttempt) atomicUpdate.$max = { bestScore: quizAccuracy };
-    atomicUpdate.$push = { quizHistory: { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date(), objectiveResults, questionIndexes: body.quizAttempt.questionIndexes || lesson.generatedLesson!.quiz.map((_: unknown, index: number) => index) }], $slice: -30 } };
+    pushUpdates.quizHistory = { $each: [{ score: quizScore, total: (body.quizAttempt as { total: number }).total, accuracy: quizAccuracy, attemptedAt: new Date(), objectiveResults, questionIndexes: body.quizAttempt.questionIndexes || lesson.generatedLesson!.quiz.map((_: unknown, index: number) => index) }], $slice: -30 };
   }
+  if (simulatorCompletion) {
+    pushUpdates.simulatorHistory = { $each: [simulatorCompletion], $slice: -50 };
+  }
+  if (Object.keys(pushUpdates).length) atomicUpdate.$push = pushUpdates;
   const progress = await LearningProgress.findOneAndUpdate(
     { userId: req.authUser!.id, lessonId: req.params.lessonId },
     atomicUpdate,
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
   ).lean();
   const objectiveMastery = aggregateObjectiveMastery(progress?.quizHistory || []);
-  return res.json({ ok: true, progress, grading: quizGrading ? { ...quizGrading, objectiveMastery } : null, objectiveMastery });
+  return res.json({ ok: true, progress, grading: quizGrading ? { ...quizGrading, objectiveMastery } : null, objectiveMastery, simulatorHistory: progress?.simulatorHistory || [] });
 });
 
 router.get('/', async (req: Request, res: Response) => {
