@@ -10,7 +10,7 @@ export interface ILearningProgress extends Document {
   target: string;
   currentStep: number;
   attempts: number;
-  quizHistory: Array<{ score: number; total: number; accuracy: number; attemptedAt: Date; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy: number }> }>;
+  quizHistory: Array<{ score: number; total: number; accuracy: number; attemptedAt: Date; objectiveResults?: Array<{ objectiveId: string; correct: number; total: number; accuracy: number }>; questionIndexes?: number[] }>;
   bestScore: number;
   lastScore: number | null;
   quizTotal: number;
@@ -32,7 +32,7 @@ const QuizAttemptSchema = new Schema({
   total: { type: Number, required: true, min: 1, max: 40 },
   accuracy: { type: Number, required: true, min: 0, max: 100 },
   attemptedAt: { type: Date, default: Date.now },
-  objectiveResults: { type: [ObjectiveResultSchema], default: [] },
+  objectiveResults: { type: [ObjectiveResultSchema], default: [] },\n  questionIndexes: { type: [Number], default: [] },
 }, { _id: false });
 
 const LearningProgressSchema = new Schema<ILearningProgress>({
