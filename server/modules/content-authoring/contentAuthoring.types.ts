@@ -82,6 +82,15 @@ export interface GeneratedLessonSimulator {
   target?: string;
   objectiveIds: string[];
 }
+export interface GeneratedDomainLessonSimulator {
+  schemaVersion: 1;
+  id: string;
+  kind: 'domain-prediction';
+  scenario: 'database-query-plan' | 'system-capacity' | 'concurrency-lost-update' | 'cloud-pipeline-gate';
+  title: string;
+  description: string;
+  objectiveIds: string[];
+}
 export interface GeneratedLesson {
   schemaVersion: '1.0';
   title: string;
@@ -92,6 +101,7 @@ export interface GeneratedLesson {
   quiz: GeneratedQuizQuestion[];
   practiceTasks: Array<{ title: string; instructions: string; expectedOutcome: string; difficulty: string }>;
   simulator?: GeneratedLessonSimulator;
+  domainSimulator?: GeneratedDomainLessonSimulator;
   references: Array<{ label: string; url: string; suppliedByUser: boolean }>;
   qualityNotes: string[];
   validation: { status: 'unverified-draft'; checks: string[]; warnings: string[] };

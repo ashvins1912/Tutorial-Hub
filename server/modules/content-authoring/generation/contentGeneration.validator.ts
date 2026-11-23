@@ -63,6 +63,18 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     if (!validObjectiveIds.length || validObjectiveIds.length !== objectiveIds.length || validObjectiveIds.length > 12 || validObjectiveIds.some((id) => id.length > 120) || new Set(validObjectiveIds).size !== validObjectiveIds.length || validObjectiveIds.some((id) => !availableObjectives.has(id))) throw new Error('GENERATED_SIMULATOR_OBJECTIVE_BINDING_INVALID');
     simulator = { schemaVersion: 1, id: candidate.id, kind: 'algorithm-trace', title: candidate.title, description: candidate.description, algorithm: candidate.algorithm as 'binary-search' | 'bubble-sort', initialInput: candidate.initialInput, objectiveIds: validObjectiveIds, ...(typeof candidate.target === 'string' ? { target: candidate.target } : {}) };
   }
+  let domainSimulator: GeneratedLesson['domainSimulator'];
+  if (raw.domainSimulator !== undefined && raw.domainSimulator !== null) {
+    if (!raw.domainSimulator || typeof raw.domainSimulator !== 'object' || Array.isArray(raw.domainSimulator)) throw new Error('GENERATED_DOMAIN_SIMULATOR_INVALID');
+    const candidate = raw.domainSimulator as Record<string, unknown>;
+    const supportedScenarios = ['database-query-plan', 'system-capacity', 'concurrency-lost-update', 'cloud-pipeline-gate'];
+    if (candidate.schemaVersion !== 1 || candidate.kind !== 'domain-prediction' || !isText(candidate.id) || candidate.id.length > 80 || !isText(candidate.title) || candidate.title.length > 120 || !isText(candidate.description) || candidate.description.length > 400 || !supportedScenarios.includes(String(candidate.scenario))) throw new Error('GENERATED_DOMAIN_SIMULATOR_INVALID');
+    const objectiveIds = asArray(candidate.objectiveIds);
+    const validObjectiveIds = objectiveIds.filter(isText);
+    const availableObjectives = new Set(asArray(raw.learningObjectives).filter(isText));
+    if (!validObjectiveIds.length || validObjectiveIds.length !== objectiveIds.length || validObjectiveIds.length > 12 || validObjectiveIds.some((id) => id.length > 120) || new Set(validObjectiveIds).size !== validObjectiveIds.length || validObjectiveIds.some((id) => !availableObjectives.has(id))) throw new Error('GENERATED_DOMAIN_SIMULATOR_OBJECTIVE_BINDING_INVALID');
+    domainSimulator = { schemaVersion: 1, id: candidate.id, kind: 'domain-prediction', scenario: candidate.scenario as NonNullable<GeneratedLesson['domainSimulator']>['scenario'], title: candidate.title, description: candidate.description, objectiveIds: validObjectiveIds };
+  }
   const lesson: GeneratedLesson = {
     schemaVersion: '1.0',
     title: raw.title as string,
@@ -73,9 +85,10 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     quiz: normalizedQuiz,
     practiceTasks: practiceTasks as GeneratedLesson['practiceTasks'],
     ...(simulator ? { simulator } : {}),
+    ...(domainSimulator ? { domainSimulator } : {}),
     references: allowedReferences.map((ref) => ({ label: String(ref.label), url: String(ref.url), suppliedByUser: true })),
     qualityNotes: asArray(raw.qualityNotes).filter(isText),
-    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and objective-linked quiz structure checked', 'Optional simulator configuration shape checked'], warnings },
+    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and objective-linked quiz structure checked', 'Optional algorithm and domain simulator configuration shape checked'], warnings },
   };
   return { lesson, warnings };
 }

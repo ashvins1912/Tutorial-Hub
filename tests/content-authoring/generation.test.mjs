@@ -71,6 +71,20 @@ test('rejects an unrelated or malformed generated simulator', () => {
   } }, sections), /GENERATED_SIMULATOR_INVALID/);
 });
 
+test('accepts a domain-specific simulator bound to exact lesson objectives', () => {
+  const domainSimulator = { schemaVersion: 1, id: 'db-query-plan', kind: 'domain-prediction', scenario: 'database-query-plan', title: 'Query plan reasoning', description: 'Predict access paths and heap work.', objectiveIds: ['Understand the invariant'] };
+  const result = validateGeneratedLesson({ ...validLesson, domainSimulator }, sections);
+  assert.equal(result.lesson.domainSimulator?.scenario, 'database-query-plan');
+  assert.equal(result.lesson.validation.status, 'unverified-draft');
+});
+
+test('rejects unknown domain scenarios and invalid objective bindings', () => {
+  const base = { schemaVersion: 1, id: 'domain-lab', kind: 'domain-prediction', scenario: 'database-query-plan', title: 'Query plan', description: 'Predict the plan', objectiveIds: ['Understand the invariant'] };
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, domainSimulator: { ...base, scenario: 'generic-animation' } }, sections), /GENERATED_DOMAIN_SIMULATOR_INVALID/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, domainSimulator: { ...base, objectiveIds: ['not an objective'] } }, sections), /GENERATED_DOMAIN_SIMULATOR_OBJECTIVE_BINDING_INVALID/);
+  assert.throws(() => validateGeneratedLesson({ ...validLesson, domainSimulator: { ...base, objectiveIds: [] } }, sections), /GENERATED_DOMAIN_SIMULATOR_OBJECTIVE_BINDING_INVALID/);
+});
+
 test('rejects step animations without at least two states', () => {
   const invalid = { ...validLesson, visualizations: [{ id: 'anim', title: 'Animation', type: 'step-animation', description: 'Only one state', source: '[]', steps: [{ title: 'Start', explanation: 'Initial state' }] }] };
   assert.throws(() => validateGeneratedLesson(invalid, sections), /GENERATED_ANIMATION_NEEDS_TWO_STEPS/);
