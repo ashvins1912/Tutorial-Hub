@@ -25,7 +25,8 @@ function tokenizeInline(source: string): InlineToken[] {
 
 function safeHref(href: string): string | null {
   try {
-    const parsed = new URL(href, 'https://tutorial-hub.invalid');
+    if (!/^https?:\/\//i.test(href)) return null;
+    const parsed = new URL(href);
     return ['https:', 'http:'].includes(parsed.protocol) ? parsed.href : null;
   } catch {
     return null;
