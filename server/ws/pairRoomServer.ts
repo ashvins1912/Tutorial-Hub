@@ -124,9 +124,9 @@ export function attachPairWebSocketServer(httpServer: HttpServer) {
 
   wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
     const parsedUrl = new URL(req.url || '/ws/pair', 'http://localhost:3000');
-    const requestedRoomId = parsedUrl.searchParams.get('room') || 'default-pair';
+    const requestedRoomId = parsedUrl.searchParams.get('room') || '';
     const identity = verifiedSockets.get(req);
-    if (!identity || !/^[a-zA-Z0-9_-]{1,64}$/.test(requestedRoomId)) {
+    if (!identity || !/^[a-zA-Z0-9_-]{22,64}$/.test(requestedRoomId)) {
       ws.close(1008, 'Invalid authenticated room');
       return;
     }
