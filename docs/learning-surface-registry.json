@@ -22,7 +22,8 @@
     "tests/content-authoring/phase1.test.mjs",
     "tests/content-authoring/published-lesson-security.test.mjs",
     "tests/content-authoring/visualization-renderer.test.mjs",
-    "tests/dsa/arrays-batch-01.test.mjs"
+    "tests/dsa/arrays-batch-01.test.mjs",
+    "tests/dsa/master-interview-inventory.test.mjs"
   ],
   "surfaces": [
     {
@@ -130,7 +131,8 @@
         "server/routes/learningProgressRoutes.ts"
       ],
       "testFiles": [
-        "tests/dsa/arrays-batch-01.test.mjs"
+        "tests/dsa/arrays-batch-01.test.mjs",
+        "tests/dsa/master-interview-inventory.test.mjs"
       ]
     },
     {
@@ -439,7 +441,9 @@
       "apiRoutes": [
         "server/routes/interviewProblemRoutes.ts"
       ],
-      "testFiles": []
+      "testFiles": [
+        "tests/dsa/master-interview-inventory.test.mjs"
+      ]
     },
     {
       "id": "sprint",
