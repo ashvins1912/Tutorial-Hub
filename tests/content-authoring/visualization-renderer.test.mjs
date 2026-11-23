@@ -24,15 +24,15 @@ test('ignores Mermaid directives and safely returns an empty graph for unsupport
   assert.equal(graph.edges.length, 0);
 });
 test('preserves every edge in chained Mermaid flowchart statements', () => {
-  const graph = parseGraph('flowchart TD\\n  A[Source] --> B[Validate] --> C[Publish] --> D[Learn]');
+  const graph = parseGraph('flowchart TD\n  A[Source] --> B[Validate] --> C[Publish] --> D[Learn]');
   assert.deepEqual(graph.nodes.map((node) => node.id), ['A', 'B', 'C', 'D']);
   assert.deepEqual(graph.edges.map(({ from, to }) => [from, to]), [['A', 'B'], ['B', 'C'], ['C', 'D']]);
 });
 
 test('bounds parsed graph nodes, edges, and source size', () => {
   const lines = ['flowchart LR', ...Array.from({ length: 45 }, (_, index) => `N${index}[Node ${index}] --> N${index + 1}[Node ${index + 1}]`)];
-  const graph = parseGraph(lines.join('\\n'));
+  const graph = parseGraph(lines.join('\n'));
   assert.ok(graph.nodes.length <= 30);
   assert.ok(graph.edges.length <= 50);
-  assert.equal(parseGraph('flowchart TD\\n' + ' '.repeat(13_000) + 'A[late node]').nodes.length, 0);
+  assert.equal(parseGraph('flowchart TD\n' + ' '.repeat(13_000) + 'A[late node]').nodes.length, 0);
 });

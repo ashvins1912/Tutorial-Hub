@@ -31,11 +31,16 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   if (!quiz.length) warnings.push('No quiz questions were generated.');
   if (!practiceTasks.length) warnings.push('No practical exercises were generated.');
   if (!visualizations.length) warnings.push('No visualizations were generated.');
-  for (const item of quiz) {
-    if (!item || typeof item !== 'object') throw new Error('GENERATED_QUIZ_INVALID');
+  const availableQuizObjectives = new Set(asArray(raw.learningObjectives).filter(isText));
+  const normalizedQuiz = quiz.map((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new Error('GENERATED_QUIZ_INVALID');
     const question = item as Record<string, unknown>;
     if (!isText(question.question) || !isText(question.explanation) || !(isText(question.correctAnswer) || Array.isArray(question.correctAnswer))) throw new Error('GENERATED_QUIZ_INCOMPLETE');
-  }
+    const objectiveIds = asArray(question.objectiveIds);
+    const validObjectiveIds = objectiveIds.filter(isText);
+    if (!validObjectiveIds.length || validObjectiveIds.length !== objectiveIds.length || validObjectiveIds.length > 12 || validObjectiveIds.some((id) => id.length > 120) || new Set(validObjectiveIds).size !== validObjectiveIds.length || validObjectiveIds.some((id) => !availableQuizObjectives.has(id))) throw new Error('GENERATED_QUIZ_OBJECTIVE_BINDING_INVALID');
+    return { ...question, objectiveIds: validObjectiveIds };
+  }) as GeneratedLesson['quiz'];
   for (const item of visualizations) {
     if (!item || typeof item !== 'object') throw new Error('GENERATED_VISUALIZATION_INVALID');
     const visual = item as Record<string, unknown>;
@@ -65,12 +70,12 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     learningObjectives: asArray(raw.learningObjectives).filter(isText),
     modules: modules as GeneratedLesson['modules'],
     visualizations: visualizations as GeneratedLesson['visualizations'],
-    quiz: quiz as GeneratedLesson['quiz'],
+    quiz: normalizedQuiz,
     practiceTasks: practiceTasks as GeneratedLesson['practiceTasks'],
     ...(simulator ? { simulator } : {}),
     references: allowedReferences.map((ref) => ({ label: String(ref.label), url: String(ref.url), suppliedByUser: true })),
     qualityNotes: asArray(raw.qualityNotes).filter(isText),
-    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and quiz structure checked', 'Optional simulator configuration shape checked'], warnings },
+    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and objective-linked quiz structure checked', 'Optional simulator configuration shape checked'], warnings },
   };
   return { lesson, warnings };
 }

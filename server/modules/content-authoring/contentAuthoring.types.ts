@@ -69,6 +69,7 @@ export interface GeneratedQuizQuestion {
   correctAnswer: string | string[];
   explanation: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
+  objectiveIds: string[];
 }
 export interface GeneratedLessonSimulator {
   schemaVersion: 1;

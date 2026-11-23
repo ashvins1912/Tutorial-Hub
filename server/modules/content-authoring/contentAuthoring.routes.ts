@@ -24,6 +24,7 @@ export function sanitizePublishedLesson(lesson: Record<string, any>) {
       question: question.question,
       options: question.options,
       explanation: question.explanation,
+      objectiveIds: Array.isArray(question.objectiveIds) ? question.objectiveIds.filter((id: unknown) => typeof id === 'string') : [],
     })) : [],
   };
 }
