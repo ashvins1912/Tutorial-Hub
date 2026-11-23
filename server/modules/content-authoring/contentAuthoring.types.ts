@@ -71,8 +71,10 @@ export interface GeneratedQuizQuestion {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
 export interface GeneratedLessonSimulator {
+  schemaVersion: 1;
   id: string;
   title: string;
+  description: string;
   kind: 'algorithm-trace';
   algorithm: 'binary-search' | 'bubble-sort';
   initialInput: string;
