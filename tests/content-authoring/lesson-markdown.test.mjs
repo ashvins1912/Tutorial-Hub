@@ -8,7 +8,7 @@ test('renders instructional Markdown structures without interpreting raw HTML', 
   const html = renderToStaticMarkup(React.createElement(LessonMarkdown, { source: '# Concept\n\nA **strong** idea with `code`.\n\n- First\n- Second\n\n> Remember this\n\n```java\nint answer = 42;\n```\n\n| Term | Meaning |\n| --- | --- |\n| O(1) | Constant |\n\n<script>alert(1)</script>' }));
   assert.match(html, /<h2/);
   assert.match(html, /<strong>strong<\/strong>/);
-  assert.match(html, /<code>code<\/code>/);
+  assert.match(html, /<code[^>]*>code<\/code>/);
   assert.match(html, /<ul/);
   assert.match(html, /<blockquote/);
   assert.match(html, /<pre/);
