@@ -330,3 +330,52 @@ test('heap Java examples execute against expected outputs', () => {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('sorting and searching topics satisfy the complete learning-unit contract', () => {
+  for (const id of ['sorting-algorithms', 'searching-algorithms']) {
+    const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === id);
+    assert.ok(lesson, id + ' lesson must exist');
+    const required = ['learningOutcomes', 'prerequisites', 'deepDive', 'correctness', 'implementationSteps', 'codeExamples', 'traceExercises', 'realWorldApplications', 'assessment', 'revisionPrompts'];
+    for (const field of required) {
+      const minimum = field === 'codeExamples' ? 1 : 3;
+      assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, id + ' lesson requires substantive ' + field);
+    }
+    assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
+    assert.ok(lesson.assessment.length >= 5);
+  }
+});
+
+test('sorting and searching Java examples execute against expected outputs', () => {
+  const sorting = DSA_COMPLETE_LESSONS.find((item) => item.id === 'sorting-algorithms');
+  const searching = DSA_COMPLETE_LESSONS.find((item) => item.id === 'searching-algorithms');
+  const examples = [...sorting.codeExamples, ...searching.codeExamples]
+    .filter((item) => item.language.startsWith('Java'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-sort-search-'));
+  try {
+    const javaSource = [
+      'import java.util.*;',
+      'public class SortSearchLessonExamples {',
+      ...examples.map((item) => item.code),
+      'public static void main(String[] args) {',
+      'int[] values = {5, 2, 4, 1, 2};',
+      'stableMergeSort(values);',
+      'if (!Arrays.equals(values, new int[]{1, 2, 2, 4, 5})) throw new AssertionError("merge sort");',
+      'int[] sorted = {1, 2, 4, 4, 4, 7, 9};',
+      'if (lowerBound(sorted, 4) != 2) throw new AssertionError("lower bound");',
+      'if (upperBound(sorted, 4) != 5) throw new AssertionError("upper bound");',
+      'if (countOccurrences(sorted, 4) != 3) throw new AssertionError("occurrence count");',
+      'if (lowerBound(sorted, 10) != sorted.length) throw new AssertionError("upper boundary");',
+      'if (lowerBound(new int[]{}, 3) != 0 || upperBound(new int[]{}, 3) != 0) throw new AssertionError("empty boundaries");',
+      '}',
+      '}'
+    ].join(String.fromCharCode(10));
+    writeFileSync(join(directory, 'SortSearchLessonExamples.java'), javaSource);
+    const compile = spawnSync('javac', ['SortSearchLessonExamples.java'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(compile.status, 0, compile.stderr || compile.stdout);
+    const execute = spawnSync('java', ['SortSearchLessonExamples'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
