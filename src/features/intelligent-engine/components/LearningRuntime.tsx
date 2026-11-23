@@ -22,6 +22,8 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   const [masterySummary, setMasterySummary] = useState<{ bestScore: number; masteryLevel: string } | null>(null);
   const [quizGrading, setQuizGrading] = useState<QuizGrading | null>(null);
 
+  const simulatorObjectiveKey = simulator?.objectiveIds.join('|') || '';
+
   useEffect(() => {
     let active = true;
     setProgressReady(false);
@@ -51,7 +53,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
       .catch((error) => { if (active) setProgressStatus(error instanceof Error ? error.message : 'Progress unavailable'); })
       .finally(() => { if (active) setProgressReady(true); });
     return () => { active = false; };
-  }, [jobId, simulator?.id]);
+  }, [jobId, simulator?.id, simulator?.algorithm, simulator?.initialInput, simulator?.initialTarget, simulatorObjectiveKey]);
   const trace = useMemo(() => {
     if (!simulator) return [];
     try {
@@ -81,14 +83,14 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
       try {
         const response = await apiFetch('/api/learning-progress/' + encodeURIComponent(jobId), {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ algorithm, input: rawValues, target, currentStep: Math.min(traceIndex, 100), completedPracticeIds }),
+          body: JSON.stringify({ ...(simulator ? { algorithm, input: rawValues, target, currentStep: Math.min(traceIndex, 100) } : {}), completedPracticeIds }),
         });
         if (!response.ok) throw new Error('Save failed');
         setProgressStatus('Progress saved');
       } catch { setProgressStatus('Progress not saved — check your connection'); }
     }, 700);
     return () => clearTimeout(timer);
-  }, [progressReady, jobId, algorithm, rawValues, target, traceIndex, completedPracticeIds]);
+  }, [progressReady, jobId, simulator?.id, algorithm, rawValues, target, traceIndex, completedPracticeIds]);
 
   const isCorrect = (question: QuizQuestion, answer: string, index: number) => {
     const correctAnswer = quizGrading?.correctAnswers[index] ?? question.correctAnswer;
@@ -116,7 +118,7 @@ export function LearningRuntime({ jobId, quiz, practiceTasks = [], simulator }: 
   return <section className="space-y-4" aria-label="Interactive learning runtime">
     <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500"><span>{progressStatus}</span>{masterySummary && <span>Best score: {masterySummary.bestScore}% · Mastery: <strong className="capitalize">{masterySummary.masteryLevel}</strong></span>}</div>
     {simulator && <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">{simulator.title}</h4><p className="text-[11px] text-slate-500">Bound to this lesson’s learning objective. Deterministic built-in trace; no generated source code is executed.</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">Step-by-step</span></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><h4 className="text-sm font-semibold">{simulator.title}</h4><p className="text-[11px] text-slate-500">{simulator.description} Deterministic built-in trace; no generated source code is executed.</p></div><span className="text-[10px] rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300 px-2 py-1">Step-by-step</span></div>
       <label className="block text-[11px] text-slate-500">Input values (comma-separated)<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={rawValues} onChange={(event) => { setRawValues(event.target.value); setTraceIndex(0); }} /></label>
       {algorithm === 'binary-search' && <label className="block text-[11px] text-slate-500">Target value<input className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent p-2 text-xs text-slate-900 dark:text-slate-100" value={target} onChange={(event) => { setTarget(event.target.value); setTraceIndex(0); }} /></label>}
       {!trace.length ? <p role="alert" className="text-xs text-rose-600">Check the input. Binary search requires sorted ascending values.</p> : <>
