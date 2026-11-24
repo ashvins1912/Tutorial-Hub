@@ -226,7 +226,7 @@ export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySumm
     {
       id: 'complexityAnalysis',
       score: complexityScore,
-      count: evidence.complexityCheckPassed ? 1 : 0,
+      count: evidence.complexityAnalysisBestPct > 0 ? 1 : 0,
       missingHint: 'Demonstrate accurate Time & Space complexity reasoning',
     },
     {
