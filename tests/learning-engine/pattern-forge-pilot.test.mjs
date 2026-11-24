@@ -21,6 +21,7 @@ import {
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
   scorePatternRecognitionAttempt,
+  scoreAssessmentDimensions,
 } from '../../shared/masteryEngine.ts';
 
 test('canonical curriculum registers all 28 patterns preserving DSA28 canonical IDs', () => {
@@ -156,12 +157,54 @@ test('pattern recognition weighted rubric sums to 100% and grades accurately', (
   assert.equal(perfect.weightedScorePct, 100);
   assert.equal(perfect.passed, true);
 
+  const atEighty = Object.fromEntries(
+    prPrompt.criteria.map((criterion, index) => [criterion.criterion, index === 0 ? criterion.options.find((option) => !option.isCorrect).id : criterion.options.find((option) => option.isCorrect).id])
+  );
+  const thresholdPass = scorePatternRecognitionAttempt(prPrompt, atEighty);
+  assert.equal(thresholdPass.weightedScorePct, 80);
+  assert.equal(thresholdPass.passed, true);
+
+  const atSeventyFive = Object.fromEntries(
+    prPrompt.criteria.map((criterion, index) => [criterion.criterion, index >= 4 ? criterion.options.find((option) => !option.isCorrect).id : criterion.options.find((option) => option.isCorrect).id])
+  );
+  const thresholdFail = scorePatternRecognitionAttempt(prPrompt, atSeventyFive);
+  assert.equal(thresholdFail.weightedScorePct, 75);
+  assert.equal(thresholdFail.passed, false);
+
   const wrongAnswers = Object.fromEntries(
     prPrompt.criteria.map((c) => [c.criterion, c.options.find((o) => !o.isCorrect).id])
   );
   const zero = scorePatternRecognitionAttempt(prPrompt, wrongAnswers);
   assert.equal(zero.weightedScorePct, 0);
   assert.equal(zero.passed, false);
+});
+
+test('assessment scoring keeps overall, transfer, and complexity evidence independent', () => {
+  const questions = [
+    { id: 'transfer-1', dimension: 'transferAbility', options: [{ id: 'a', isCorrect: true }] },
+    { id: 'complexity-1', dimension: 'complexityAnalysis', options: [{ id: 'a', isCorrect: true }] },
+    { id: 'complexity-2', dimension: 'complexityAnalysis', options: [{ id: 'a', isCorrect: true }] },
+    { id: 'understand-1', dimension: 'understanding', options: [{ id: 'a', isCorrect: true }] },
+  ];
+  const result = scoreAssessmentDimensions(questions, {
+    'transfer-1': 'a',
+    'complexity-1': 'a',
+    'complexity-2': 'wrong',
+    'understand-1': 'a',
+  });
+  assert.equal(result.scorePct, 75);
+  assert.equal(result.correctCount, 3);
+  assert.equal(result.dimensionScores.transferAbility, 100);
+  assert.equal(result.dimensionScores.complexityAnalysis, 50);
+  assert.equal(result.dimensionScores.understanding, 100);
+
+  const evidence = createEmptyMasteryEvidence('hashmap-hashset-lookup', '1.0.0');
+  evidence.patternRecognitionBestPct = 100;
+  const withoutComplexity = computeTopicMastery(evidence);
+  assert.equal(withoutComplexity.dimensions.find((dimension) => dimension.id === 'complexityAnalysis')?.score, 0);
+  evidence.complexityCheckPassed = true;
+  const withComplexity = computeTopicMastery(evidence);
+  assert.equal(withComplexity.dimensions.find((dimension) => dimension.id === 'complexityAnalysis')?.score, 100);
 });
 
 test('evidence-based mastery never awards Mastered without full 8-dimension proof', () => {
