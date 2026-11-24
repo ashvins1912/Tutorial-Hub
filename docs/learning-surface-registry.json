@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "baseline": {
     "branch": "main",
-    "commit": "2acd983e8b5d37fa8cbbf9d9073e232727f1aa1b",
-    "auditDate": "2026-11-23",
+    "commit": "512c342ac17825398b9aafde24b706ecd1d9a3a6",
+    "auditDate": "2026-11-25",
     "trackedFileCount": 442
   },
   "purpose": "Machine-checkable first-pass map of every TopView value to representative entry components, canonical data sources, API routes and existing test files. This is a discoverability and path-integrity inventory, not a claim that mapped content is complete or verified.",
@@ -24,7 +24,8 @@
     "tests/content-authoring/published-lesson-security.test.mjs",
     "tests/content-authoring/visualization-renderer.test.mjs",
     "tests/dsa/arrays-batch-01.test.mjs",
-    "tests/dsa/master-interview-inventory.test.mjs"
+    "tests/dsa/master-interview-inventory.test.mjs",
+    "tests/learning-engine/pattern-forge-pilot.test.mjs"
   ],
   "surfaces": [
     {
@@ -509,6 +510,38 @@
       ],
       "testFiles": [
         "tests/content-authoring/learning-progress.test.mjs"
+      ]
+    },
+    {
+      "id": "pattern-forge",
+      "title": "Pattern Forge unified five-stage learning workspace",
+      "kind": "reference-learning-academy",
+      "navigation": "primary",
+      "summary": "Canonical 28-pattern curriculum with five-stage learning, deterministic traces, verified pilot implementations, practice, mastery and spaced revision.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/features/pattern-forge-unified/UnifiedPatternForgeWorkspace.tsx",
+        "src/features/pattern-forge-unified/components/StageUnderstandView.tsx",
+        "src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx",
+        "src/features/pattern-forge-unified/components/StageImplementView.tsx",
+        "src/features/pattern-forge-unified/components/StagePracticeView.tsx",
+        "src/features/pattern-forge-unified/components/StageMasterView.tsx"
+      ],
+      "dataSources": [
+        "src/features/pattern-forge-unified/useUnifiedLearningStore.ts",
+        "src/data/dsa28Patterns.ts",
+        "shared/learningContract.ts",
+        "shared/patternForgeCurriculum.ts",
+        "shared/pilotPatternsData.ts",
+        "shared/traceEngine.ts",
+        "shared/masteryEngine.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/learningEngineRoutes.ts"
+      ],
+      "testFiles": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs"
       ]
     }
   ]
