@@ -39,6 +39,8 @@ test('arrays Java and Python examples execute against expected outputs', () => {
       'int[] values = {3, 2, 2, 4, 2, 5};',
       'int length = removeValue(values, 2);',
       'if (length != 3 || !Arrays.equals(Arrays.copyOf(values, length), new int[]{3, 4, 5})) throw new AssertionError("stable compaction");',
+      'if (!Arrays.equals(applyRangeAdds(new int[]{1, 2, 3, 4, 5}, new int[][]{{1, 3, 4}, {2, 4, -2}}), new long[]{1, 6, 5, 6, 3})) throw new AssertionError("difference array updates");',
+      'if (!Arrays.equals(applyRangeAdds(new int[]{7}, new int[][]{{0, 0, 5}}), new long[]{12})) throw new AssertionError("last-index sentinel");',
       '}',
       '}'
     ].join('\n');
@@ -48,7 +50,7 @@ test('arrays Java and Python examples execute against expected outputs', () => {
     const execute = spawnSync('java', ['ArrayLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
 
-    const pythonSource = pythonExample.code + '\nassert build_prefix([3, -2, 5, 1]) == [0, 3, 1, 6, 7]\nassert sum_range(build_prefix([3, -2, 5, 1]), 1, 4) == 4\n';
+    const pythonSource = pythonExample.code + '\nassert build_prefix([3, -2, 5, 1]) == [0, 3, 1, 6, 7]\nassert sum_range(build_prefix([3, -2, 5, 1]), 1, 4) == 4\nassert apply_range_adds([1, 2, 3, 4, 5], [(1, 3, 4), (2, 4, -2)]) == [1, 6, 5, 6, 3]\nassert apply_range_adds([7], [(0, 0, 5)]) == [12]\n';
     writeFileSync(join(directory, 'array_lesson_examples.py'), pythonSource);
     const python = spawnSync('python', ['array_lesson_examples.py'], { cwd: directory, encoding: 'utf8' });
     assert.equal(python.status, 0, python.stderr || python.stdout);
