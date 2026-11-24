@@ -102,7 +102,8 @@ export const StagePracticeView: React.FC<StagePracticeViewProps> = ({
     setPrResult(scored);
     void recordEvidence({
       topicId: topic.id,
-      patternRecognitionScorePct: scored.weightedScorePct,
+      patternRecognitionProblemId: prProblem.id,
+      patternRecognitionAnswers: { ...prAnswers },
     });
   };
 
