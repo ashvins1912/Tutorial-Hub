@@ -128,7 +128,7 @@ test('linked-list topic satisfies the complete learning-unit contract', () => {
 
 test('linked-list Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-linked-list-'));
   try {
     const javaSource = [
@@ -153,6 +153,57 @@ test('linked-list Java examples execute against expected outputs', () => {
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
     const execute = spawnSync('java', ['LinkedListLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+
+
+test('linked-list JavaScript and Python examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
+  const jsExample = lesson.codeExamples.find((item) => item.language.startsWith('JavaScript'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  assert.ok(jsExample && pythonExample, 'linked-list lesson must include JavaScript and Python examples');
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-linked-list-polyglot-'));
+  try {
+    const jsSource = jsExample.code + `
+const a = new Node(1), b = new Node(2), c = new Node(3);
+a.next = b; b.next = c;
+const reversed = reverse(a);
+if (reversed !== c || reversed.next !== b || b.next !== a || a.next !== null) throw new Error('reverse links');
+if (hasCycle(reversed)) throw new Error('acyclic list');
+const self = new Node(7); self.next = self;
+if (!hasCycle(self)) throw new Error('self cycle');
+const p = new Node(4), q = new Node(5), r = new Node(6);
+p.next = q; q.next = r; r.next = q;
+if (!hasCycle(p)) throw new Error('middle cycle');
+if (reverse(null) !== null || hasCycle(null)) throw new Error('empty list');
+`;
+    writeFileSync(join(directory, 'linked_list_examples.js'), jsSource);
+    const js = spawnSync('node', ['linked_list_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(js.status, 0, js.stderr || js.stdout);
+
+    const pythonSource = pythonExample.code + `
+a, b, c = Node(1), Node(2), Node(3)
+a.next = b
+b.next = c
+reversed_head = reverse(a)
+assert reversed_head is c and c.next is b and b.next is a and a.next is None
+assert not has_cycle(reversed_head)
+self_node = Node(7)
+self_node.next = self_node
+assert has_cycle(self_node)
+p, q, r = Node(4), Node(5), Node(6)
+p.next = q
+q.next = r
+r.next = q
+assert has_cycle(p)
+assert reverse(None) is None and not has_cycle(None)
+`;
+    writeFileSync(join(directory, 'linked_list_examples.py'), pythonSource);
+    const python = spawnSync('python', ['linked_list_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
