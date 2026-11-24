@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import * as ts from 'typescript';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const ts = require('typescript-compiler-api');
 
 const root = process.cwd();
 const sources = [
@@ -88,13 +91,38 @@ for (const record of records) {
   if (unique.has(key)) throw new Error(`Duplicate candidate ID ${key}`);
   unique.add(key);
 }
+const surfaceSummaries = [...new Set(sources.map((source) => source.surfaceId))].sort().map((surfaceId) => {
+  const surfaceRecords = records.filter((record) => record.surfaceId === surfaceId);
+  const fieldCounts = Object.fromEntries(
+    [...new Set(surfaceRecords.flatMap((record) => record.fieldsPresent))].sort().map((field) => [
+      field,
+      surfaceRecords.filter((record) => record.fieldsPresent.includes(field)).length,
+    ]),
+  );
+  return {
+    surfaceId,
+    sourceCount: sources.filter((source) => source.surfaceId === surfaceId).length,
+    candidateRecordCount: surfaceRecords.length,
+    candidateKinds: Object.fromEntries(
+      ['lesson-candidate', 'concept-candidate', 'topic-candidate'].map((kind) => [
+        kind,
+        surfaceRecords.filter((record) => record.candidateKind === kind).length,
+      ]),
+    ),
+    teachingFieldPresenceCounts: fieldCounts,
+    reviewStatus: 'not_assessed',
+  };
+});
+
 const output = {
   schemaVersion: 1,
   generatedAt: new Date().toISOString(),
   purpose: 'AST-derived candidate inventory only; candidate extraction is not a quality score or verification.',
   sourceCount: sources.length,
+  surfaceCount: surfaceSummaries.length,
   candidateRecordCount: records.length,
   sourceSummaries,
+  surfaceSummaries,
   records,
 };
 console.log(JSON.stringify(output, null, 2));

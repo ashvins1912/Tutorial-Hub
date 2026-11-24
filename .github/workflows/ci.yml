@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio]
   push:
-    branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio]
+    branches: [main, fix/api-integration, enhancement/dsa-stage-learning-content, feature/intelligent-content-studio, 'feat/**']
 
 jobs:
   validate:
@@ -50,5 +50,7 @@ jobs:
         run: npm run audit:learning-surfaces
       - name: Validate application-wide content quality audit ledger
         run: npm run audit:learning-content
+      - name: Inventory canonical topic and lesson candidates
+        run: node --test tests/content-authoring/topic-content-inventory.test.mjs
       - name: Build frontend
         run: npm run build

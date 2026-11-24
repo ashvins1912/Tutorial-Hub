@@ -1,6 +1,6 @@
 # Topic-level content inventory
 
-The topic-level inventory is generated from the TypeScript AST of the canonical source files listed in `scripts/audit-topic-content-inventory.mjs` (currently 27 files across 11 learning surfaces).
+The topic-level inventory is generated from the TypeScript AST of 27 canonical source files across 12 learning surfaces, listed in `scripts/audit-topic-content-inventory.mjs`.
 
 ## What the inventory means
 
@@ -12,7 +12,7 @@ The topic-level inventory is generated from the TypeScript AST of the canonical 
 
 ## Initial canonical coverage
 
-The first extraction covers 27 canonical source files across AI engineering, database internals, DevOps/cloud, full-stack architecture, system design, programming languages, OOP/SOLID, fuzzy search, flight simulator, AI academy, the DSA curriculum workspace and algorithm packs. Several surfaces have multiple canonical sources; the source path is part of record identity so IDs are not silently conflated.
+The expanded extraction covers 27 canonical source files across AI engineering, database internals, DevOps/cloud, full-stack architecture, system design, programming languages, OOP/SOLID, fuzzy search, flight simulator, AI academy, the DSA curriculum workspace and algorithm packs. Several surfaces have multiple canonical sources; the source path is part of record identity so IDs are not silently conflated.
 
 ## Run
 
