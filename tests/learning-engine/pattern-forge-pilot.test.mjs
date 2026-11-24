@@ -32,6 +32,14 @@ test('canonical curriculum registers all 28 patterns preserving DSA28 canonical 
   assert.deepEqual(actualIds, expectedIds);
 });
 
+test('Dynamic Programming explicitly distinguishes pseudo-polynomial state bounds from polynomial input-bit complexity', () => {
+  const topic = getLearningTopicById('dynamic-programming');
+  assert.ok(topic?.understand, 'Dynamic Programming must publish its conceptual explanation');
+  assert.match(topic.understand.whyItExists, /pseudo-polynomial/i);
+  assert.match(topic.understand.problemItSolves, /bit length/i);
+  assert.match(topic.understand.limitations.join(' '), /O\\(log amount\\)/i);
+});
+
 test('content quality governance enforces acyclic DAG, unique IDs, and honest verification statuses', () => {
   const audit = auditCurriculumGovernance(PATTERN_FORGE_TOPICS);
   assert.equal(audit.totalTopics, 28);
