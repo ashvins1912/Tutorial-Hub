@@ -224,6 +224,75 @@ test('stack and queue topic satisfies the complete learning-unit contract', () =
   assert.ok(lesson.assessment.length >= 5);
 });
 
+test('stack and queue lesson includes JavaScript and Python reference examples', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('JavaScript')));
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
+  for (const language of ['JavaScript', 'Python']) {
+    const example = lesson.codeExamples.find((item) => item.language.startsWith(language));
+    assert.match(example.code, /TwoStackQueue/);
+    assert.match(example.code, /sliding_maximum|slidingMaximum/);
+    assert.ok(example.explanation.length > 80);
+  }
+});
+
+test('stack and queue JavaScript and Python examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  const jsExample = lesson.codeExamples.find((item) => item.language.startsWith('JavaScript'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-stack-queue-polyglot-'));
+  try {
+    const jsSource = jsExample.code + `
+const queue = new TwoStackQueue();
+queue.offer(1); queue.offer(2); queue.offer(3);
+if (queue.poll() !== 1 || queue.poll() !== 2) throw new Error('FIFO order');
+queue.offer(4);
+if (queue.poll() !== 3 || queue.poll() !== 4 || !queue.isEmpty()) throw new Error('transfer order');
+if (!queue.isEmpty()) throw new Error('queue should be empty');
+let emptyRejected = false;
+try { queue.poll(); } catch (error) { emptyRejected = error instanceof RangeError; }
+if (!emptyRejected) throw new Error('empty queue must reject poll');
+if (JSON.stringify(slidingMaximum([1, 3, -1, -3, 5, 3, 6, 7], 3)) !== JSON.stringify([3, 3, 5, 5, 6, 7])) throw new Error('window maximum');
+if (JSON.stringify(slidingMaximum([5, 5, 4], 2)) !== JSON.stringify([5, 5])) throw new Error('duplicate maxima');
+if (JSON.stringify(slidingMaximum([7], 1)) !== JSON.stringify([7])) throw new Error('single window');
+let invalidWindowRejected = false;
+try { slidingMaximum([1, 2], 0); } catch (error) { invalidWindowRejected = error instanceof RangeError; }
+if (!invalidWindowRejected) throw new Error('invalid window must reject');
+`;
+    writeFileSync(join(directory, 'stack_queue_examples.js'), jsSource);
+    const js = spawnSync('node', ['stack_queue_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(js.status, 0, js.stderr || js.stdout);
+
+    const pythonSource = pythonExample.code + `
+queue = TwoStackQueue()
+queue.offer(1)
+queue.offer(2)
+queue.offer(3)
+assert queue.poll() == 1 and queue.poll() == 2
+queue.offer(4)
+assert queue.poll() == 3 and queue.poll() == 4 and queue.is_empty()
+try:
+    queue.poll()
+    raise AssertionError("empty queue must reject poll")
+except IndexError:
+    pass
+assert sliding_maximum([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
+assert sliding_maximum([5, 5, 4], 2) == [5, 5]
+assert sliding_maximum([7], 1) == [7]
+try:
+    sliding_maximum([1, 2], 0)
+    raise AssertionError("invalid window must reject")
+except ValueError:
+    pass
+`;
+    writeFileSync(join(directory, 'stack_queue_examples.py'), pythonSource);
+    const python = spawnSync('python', ['stack_queue_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('stack and queue Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
   const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
