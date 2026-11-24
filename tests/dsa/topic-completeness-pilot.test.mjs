@@ -295,7 +295,7 @@ except ValueError:
 
 test('stack and queue Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-stack-queue-'));
   try {
     const javaSource = [
