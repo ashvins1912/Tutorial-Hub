@@ -233,7 +233,7 @@ test('evidence-based mastery never awards Mastered without full 8-dimension proo
   ev.edgeCasesPassed = 3;
   ev.debuggingExercisesPassed = ['prob-hm-debug-subarray'];
   ev.patternRecognitionBestPct = 100;
-  ev.complexityCheckPassed = true;
+  ev.complexityAnalysisBestPct = 100;
   ev.transferAssessmentBestPct = 100;
 
   const mastered = computeTopicMastery(ev);
