@@ -7,5 +7,5 @@ test('application-wide content quality audit covers every surface with honest ev
     encoding: 'utf8'
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /21 surfaces/);
+  assert.match(result.stdout, /22 surfaces/);
 });
