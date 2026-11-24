@@ -16,6 +16,17 @@ const sources = registry.surfaces.flatMap((surface) =>
 );
 
 
+const QUALITY_DIMENSIONS = [
+  'coverage-prerequisites',
+  'explanation-depth',
+  'examples-implementation',
+  'visualization-correctness',
+  'failure-debugging',
+  'assessment-feedback',
+  'transfer-retention',
+  'accessibility-usability',
+];
+
 const stringValue = (node) => node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
 const propertyMap = (node) => {
   const values = new Map();
@@ -57,6 +68,10 @@ for (const source of sources) {
           candidateKind: kind,
           fieldsPresent: keys.filter((key) => ['why','outcome','explanation','analogy','keyPoints','workedExample','code','steps','question','project','pitfalls','practice','complexity','frames','quizzes'].includes(key)).sort(),
           reviewStatus: 'not_assessed',
+          qualityReview: {
+            status: 'not_assessed',
+            dimensions: Object.fromEntries(QUALITY_DIMENSIONS.map((dimension) => [dimension, { score: null, evidence: [] }])),
+          },
         });
       }
     }
@@ -101,6 +116,7 @@ const output = {
   sourceCount: sources.length,
   surfaceCount: surfaceSummaries.length,
   candidateRecordCount: records.length,
+  qualityDimensions: QUALITY_DIMENSIONS,
   sourceSummaries,
   surfaceSummaries,
   records,
