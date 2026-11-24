@@ -68,6 +68,7 @@ for (const source of sources) {
         const kind = lessonSignals.some((key) => props.has(key)) ? 'lesson-candidate'
           : conceptSignals.some((key) => props.has(key)) ? 'concept-candidate' : 'topic-candidate';
         records.push({
+          recordKey: `${source.path}#${node.getStart(ast)}#${id}`,
           surfaceId: source.surfaceId,
           sourcePath: source.path,
           sourceLine: ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1,
