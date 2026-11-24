@@ -253,8 +253,7 @@ static boolean hasCycle(Node head) {
         if (slow == fast) return true;
     }
     return false;
-}`, explanation: 'Reversal is O(n) time and O(1) auxiliary space; it mutates the original nodes. Floyd detection is O(n) time and O(1) space. The identity comparison is intentional: two references meet only when they point to the same node object.' }
-
+}`, explanation: 'Reversal is O(n) time and O(1) auxiliary space; it mutates the original nodes. Floyd detection is O(n) time and O(1) space. The identity comparison is intentional: two references meet only when they point to the same node object.' },
       { language: 'JavaScript (Node.js)', title: 'Iterative reversal and Floyd cycle detection', code: `class Node {
   constructor(value) {
     this.value = value;
