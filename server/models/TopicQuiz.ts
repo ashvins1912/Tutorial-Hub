@@ -59,5 +59,6 @@ const TopicQuizSchema = new Schema<ITopicQuiz>(
   { timestamps: true }
 );
 
-export const TopicQuiz =
-  mongoose.models.TopicQuiz || mongoose.model<ITopicQuiz>('TopicQuiz', TopicQuizSchema);
+export const TopicQuiz: mongoose.Model<ITopicQuiz> =
+  (mongoose.models.TopicQuiz as mongoose.Model<ITopicQuiz> | undefined) ||
+  mongoose.model<ITopicQuiz>('TopicQuiz', TopicQuizSchema);

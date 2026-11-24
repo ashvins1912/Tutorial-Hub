@@ -6,6 +6,8 @@ export interface IUserAccount extends Document {
   fullName: string;
   avatarUrl?: string;
   lastSignInAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const UserAccountSchema = new Schema<IUserAccount>({
@@ -16,5 +18,6 @@ const UserAccountSchema = new Schema<IUserAccount>({
   lastSignInAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 
-export const UserAccount = mongoose.models.UserAccount ||
+export const UserAccount: mongoose.Model<IUserAccount> =
+  (mongoose.models.UserAccount as mongoose.Model<IUserAccount> | undefined) ||
   mongoose.model<IUserAccount>('UserAccount', UserAccountSchema);

@@ -70,6 +70,6 @@ const PlatformContentBundleSchema = new Schema<IPlatformContentBundle>(
   }
 );
 
-export const PlatformContentBundle =
-  mongoose.models.PlatformContentBundle ||
+export const PlatformContentBundle: mongoose.Model<IPlatformContentBundle> =
+  (mongoose.models.PlatformContentBundle as mongoose.Model<IPlatformContentBundle> | undefined) ||
   mongoose.model<IPlatformContentBundle>('PlatformContentBundle', PlatformContentBundleSchema);

@@ -68,6 +68,6 @@ const SolverSharedProblemSchema = new Schema<ISolverSharedProblem>(
 SolverSharedProblemSchema.index({ visibility: 1, createdAt: -1 });
 SolverSharedProblemSchema.index({ ownerUserId: 1, visibility: 1, createdAt: -1 });
 
-export const SolverSharedProblem =
-  mongoose.models.SolverSharedProblem ||
+export const SolverSharedProblem: mongoose.Model<ISolverSharedProblem> =
+  (mongoose.models.SolverSharedProblem as mongoose.Model<ISolverSharedProblem> | undefined) ||
   mongoose.model<ISolverSharedProblem>('SolverSharedProblem', SolverSharedProblemSchema);

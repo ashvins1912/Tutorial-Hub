@@ -85,6 +85,6 @@ const TopicResourceSchema = new Schema<ITopicResource>(
   { timestamps: true }
 );
 
-export const TopicResource =
-  mongoose.models.TopicResource ||
+export const TopicResource: mongoose.Model<ITopicResource> =
+  (mongoose.models.TopicResource as mongoose.Model<ITopicResource> | undefined) ||
   mongoose.model<ITopicResource>('TopicResource', TopicResourceSchema);

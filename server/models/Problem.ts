@@ -245,5 +245,6 @@ const ProblemSchema = new Schema<IProblem>(
   { timestamps: true }
 );
 
-export const Problem =
-  mongoose.models.Problem || mongoose.model<IProblem>('Problem', ProblemSchema);
+export const Problem: mongoose.Model<IProblem> =
+  (mongoose.models.Problem as mongoose.Model<IProblem> | undefined) ||
+  mongoose.model<IProblem>('Problem', ProblemSchema);

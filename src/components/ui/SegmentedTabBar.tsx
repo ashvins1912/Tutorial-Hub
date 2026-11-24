@@ -11,10 +11,10 @@ export interface SegmentedTabItem<T extends string = string> {
 }
 
 export interface SegmentedTabBarProps<T extends string = string> {
-  // Infer the tab ID union from activeTab, not from arrays widened to string.
-  tabs: ReadonlyArray<SegmentedTabItem<NoInfer<T>>>;
-  activeTab: T;
-  onChange: (tabId: T) => void;
+  // Infer the literal tab ID union from tabs; activeTab and onChange align via NoInfer<T>.
+  tabs: ReadonlyArray<SegmentedTabItem<T>>;
+  activeTab: NoInfer<T>;
+  onChange: (tabId: NoInfer<T>) => void;
   ariaLabel: string;
   size?: 'xs' | 'sm';
   wrap?: boolean;
@@ -26,7 +26,7 @@ export interface SegmentedTabBarProps<T extends string = string> {
  * studio navigation. Guarantees single-line items, consistent dual light/dark
  * contrast, and clean horizontal scrolling or multi-row wrapping when requested.
  */
-export function SegmentedTabBar<T extends string>({
+export function SegmentedTabBar<const T extends string>({
   tabs,
   activeTab,
   onChange,

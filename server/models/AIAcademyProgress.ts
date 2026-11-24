@@ -25,5 +25,6 @@ const AIAcademyProgressSchema = new Schema<IAIAcademyProgress>({
 AIAcademyProgressSchema.index({ userId: 1, lessonId: 1 }, { unique: true });
 AIAcademyProgressSchema.index({ userId: 1, lastAccessedAt: -1 });
 
-export const AIAcademyProgress = mongoose.models.AIAcademyProgress ||
+export const AIAcademyProgress: mongoose.Model<IAIAcademyProgress> =
+  (mongoose.models.AIAcademyProgress as mongoose.Model<IAIAcademyProgress> | undefined) ||
   mongoose.model<IAIAcademyProgress>('AIAcademyProgress', AIAcademyProgressSchema);

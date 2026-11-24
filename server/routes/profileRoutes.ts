@@ -21,7 +21,7 @@ import {
   MASTER_13_TOPIC_BANK,
   PRODUCT_COMPANY_HIGH_YIELD,
 } from '../../src/data/productCompanyMasterBank';
-import type { BigTechCompany, RankTier } from '../../src/types/dsa';
+import type { BigTechCompany, BigTechTopicCategory, RankTier } from '../../src/types/dsa';
 
 const PRODUCT_BANK_TOTAL =
   PRODUCT_COMPANY_HIGH_YIELD.length +
@@ -276,7 +276,14 @@ router.get('/stats', async (req: Request, res: Response) => {
         startDate: new Date(sprintDoc.startDate).toISOString(),
         currentDay: sprintDoc.currentDay,
         companyPatternWeights: {},
-        dailySchedule: sprintDoc.dailySchedule,
+        dailySchedule: (sprintDoc.dailySchedule ?? []).map((day) => ({
+          ...day,
+          tasks: (day.tasks ?? []).map((task) => ({
+            ...task,
+            problemId: String(task.problemId),
+            topicCategory: task.topicCategory as BigTechTopicCategory,
+          })),
+        })),
         completionPct: 0,
         readinessScore: 28,
       });

@@ -40,6 +40,6 @@ const CommunityInviteSchema = new Schema<ICommunityInvite>(
   { timestamps: true }
 );
 
-export const CommunityInvite =
-  mongoose.models.CommunityInvite ||
+export const CommunityInvite: mongoose.Model<ICommunityInvite> =
+  (mongoose.models.CommunityInvite as mongoose.Model<ICommunityInvite> | undefined) ||
   mongoose.model<ICommunityInvite>('CommunityInvite', CommunityInviteSchema);

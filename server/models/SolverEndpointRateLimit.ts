@@ -19,5 +19,6 @@ const SolverEndpointRateLimitSchema = new Schema<ISolverEndpointRateLimit>({
 SolverEndpointRateLimitSchema.index({ userId: 1, endpoint: 1, windowStart: 1 }, { unique: true });
 SolverEndpointRateLimitSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const SolverEndpointRateLimit = mongoose.models.SolverEndpointRateLimit ||
+export const SolverEndpointRateLimit: mongoose.Model<ISolverEndpointRateLimit> =
+  (mongoose.models.SolverEndpointRateLimit as mongoose.Model<ISolverEndpointRateLimit> | undefined) ||
   mongoose.model<ISolverEndpointRateLimit>('SolverEndpointRateLimit', SolverEndpointRateLimitSchema);

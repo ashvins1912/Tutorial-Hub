@@ -74,6 +74,6 @@ const CommunityPostSchema = new Schema<ICommunityPost>(
 
 CommunityPostSchema.index({ createdAt: -1 });
 
-export const CommunityPost =
-  mongoose.models.CommunityPost ||
+export const CommunityPost: mongoose.Model<ICommunityPost> =
+  (mongoose.models.CommunityPost as mongoose.Model<ICommunityPost> | undefined) ||
   mongoose.model<ICommunityPost>('CommunityPost', CommunityPostSchema);

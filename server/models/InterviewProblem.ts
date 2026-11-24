@@ -56,5 +56,6 @@ const InterviewProblemSchema = new Schema<IInterviewProblem>({
 InterviewProblemSchema.index({ topicId: 1, normalizedTitle: 1 }, { unique: true });
 InterviewProblemSchema.index({ slug: 1 }, { unique: true });
 
-export const InterviewProblem = mongoose.models.InterviewProblem ||
+export const InterviewProblem: mongoose.Model<IInterviewProblem> =
+  (mongoose.models.InterviewProblem as mongoose.Model<IInterviewProblem> | undefined) ||
   mongoose.model<IInterviewProblem>('InterviewProblem', InterviewProblemSchema);

@@ -39,5 +39,6 @@ const ContentAuthoringJobSchema = new Schema<IContentAuthoringJob>({
 }, { timestamps: true });
 
 ContentAuthoringJobSchema.index({ ownerId: 1, createdAt: -1 });
-export const ContentAuthoringJob = mongoose.models.ContentAuthoringJob ||
+export const ContentAuthoringJob: mongoose.Model<IContentAuthoringJob> =
+  (mongoose.models.ContentAuthoringJob as mongoose.Model<IContentAuthoringJob> | undefined) ||
   mongoose.model<IContentAuthoringJob>('ContentAuthoringJob', ContentAuthoringJobSchema);

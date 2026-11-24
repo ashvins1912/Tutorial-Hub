@@ -17,5 +17,6 @@ const AIAcademyRateLimitSchema = new Schema<IAIAcademyRateLimit>({
 AIAcademyRateLimitSchema.index({ userId: 1, windowStart: 1 }, { unique: true });
 AIAcademyRateLimitSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const AIAcademyRateLimit = mongoose.models.AIAcademyRateLimit ||
+export const AIAcademyRateLimit: mongoose.Model<IAIAcademyRateLimit> =
+  (mongoose.models.AIAcademyRateLimit as mongoose.Model<IAIAcademyRateLimit> | undefined) ||
   mongoose.model<IAIAcademyRateLimit>('AIAcademyRateLimit', AIAcademyRateLimitSchema);

@@ -66,5 +66,6 @@ const LearningProgressSchema = new Schema<ILearningProgress>({
 LearningProgressSchema.index({ userId: 1, lessonId: 1 }, { unique: true });
 LearningProgressSchema.index({ userId: 1, lastAccessedAt: -1 });
 
-export const LearningProgress = mongoose.models.LearningProgress ||
+export const LearningProgress: mongoose.Model<ILearningProgress> =
+  (mongoose.models.LearningProgress as mongoose.Model<ILearningProgress> | undefined) ||
   mongoose.model<ILearningProgress>('LearningProgress', LearningProgressSchema);

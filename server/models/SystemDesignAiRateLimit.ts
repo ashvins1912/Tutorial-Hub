@@ -17,5 +17,6 @@ const SystemDesignAiRateLimitSchema = new Schema<ISystemDesignAiRateLimit>({
 SystemDesignAiRateLimitSchema.index({ userId: 1, windowStart: 1 }, { unique: true });
 SystemDesignAiRateLimitSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const SystemDesignAiRateLimit = mongoose.models.SystemDesignAiRateLimit ||
+export const SystemDesignAiRateLimit: mongoose.Model<ISystemDesignAiRateLimit> =
+  (mongoose.models.SystemDesignAiRateLimit as mongoose.Model<ISystemDesignAiRateLimit> | undefined) ||
   mongoose.model<ISystemDesignAiRateLimit>('SystemDesignAiRateLimit', SystemDesignAiRateLimitSchema);

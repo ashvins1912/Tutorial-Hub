@@ -104,6 +104,6 @@ const CompanySprintSchema = new Schema<ICompanySprint>(
   { timestamps: true }
 );
 
-export const CompanySprint =
-  mongoose.models.CompanySprint ||
+export const CompanySprint: mongoose.Model<ICompanySprint> =
+  (mongoose.models.CompanySprint as mongoose.Model<ICompanySprint> | undefined) ||
   mongoose.model<ICompanySprint>('CompanySprint', CompanySprintSchema);

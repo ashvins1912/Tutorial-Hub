@@ -124,6 +124,6 @@ const UserBrainProfileSchema = new Schema<IUserBrainProfile>(
   { timestamps: true }
 );
 
-export const UserBrainProfile =
-  mongoose.models.UserBrainProfile ||
+export const UserBrainProfile: mongoose.Model<IUserBrainProfile> =
+  (mongoose.models.UserBrainProfile as mongoose.Model<IUserBrainProfile> | undefined) ||
   mongoose.model<IUserBrainProfile>('UserBrainProfile', UserBrainProfileSchema);
