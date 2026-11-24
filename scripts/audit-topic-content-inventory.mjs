@@ -36,7 +36,7 @@ const sources = [
   { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterSystemsPack.ts' },
 ];
 
-const stringValue = (node) => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text : undefined;
+const stringValue = (node) => node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
 const propertyMap = (node) => {
   const values = new Map();
   for (const property of node.properties) {
@@ -68,6 +68,7 @@ for (const source of sources) {
         const kind = lessonSignals.some((key) => props.has(key)) ? 'lesson-candidate'
           : conceptSignals.some((key) => props.has(key)) ? 'concept-candidate' : 'topic-candidate';
         records.push({
+          recordKey: `${source.path}#${node.getStart(ast)}#${id}`,
           surfaceId: source.surfaceId,
           sourcePath: source.path,
           sourceLine: ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1,
@@ -87,9 +88,8 @@ for (const source of sources) {
 
 const unique = new Set();
 for (const record of records) {
-  const key = `${record.sourcePath}#${record.id}`;
-  if (unique.has(key)) throw new Error(`Duplicate candidate ID ${key}`);
-  unique.add(key);
+  if (unique.has(record.recordKey)) throw new Error(`Duplicate candidate record key ${record.recordKey}`);
+  unique.add(record.recordKey);
 }
 const surfaceSummaries = [...new Set(sources.map((source) => source.surfaceId))].sort().map((surfaceId) => {
   const surfaceRecords = records.filter((record) => record.surfaceId === surfaceId);

@@ -11,7 +11,8 @@ test('topic inventory extracts canonical ID/title candidates without asserting q
   assert.ok(report.sourceCount >= 10);
   assert.ok(report.candidateRecordCount > 0);
   assert.equal(report.records.length, report.candidateRecordCount);
-  assert.ok(report.records.every((record) => record.id && record.title && record.sourcePath && record.surfaceId));
+  assert.ok(report.records.every((record) => record.id && record.title && record.sourcePath && record.surfaceId && record.recordKey));
+  assert.equal(new Set(report.records.map((record) => record.recordKey)).size, report.records.length);
   assert.ok(report.records.every((record) => record.reviewStatus === 'not_assessed'));
   assert.ok(report.records.some((record) => record.surfaceId === 'workspace'));
   assert.ok(report.records.some((record) => record.surfaceId === 'db-internals'));
