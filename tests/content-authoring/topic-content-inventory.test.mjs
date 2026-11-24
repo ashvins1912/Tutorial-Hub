@@ -14,6 +14,9 @@ test('topic inventory extracts canonical ID/title candidates without asserting q
   assert.ok(report.records.every((record) => record.id && record.title && record.sourcePath && record.surfaceId && record.recordKey));
   assert.equal(new Set(report.records.map((record) => record.recordKey)).size, report.records.length);
   assert.ok(report.records.every((record) => record.reviewStatus === 'not_assessed'));
+  assert.equal(report.qualityDimensions.length, 8);
+  assert.ok(report.records.every((record) => record.qualityReview.status === 'not_assessed'));
+  assert.ok(report.records.every((record) => report.qualityDimensions.every((dimension) => record.qualityReview.dimensions[dimension]?.score === null && record.qualityReview.dimensions[dimension]?.evidence.length === 0)));
   assert.ok(report.records.some((record) => record.surfaceId === 'workspace'));
   assert.ok(report.records.some((record) => record.surfaceId === 'db-internals'));
   assert.ok(report.records.some((record) => record.surfaceId === 'pattern-forge'), 'Pattern Forge canonical content must be inventoried');
