@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 
 test('topic inventory extracts canonical ID/title candidates without asserting quality', () => {
-  const output = execFileSync(process.execPath, ['scripts/audit-topic-content-inventory.mjs'], { encoding: 'utf8' });
+  const output = execFileSync(process.execPath, ['scripts/audit-topic-content-inventory.mjs'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const report = JSON.parse(output);
   assert.equal(report.schemaVersion, 1);
   assert.ok(report.sourceCount >= 27, 'inventory must cover all registered TypeScript data sources');
