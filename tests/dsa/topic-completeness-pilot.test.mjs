@@ -339,7 +339,7 @@ test('heap topic satisfies the complete learning-unit contract', () => {
 
 test('heap Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-'));
   try {
     const javaSource = [
@@ -348,10 +348,17 @@ test('heap Java examples execute against expected outputs', () => {
       ...javaExamples.map((item) => item.code),
       'public static void main(String[] args) {',
       'int[] top = topKLargest(new int[]{4, 1, 9, 2, 8, 3}, 3);',
-      'Arrays.sort(top);',
       'if (!Arrays.equals(top, new int[]{4, 8, 9})) throw new AssertionError("top K");',
       'if (!Arrays.equals(mergeKSorted(new int[][]{{1, 4, 9}, {1, 3, 8}, {2, 6}}), new int[]{1, 1, 2, 3, 4, 6, 8, 9})) throw new AssertionError("k-way merge");',
       'if (!Arrays.equals(mergeKSorted(new int[][]{{}, {2}, {}}), new int[]{2})) throw new AssertionError("empty sources");',
+      'if (!Arrays.equals(topKLargest(new int[]{}, 0), new int[]{})) throw new AssertionError("empty top K");',
+      'if (!Arrays.equals(topKLargest(new int[]{5, 5, 1, 5}, 2), new int[]{5, 5})) throw new AssertionError("duplicate top K");',
+      'if (!Arrays.equals(topKLargest(new int[]{4, 1, 9}, 1), new int[]{9})) throw new AssertionError("K equals one");',
+      'if (!Arrays.equals(topKLargest(new int[]{4, 1, 9}, 3), new int[]{1, 4, 9})) throw new AssertionError("K equals n");',
+      'if (!Arrays.equals(mergeKSorted(new int[][]{}), new int[]{})) throw new AssertionError("no sources");',
+      'if (!Arrays.equals(mergeKSorted(new int[][]{{1, 1, 2}}), new int[]{1, 1, 2})) throw new AssertionError("one source");',
+      'boolean invalidK = false; try { topKLargest(new int[]{1}, 2); } catch (IllegalArgumentException expected) { invalidK = true; }',
+      'if (!invalidK) throw new AssertionError("invalid K");',
       '}',
       '}'
     ].join(String.fromCharCode(10));
@@ -360,6 +367,68 @@ test('heap Java examples execute against expected outputs', () => {
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
     const execute = spawnSync('java', ['HeapLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+
+test('heap lesson includes JavaScript and Python reference examples', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
+  for (const language of ['JavaScript', 'Python']) {
+    const example = lesson.codeExamples.find((item) => item.language.startsWith(language));
+    assert.ok(example, 'heap lesson must include ' + language);
+    assert.match(example.code, /top_k_largest|topKLargest/);
+    assert.match(example.code, /merge_k_sorted|mergeKSorted/);
+    assert.ok(example.explanation.length > 100);
+  }
+});
+
+test('heap JavaScript and Python examples execute against edge cases', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
+  const jsExample = lesson.codeExamples.find((item) => item.language.startsWith('JavaScript'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-polyglot-'));
+  try {
+    const jsSource = jsExample.code + `
+if (JSON.stringify(topKLargest([4, 1, 9, 2, 8, 3], 3)) !== JSON.stringify([4, 8, 9])) throw new Error('top K sorted result');
+if (JSON.stringify(topKLargest([5, 5, 1, 5], 2)) !== JSON.stringify([5, 5])) throw new Error('duplicate top K');
+if (JSON.stringify(topKLargest([4, 1, 9], 1)) !== JSON.stringify([9])) throw new Error('K equals one');
+if (JSON.stringify(topKLargest([4, 1, 9], 3)) !== JSON.stringify([1, 4, 9])) throw new Error('K equals n');
+if (JSON.stringify(topKLargest([], 0)) !== JSON.stringify([])) throw new Error('empty Top K');
+let invalidK = false;
+try { topKLargest([1], 2); } catch (error) { invalidK = error instanceof RangeError; }
+if (!invalidK) throw new Error('invalid K must reject');
+if (JSON.stringify(mergeKSorted([[1, 4, 9], [1, 3, 8], [2, 6]])) !== JSON.stringify([1, 1, 2, 3, 4, 6, 8, 9])) throw new Error('K-way merge');
+if (JSON.stringify(mergeKSorted([[], [2], []])) !== JSON.stringify([2])) throw new Error('empty sources');
+if (JSON.stringify(mergeKSorted([])) !== JSON.stringify([])) throw new Error('no sources');
+if (JSON.stringify(mergeKSorted([[1, 1, 2]])) !== JSON.stringify([1, 1, 2])) throw new Error('one source');
+if (JSON.stringify(mergeKSorted([[1, 1], [1, 1]])) !== JSON.stringify([1, 1, 1, 1])) throw new Error('equal priorities');
+`;
+    writeFileSync(join(directory, 'heap_examples.js'), jsSource);
+    const js = spawnSync('node', ['heap_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(js.status, 0, js.stderr || js.stdout);
+
+    const pythonSource = pythonExample.code + `
+assert top_k_largest([4, 1, 9, 2, 8, 3], 3) == [4, 8, 9]
+assert top_k_largest([5, 5, 1, 5], 2) == [5, 5]
+assert top_k_largest([4, 1, 9], 1) == [9]
+assert top_k_largest([4, 1, 9], 3) == [1, 4, 9]
+assert top_k_largest([], 0) == []
+try:
+    top_k_largest([1], 2)
+    raise AssertionError("invalid K must reject")
+except ValueError:
+    pass
+assert merge_k_sorted([[1, 4, 9], [1, 3, 8], [2, 6]]) == [1, 1, 2, 3, 4, 6, 8, 9]
+assert merge_k_sorted([[], [2], []]) == [2]
+assert merge_k_sorted([]) == []
+assert merge_k_sorted([[1, 1, 2]]) == [1, 1, 2]
+assert merge_k_sorted([[1, 1], [1, 1]]) == [1, 1, 1, 1]
+`;
+    writeFileSync(join(directory, 'heap_examples.py'), pythonSource);
+    const python = spawnSync('python', ['heap_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
