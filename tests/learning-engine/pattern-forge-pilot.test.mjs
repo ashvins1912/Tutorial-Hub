@@ -202,9 +202,14 @@ test('assessment scoring keeps overall, transfer, and complexity evidence indepe
   evidence.patternRecognitionBestPct = 100;
   const withoutComplexity = computeTopicMastery(evidence);
   assert.equal(withoutComplexity.dimensions.find((dimension) => dimension.dimension === 'complexityAnalysis')?.scorePct, 0);
+  // Legacy flags from earlier releases are ignored because they may have been set by unrelated activities.
   evidence.complexityCheckPassed = true;
+  const legacyOnly = computeTopicMastery(evidence);
+  assert.equal(legacyOnly.dimensions.find((dimension) => dimension.dimension === 'complexityAnalysis')?.scorePct, 0);
+
+  evidence.complexityAnalysisBestPct = 80;
   const withComplexity = computeTopicMastery(evidence);
-  assert.equal(withComplexity.dimensions.find((dimension) => dimension.id === 'complexityAnalysis')?.score, 100);
+  assert.equal(withComplexity.dimensions.find((dimension) => dimension.dimension === 'complexityAnalysis')?.scorePct, 80);
 });
 
 test('evidence-based mastery never awards Mastered without full 8-dimension proof', () => {
