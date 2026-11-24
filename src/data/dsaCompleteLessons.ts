@@ -186,7 +186,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       'Compare linked lists with arrays and identify when a hash-map plus doubly linked list is useful.'
     ],
     prerequisites: [
-      'Understand object references, null, heap allocation and mutation in Java.',
+      'Understand object references, null/None, heap allocation and mutation in your chosen language; distinguish object identity from equal values.',
       'Be comfortable with loops, conditions and O(1)/O(n) complexity.',
       'Review arrays to compare contiguous indexing with pointer traversal.',
       'Know that two variables can refer to the same mutable node object.'
@@ -254,7 +254,60 @@ static boolean hasCycle(Node head) {
     }
     return false;
 }`, explanation: 'Reversal is O(n) time and O(1) auxiliary space; it mutates the original nodes. Floyd detection is O(n) time and O(1) space. The identity comparison is intentional: two references meet only when they point to the same node object.' }
-    ],
+
+      { language: 'JavaScript (Node.js)', title: 'Iterative reversal and Floyd cycle detection', code: `class Node {
+  constructor(value) {
+    this.value = value;
+    this.next = null;
+  }
+}
+
+function reverse(head) {
+  let previous = null;
+  let current = head;
+  while (current !== null) {
+    const next = current.next; // save the untouched suffix
+    current.next = previous;
+    previous = current;
+    current = next;
+  }
+  return previous;
+}
+
+function hasCycle(head) {
+  let slow = head;
+  let fast = head;
+  while (fast !== null && fast.next !== null) {
+    slow = slow.next;
+    fast = fast.next.next;
+    if (slow === fast) return true; // compare node identity
+  }
+  return false;
+}`, explanation: 'The algorithm is the same as the Java version: O(n) time and O(1) auxiliary space. JavaScript strict equality compares object identity here, not node values. Reversal mutates the original nodes.' },
+      { language: 'Python 3', title: 'Iterative reversal and Floyd cycle detection', code: `class Node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+
+def reverse(head):
+    previous = None
+    current = head
+    while current is not None:
+        next_node = current.next  # save the untouched suffix
+        current.next = previous
+        previous = current
+        current = next_node
+    return previous
+
+def has_cycle(head):
+    slow = head
+    fast = head
+    while fast is not None and fast.next is not None:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:  # compare object identity
+            return True
+    return False`, explanation: 'The algorithm takes O(n) time and O(1) auxiliary space. Python identity comparison with is is intentional: equal values do not mean two references point to the same node. Reversal mutates the original nodes.' },    ],
     traceExercises: [
       'Reverse A → B → C → null. After each iteration, draw prev, curr, next and all next arrows.',
       'Run slow/fast on a five-node acyclic list. Record each pointer before and after every iteration and show why the null guard is required.',
