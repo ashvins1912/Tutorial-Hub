@@ -1,9 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const ts = require('typescript');
+import * as ts from 'typescript';
 
 const root = process.cwd();
 const sources = [
