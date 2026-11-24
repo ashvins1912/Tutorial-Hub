@@ -8,7 +8,7 @@ The topic-level inventory is generated from the TypeScript AST of every TypeScri
 - The source path and line are retained so a reviewer can navigate to the authored content.
 - Candidate kind is a structural hint based on fields; it is not a claim that the record is a complete lesson.
 - `fieldsPresent` reports selected teaching signals that are present on that exact object. It does not judge their depth, correctness, rendering or usefulness.
-- Every record remains `not_assessed`. No score, mastery, verification or learning outcome is inferred from source shape.
+- Every record remains `not_assessed`. Each record carries an eight-dimension scorecard scaffold with null scores and empty evidence. No score, mastery, verification or learning outcome is inferred from source shape.
 
 ## Initial canonical coverage
 
