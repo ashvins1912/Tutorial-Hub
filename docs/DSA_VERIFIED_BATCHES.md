@@ -40,3 +40,8 @@ The CI job provisions Node.js, Python, and Java and runs the batch test suite be
 ## Arrays lesson enhancement — offline range updates
 
 The Arrays reference lesson now includes matching Java 21 and Python 3 difference-array implementations for offline inclusive range additions. The examples validate update bounds, use an `n + 1` sentinel for an update ending at the last index, and materialize results with one prefix scan. Regression fixtures cover overlapping updates and the final-index boundary. This extends the lesson's existing prefix-sum and compaction examples; it does not promote the full Arrays topic or the 293-question inventory to verified status.
+
+
+### Difference-array initial-state correction
+
+A follow-up regression review caught that initializing `diff[i]` with `values[i]` only works for a zero-based initial array. The implementation now derives the initial difference representation (`diff[0] = values[0]`; `diff[i] = values[i] - values[i-1]`) before applying update boundary deltas. Java uses a widened subtraction to avoid 32-bit overflow when adjacent input values are far apart. Executable tests cover overlapping updates, final-index sentinel handling, no updates, and empty input. The earlier CI failure was caused by this initial-state defect; the corrected change is being revalidated.
