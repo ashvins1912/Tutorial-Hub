@@ -87,9 +87,8 @@ for (const source of sources) {
 
 const unique = new Set();
 for (const record of records) {
-  const key = `${record.sourcePath}#${record.id}`;
-  if (unique.has(key)) throw new Error(`Duplicate candidate ID ${key}`);
-  unique.add(key);
+  if (unique.has(record.recordKey)) throw new Error(`Duplicate candidate record key ${record.recordKey}`);
+  unique.add(record.recordKey);
 }
 const surfaceSummaries = [...new Set(sources.map((source) => source.surfaceId))].sort().map((surfaceId) => {
   const surfaceRecords = records.filter((record) => record.surfaceId === surfaceId);
