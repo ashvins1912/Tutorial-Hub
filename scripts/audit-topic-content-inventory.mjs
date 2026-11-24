@@ -36,7 +36,7 @@ const sources = [
   { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterSystemsPack.ts' },
 ];
 
-const stringValue = (node) => ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text : undefined;
+const stringValue = (node) => node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
 const propertyMap = (node) => {
   const values = new Map();
   for (const property of node.properties) {
