@@ -201,7 +201,7 @@ test('assessment scoring keeps overall, transfer, and complexity evidence indepe
   const evidence = createEmptyMasteryEvidence('hashmap-hashset-lookup', '1.0.0');
   evidence.patternRecognitionBestPct = 100;
   const withoutComplexity = computeTopicMastery(evidence);
-  assert.equal(withoutComplexity.dimensions.find((dimension) => dimension.id === 'complexityAnalysis')?.score, 0);
+  assert.equal(withoutComplexity.dimensions.find((dimension) => dimension.dimension === 'complexityAnalysis')?.scorePct, 0);
   evidence.complexityCheckPassed = true;
   const withComplexity = computeTopicMastery(evidence);
   assert.equal(withComplexity.dimensions.find((dimension) => dimension.id === 'complexityAnalysis')?.score, 100);
