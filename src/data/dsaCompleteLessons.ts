@@ -594,7 +594,7 @@ static int[] kmpMatches(String text, String pattern) {
         if (left >= 0) answer[left] = values[candidates.peekFirst()];
     }
     return answer;
-}`, explanation: 'Indices increase from front to back and their values decrease. Expiry removes indices left of the current window; removing <= values from the back keeps the newest equal maximum. O(n) time and O(k) auxiliary space.' }
+}`, explanation: 'Indices increase from front to back and their values decrease. Expiry removes indices left of the current window; removing <= values from the back keeps the newest equal maximum. O(n) time and O(k) auxiliary space.' },
       { language: 'JavaScript (Node.js)', title: 'Queue with two stacks and sliding-window maximum', code: `class TwoStackQueue {
   constructor() {
     this.incoming = [];
