@@ -1184,7 +1184,7 @@ export function runMiniSql(
 
       if (m[3]) {
         const parsedWhere = parseWhereClause(m[3], validColSet);
-        if (!parsedWhere.ok) {
+        if (parsedWhere.ok === false) {
           issues.push({
             statementIndex: stmtNum,
             statementPreview: preview,
@@ -1275,7 +1275,7 @@ export function runMiniSql(
 
       if (m[2]) {
         const parsedWhere = parseWhereClause(m[2], validColSet);
-        if (!parsedWhere.ok) {
+        if (parsedWhere.ok === false) {
           issues.push({
             statementIndex: stmtNum,
             statementPreview: preview,
@@ -1456,7 +1456,7 @@ export function runMiniSql(
       let whereEval: WhereClauseEval = { referencedCols: [], predicate: () => true };
       if (whereRaw) {
         const parsedWhere = parseWhereClause(whereRaw, validColSet);
-        if (!parsedWhere.ok) {
+        if (parsedWhere.ok === false) {
           issues.push({
             statementIndex: stmtNum,
             statementPreview: preview,
@@ -1659,7 +1659,7 @@ export function runMiniSql(
         if (havingRaw) {
           const havingCols = new Set([...outputCols, ...havingAggSpecs.map((s) => s.key)]);
           const parsedHaving = parseWhereClause(normalizedHaving, havingCols);
-          if (!parsedHaving.ok) {
+          if (parsedHaving.ok === false) {
             issues.push({
               statementIndex: stmtNum,
               statementPreview: preview,
@@ -1701,7 +1701,7 @@ export function runMiniSql(
             const projected: TableRow = {};
             for (const p of parsedItems) {
               const res = evalScalarExpr(p.cleanExpr, r);
-              if (!res.ok) {
+              if (res.ok === false) {
                 issues.push({
                   statementIndex: stmtNum,
                   statementPreview: preview,
