@@ -128,7 +128,7 @@ test('linked-list topic satisfies the complete learning-unit contract', () => {
 
 test('linked-list Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-linked-list-'));
   try {
     const javaSource = [
