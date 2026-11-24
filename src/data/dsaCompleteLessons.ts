@@ -595,6 +595,86 @@ static int[] kmpMatches(String text, String pattern) {
     }
     return answer;
 }`, explanation: 'Indices increase from front to back and their values decrease. Expiry removes indices left of the current window; removing <= values from the back keeps the newest equal maximum. O(n) time and O(k) auxiliary space.' }
+      { language: 'JavaScript (Node.js)', title: 'Queue with two stacks and sliding-window maximum', code: `class TwoStackQueue {
+  constructor() {
+    this.incoming = [];
+    this.outgoing = [];
+  }
+
+  offer(value) {
+    this.incoming.push(value);
+  }
+
+  poll() {
+    if (this.outgoing.length === 0) {
+      while (this.incoming.length > 0) this.outgoing.push(this.incoming.pop());
+    }
+    if (this.outgoing.length === 0) throw new RangeError('queue is empty');
+    return this.outgoing.pop();
+  }
+
+  isEmpty() {
+    return this.incoming.length === 0 && this.outgoing.length === 0;
+  }
+}
+
+function slidingMaximum(values, k) {
+  if (!Number.isInteger(k) || k <= 0 || k > values.length) {
+    throw new RangeError('invalid window');
+  }
+  const candidates = [];
+  let head = 0;
+  const answer = [];
+
+  for (let right = 0; right < values.length; right++) {
+    const left = right - k + 1;
+    while (head < candidates.length && candidates[head] < left) head++;
+    while (candidates.length > head
+        && values[candidates[candidates.length - 1]] <= values[right]) {
+      candidates.pop();
+    }
+    candidates.push(right);
+    if (left >= 0) answer.push(values[candidates[head]]);
+  }
+  return answer;
+}`, explanation: 'The queue transfers only when the output stack is empty, preserving FIFO order with O(1) amortized operations. The window deque stores indices in increasing order and values in decreasing order; a head cursor avoids costly Array.shift(). Both algorithms are O(n) overall for their respective operation/input sequences.' },
+      { language: 'Python 3', title: 'Queue with two stacks and sliding-window maximum', code: `class TwoStackQueue:
+    def __init__(self):
+        self.incoming = []
+        self.outgoing = []
+
+    def offer(self, value):
+        self.incoming.append(value)
+
+    def poll(self):
+        if not self.outgoing:
+            while self.incoming:
+                self.outgoing.append(self.incoming.pop())
+        if not self.outgoing:
+            raise IndexError("queue is empty")
+        return self.outgoing.pop()
+
+    def is_empty(self):
+        return not self.incoming and not self.outgoing
+
+
+def sliding_maximum(values, k):
+    if not isinstance(k, int) or isinstance(k, bool) or k <= 0 or k > len(values):
+        raise ValueError("invalid window")
+    from collections import deque
+
+    candidates = deque()
+    answer = []
+    for right, value in enumerate(values):
+        left = right - k + 1
+        while candidates and candidates[0] < left:
+            candidates.popleft()
+        while candidates and values[candidates[-1]] <= value:
+            candidates.pop()
+        candidates.append(right)
+        if left >= 0:
+            answer.append(values[candidates[0]])
+    return answer`, explanation: 'The queue reverses incoming items only when outgoing is empty. The sliding-window deque holds candidate indices; expired indices leave the front and dominated values leave the back. Each index enters and leaves at most once, giving O(n) time and O(k) active candidate space.' },
     ],
     traceExercises: [
       'Queue trace: enqueue 1, 2, 3; dequeue twice; enqueue 4; dequeue twice. Show both internal stacks after every operation.',
