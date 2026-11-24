@@ -46,6 +46,8 @@ jobs:
         run: npm run test:solver-endpoint-security
       - name: Verify the canonical 293-question DSA inventory and blueprint boundaries
         run: npm run test:dsa:inventory
+      - name: Verify Pattern Forge five-stage learning engine
+        run: npm run test:learning-engine
       - name: Validate canonical learning surface inventory
         run: npm run audit:learning-surfaces
       - name: Validate application-wide content quality audit ledger
