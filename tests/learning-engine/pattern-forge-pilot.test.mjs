@@ -36,7 +36,7 @@ test('Dynamic Programming explicitly distinguishes pseudo-polynomial state bound
   const topic = getLearningTopicById('dynamic-programming');
   assert.ok(topic?.understand, 'Dynamic Programming must publish its conceptual explanation');
   assert.match(topic.understand.whyItExists, /pseudo-polynomial/i);
-  assert.match(topic.understand.problemItSolves, /bit length/i);
+  assert.match(topic.understand.problemItSolves, /not polynomial in input bit length/i);
   assert.match(topic.understand.limitations.join(' '), /O\(log amount\)/i);
 });
 
