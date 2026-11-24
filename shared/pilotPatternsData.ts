@@ -1811,9 +1811,9 @@ const DP_UNDERSTAND: UnderstandStageContent = {
   whatIsPattern:
     'Dynamic Programming solves complex optimization or counting problems by decomposing them into overlapping subproblems, caching each state’s exact answer once, and building larger states from proven optimal smaller states.',
   whyItExists:
-    'Plain recursion re-solves the exact same subproblem states exponentially many times (e.g., O(2^n) or O(k^amount)). Caching states turns an exponential recursion tree into a polynomial DAG.',
+    'Plain recursion can revisit the same subproblem exponentially many times (e.g., O(2^n) or O(k^amount)). Memoization solves each distinct state once, producing a state DAG; total work is O(states × transitions). When a state ranges over a numeric magnitude such as amount or capacity, this bound is pseudo-polynomial in that value, not polynomial in its bit length.',
   problemItSolves:
-    'Transforms exponential decision-tree searches (min/max cost, number of ways, feasibility, sequence alignment) into polynomial O(states × transitions) algorithms.',
+    'Transforms repeated decision-tree work (min/max cost, number of ways, feasibility, sequence alignment) into O(states × transitions) work. This is polynomial in the number of represented states; numeric ranges such as coin amount make the algorithm pseudo-polynomial in input magnitude, not polynomial in input bit length.',
   whenToUse: [
     'Optimal Substructure: an optimal answer to state S can be computed from optimal answers to smaller subproblems.',
     'Overlapping Subproblems: the recursion tree visits the exact same state parameters repeatedly.',
@@ -1825,12 +1825,12 @@ const DP_UNDERSTAND: UnderstandStageContent = {
     'You must enumerate ALL actual configurations/combinations rather than count or optimize them (use Backtracking).',
   ],
   advantages: [
-    'Collapses exponential O(2^n) recursion into polynomial time.',
+    'Avoids repeated recursive work by solving each distinct state once; the resulting O(states × transitions) bound may be pseudo-polynomial when a state dimension is a numeric magnitude.',
     'Systematic framework (State → Recurrence → Base Case → Topological Order → Space Compression).',
   ],
   limitations: [
     'State space explodes if too many dimensions are encoded (curse of dimensionality).',
-    'Requires careful base-case and sentinel selection (e.g., avoiding `Integer.MAX_VALUE + 1` overflow).',
+    'Requires careful base-case and sentinel selection (e.g., avoiding `Integer.MAX_VALUE + 1` overflow). Numeric-state DP such as O(k × amount) Coin Change is pseudo-polynomial: amount may require only O(log amount) input bits.',
   ],
   realWorldAnalogy: {
     title: 'Distance Ledger on a Multi-City Road Map',

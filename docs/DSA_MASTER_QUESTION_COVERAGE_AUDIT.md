@@ -19,6 +19,21 @@
 
 This is a title-level coverage audit, not a claim that the 99 matched problems already have complete five-stage lessons. A title match does not prove that its statement, examples, constraints, brute-force/better/optimal solutions, language implementations, visual trace, tests, quiz, and revision workflow are all complete.
 
+## 2026-11-25 implementation-status addendum
+
+The 2026-11-19 counts above are a **historical title-match snapshot**. They must not be presented as current coverage after the subsequent 293-record canonical inventory was added.
+
+The current source of truth is `server/seed/masterInterviewProblemSeed.ts`, validated by `tests/dsa/master-interview-inventory.test.mjs`:
+- Exactly 293 topic-scoped records across 22 topic IDs.
+- Unique slugs and unique normalized problem titles within each topic.
+- Every seed record is explicitly `catalogStatus: review` and `contentStatus: in-progress`.
+- Startup creates a five-stage blueprint for each record, but the generated statement explicitly discloses that it is a curriculum-generated paraphrase and not an official platform statement.
+- Generated examples and constraints are intentionally empty; language implementation status is `blueprint-not-submission`; executable tests and visual-trace validation are still required evidence, not fabricated.
+
+The seed importer is idempotent and fills only missing fields, preserving existing authored content. The separate `CURATED_INTERVIEW_BANK` contains richer question explanations and follow-ups for a subset, but its presence is not proof that the corresponding 293-record five-stage lessons are technically verified or published.
+
+**Current interpretation:** catalog discovery and five-stage blueprint generation are complete for 293 records; authored content, official source reconciliation, runnable language solutions, executable tests, visual traces and learning validation remain in progress unless independently evidenced per record. A fresh exact/related title reconciliation across all current canonical sources is still required before publishing new match percentages.
+
 ## Topic-by-topic results
 
 | Topic | Target | Exact | Partial | Missing |
