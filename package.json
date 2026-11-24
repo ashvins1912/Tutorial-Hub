@@ -55,5 +55,8 @@
     "typescript": "^7.0.2",
     "@types/express": "^4.17.21",
     "typescript-compiler-api": "npm:typescript@5.9.3"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
