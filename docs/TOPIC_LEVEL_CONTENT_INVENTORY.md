@@ -1,6 +1,6 @@
 # Topic-level content inventory
 
-The topic-level inventory is generated from the TypeScript AST of 27 canonical source files across 11 learning surfaces, listed in `scripts/audit-topic-content-inventory.mjs`.
+The topic-level inventory is generated from the TypeScript AST of 27 canonical source files across 12 learning surfaces, listed in `scripts/audit-topic-content-inventory.mjs`.
 
 ## What the inventory means
 
