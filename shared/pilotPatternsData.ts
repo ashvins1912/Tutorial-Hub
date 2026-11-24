@@ -1813,7 +1813,7 @@ const DP_UNDERSTAND: UnderstandStageContent = {
   whyItExists:
     'Plain recursion can revisit the same subproblem exponentially many times (e.g., O(2^n) or O(k^amount)). Memoization solves each distinct state once, producing a state DAG; total work is O(states × transitions). When a state ranges over a numeric magnitude such as amount or capacity, this bound is pseudo-polynomial in that value, not polynomial in its bit length.',
   problemItSolves:
-    'Transforms repeated decision-tree work (min/max cost, number of ways, feasibility, sequence alignment) into O(states × transitions) work. This is polynomial in the number of represented states; numeric ranges such as coin amount can make the algorithm pseudo-polynomial in the input magnitude.',
+    'Transforms repeated decision-tree work (min/max cost, number of ways, feasibility, sequence alignment) into O(states × transitions) work. This is polynomial in the number of represented states; numeric ranges such as coin amount make the algorithm pseudo-polynomial in input magnitude, not polynomial in input bit length.',
   whenToUse: [
     'Optimal Substructure: an optimal answer to state S can be computed from optimal answers to smaller subproblems.',
     'Overlapping Subproblems: the recursion tree visits the exact same state parameters repeatedly.',
