@@ -1,17 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
+  ConnectionMode,
   Controls,
   Handle,
   MarkerType,
   Position,
   ReactFlow,
-  addEdge,
   type Connection,
   type Edge,
   type Node,
   type NodeProps,
+  type OnEdgesChange,
   type OnNodesChange,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -89,7 +91,12 @@ const FlightArchitectureNode: React.FC<NodeProps<Node<CustomFlowNodeData>>> = ({
 
   return (
     <div className={`min-w-[162px] rounded-lg border px-3 py-2 shadow-xs transition-colors ${borderClass}`}>
-      <Handle type="target" position={Position.Left} className="!w-2.5 !h-2.5 !bg-sky-500" />
+      <Handle
+        id="left"
+        type="target"
+        position={Position.Left}
+        className="!w-3 !h-3 !bg-sky-500 !border-2 !border-white dark:!border-slate-900"
+      />
       <div className="flex items-center justify-between gap-2 text-[10px] font-mono">
         <span className="uppercase text-slate-500 dark:text-slate-400">{data.category}</span>
         <span
@@ -114,7 +121,12 @@ const FlightArchitectureNode: React.FC<NodeProps<Node<CustomFlowNodeData>>> = ({
           {data.throttled ? 'Throttled' : ''}
         </div>
       )}
-      <Handle type="source" position={Position.Right} className="!w-2.5 !h-2.5 !bg-sky-500" />
+      <Handle
+        id="right"
+        type="source"
+        position={Position.Right}
+        className="!w-3 !h-3 !bg-sky-500 !border-2 !border-white dark:!border-slate-900"
+      />
     </div>
   );
 };
@@ -337,26 +349,52 @@ const FlightSimulatorStudioInner: React.FC = () => {
     };
   }, [nodes, trafficRps, paradigm]);
 
+  // React Flow instance & layout metadata (preserves measured dimensions & dragging state in @xyflow/react v13)
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance<
+    Node<CustomFlowNodeData>,
+    Edge
+  > | null>(null);
+  const [lastCanvasAction, setLastCanvasAction] = useState<string | null>(null);
+  const [rfNodeMeta, setRfNodeMeta] = useState<
+    Record<
+      string,
+      {
+        measured?: { width?: number; height?: number };
+        dragging?: boolean;
+        selected?: boolean;
+      }
+    >
+  >({});
+
   // React Flow synchronization
   const rfNodes: Node<CustomFlowNodeData>[] = useMemo(
     () =>
-      nodes.map((n) => ({
-        id: n.id,
-        type: 'flightNode',
-        position: { x: n.x, y: n.y },
-        data: {
-          label: n.label,
-          techStack: n.techStack,
-          category: INFRA_NODE_CATALOG[n.type].category,
-          replicas: n.replicas,
-          killed: n.killed,
-          latencyInjectedMs: n.latencyInjectedMs,
-          throttled: n.throttled,
-          selectedNode: n.id === selectedNodeId,
-        },
-      })),
-    [nodes, selectedNodeId]
+      nodes.map((n) => {
+        const meta = rfNodeMeta[n.id];
+        return {
+          id: n.id,
+          type: 'flightNode',
+          position: { x: n.x, y: n.y },
+          ...(meta?.measured ? { measured: meta.measured } : {}),
+          ...(meta?.dragging !== undefined ? { dragging: meta.dragging } : {}),
+          ...(meta?.selected !== undefined ? { selected: meta.selected } : {}),
+          data: {
+            label: n.label,
+            techStack: n.techStack,
+            category: INFRA_NODE_CATALOG[n.type].category,
+            replicas: n.replicas,
+            killed: n.killed,
+            latencyInjectedMs: n.latencyInjectedMs,
+            throttled: n.throttled,
+            selectedNode: n.id === selectedNodeId,
+          },
+        };
+      }),
+    [nodes, rfNodeMeta, selectedNodeId]
   );
+
+  const rfNodesRef = useRef<Node<CustomFlowNodeData>[]>(rfNodes);
+  rfNodesRef.current = rfNodes;
 
   const rfEdges: Edge[] = useMemo(
     () =>
@@ -382,72 +420,155 @@ const FlightSimulatorStudioInner: React.FC = () => {
     [edges, prefersReducedMotion]
   );
 
+  const rfEdgesRef = useRef<Edge[]>(rfEdges);
+  rfEdgesRef.current = rfEdges;
+
   const handleNodesChange: OnNodesChange<Node<CustomFlowNodeData>> = useCallback((changes) => {
+    const updated = changes.applyTo(rfNodesRef.current);
+
+    setRfNodeMeta((prevMeta) => {
+      let changed = false;
+      const nextMeta: typeof prevMeta = { ...prevMeta };
+      const presentIds = new Set(updated.map((u) => u.id));
+      for (const key of Object.keys(nextMeta)) {
+        if (!presentIds.has(key)) {
+          delete nextMeta[key];
+          changed = true;
+        }
+      }
+      for (const u of updated) {
+        const cur = prevMeta[u.id];
+        const sameMeasured =
+          cur?.measured?.width === u.measured?.width &&
+          cur?.measured?.height === u.measured?.height;
+        const sameDrag = cur?.dragging === u.dragging;
+        const sameSel = cur?.selected === u.selected;
+        if (!sameMeasured || !sameDrag || !sameSel) {
+          nextMeta[u.id] = {
+            measured: u.measured,
+            dragging: u.dragging,
+            selected: u.selected,
+          };
+          changed = true;
+        }
+      }
+      return changed ? nextMeta : prevMeta;
+    });
+
     setNodes((prev) => {
-      const mapped: Node<CustomFlowNodeData>[] = prev.map((n) => ({
-        id: n.id,
-        type: 'flightNode',
-        position: { x: n.x, y: n.y },
-        data: {
-          label: n.label,
-          techStack: n.techStack,
-          category: INFRA_NODE_CATALOG[n.type].category,
-          replicas: n.replicas,
-        },
-      }));
-      const updated = changes.applyTo(mapped);
       const posMap = new Map(updated.map((u) => [u.id, u.position]));
-      return prev
+      let changed = prev.length !== updated.length;
+      const next = prev
         .filter((n) => posMap.has(n.id))
         .map((n) => {
           const pos = posMap.get(n.id)!;
-          return { ...n, x: Math.round(pos.x), y: Math.round(pos.y) };
+          const nx = Math.round(pos.x);
+          const ny = Math.round(pos.y);
+          if (nx !== n.x || ny !== n.y) {
+            changed = true;
+            return { ...n, x: nx, y: ny };
+          }
+          return n;
         });
+      return changed ? next : prev;
+    });
+
+    const removedIds = new Set(
+      rfNodesRef.current.filter((orig) => !updated.some((u) => u.id === orig.id)).map((o) => o.id)
+    );
+    if (removedIds.size > 0) {
+      setEdges((prev) =>
+        prev.filter((e) => !removedIds.has(e.source) && !removedIds.has(e.target))
+      );
+    }
+  }, []);
+
+  const handleEdgesChange: OnEdgesChange<Edge> = useCallback((changes) => {
+    const updated = changes.applyTo(rfEdgesRef.current);
+    const keepIds = new Set(updated.map((e) => e.id));
+    setEdges((prev) => {
+      if (prev.length === keepIds.size && prev.every((e) => keepIds.has(e.id))) {
+        return prev;
+      }
+      return prev.filter((e) => keepIds.has(e.id));
     });
   }, []);
 
   const handleConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
+    if (!connection.source || !connection.target || connection.source === connection.target) return;
     setEdges((prev) => {
-      const nextRf = addEdge(
-        {
-          ...connection,
-          id: `e-${connection.source}-${connection.target}-${Date.now()}`,
-        },
-        prev.map((e) => ({ id: e.id, source: e.source, target: e.target }))
+      const duplicate = prev.some(
+        (e) => e.source === connection.source && e.target === connection.target
       );
-      const added = nextRf[nextRf.length - 1];
-      if (!added) return prev;
+      if (duplicate) return prev;
       return [
         ...prev,
         {
-          id: added.id,
-          source: added.source,
-          target: added.target,
+          id: `e-${connection.source}-${connection.target}-${Date.now()}`,
+          source: connection.source,
+          target: connection.target,
           label: 'Wired Flow',
           packetKind: 'search',
         },
       ];
     });
+    setLastCanvasAction('Connected nodes on canvas');
   }, []);
 
-  const addNodeFromPalette = (type: InfraNodeType) => {
-    const spec = INFRA_NODE_CATALOG[type];
-    const colX = spec.category === 'edge' ? 190 : spec.category === 'compute' ? 430 : 690;
-    const countSame = nodes.filter((n) => INFRA_NODE_CATALOG[n.type].category === spec.category).length;
-    const newId = `n-${type}-${Date.now().toString().slice(-4)}`;
-    const newNode: FlightNodeData = {
-      id: newId,
-      type,
-      label: spec.label,
-      x: colX + (countSame % 2) * 24,
-      y: 45 + countSame * 84,
-      techStack: spec.defaultTechStack,
-      replicas: 2,
-    };
-    setNodes((prev) => [...prev, newNode]);
-    setSelectedNodeId(newId);
-  };
+  const addNodeFromPalette = useCallback(
+    (type: InfraNodeType, dropPos?: { x: number; y: number }) => {
+      const spec = INFRA_NODE_CATALOG[type];
+      const newId = `n-${type}-${Date.now().toString(36).slice(-4)}-${Math.random()
+        .toString(36)
+        .slice(2, 4)}`;
+
+      setNodes((prev) => {
+        const countSame = prev.filter(
+          (n) => INFRA_NODE_CATALOG[n.type].category === spec.category
+        ).length;
+        const colX = spec.category === 'edge' ? 190 : spec.category === 'compute' ? 430 : 690;
+        const x = dropPos ? Math.round(dropPos.x) : colX + (countSame % 3) * 28;
+        const y = dropPos ? Math.round(dropPos.y) : 45 + (countSame % 4) * 86;
+        const newNode: FlightNodeData = {
+          id: newId,
+          type,
+          label: spec.label,
+          x,
+          y,
+          techStack: spec.defaultTechStack,
+          replicas: 2,
+        };
+        return [...prev, newNode];
+      });
+
+      setSelectedNodeId(newId);
+      setLastCanvasAction(`Added ${spec.shortLabel} onto canvas`);
+      if (!dropPos && rfInstance) {
+        window.setTimeout(() => {
+          void rfInstance.fitView({ padding: 0.18, duration: 240 });
+        }, 60);
+      }
+    },
+    [rfInstance]
+  );
+
+  const handleCanvasDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleCanvasDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData('application/flight-infra-node') as InfraNodeType;
+      if (!type || !INFRA_NODE_CATALOG[type]) return;
+      const position = rfInstance
+        ? rfInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY })
+        : { x: 360, y: 160 };
+      addNodeFromPalette(type, { x: position.x - 80, y: position.y - 32 });
+    },
+    [rfInstance, addNodeFromPalette]
+  );
 
   const injectDirectDbAntiPattern = () => {
     const client = nodes.find((n) => n.type === 'web-client');
@@ -904,9 +1025,19 @@ const FlightSimulatorStudioInner: React.FC = () => {
               {/* Infrastructure Node Palette */}
               <div className="space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Click any component to drop onto the canvas (drag nodes &amp; connect handles freely)
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      Click or drag any component to drop onto the canvas (drag nodes &amp; connect handles freely)
+                    </span>
+                    <span className="font-mono text-[11px] tabular-nums text-slate-500 dark:text-slate-400">
+                      · {nodes.length} nodes · {edges.length} links
+                    </span>
+                    {lastCanvasAction && (
+                      <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                        · {lastCanvasAction}
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={injectDirectDbAntiPattern}
@@ -941,8 +1072,14 @@ const FlightSimulatorStudioInner: React.FC = () => {
                             <button
                               key={item.type}
                               type="button"
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('application/flight-infra-node', item.type);
+                                e.dataTransfer.effectAllowed = 'copy';
+                              }}
                               onClick={() => addNodeFromPalette(item.type)}
-                              className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] text-slate-700 dark:text-slate-200 hover:border-sky-500 transition-colors"
+                              title={`Click or drag to drop ${item.label} onto the canvas`}
+                              className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1 text-[11px] text-slate-700 dark:text-slate-200 hover:border-sky-500 active:scale-[0.98] cursor-grab active:cursor-grabbing transition-all"
                             >
                               <Plus className="w-3 h-3 text-sky-600 dark:text-sky-400" aria-hidden="true" />
                               {item.shortLabel}
@@ -956,14 +1093,24 @@ const FlightSimulatorStudioInner: React.FC = () => {
               </div>
 
               {/* Live React Flow Canvas */}
-              <div className="h-[430px] w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-hidden">
+              <div
+                onDragOver={handleCanvasDragOver}
+                onDrop={handleCanvasDrop}
+                className="h-[430px] w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-hidden"
+              >
                 <ReactFlow
                   nodes={rfNodes}
                   edges={rfEdges}
                   nodeTypes={NODE_TYPES}
+                  onInit={setRfInstance}
                   onNodesChange={handleNodesChange}
+                  onEdgesChange={handleEdgesChange}
                   onConnect={handleConnect}
                   onNodeClick={(_, node) => handleSelectFlightNode(node.id)}
+                  connectionMode={ConnectionMode.Loose}
+                  nodesDraggable
+                  nodesConnectable
+                  elementsSelectable
                   fitView
                   fitViewOptions={{ padding: 0.16 }}
                   proOptions={{ hideAttribution: true }}

@@ -11,8 +11,11 @@ import {
   History,
   Languages,
   Layers,
+  Lock,
   PlayCircle,
+  Radio,
   ShieldCheck,
+  Workflow,
 } from 'lucide-react';
 import {
   LANGUAGE_CONCEPTS,
@@ -38,6 +41,9 @@ import { JavaPythonCodingMasteryTrack } from './JavaPythonCodingMasteryTrack';
 import { JavaToPythonThinkingLab } from './JavaToPythonThinkingLab';
 import { VersionEvolutionPlayground } from './VersionEvolutionPlayground';
 import { MultithreadingTelemetryLab } from './MultithreadingTelemetryLab';
+import { ConcurrentExecutionVisualizer } from './ConcurrentExecutionVisualizer';
+import { ConcurrencyPlayground } from './ConcurrencyPlayground';
+import { ThreadTelemetryOverlay } from './ThreadTelemetryOverlay';
 import { CloudDevCompleteTutorial } from '../devops/CloudDevCompleteTutorial';
 import { LanguageVisualAnimator } from './LanguageVisualAnimator';
 import { OopCustomDsAcademy } from './OopCustomDsAcademy';
@@ -52,6 +58,8 @@ type LangStudioTab =
   | 'coding-mastery'
   | 'java-to-python'
   | 'version-evolution'
+  | 'concurrent-visualizer'
+  | 'concurrency-playground'
   | 'thread-telemetry'
   | 'docker-k8s-cloud'
   | 'oop-custom-ds'
@@ -104,6 +112,24 @@ const BoundedMultithreadingTelemetryLab = withStudioBoundary(
     studioName: 'Multithreading & Concurrency Live Telemetry Lab',
   }
 );
+const BoundedConcurrentExecutionVisualizer = withStudioBoundary(
+  ConcurrentExecutionVisualizer,
+  {
+    studioName: 'Concurrent Execution Visualizer (Thread Lifecycle & GIL Telemetry)',
+  }
+);
+const BoundedConcurrencyPlayground = withStudioBoundary(
+  ConcurrencyPlayground,
+  {
+    studioName: 'Drag-and-Drop Concurrency Playground (Java Lock vs Python Lock/Queue)',
+  }
+);
+const BoundedThreadTelemetryOverlay = withStudioBoundary(
+  ThreadTelemetryOverlay,
+  {
+    studioName: 'Thread Telemetry Overlay & Data Flow Pipelines',
+  }
+);
 const BoundedCloudDevCompleteTutorial = withStudioBoundary(
   CloudDevCompleteTutorial,
   {
@@ -142,6 +168,7 @@ export function LanguagesTutorialStudio() {
   const [activeTab, setActiveTab] = useState<LangStudioTab>('coding-mastery');
   const [languageFilter, setLanguageFilter] = useState<'all' | LangTrack>('all');
   const [selectedFlowId, setSelectedFlowId] = useState<string>(LANGUAGE_VISUAL_FLOWS[0].id);
+  const [showTelemetryOverlay, setShowTelemetryOverlay] = useState<boolean>(false);
 
   const [progress, setProgress] = useAccountState<LanguagesStudioProgress>(
     'languages-studio-progress',
@@ -380,6 +407,20 @@ export function LanguagesTutorialStudio() {
                 icon: History,
               },
               {
+                id: 'concurrent-visualizer',
+                label: 'Concurrent Execution Visualizer',
+                shortLabel: 'Lifecycle Viz',
+                count: 5,
+                icon: Workflow,
+              },
+              {
+                id: 'concurrency-playground',
+                label: 'Concurrency Playground',
+                shortLabel: 'DnD Blocks',
+                count: 3,
+                icon: Lock,
+              },
+              {
                 id: 'thread-telemetry',
                 label: 'Live Thread Telemetry',
                 shortLabel: 'Threads Live',
@@ -444,19 +485,42 @@ export function LanguagesTutorialStudio() {
             ]}
           />
 
-          <SegmentedTabBar<'all' | LangTrack>
-            ariaLabel="Filter by programming language track"
-            activeTab={languageFilter}
-            onChange={setLanguageFilter}
-            size="xs"
-            tabs={[
-              { id: 'all', label: 'Python + Java' },
-              { id: 'python', label: 'Python (0+ to 3.13+)' },
-              { id: 'java', label: 'Java (1+ to 21+ LTS)' },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTelemetryOverlay((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                showTelemetryOverlay
+                  ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:border-sky-500'
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5" aria-hidden="true" />
+              {showTelemetryOverlay ? 'Hide Telemetry Overlay' : 'Telemetry Overlay'}
+            </button>
+
+            <SegmentedTabBar<'all' | LangTrack>
+              ariaLabel="Filter by programming language track"
+              activeTab={languageFilter}
+              onChange={setLanguageFilter}
+              size="xs"
+              tabs={[
+                { id: 'all', label: 'Python + Java' },
+                { id: 'python', label: 'Python (0+ to 3.13+)' },
+                { id: 'java', label: 'Java (1+ to 21+ LTS)' },
+              ]}
+            />
+          </div>
         </div>
       </section>
+
+      {/* Toggleable Global Telemetry Overlay (Animated Data Flow Pipelines) */}
+      {showTelemetryOverlay && (
+        <BoundedThreadTelemetryOverlay
+          mode="overlay"
+          onClose={() => setShowTelemetryOverlay(false)}
+        />
+      )}
 
       {/* Active Workspace (Each Isolated by withStudioBoundary HOC) */}
       {activeTab === 'coding-mastery' && (
@@ -478,6 +542,8 @@ export function LanguagesTutorialStudio() {
           onToggleGoalComplete={handleToggleEvolutionGoalComplete}
         />
       )}
+      {activeTab === 'concurrent-visualizer' && <BoundedConcurrentExecutionVisualizer />}
+      {activeTab === 'concurrency-playground' && <BoundedConcurrencyPlayground />}
       {activeTab === 'thread-telemetry' && (
         <BoundedMultithreadingTelemetryLab languageFilter={languageFilter} />
       )}
