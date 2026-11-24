@@ -146,6 +146,7 @@ export function createEmptyMasteryEvidence(topicId: string, contentVersion: stri
     debuggingExercisesPassed: [],
     patternRecognitionBestPct: 0,
     complexityCheckPassed: false,
+    complexityAnalysisBestPct: 0,
     transferAssessmentBestPct: 0,
     delayedRecallPassedCount: 0,
     hintsUsedTotal: 0,
