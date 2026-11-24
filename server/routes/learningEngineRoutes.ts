@@ -298,7 +298,7 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
     dimensionScores.complexityAnalysis ?? 0
   );
   ev.hintsUsedTotal += hintsUsed;
-  ev.mistakesCount += assessment.questions.length - correct;
+  ev.mistakesCount += assessment.questions.length - correctCount;
   ev.updatedAt = attempt.submittedAt;
   state.evidenceByTopic[topic.id] = ev;
 
