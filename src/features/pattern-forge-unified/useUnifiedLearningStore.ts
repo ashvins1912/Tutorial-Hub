@@ -359,7 +359,7 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
     const nextEv: MasteryEvidence = {
       ...currentEv,
       transferAssessmentBestPct: Math.max(currentEv.transferAssessmentBestPct, assessmentScore.dimensionScores.transferAbility ?? 0),
-      complexityCheckPassed: currentEv.complexityCheckPassed || (assessmentScore.dimensionScores.complexityAnalysis ?? 0) >= 80,
+      complexityAnalysisBestPct: Math.max(currentEv.complexityAnalysisBestPct ?? 0, assessmentScore.dimensionScores.complexityAnalysis ?? 0),
       hintsUsedTotal: currentEv.hintsUsedTotal + meta.hintsUsed,
       mistakesCount: currentEv.mistakesCount + (assessment.questions.length - correct),
       updatedAt: attempt.submittedAt,
