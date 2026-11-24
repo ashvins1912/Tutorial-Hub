@@ -1000,8 +1000,8 @@ static long atMostKDistinct(int[] values, int k) {
             minHeap.offer(value);
         }
     }
-    return minHeap.stream().mapToInt(Integer::intValue).toArray();
-}`, explanation: 'The min-heap root is the smallest of the retained K candidates. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space. Returned order is heap iteration order, not sorted order.' },
+    return minHeap.stream().sorted().mapToInt(Integer::intValue).toArray();
+}`, explanation: 'The min-heap root is the smallest of the retained K candidates. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space. The method returns the retained values in ascending order so callers receive a deterministic result; the heap itself is not sorted. The min-heap root is the smallest retained candidate. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space.' },
       { language: 'Java 21', title: 'Merge K sorted arrays', code: `record Entry(int value, int source, int index) {}
 
 static int[] mergeKSorted(int[][] arrays) {
@@ -1031,6 +1031,128 @@ static int[] mergeKSorted(int[][] arrays) {
     return merged;
 }`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' }
     ],
+      { language: 'JavaScript (Node.js)', title: 'Top K largest and deterministic K-way merge', code: `function topKLargest(values, k) {
+  if (!Number.isInteger(k) || k < 0 || k > values.length) {
+    throw new RangeError('k must be an integer between 0 and values.length');
+  }
+  const heap = [];
+  const push = (value) => {
+    let index = heap.length;
+    heap.push(value);
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (heap[parent] <= heap[index]) break;
+      [heap[parent], heap[index]] = [heap[index], heap[parent]];
+      index = parent;
+    }
+  };
+  const pop = () => {
+    const minimum = heap[0];
+    const last = heap.pop();
+    if (heap.length > 0) {
+      heap[0] = last;
+      let index = 0;
+      while (true) {
+        const left = 2 * index + 1;
+        const right = left + 1;
+        let smallest = index;
+        if (left < heap.length && heap[left] < heap[smallest]) smallest = left;
+        if (right < heap.length && heap[right] < heap[smallest]) smallest = right;
+        if (smallest === index) break;
+        [heap[index], heap[smallest]] = [heap[smallest], heap[index]];
+        index = smallest;
+      }
+    }
+    return minimum;
+  };
+
+  for (const value of values) {
+    if (heap.length < k) push(value);
+    else if (k > 0 && value > heap[0]) {
+      pop();
+      push(value);
+    }
+  }
+  return heap.sort((a, b) => a - b);
+}
+
+function mergeKSorted(sources) {
+  const heap = [];
+  const compare = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  const push = (entry) => {
+    let index = heap.length;
+    heap.push(entry);
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (compare(heap[parent], heap[index]) <= 0) break;
+      [heap[parent], heap[index]] = [heap[index], heap[parent]];
+      index = parent;
+    }
+  };
+  const pop = () => {
+    const minimum = heap[0];
+    const last = heap.pop();
+    if (heap.length > 0) {
+      heap[0] = last;
+      let index = 0;
+      while (true) {
+        const left = 2 * index + 1;
+        const right = left + 1;
+        let smallest = index;
+        if (left < heap.length && compare(heap[left], heap[smallest]) < 0) smallest = left;
+        if (right < heap.length && compare(heap[right], heap[smallest]) < 0) smallest = right;
+        if (smallest === index) break;
+        [heap[index], heap[smallest]] = [heap[smallest], heap[index]];
+        index = smallest;
+      }
+    }
+    return minimum;
+  };
+
+  sources.forEach((source, sourceIndex) => {
+    if (source.length > 0) push([source[0], sourceIndex, 0]);
+  });
+  const merged = [];
+  while (heap.length > 0) {
+    const [value, sourceIndex, index] = pop();
+    merged.push(value);
+    const nextIndex = index + 1;
+    if (nextIndex < sources[sourceIndex].length) {
+      push([sources[sourceIndex][nextIndex], sourceIndex, nextIndex]);
+    }
+  }
+  return merged;
+}`, explanation: 'The bounded min-heap retains only the K largest values and returns them in ascending order. K-way merge stores one [value, sourceIndex, index] candidate per nonempty source; tuple ordering makes equal values deterministic by source and position. Each emitted value advances only its own source. Top K is O(n log K) time and O(K) space; merge is O(N log K) time and O(K) heap space.' },
+      { language: 'Python 3', title: 'Top K largest and deterministic K-way merge', code: `import heapq
+
+def top_k_largest(values, k):
+    if not isinstance(k, int) or isinstance(k, bool) or k < 0 or k > len(values):
+        raise ValueError("k must be an integer between 0 and len(values)")
+    retained = []
+    for value in values:
+        if len(retained) < k:
+            heapq.heappush(retained, value)
+        elif k > 0 and value > retained[0]:
+            heapq.heapreplace(retained, value)
+    return sorted(retained)
+
+def merge_k_sorted(sources):
+    heap = []
+    for source_index, source in enumerate(sources):
+        if source:
+            heapq.heappush(heap, (source[0], source_index, 0))
+
+    merged = []
+    while heap:
+        value, source_index, index = heapq.heappop(heap)
+        merged.append(value)
+        next_index = index + 1
+        if next_index < len(sources[source_index]):
+            heapq.heappush(
+                heap,
+                (sources[source_index][next_index], source_index, next_index)
+            )
+    return merged`, explanation: 'heapq is a min-heap, so it directly supports the bounded Top K largest strategy. Both functions return values in ascending order. Merge entries are tuples (value, sourceIndex, index), giving deterministic tie-breaking without comparing source payloads. Top K is O(n log K) time and O(K) space; merge is O(N log K) time and O(K) heap space.' },
     traceExercises: [
       'Insert 7, 3, 9, 1, 6 into a min-heap. Draw the array after each append and sift-up.',
       'Extract twice from [1, 3, 6, 7, 9]. Show the replacement root and each sift-down choice.',
