@@ -185,8 +185,8 @@ export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySumm
       Math.min(3, evidence.edgeCasesPassed) * 20
   );
 
-  // Complexity analysis is independent evidence; pattern-recognition performance must not inflate it.
-  const complexityScore = evidence.complexityCheckPassed ? 100 : 0;
+  // Legacy complexityCheckPassed is intentionally ignored: older clients set it from unrelated activity.
+  const complexityScore = clampPct(evidence.complexityAnalysisBestPct ?? 0);
 
   const debuggingScore = clampPct(evidence.debuggingExercisesPassed.length > 0 ? 100 : 0);
 
