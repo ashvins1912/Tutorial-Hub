@@ -44,8 +44,9 @@ function normalizeLine(code: string): string {
 
 /** Extract meaningful identifier / operator tokens to allow minor naming or spacing variations */
 function extractKeyTokens(line: string): string[] {
-  const matches = line.toLowerCase().match(/[a-z_][a-z0-9_]*|[<>!=]=|&&|\|\||[+\-*]/g) ?? [];
-  const noise = new Set(['const', 'let', 'var', 'int', 'if', 'for', 'while', 'return', 'new', 'final']);
+  const tokenMatch = line.toLowerCase().match(/[a-z_][a-z0-9_]*|[<>!=]=|&&|\\|\\||[+\\-*]/g);
+  const matches: string[] = tokenMatch ? Array.from(tokenMatch) : [];
+  const noise = new Set<string>(['const', 'let', 'var', 'int', 'if', 'for', 'while', 'return', 'new', 'final']);
   return Array.from(new Set(matches.filter((t) => t.length >= 2 && !noise.has(t))));
 }
 
