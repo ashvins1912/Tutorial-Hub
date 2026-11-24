@@ -1029,7 +1029,7 @@ static int[] mergeKSorted(int[][] arrays) {
         }
     }
     return merged;
-}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' }
+}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' },
       { language: 'JavaScript (Node.js)', title: 'Top K largest and deterministic K-way merge', code: `function topKLargest(values, k) {
   if (!Number.isInteger(k) || k < 0 || k > values.length) {
     throw new RangeError('k must be an integer between 0 and values.length');
