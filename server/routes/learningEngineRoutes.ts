@@ -293,9 +293,10 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
     state.evidenceByTopic[topic.id] ??
     createEmptyMasteryEvidence(topic.id, topic.version.version);
   ev.transferAssessmentBestPct = Math.max(ev.transferAssessmentBestPct, dimensionScores.transferAbility ?? 0);
-  if ((dimensionScores.complexityAnalysis ?? 0) >= 80) {
-    ev.complexityCheckPassed = true;
-  }
+  ev.complexityAnalysisBestPct = Math.max(
+    ev.complexityAnalysisBestPct ?? 0,
+    dimensionScores.complexityAnalysis ?? 0
+  );
   ev.hintsUsedTotal += hintsUsed;
   ev.mistakesCount += assessment.questions.length - correct;
   ev.updatedAt = attempt.submittedAt;
