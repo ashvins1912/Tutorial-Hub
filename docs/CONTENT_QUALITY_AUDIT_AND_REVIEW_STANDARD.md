@@ -79,7 +79,7 @@ The JSON ledger contains all 22 registered surfaces, including the Pattern Forge
 
 | Priority | Surfaces | First review focus |
 |---|---|---|
-| P0 | Knowledge engine, DSA workspace, algorithms, database internals, system design | Lesson completeness, objective binding, correctness and executable/trace evidence |
+| P0 | Pattern Forge, knowledge engine, DSA workspace, algorithms, database internals, system design | Lesson completeness, objective binding, correctness and executable/trace evidence |
 | P1 | AI Academy, AI engineering, DevOps/cloud, languages, OOD, full-stack, fuzzy search, flight simulator, solver, roadmap, skill tree, revision | Domain-specific depth, examples, failure scenarios, assessment and transfer |
 | P2 | Schemas, sprint, community, profile | Reference freshness, feedback quality, progress semantics and separation from mastery |
 
