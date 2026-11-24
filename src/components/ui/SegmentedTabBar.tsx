@@ -11,7 +11,8 @@ export interface SegmentedTabItem<T extends string = string> {
 }
 
 export interface SegmentedTabBarProps<T extends string = string> {
-  tabs: ReadonlyArray<SegmentedTabItem<T>>;
+  // Infer the tab ID union from activeTab, not from arrays widened to string.
+  tabs: ReadonlyArray<SegmentedTabItem<NoInfer<T>>>;
   activeTab: T;
   onChange: (tabId: T) => void;
   ariaLabel: string;
