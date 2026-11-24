@@ -7,7 +7,7 @@ test('topic inventory extracts canonical ID/title candidates without asserting q
   const report = JSON.parse(output);
   assert.equal(report.schemaVersion, 1);
   assert.equal(report.sourceCount, 27);
-  assert.equal(report.surfaceCount, 11);
+  assert.equal(report.surfaceCount, 12);
   assert.ok(report.sourceCount >= 10);
   assert.ok(report.candidateRecordCount > 0);
   assert.equal(report.records.length, report.candidateRecordCount);
