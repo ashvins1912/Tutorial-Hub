@@ -206,6 +206,7 @@ test('assessment scoring keeps overall, transfer, and complexity evidence indepe
   evidence.complexityCheckPassed = true;
   const legacyOnly = computeTopicMastery(evidence);
   assert.equal(legacyOnly.dimensions.find((dimension) => dimension.dimension === 'complexityAnalysis')?.scorePct, 0);
+  assert.equal(legacyOnly.dimensions.find((dimension) => dimension.dimension === 'complexityAnalysis')?.evidenceCount, 0);
 
   evidence.complexityAnalysisBestPct = 80;
   const withComplexity = computeTopicMastery(evidence);
