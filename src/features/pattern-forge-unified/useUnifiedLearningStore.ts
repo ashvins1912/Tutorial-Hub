@@ -12,6 +12,8 @@ import {
   computeTopicMastery,
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
+  scoreAssessmentDimensions,
+  scorePatternRecognitionAttempt,
 } from '../../../shared/masteryEngine';
 import {
   getLearningTopicById,
@@ -57,11 +59,11 @@ export interface RecordEvidencePayload {
   topicId: string;
   understandCompleted?: boolean;
   conceptCheckPassed?: boolean;
-  complexityCheckPassed?: boolean;
   traceCompletedId?: string;
   checkpointCorrect?: boolean;
   verifiedProblemId?: string;
-  patternRecognitionScorePct?: number;
+  patternRecognitionProblemId?: string;
+  patternRecognitionAnswers?: Record<string, string>;
   hintsUsedDelta?: number;
 }
 
@@ -189,7 +191,6 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
 
     if (payload.understandCompleted) next.understandCompleted = true;
     if (payload.conceptCheckPassed) next.conceptCheckPassed = true;
-    if (payload.complexityCheckPassed) next.complexityCheckPassed = true;
 
     if (payload.traceCompletedId && !next.tracesCompleted.includes(payload.traceCompletedId)) {
       next.tracesCompleted = [...next.tracesCompleted, payload.traceCompletedId];
@@ -215,13 +216,14 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
       }
     }
 
-    if (typeof payload.patternRecognitionScorePct === 'number') {
-      next.patternRecognitionBestPct = Math.max(
-        next.patternRecognitionBestPct,
-        Math.round(payload.patternRecognitionScorePct)
-      );
-      if (payload.patternRecognitionScorePct >= 75) {
-        next.complexityCheckPassed = true;
+    if (payload.patternRecognitionProblemId && payload.patternRecognitionAnswers) {
+      const recognitionProblem = topic.problems.find((problem) => problem.id === payload.patternRecognitionProblemId);
+      if (recognitionProblem?.patternRecognitionPrompt) {
+        const recognitionScore = scorePatternRecognitionAttempt(
+          recognitionProblem.patternRecognitionPrompt,
+          payload.patternRecognitionAnswers
+        ).weightedScorePct;
+        next.patternRecognitionBestPct = Math.max(next.patternRecognitionBestPct, recognitionScore);
       }
     }
 
@@ -334,7 +336,8 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
       };
     });
 
-    const scorePct = Math.round((correct / assessment.questions.length) * 100);
+    const assessmentScore = scoreAssessmentDimensions(assessment.questions, answers);
+    const scorePct = assessmentScore.scorePct;
     const attempt: AssessmentAttempt = {
       id: `local-att-${Date.now()}`,
       assessmentId,
@@ -346,7 +349,7 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
       passed: scorePct >= assessment.passingScorePct,
       hintsUsed: meta.hintsUsed,
       timeTakenSec: meta.timeTakenSec,
-      dimensionScores: { transferAbility: scorePct },
+      dimensionScores: assessmentScore.dimensionScores,
       answers,
     };
 
@@ -355,8 +358,8 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
       createEmptyMasteryEvidence(topic.id, topic.version.version);
     const nextEv: MasteryEvidence = {
       ...currentEv,
-      transferAssessmentBestPct: Math.max(currentEv.transferAssessmentBestPct, scorePct),
-      complexityCheckPassed: currentEv.complexityCheckPassed || scorePct >= 80,
+      transferAssessmentBestPct: Math.max(currentEv.transferAssessmentBestPct, assessmentScore.dimensionScores.transferAbility ?? 0),
+      complexityCheckPassed: currentEv.complexityCheckPassed || (assessmentScore.dimensionScores.complexityAnalysis ?? 0) >= 80,
       hintsUsedTotal: currentEv.hintsUsedTotal + meta.hintsUsed,
       mistakesCount: currentEv.mistakesCount + (assessment.questions.length - correct),
       updatedAt: attempt.submittedAt,
