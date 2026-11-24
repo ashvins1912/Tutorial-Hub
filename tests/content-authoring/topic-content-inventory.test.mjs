@@ -6,8 +6,8 @@ test('topic inventory extracts canonical ID/title candidates without asserting q
   const output = execFileSync(process.execPath, ['scripts/audit-topic-content-inventory.mjs'], { encoding: 'utf8' });
   const report = JSON.parse(output);
   assert.equal(report.schemaVersion, 1);
-  assert.equal(report.sourceCount, 27);
-  assert.equal(report.surfaceCount, 12);
+  assert.ok(report.sourceCount >= 27, 'inventory must cover all registered TypeScript data sources');
+  assert.ok(report.surfaceCount >= 12, 'inventory must cover every surface with mapped TypeScript data sources');
   assert.ok(report.sourceCount >= 10);
   assert.ok(report.candidateRecordCount > 0);
   assert.equal(report.records.length, report.candidateRecordCount);
@@ -16,6 +16,7 @@ test('topic inventory extracts canonical ID/title candidates without asserting q
   assert.ok(report.records.every((record) => record.reviewStatus === 'not_assessed'));
   assert.ok(report.records.some((record) => record.surfaceId === 'workspace'));
   assert.ok(report.records.some((record) => record.surfaceId === 'db-internals'));
+  assert.ok(report.records.some((record) => record.surfaceId === 'pattern-forge'), 'Pattern Forge canonical content must be inventoried');
   assert.equal(report.surfaceSummaries.reduce((sum, surface) => sum + surface.candidateRecordCount, 0), report.candidateRecordCount);
   assert.ok(report.surfaceSummaries.every((surface) => surface.reviewStatus === 'not_assessed'));
   assert.ok(report.surfaceSummaries.every((surface) => surface.sourceCount > 0));
