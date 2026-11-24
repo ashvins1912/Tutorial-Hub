@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -94,6 +94,16 @@ test('all verified pilot JavaScript and Python 3.12 solutions execute and pass 1
         problem.solution.variants[problem.solution.variants.length - 1];
       assert.ok(optimalVariant, `${problem.id} missing optimal solution`);
       assert.ok(optimalVariant.code.java.includes('class Solution'), `${problem.id} missing Java 21 class`);
+
+      // Compile every reference tier with the same Java 21 toolchain used by CI.
+      for (const variant of problem.solution.variants) {
+        const javaOutDir = join(tmpDir, `${problem.id}-${variant.tier}`);
+        mkdirSync(javaOutDir, { recursive: true });
+        const javaFile = join(javaOutDir, 'Solution.java');
+        writeFileSync(javaFile, variant.code.java, 'utf8');
+        const javaCompile = spawnSync('javac', ['--release', '21', '-d', javaOutDir, javaFile], { encoding: 'utf8' });
+        assert.equal(javaCompile.status, 0, `Java 21 ${problem.id} (${variant.tier}) did not compile: ${javaCompile.stderr || javaCompile.stdout}`);
+      }
 
       // 1. Verify JavaScript optimal solution against all test cases
       const jsFn = new Function(

@@ -1,7 +1,7 @@
 # Application-wide content quality audit and review standard
 
-**Audit date:** 2026-11-24  
-**Baseline:** `main` at `8c83bc6d2bed2222ae08a524a78c20b1ede9d930`  
+**Audit date:** 2026-11-25  
+**Baseline:** `main` at `512c342ac17825398b9aafde24b706ecd1d9a3a6`  
 **Scope:** All 21 registered learning surfaces in `docs/learning-surface-registry.json`  
 **Method:** Static source and curriculum review. Browser walkthroughs, learner studies, screen-reader testing and subject-matter sign-off are not claimed.
 
@@ -75,11 +75,11 @@ These are content gates, not learner mastery thresholds.
 
 ## 4. Surface review register
 
-The JSON ledger contains all 21 registered surfaces. Priority indicates audit sequencing, not a claim that the surface is defective.
+The JSON ledger contains all 22 registered surfaces, including the Pattern Forge five-stage workspace added on 2026-11-25. Priority indicates audit sequencing, not a claim that the surface is defective.
 
 | Priority | Surfaces | First review focus |
 |---|---|---|
-| P0 | Knowledge engine, DSA workspace, algorithms, database internals, system design | Lesson completeness, objective binding, correctness and executable/trace evidence |
+| P0 | Pattern Forge, knowledge engine, DSA workspace, algorithms, database internals, system design | Lesson completeness, objective binding, correctness and executable/trace evidence |
 | P1 | AI Academy, AI engineering, DevOps/cloud, languages, OOD, full-stack, fuzzy search, flight simulator, solver, roadmap, skill tree, revision | Domain-specific depth, examples, failure scenarios, assessment and transfer |
 | P2 | Schemas, sprint, community, profile | Reference freshness, feedback quality, progress semantics and separation from mastery |
 

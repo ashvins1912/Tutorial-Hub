@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "auditDate": "2026-11-24",
+  "auditDate": "2026-11-25",
   "baseline": {
     "branch": "main",
-    "commit": "8c83bc6d2bed2222ae08a524a78c20b1ede9d930"
+    "commit": "512c342ac17825398b9aafde24b706ecd1d9a3a6"
   },
   "purpose": "Evidence-led quality audit ledger for every registered learning surface. Inventory mapping is not lesson completeness or technical verification.",
   "evidencePolicy": {
@@ -763,6 +763,50 @@
         "example or simulator fixture validation",
         "objective-linked assessment",
         "accessibility review where interactive"
+      ]
+    },
+    {
+      "surfaceId": "pattern-forge",
+      "title": "Pattern Forge unified five-stage learning workspace",
+      "priority": "P0",
+      "inventoryStatus": "mapped",
+      "contentStatus": "not_assessed",
+      "verificationStatus": "not_assessed",
+      "reviewedSourcePaths": [
+        "src/features/pattern-forge-unified/UnifiedPatternForgeWorkspace.tsx",
+        "src/features/pattern-forge-unified/components/StageUnderstandView.tsx",
+        "src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx",
+        "src/features/pattern-forge-unified/components/StageImplementView.tsx",
+        "src/features/pattern-forge-unified/components/StagePracticeView.tsx",
+        "src/features/pattern-forge-unified/components/StageMasterView.tsx",
+        "src/features/pattern-forge-unified/useUnifiedLearningStore.ts",
+        "src/data/dsa28Patterns.ts",
+        "shared/learningContract.ts",
+        "shared/patternForgeCurriculum.ts",
+        "shared/pilotPatternsData.ts",
+        "shared/traceEngine.ts",
+        "shared/masteryEngine.ts"
+      ],
+      "reviewFocus": [
+        "Five-stage lesson completeness and objective alignment across all 28 canonical patterns",
+        "Deterministic trace correctness and prediction checkpoint quality",
+        "Java 21, JavaScript and Python implementation verification",
+        "Practice progression, debugging and unseen transfer",
+        "Evidence-based mastery and spaced revision behavior"
+      ],
+      "knownEvidence": {
+        "mappedComponents": 6,
+        "mappedDataSources": 7,
+        "mappedApiRoutes": 1,
+        "mappedTestFiles": 1
+      },
+      "requiredEvidence": [
+        "Topic-and-subtopic inventory for all 28 canonical pattern IDs",
+        "Lesson-level quality scorecard for every published and inventory-only pattern",
+        "Technical accuracy review and reproducible Java/JavaScript/Python fixtures",
+        "Deterministic trace and prediction checkpoint validation",
+        "Objective-linked practice, debugging and unseen-transfer assessment",
+        "Accessibility review of interactive traces and stage controls"
       ]
     }
   ]

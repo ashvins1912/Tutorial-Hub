@@ -6,34 +6,25 @@ const require = createRequire(import.meta.url);
 const ts = require('typescript-compiler-api');
 
 const root = process.cwd();
-const sources = [
-  { surfaceId: 'ai-engineering', path: 'src/data/aiEngineeringData.ts' },
-  { surfaceId: 'db-internals', path: 'src/data/databaseInternalsData.ts' },
-  { surfaceId: 'devops-cloud', path: 'src/data/devopsCloudCurriculumData.ts' },
-  { surfaceId: 'full-stack', path: 'src/data/fullStackArchitectureData.ts' },
-  { surfaceId: 'system-design', path: 'src/data/systemDesignData.ts' },
-  { surfaceId: 'languages', path: 'src/data/languagesTutorialData.ts' },
-  { surfaceId: 'ood', path: 'src/data/ood/oopsAndSolidData.ts' },
-  { surfaceId: 'fuzzy-search', path: 'src/data/ngramTaxonomy.ts' },
-  { surfaceId: 'flight-simulator', path: 'src/data/flightSimulatorData.ts' },
-  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringCurriculum.ts' },
-  { surfaceId: 'workspace', path: 'src/features/topics/data/curriculumIndex.ts' },
-  { surfaceId: 'workspace', path: 'src/data/dsaCompleteLessons.ts' },
-  { surfaceId: 'fuzzy-search', path: 'src/data/ngramTaxonomyPart1.ts' },
-  { surfaceId: 'fuzzy-search', path: 'src/data/ngramTaxonomyPart2.ts' },
-  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringDeepDiveLessons.ts' },
-  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringExtraLessons.ts' },
-  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringRagSystems.ts' },
-  { surfaceId: 'ai-academy', path: 'src/features/ai-academy/data/aiEngineeringMcpSystems.ts' },
-  { surfaceId: 'languages', path: 'src/data/javaToPythonThinkingData.ts' },
-  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsFoundations.ts' },
-  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsIntermediate.ts' },
-  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsAdvanced.ts' },
-  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsAppliedFuzzy.ts' },
-  { surfaceId: 'workspace', path: 'src/features/topics/data/topicsRecursionBacktrackingSorting.ts' },
-  { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterCorePack.ts' },
-  { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterAdvancedPack.ts' },
-  { surfaceId: 'algorithms', path: 'src/data/algorithmsMasterSystemsPack.ts' },
+const registry = JSON.parse(fs.readFileSync(path.join(root, 'docs/learning-surface-registry.json'), 'utf8'));
+
+// Inventory every TypeScript data source mapped to a learner-facing surface.
+const sources = registry.surfaces.flatMap((surface) =>
+  surface.dataSources
+    .filter((sourcePath) => /\.tsx?$/.test(sourcePath))
+    .map((sourcePath) => ({ surfaceId: surface.id, path: sourcePath }))
+);
+
+
+const QUALITY_DIMENSIONS = [
+  'coverage-prerequisites',
+  'explanation-depth',
+  'examples-implementation',
+  'visualization-correctness',
+  'failure-debugging',
+  'assessment-feedback',
+  'transfer-retention',
+  'accessibility-usability',
 ];
 
 const stringValue = (node) => node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
@@ -68,7 +59,7 @@ for (const source of sources) {
         const kind = lessonSignals.some((key) => props.has(key)) ? 'lesson-candidate'
           : conceptSignals.some((key) => props.has(key)) ? 'concept-candidate' : 'topic-candidate';
         records.push({
-          recordKey: `${source.path}#${node.getStart(ast)}#${id}`,
+          recordKey: `${source.surfaceId}#${source.path}#${node.getStart(ast)}#${id}`,
           surfaceId: source.surfaceId,
           sourcePath: source.path,
           sourceLine: ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1,
@@ -77,6 +68,10 @@ for (const source of sources) {
           candidateKind: kind,
           fieldsPresent: keys.filter((key) => ['why','outcome','explanation','analogy','keyPoints','workedExample','code','steps','question','project','pitfalls','practice','complexity','frames','quizzes'].includes(key)).sort(),
           reviewStatus: 'not_assessed',
+          qualityReview: {
+            status: 'not_assessed',
+            dimensions: Object.fromEntries(QUALITY_DIMENSIONS.map((dimension) => [dimension, { score: null, evidence: [] }])),
+          },
         });
       }
     }
@@ -117,10 +112,11 @@ const surfaceSummaries = [...new Set(sources.map((source) => source.surfaceId))]
 const output = {
   schemaVersion: 1,
   generatedAt: new Date().toISOString(),
-  purpose: 'AST-derived candidate inventory only; candidate extraction is not a quality score or verification.',
+  purpose: 'AST-derived candidate inventory across every TypeScript data source mapped by the canonical learning-surface registry; candidate extraction is not a quality score or verification.',
   sourceCount: sources.length,
   surfaceCount: surfaceSummaries.length,
   candidateRecordCount: records.length,
+  qualityDimensions: QUALITY_DIMENSIONS,
   sourceSummaries,
   surfaceSummaries,
   records,
