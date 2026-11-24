@@ -198,6 +198,12 @@ No numeric quality scores are assigned because comprehensive topic-level evidenc
 **Resolution:** Add a consistent keyboard, contrast, reduced-motion, screen-reader, zoom and mobile checklist. Run representative manual tests across shared components and academy-specific controls. Add transfer/delayed-recall measurement for pilot cohorts when available.  
 **Acceptance:** Evidence links to environment, tested routes/viewports/assistive technology, defects and remediation. Repository unit tests alone must not be called learner validation.
 
+### LRN-009 — Mastery evidence was cross-credited between unrelated dimensions
+**Priority:** P0  
+**Evidence:** The Pattern Forge implementation path set `complexityCheckPassed` after JavaScript tests passed; the pattern-recognition scorer also set it at 75%; the mastery calculator then added pattern-recognition performance to the complexity-analysis score. The published standard requires 80% independently for each dimension. The client assessment fallback also stored the overall assessment score as transfer evidence, while the server stored the overall score in `transferAssessmentBestPct` even though questions carry explicit dimensions.  
+**Resolution:** Compute assessment totals and per-dimension scores through one shared pure scorer; derive transfer evidence only from `transferAbility` questions and complexity evidence only from `complexityAnalysis` questions; align pattern-recognition pass threshold to 80%; have the server recompute pattern-recognition results from canonical prompt answers; ignore legacy `complexityCheckPassed` flags when calculating mastery and retain a new dimension-specific score field for verified evidence.  
+**Acceptance:** Regression tests prove that 75% recognition does not pass, 80% does; perfect recognition alone does not increase complexity mastery; overall quiz percentage cannot substitute for transfer or complexity evidence; client fallback and server grading use identical dimension rules.
+
 ## 8. Reusable assets to preserve
 
 | Existing asset | Reuse strategy |

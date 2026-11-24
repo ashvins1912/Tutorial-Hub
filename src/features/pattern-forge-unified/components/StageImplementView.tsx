@@ -87,7 +87,6 @@ export const StageImplementView: React.FC<StageImplementViewProps> = ({
       await recordEvidence({
         topicId: topic.id,
         verifiedProblemId: problem.id,
-        complexityCheckPassed: true,
       });
     }
   };

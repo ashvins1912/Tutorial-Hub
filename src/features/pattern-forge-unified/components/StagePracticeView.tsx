@@ -97,12 +97,13 @@ export const StagePracticeView: React.FC<StagePracticeViewProps> = ({
   };
 
   const handleSubmitRecognition = () => {
-    if (!prPrompt) return;
+    if (!prPrompt || !prProblem) return;
     const scored = scorePatternRecognitionAttempt(prPrompt, prAnswers);
     setPrResult(scored);
     void recordEvidence({
       topicId: topic.id,
-      patternRecognitionScorePct: scored.weightedScorePct,
+      patternRecognitionProblemId: prProblem.id,
+      patternRecognitionAnswers: { ...prAnswers },
     });
   };
 

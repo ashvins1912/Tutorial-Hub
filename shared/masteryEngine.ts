@@ -1,4 +1,5 @@
 import type {
+  AssessmentQuestion,
   DimensionMasteryRecord,
   MasteryDimensionId,
   MasteryEvidence,
@@ -92,8 +93,42 @@ export function scorePatternRecognitionAttempt(
   const weightedScorePct = totalWeight > 0 ? Math.round((earned / totalWeight) * 100) : 0;
   return {
     weightedScorePct,
-    passed: weightedScorePct >= 75,
+    passed: weightedScorePct >= 80,
     breakdown,
+  };
+}
+
+export function scoreAssessmentDimensions(
+  questions: AssessmentQuestion[],
+  answers: Record<string, string>
+): {
+  correctCount: number;
+  scorePct: number;
+  dimensionScores: Partial<Record<MasteryDimensionId, number>>;
+} {
+  const totals = new Map<MasteryDimensionId, { correct: number; total: number }>();
+  let correctCount = 0;
+
+  for (const question of questions) {
+    const isCorrect = question.options.some(
+      (option) => option.id === answers[question.id] && option.isCorrect
+    );
+    if (isCorrect) correctCount += 1;
+    const current = totals.get(question.dimension) ?? { correct: 0, total: 0 };
+    current.total += 1;
+    if (isCorrect) current.correct += 1;
+    totals.set(question.dimension, current);
+  }
+
+  const dimensionScores: Partial<Record<MasteryDimensionId, number>> = {};
+  for (const [dimension, result] of totals) {
+    dimensionScores[dimension] = Math.round((result.correct / result.total) * 100);
+  }
+
+  return {
+    correctCount,
+    scorePct: questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0,
+    dimensionScores,
   };
 }
 
@@ -111,6 +146,7 @@ export function createEmptyMasteryEvidence(topicId: string, contentVersion: stri
     debuggingExercisesPassed: [],
     patternRecognitionBestPct: 0,
     complexityCheckPassed: false,
+    complexityAnalysisBestPct: 0,
     transferAssessmentBestPct: 0,
     delayedRecallPassedCount: 0,
     hintsUsedTotal: 0,
@@ -150,10 +186,8 @@ export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySumm
       Math.min(3, evidence.edgeCasesPassed) * 20
   );
 
-  const complexityScore = clampPct(
-    (evidence.complexityCheckPassed ? 60 : 0) +
-      (evidence.patternRecognitionBestPct >= 75 ? 40 : Math.round(evidence.patternRecognitionBestPct * 0.4))
-  );
+  // Legacy complexityCheckPassed is intentionally ignored: older clients set it from unrelated activity.
+  const complexityScore = clampPct(evidence.complexityAnalysisBestPct ?? 0);
 
   const debuggingScore = clampPct(evidence.debuggingExercisesPassed.length > 0 ? 100 : 0);
 
@@ -193,7 +227,7 @@ export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySumm
     {
       id: 'complexityAnalysis',
       score: complexityScore,
-      count: evidence.complexityCheckPassed ? 1 : 0,
+      count: evidence.complexityAnalysisBestPct > 0 ? 1 : 0,
       missingHint: 'Demonstrate accurate Time & Space complexity reasoning',
     },
     {

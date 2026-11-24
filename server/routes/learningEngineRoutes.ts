@@ -4,7 +4,6 @@ import { isMongoConnected } from '../db/connectMongo';
 import { UnifiedLearningRecord } from '../models/UnifiedLearningRecord';
 import type {
   AssessmentAttempt,
-  MasteryDimensionId,
   MasteryEvidence,
   RevisionSchedule,
 } from '../../shared/learningContract';
@@ -24,6 +23,8 @@ import {
   computeTopicMastery,
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
+  scoreAssessmentDimensions,
+  scorePatternRecognitionAttempt,
 } from '../../shared/masteryEngine';
 import { auditCurriculumGovernance } from '../../shared/learningValidator';
 
@@ -171,7 +172,6 @@ router.post('/mastery/evidence', requireAuth, async (req: Request, res: Response
 
   if (body.understandCompleted === true) next.understandCompleted = true;
   if (body.conceptCheckPassed === true) next.conceptCheckPassed = true;
-  if (body.complexityCheckPassed === true) next.complexityCheckPassed = true;
 
   if (typeof body.traceCompletedId === 'string' && topic.traceIds.includes(body.traceCompletedId)) {
     if (!next.tracesCompleted.includes(body.traceCompletedId)) {
@@ -199,10 +199,19 @@ router.post('/mastery/evidence', requireAuth, async (req: Request, res: Response
     }
   }
 
-  if (typeof body.patternRecognitionScorePct === 'number' && Number.isFinite(body.patternRecognitionScorePct)) {
-    const pct = Math.max(0, Math.min(100, Math.round(body.patternRecognitionScorePct)));
-    next.patternRecognitionBestPct = Math.max(next.patternRecognitionBestPct, pct);
-    if (pct >= 75) next.complexityCheckPassed = true;
+  const recognitionProblemId = typeof body.patternRecognitionProblemId === 'string' ? body.patternRecognitionProblemId : '';
+  const recognitionProblem = topic.problems.find((problem) => problem.id === recognitionProblemId);
+  const recognitionAnswers = body.patternRecognitionAnswers;
+  if (recognitionProblem?.patternRecognitionPrompt && recognitionAnswers && typeof recognitionAnswers === 'object' && !Array.isArray(recognitionAnswers)) {
+    const normalizedAnswers = Object.fromEntries(
+      Object.entries(recognitionAnswers as Record<string, unknown>)
+        .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    );
+    const recognitionScore = scorePatternRecognitionAttempt(
+      recognitionProblem.patternRecognitionPrompt,
+      normalizedAnswers
+    ).weightedScorePct;
+    next.patternRecognitionBestPct = Math.max(next.patternRecognitionBestPct, recognitionScore);
   }
 
   if (typeof body.hintsUsedDelta === 'number' && body.hintsUsedDelta > 0) {
@@ -245,20 +254,10 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
   const hintsUsed = typeof body.hintsUsed === 'number' ? Math.max(0, Math.trunc(body.hintsUsed)) : 0;
   const timeTakenSec = typeof body.timeTakenSec === 'number' ? Math.max(1, Math.trunc(body.timeTakenSec)) : 60;
 
-  let correct = 0;
-  const dimTotals = new Map<MasteryDimensionId, { correct: number; total: number }>();
-
   const feedback = assessment.questions.map((q) => {
     const selectedId = typeof answers[q.id] === 'string' ? answers[q.id] : '';
     const option = q.options.find((o) => o.id === selectedId);
     const isCorrect = Boolean(option?.isCorrect);
-    if (isCorrect) correct += 1;
-
-    const prevDim = dimTotals.get(q.dimension) ?? { correct: 0, total: 0 };
-    prevDim.total += 1;
-    if (isCorrect) prevDim.correct += 1;
-    dimTotals.set(q.dimension, prevDim);
-
     const correctOption = q.options.find((o) => o.isCorrect);
     return {
       questionId: q.id,
@@ -268,12 +267,9 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
     };
   });
 
-  const scorePct = assessment.questions.length > 0 ? Math.round((correct / assessment.questions.length) * 100) : 0;
+  const assessmentScore = scoreAssessmentDimensions(assessment.questions, answers);
+  const { scorePct, dimensionScores, correctCount } = assessmentScore;
   const passed = scorePct >= assessment.passingScorePct;
-  const dimensionScores: Partial<Record<MasteryDimensionId, number>> = {};
-  for (const [dim, stats] of dimTotals.entries()) {
-    dimensionScores[dim] = Math.round((stats.correct / stats.total) * 100);
-  }
 
   const attempt: AssessmentAttempt = {
     id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -296,12 +292,13 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
   const ev =
     state.evidenceByTopic[topic.id] ??
     createEmptyMasteryEvidence(topic.id, topic.version.version);
-  ev.transferAssessmentBestPct = Math.max(ev.transferAssessmentBestPct, scorePct);
-  if ((dimensionScores.complexityAnalysis ?? 0) >= 80) {
-    ev.complexityCheckPassed = true;
-  }
+  ev.transferAssessmentBestPct = Math.max(ev.transferAssessmentBestPct, dimensionScores.transferAbility ?? 0);
+  ev.complexityAnalysisBestPct = Math.max(
+    ev.complexityAnalysisBestPct ?? 0,
+    dimensionScores.complexityAnalysis ?? 0
+  );
   ev.hintsUsedTotal += hintsUsed;
-  ev.mistakesCount += assessment.questions.length - correct;
+  ev.mistakesCount += assessment.questions.length - correctCount;
   ev.updatedAt = attempt.submittedAt;
   state.evidenceByTopic[topic.id] = ev;
 
@@ -311,7 +308,7 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
     scorePct,
     hintsUsed,
     timeTakenSec,
-    mistakesCount: assessment.questions.length - correct,
+    mistakesCount: assessment.questions.length - correctCount,
   });
 
   await saveLearnerState(userId, state);

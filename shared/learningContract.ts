@@ -534,7 +534,9 @@ export interface MasteryEvidence {
   edgeCasesPassed: number;
   debuggingExercisesPassed: string[];
   patternRecognitionBestPct: number;
+  /** @deprecated Legacy flag; use dimension-specific complexityAnalysisBestPct. */
   complexityCheckPassed: boolean;
+  complexityAnalysisBestPct: number;
   transferAssessmentBestPct: number;
   delayedRecallPassedCount: number;
   hintsUsedTotal: number;
