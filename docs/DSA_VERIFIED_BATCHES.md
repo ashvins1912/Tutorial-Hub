@@ -35,3 +35,8 @@ npm run test:dsa:arrays:01
 ```
 
 The CI job provisions Node.js, Python, and Java and runs the batch test suite before the production build. The next batch should continue with the remaining Arrays problems, then proceed topic-wise. No records in later batches should be promoted based solely on generated topic templates.
+
+
+## Arrays lesson enhancement — offline range updates
+
+The Arrays reference lesson now includes matching Java 21 and Python 3 difference-array implementations for offline inclusive range additions. The examples validate update bounds, use an `n + 1` sentinel for an update ending at the last index, and materialize results with one prefix scan. Regression fixtures cover overlapping updates and the final-index boundary. This extends the lesson's existing prefix-sum and compaction examples; it does not promote the full Arrays topic or the 293-question inventory to verified status.
