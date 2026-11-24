@@ -1029,8 +1029,7 @@ static int[] mergeKSorted(int[][] arrays) {
         }
     }
     return merged;
-}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' }
-    ],
+}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' },
       { language: 'JavaScript (Node.js)', title: 'Top K largest and deterministic K-way merge', code: `function topKLargest(values, k) {
   if (!Number.isInteger(k) || k < 0 || k > values.length) {
     throw new RangeError('k must be an integer between 0 and values.length');
@@ -1153,6 +1152,7 @@ def merge_k_sorted(sources):
                 (sources[source_index][next_index], source_index, next_index)
             )
     return merged`, explanation: 'heapq is a min-heap, so it directly supports the bounded Top K largest strategy. Both functions return values in ascending order. Merge entries are tuples (value, sourceIndex, index), giving deterministic tie-breaking without comparing source payloads. Top K is O(n log K) time and O(K) space; merge is O(N log K) time and O(K) heap space.' },
+    ],
     traceExercises: [
       'Insert 7, 3, 9, 1, 6 into a min-heap. Draw the array after each append and sift-up.',
       'Extract twice from [1, 3, 6, 7, 9]. Show the replacement root and each sift-down choice.',
