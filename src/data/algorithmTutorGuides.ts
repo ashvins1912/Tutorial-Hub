@@ -96,7 +96,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you prevent infinite loops between left-biased and right-biased mid?',
         invariantShift: 'Pair floor mid (`lo + ((hi - lo) >> 1)`) strictly with `hi = mid; else lo = mid + 1`.',
-        complexityImpact: 'Guaranteed O(log(hi - lo)) termination.',
+        complexityImpact: 'For an inclusive integer range, O(log(hi - lo + 1)) iterations; the exact bound depends on the interval convention.',
       },
     ],
   },
@@ -208,10 +208,10 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'dijkstra-shortest-path': {
     algorithmId: 'dijkstra-shortest-path',
     simpleAnalogy:
-      'A GPS exploring toll roads: always lock in the cheapest unvisited intersection next because adding more positive tolls later can never make a longer route cheaper.',
+      'A GPS with non-negative edge costs repeatedly settles the unvisited intersection with the smallest tentative distance. No later path can improve it once all edge costs are non-negative.',
     interviewScript30s:
       '"With non-negative weights, the smallest unsettled vertex popped from the Min-Heap is permanently optimal. Skipping stale entries (`if (d > dist[u]) continue`) keeps total runtime O((V + E) log V)."',
-    chooseWhen: 'Single-source shortest paths or min-max effort grid paths with strictly non-negative weights.',
+    chooseWhen: 'Single-source shortest paths when all edge weights are non-negative.',
     avoidWhen: 'Any edge has a negative weight (use Bellman-Ford) or edges are all unweighted (use plain BFS).',
     followUpTwists: [
       {
@@ -294,14 +294,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Packing maximum meetings into one room by always picking whichever meeting ends soonest—leaving the largest possible unbooked afternoon for everything else.',
     interviewScript30s:
-      '"By sorting intervals by end time (or tracking the farthest reach frontier), an exchange argument proves the greedy choice can never do worse than any optimal schedule, solving it in O(N log N) or O(N)."',
+      '"For unweighted maximum-cardinality interval scheduling, sorting by end time and choosing the next compatible interval is optimal by an exchange argument. Farthest-reach greedy is a different rule used in problems such as Jump Game or interval covering and needs its own invariant."',
     chooseWhen: 'Interval merging/scheduling, Jump Game, Gas Station, Huffman coding, Kruskal/Prim MST.',
     avoidWhen: 'A tiny 3-item counterexample disproves greedy (e.g., Coin Change [1, 3, 4] for target 6 -> use DP).',
     followUpTwists: [
       {
         question: 'How do you prove to an interviewer that Greedy is actually optimal here?',
         invariantShift: 'State a 2-sentence Exchange Argument: assume an optimal solution differs at the first step, swap in the greedy choice, and prove feasibility + equal-or-better score.',
-        complexityImpact: 'Eliminates DP table overhead (often O(N²) -> O(N log N) or O(N)).',
+        complexityImpact: 'A proven greedy rule can avoid a DP table for that specific problem; weighted interval scheduling needs a different DP approach.',
       },
       {
         question: 'What if intervals also carry different profit weights (Weighted Job Scheduling)?',
@@ -368,7 +368,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'What if the graph has 10^5 nodes in a straight chain causing RecursionError?',
-        invariantShift: 'Replace recursion with an explicit heap-allocated stack storing `(node, state)` frames.',
+        invariantShift: 'Replace recursion with an explicit stack storing `(node, state)` frames; this avoids recursion-depth limits but uses O(V) auxiliary stack memory in the worst case.',
         complexityImpact: 'O(V + E) time, zero call-stack limit risk.',
       },
     ],
@@ -376,7 +376,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'union-find-dsu': {
     algorithmId: 'union-find-dsu',
     simpleAnalogy:
-      'Friend circles merging at a party: each group picks one team captain, and whenever you ask who your captain is, you remember the top captain directly (Path Compression) so future checks are instant.',
+      'Friend circles merging at a party: each group has a representative. Path compression makes nodes point closer to the representative after a lookup, so later operations are faster on average.',
     interviewScript30s:
       '"Pairing Path Compression with Union-by-Size merges components and tests connectivity in inverse-Ackermann O(α(N)) ≈ O(1) amortized time—far faster than re-running DFS per edge."',
     chooseWhen: 'Dynamic connectivity, Redundant Connection, Accounts Merge, Kruskal MST, Number of Provinces.',
@@ -427,7 +427,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you eliminate hash collision hacks against Rabin-Karp?',
         invariantShift: 'Use Double Hashing with two large coprime moduli (e.g., 10^9+7 and 10^9+9) and verify exact string match on hit.',
-        complexityImpact: 'Collision probability drops to ~10^-18 while staying O(N).',
+        complexityImpact: 'With suitable random-hash assumptions, double hashing makes accidental collisions very unlikely; verify a hash match against the actual substring when correctness must be exact.',
       },
       {
         question: 'How does KMP find the Shortest Palindrome by prepending characters (#214)?',
