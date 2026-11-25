@@ -52,6 +52,8 @@ jobs:
         run: npm run audit:learning-surfaces
       - name: Validate application-wide content quality audit ledger
         run: npm run audit:learning-content
+      - name: Scan registered learner-facing content for wording review targets (advisory)
+        run: npm run audit:application-content
       - name: Inventory canonical topic and lesson candidates
         run: node --test tests/content-authoring/topic-content-inventory.test.mjs
       - name: Build frontend
