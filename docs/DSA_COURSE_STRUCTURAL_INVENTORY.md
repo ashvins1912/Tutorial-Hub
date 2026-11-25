@@ -64,3 +64,12 @@ The all-module structural test also locks these course totals, and now requires 
 | Real-world applications | 106 |
 
 These counts are array entries, not a score or content review. A field being present does not prove its statements are correct or sufficiently detailed.
+
+
+## Code display and bounded-output review
+
+A source-to-UI check found that eight JSON-encoded Java examples stored literal backslash-n sequences instead of newline characters. `CompleteDsaCourse.tsx` splits code on real newline characters for line numbering, so those examples would render as one long line with visible escape text. The data encoding was normalized to real newline characters, and a regression test now asserts those specific examples contain actual line breaks.
+
+The bitmask-subset example also materialized all `2^n` subsets into memory with only a shift-width guard. It now requires a caller-provided `maxSubsets` cap before allocation and explains the Θ(n·2^n) output-size cost.
+
+The new syntax suite parses every JavaScript example, compiles every Python example, and compiles all Java snippets (with minimal missing-node type stubs where the snippet relies on surrounding course context). A separate Java execution test covers overflow, independent tree calls and subset output caps. These checks establish syntax/selected behavior only; they do not certify every example's semantics.
