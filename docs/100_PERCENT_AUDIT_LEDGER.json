@@ -2593,6 +2593,26 @@
       "evidence": [
         "tests/content-authoring/dsa-course-code-examples.test.mjs: repeated independent tree calls"
       ]
+    },
+    {
+      "unitId": "dsa-course:code-examples:newline-rendering",
+      "sourcePath": "src/data/dsaCompleteLessons.ts",
+      "reviewStatus": "corrected-awaiting-ci",
+      "finding": "Eight code examples stored escaped backslash-n sequences; the line-numbered DSA UI splits on real newline characters.",
+      "fix": "Normalized source string encoding to actual newlines and added an assertion for each affected example title.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-code-example-syntax.test.mjs: code walkthrough real-newline regression"
+      ]
+    },
+    {
+      "unitId": "dsa-course:bit-manipulation:materialized-subsets",
+      "sourcePath": "src/data/dsaCompleteLessons.ts",
+      "reviewStatus": "corrected-awaiting-ci",
+      "finding": "Materializing all 2^n subsets could exhaust memory before the bit-width guard was reached.",
+      "fix": "Added caller-supplied maxSubsets cap before allocation and documented Θ(n·2^n) output storage.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-code-examples.test.mjs: Java subset output-cap runtime test"
+      ]
     }
   ],
   "counts": {
@@ -2600,15 +2620,15 @@
     "testPathCount": 15,
     "allPathCount": 164,
     "reviewedPaths": 0,
-    "reviewedUnits": 3,
+    "reviewedUnits": 5,
     "verifiedUnits": 0,
-    "correctedUnitsAwaitingCi": 3,
+    "correctedUnitsAwaitingCi": 5,
     "unresolvedP0": 0,
     "unresolvedP1": 0
   },
   "limitations": [
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
     "Dynamic/database/generated/user-authored content and UI state variants are not yet fully enumerated.",
-    "The three corrected DSA units await current-head CI; do not count them verified until tests pass."
+    "Five focused DSA course units have corrections awaiting final-head CI; the rest of the registered paths and course units remain unreviewed."
   ]
 }
