@@ -16,10 +16,12 @@ import {
 import { auditCurriculumGovernance } from '../../shared/learningValidator.ts';
 import { buildLearningTrace } from '../../shared/traceEngine.ts';
 import {
+  addVerifiedProblemEvidence,
   computeNextRevisionSchedule,
   computeTopicMastery,
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
+  normalizeVerifiedProblemEvidence,
   scorePatternRecognitionAttempt,
   scoreAssessmentDimensions,
 } from '../../shared/masteryEngine.ts';
@@ -247,6 +249,55 @@ test('evidence-based mastery never awards Mastered without full 8-dimension proo
   const mastered = computeTopicMastery(ev);
   assert.equal(mastered.level, 'Mastered');
   assert.equal(mastered.missingForMastery.length, 0);
+});
+
+
+
+test('verified problem evidence deduplicates submissions and recomputes edge-case credit from canonical IDs', () => {
+  const problems = [
+    { id: 'prob-a', category: 'core', testSuite: { cases: [{ isEdgeCase: true }, { isBoundary: true }, {}] } },
+    { id: 'prob-b', category: 'debugging', testSuite: { cases: [{ isEdgeCase: true }, {}] } },
+  ];
+  const evidence = createEmptyMasteryEvidence('hashmap-hashset-lookup', '1.0.0');
+  evidence.implementationsVerified = ['prob-a', 'prob-a'];
+  evidence.edgeCasesPassed = 99; // Legacy duplicate submissions must not retain inflated credit.
+  evidence.debuggingExercisesPassed = ['prob-b', 'prob-b'];
+
+  const normalized = normalizeVerifiedProblemEvidence(evidence, problems);
+  assert.deepEqual(normalized.implementationsVerified, ['prob-a']);
+  assert.equal(normalized.edgeCasesPassed, 2);
+  assert.deepEqual(normalized.debuggingExercisesPassed, []);
+
+  const first = addVerifiedProblemEvidence(normalized, problems[0], problems);
+  const duplicate = addVerifiedProblemEvidence(first, problems[0], problems);
+  assert.equal(first.edgeCasesPassed, 2);
+  assert.equal(duplicate.edgeCasesPassed, 2);
+  assert.deepEqual(duplicate.implementationsVerified, ['prob-a']);
+
+  const second = addVerifiedProblemEvidence(duplicate, problems[1], problems);
+  assert.equal(second.edgeCasesPassed, 3);
+  assert.deepEqual(second.implementationsVerified, ['prob-a', 'prob-b']);
+  assert.deepEqual(second.debuggingExercisesPassed, ['prob-b']);
+});
+
+test('duplicate mastery evidence IDs cannot satisfy independent trace or implementation breadth', () => {
+  const evidence = createEmptyMasteryEvidence('hashmap-hashset-lookup', '1.0.0');
+  evidence.understandCompleted = true;
+  evidence.conceptCheckPassed = true;
+  evidence.patternRecognitionBestPct = 100;
+  evidence.tracesCompleted = ['trace-a', 'trace-a'];
+  evidence.predictionCheckpointsCorrect = 2;
+  evidence.predictionCheckpointsTotal = 2;
+  evidence.implementationsVerified = ['problem-a', 'problem-a'];
+  evidence.edgeCasesPassed = 3;
+  evidence.debuggingExercisesPassed = ['debug-a', 'debug-a'];
+  evidence.complexityAnalysisBestPct = 100;
+  evidence.transferAssessmentBestPct = 100;
+
+  const summary = computeTopicMastery(evidence);
+  assert.equal(summary.dimensions.find((item) => item.dimension === 'visualization')?.scorePct, 75);
+  assert.equal(summary.dimensions.find((item) => item.dimension === 'implementation')?.scorePct, 50);
+  assert.notEqual(summary.level, 'Mastered');
 });
 
 test('adaptive spaced revision advances on independent recall and pulls back on struggles', () => {
