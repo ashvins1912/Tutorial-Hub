@@ -100,7 +100,11 @@ export function CompleteDsaCourse() {
     return DSA_COMPLETE_LESSONS.filter((lesson) => searchableText(lesson).includes(q));
   }, [DSA_COMPLETE_LESSONS, search]);
   const validStepSet = new Set<string>(DSA_LESSON_STEPS);
-  const validProgressFor = (lessonId: string) => [...new Set((progress[lessonId] ?? []).filter((step) => validStepSet.has(step)))];
+  const validProgressFor = (lessonId: string) => {
+    const stored = progress[lessonId];
+    const steps = Array.isArray(stored) ? stored : [];
+    return [...new Set(steps.filter((step) => typeof step === 'string' && validStepSet.has(step)))];
+  };
   const doneCount = DSA_COMPLETE_LESSONS.filter((lesson) => validProgressFor(lesson.id).length === DSA_LESSON_STEPS.length).length;
   const activeCompletedSteps = validProgressFor(active.id);
   const toggleStep = (step: string) => {
