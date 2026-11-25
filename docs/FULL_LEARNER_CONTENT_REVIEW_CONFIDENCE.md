@@ -206,3 +206,13 @@ Two explanatory claims were aligned with the actual algorithm assumptions:
 - **Bidirectional BFS script:** now qualifies the O(b^(d/2)) estimate as a balanced-branching/near-middle model and states that it is not universal on irregular graphs.
 
 Regression assertions were added and source/test blobs were re-fetched. Source commit `4659b8389011fece3a25cb687fe71eafacceea97`; test commit `52d6e49a33b5d967c2f22050a2411be51643b1b4`. Run #733 was in progress at type-check for an earlier head; these latest edits still require completed validation.
+
+
+## Eighth focused technical pass: delimiter and interval boundary assumptions
+
+Two additional edge cases were corrected:
+
+- **KMP / shortest palindrome:** the concatenation delimiter must be absent from the input string (or be an out-of-alphabet sentinel).
+- **Sweep line:** empty half-open intervals `[t, t)` are excluded so the end event cannot decrement before the start event.
+
+Regression assertions were added and source/test blobs were re-fetched. Source commit `6f58a11916470ddd647329bb83357f84256ab029`; test commit `8e68ff58d51b10720b7458167b8d79732fba1d33`. Run #736 was at type-check for an earlier head; the latest delimiter/interval test and report commits still need final-head validation.
