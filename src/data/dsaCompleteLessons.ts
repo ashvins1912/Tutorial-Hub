@@ -2295,11 +2295,17 @@ static int singleNumber(int[] values) {
     for (int value : values) result ^= value;
     return result;
 }`, explanation: 'The set-bit loop works on the fixed-width two’s-complement representation too, terminating after at most Integer.SIZE iterations. The power-of-two check deliberately excludes zero and negatives.' },
-      { language: 'Java 21', title: 'Enumerate subsets with a long bitmask', code: `static List<List<Integer>> subsets(int[] values) {
+      { language: 'Java 21', title: 'Enumerate subsets with a long bitmask', code: `static List<List<Integer>> subsets(int[] values, long maxSubsets) {
+    if (maxSubsets < 1) {
+        throw new IllegalArgumentException("maxSubsets must be positive");
+    }
     if (values.length >= Long.SIZE - 1) {
-        throw new IllegalArgumentException("too many elements for this mask demo");
+        throw new IllegalArgumentException("input is too large for a signed long bitmask");
     }
     long limit = 1L << values.length;
+    if (limit > maxSubsets) {
+        throw new IllegalArgumentException("materialized subset output exceeds maxSubsets");
+    }
     List<List<Integer>> result = new ArrayList<>();
     for (long mask = 0; mask < limit; mask++) {
         List<Integer> subset = new ArrayList<>();
@@ -2309,7 +2315,7 @@ static int singleNumber(int[] values) {
         result.add(subset);
     }
     return result;
-}`, explanation: 'Each mask represents one subset. There are 2^n masks and scanning n bits per mask costs O(n*2^n) time plus output storage. The guard prevents shift-width misuse; practical memory limits are much smaller than the type limit.' }
+}`, explanation: 'Each mask represents one subset. There are 2^n masks and scanning n bits per mask costs O(n*2^n) time; materializing every subset also needs Θ(n*2^n) output elements. The maxSubsets argument lets the caller reject exponential output before allocation, and the signed-long width guard prevents invalid shifts.' }
     ],
     traceExercises: [
       'For x=10 (1010), calculate x&-x, x&(x-1), x|0010 and x^0010.',
