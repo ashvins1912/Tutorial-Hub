@@ -141,6 +141,7 @@ export function createEmptyMasteryEvidence(topicId: string, contentVersion: stri
     tracesCompleted: [],
     predictionCheckpointsCorrect: 0,
     predictionCheckpointsTotal: 0,
+    predictionCheckpointResults: {},
     implementationsVerified: [],
     edgeCasesPassed: 0,
     debuggingExercisesPassed: [],
@@ -152,6 +153,41 @@ export function createEmptyMasteryEvidence(topicId: string, contentVersion: stri
     hintsUsedTotal: 0,
     mistakesCount: 0,
     updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Record a prediction checkpoint once by stable ID. A later correct retry can
+ * upgrade a prior miss without increasing the denominator; anonymous legacy
+ * events retain their old count-based behavior for backward compatibility.
+ */
+export function recordPredictionCheckpointEvidence(
+  evidence: MasteryEvidence,
+  checkpointId: string | undefined,
+  isCorrect: boolean
+): MasteryEvidence {
+  const id = checkpointId?.trim();
+  if (!id) {
+    return {
+      ...evidence,
+      predictionCheckpointsTotal: evidence.predictionCheckpointsTotal + 1,
+      predictionCheckpointsCorrect: evidence.predictionCheckpointsCorrect + (isCorrect ? 1 : 0),
+      mistakesCount: evidence.mistakesCount + (isCorrect ? 0 : 1),
+    };
+  }
+
+  const previous = evidence.predictionCheckpointResults?.[id];
+  if (previous === true || previous === isCorrect) return evidence;
+
+  const results = { ...(evidence.predictionCheckpointResults ?? {}), [id]: isCorrect };
+  return {
+    ...evidence,
+    predictionCheckpointResults: results,
+    predictionCheckpointsTotal: previous === undefined
+      ? evidence.predictionCheckpointsTotal + 1
+      : evidence.predictionCheckpointsTotal,
+    predictionCheckpointsCorrect: evidence.predictionCheckpointsCorrect + (isCorrect ? 1 : 0),
+    mistakesCount: evidence.mistakesCount + (isCorrect ? 0 : 1),
   };
 }
 
@@ -232,10 +268,10 @@ export function computeTopicMastery(
   const patternRecognitionScore = clampPct(normalizedEvidence.patternRecognitionBestPct);
 
   const traceBreadth = Math.min(2, normalizedEvidence.tracesCompleted.length) * 25; // up to 50
-  const checkpointAccuracy =
-    normalizedEvidence.predictionCheckpointsTotal > 0
-      ? (normalizedEvidence.predictionCheckpointsCorrect / normalizedEvidence.predictionCheckpointsTotal) * 50
-      : 0;
+  const checkpointAccuracyRatio = normalizedEvidence.predictionCheckpointsTotal > 0
+    ? Math.max(0, Math.min(1, normalizedEvidence.predictionCheckpointsCorrect / normalizedEvidence.predictionCheckpointsTotal))
+    : 0;
+  const checkpointAccuracy = checkpointAccuracyRatio * 50;
   const visualizationScore = clampPct(traceBreadth + checkpointAccuracy);
 
   const implementationScore = clampPct(
@@ -271,7 +307,7 @@ export function computeTopicMastery(
       id: 'visualization',
       score: visualizationScore,
       count: normalizedEvidence.tracesCompleted.length + normalizedEvidence.predictionCheckpointsCorrect,
-      missingHint: 'Complete at least 2 interactive traces and pass prediction checkpoints',
+      missingHint: 'Complete at least 2 interactive traces and pass at least 80% of 2 or more prediction checkpoints',
     },
     {
       id: 'implementation',
@@ -330,6 +366,9 @@ export function computeTopicMastery(
     level = 'Not Started';
   } else if (
     metCount === dimensions.length &&
+    normalizedEvidence.tracesCompleted.length >= 2 &&
+    normalizedEvidence.predictionCheckpointsTotal >= 2 &&
+    checkpointAccuracyRatio >= 0.8 &&
     normalizedEvidence.implementationsVerified.length >= 2 &&
     normalizedEvidence.debuggingExercisesPassed.length >= 1 &&
     normalizedEvidence.transferAssessmentBestPct >= 80
