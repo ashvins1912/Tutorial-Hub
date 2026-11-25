@@ -21,3 +21,14 @@ test('learner sentence inventory covers registered sources and labels candidates
   assert.ok(inventory.sample.every((item) => item.sourcePath && item.line > 0 && item.sentence));
   assert.match(inventory.purpose, /does not prove/i);
 });
+
+test('DSA and published lesson code examples use readable line-numbered walkthroughs', async () => {
+  const { readFileSync } = await import('node:fs');
+  const dsaUi = readFileSync(path.join(root, 'src/components/CompleteDsaCourse.tsx'), 'utf8');
+  const publishedUi = readFileSync(path.join(root, 'src/features/intelligent-engine/components/PublishedLessonView.tsx'), 'utf8');
+  for (const source of [dsaUi, publishedUi]) {
+    assert.match(source, /Code walkthrough|Code example/);
+    assert.match(source, /lineIndex \+ 1/);
+    assert.match(source, /How this code works|What the code is doing/);
+  }
+});
