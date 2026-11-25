@@ -69,7 +69,7 @@ test('DSA course structure totals remain transparent and reviewable', () => {
   assert.equal(totals.concepts, 195);
   assert.equal(totals.workedExample, 111);
   assert.equal(totals.implementationSteps, 172);
-  assert.equal(totals.codeExamples, 45);
+  assert.equal(totals.codeExamples, 42);
   assert.equal(totals.traceExercises, 83);
   assert.equal(totals.assessment, 142);
   assert.equal(totals.practice, 115);
