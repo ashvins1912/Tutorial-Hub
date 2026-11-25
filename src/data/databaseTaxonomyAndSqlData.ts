@@ -64,7 +64,7 @@ export const DATABASE_PARADIGMS: DatabaseParadigm[] = [
     storageLayout: 'Row-Oriented 8KB/16KB Slotted Pages + WAL',
     indexStructure: 'B+ Tree, GIN, GiST, BRIN, Partial Covering',
     simpleEnglish:
-      'Strict spreadsheets with rules, relationships, and unbreakable transaction guarantees—money never disappears between accounts.',
+      'A relational database stores structured rows with declared relationships and constraints. Transactions can provide atomicity and isolation according to the engine, isolation level, schema and configuration; a correct ledger also needs durable writes, constraints, idempotent operations and recovery tests.',
     standardDefinition:
       'Schema-enforced relational database management system organizing tuples into normalized tables with ACID transactions, relational algebra joins, and cost-based query optimization.',
     idealWorkloads: [
@@ -340,7 +340,7 @@ ALTER TABLE events DETACH PARTITION events_2025_08 CONCURRENTLY;
 DROP TABLE events_2025_08;`,
     productionImpact: '< 2ms metadata DDL · 0 blocked checkout traffic · O(1) partition drop',
     keyTakeaway:
-      'TRUNCATE / DROP PARTITION frees disk blocks instantly in O(1); DELETE marks dead tuples one-by-one and forces autovacuum to clean them.',
+      'In PostgreSQL, TRUNCATE avoids scanning and deleting rows one by one, but it takes strong locks and its storage/catalog work is not a universal wall-clock O(1) guarantee. Dropping or detaching a partition can make bulk retention much cheaper than row-by-row DELETE; physical file cleanup and lock behavior depend on the operation and engine. DELETE creates dead tuples that VACUUM must reclaim for reuse.',
   },
   {
     id: 'dml-merge-skiplocked',
