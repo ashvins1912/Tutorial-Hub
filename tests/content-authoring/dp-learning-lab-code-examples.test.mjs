@@ -15,7 +15,7 @@ for (let position = 0; (position = source.indexOf('java: "', position)) >= 0;) {
   let escaped = false;
   for (; end < source.length; end++) {
     if (escaped) escaped = false;
-    else if (source[end] === '\\\\') escaped = true;
+    else if (source[end] === '\\') escaped = true;
     else if (source[end] === '"') break;
   }
   javaLiterals.push(JSON.parse(source.slice(quoteStart, end + 1)));
