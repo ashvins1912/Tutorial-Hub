@@ -1,13 +1,26 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const source = readFileSync(path.join(root, 'src/components/DpLearningLab.tsx'), 'utf8');
-const javaLiterals = [...source.matchAll(/java:\s*("(?:\\\\.|[^"\\\\])*")/g)].map((match) => JSON.parse(match[1]));
+const javaLiterals = [];
+for (let position = 0; (position = source.indexOf('java: "', position)) >= 0;) {
+  const quoteStart = position + 6;
+  let end = quoteStart + 1;
+  let escaped = false;
+  for (; end < source.length; end++) {
+    if (escaped) escaped = false;
+    else if (source[end] === '\\\\') escaped = true;
+    else if (source[end] === '"') break;
+  }
+  javaLiterals.push(JSON.parse(source.slice(quoteStart, end + 1)));
+  position = end + 1;
+}
 const hasJdk = spawnSync('javac', ['-version'], { encoding: 'utf8' }).status === 0;
 
 test('DP Java examples compile and selected recurrences pass edge cases', { skip: !hasJdk }, () => {
