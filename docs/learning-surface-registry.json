@@ -14,19 +14,20 @@
   "globalTestFiles": [
     "tests/content-authoring/ai-academy-curriculum.test.mjs",
     "tests/content-authoring/ai-academy-progress.test.mjs",
+    "tests/content-authoring/application-content-audit.test.mjs",
     "tests/content-authoring/code-execution.test.mjs",
     "tests/content-authoring/generation.test.mjs",
     "tests/content-authoring/learning-content-quality-audit.test.mjs",
     "tests/content-authoring/learning-progress-grading.test.mjs",
     "tests/content-authoring/learning-progress.test.mjs",
     "tests/content-authoring/learning-runtime.test.mjs",
+    "tests/content-authoring/mastery-stepper-accessibility.test.mjs",
     "tests/content-authoring/phase1.test.mjs",
     "tests/content-authoring/published-lesson-security.test.mjs",
     "tests/content-authoring/visualization-renderer.test.mjs",
     "tests/dsa/arrays-batch-01.test.mjs",
     "tests/dsa/master-interview-inventory.test.mjs",
-    "tests/learning-engine/pattern-forge-pilot.test.mjs",
-    "tests/content-authoring/application-content-audit.test.mjs"
+    "tests/learning-engine/pattern-forge-pilot.test.mjs"
   ],
   "surfaces": [
     {
