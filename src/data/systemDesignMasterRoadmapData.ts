@@ -266,7 +266,7 @@ export const CORE_ROADMAP_MODULES: RoadmapModule[] = [
           {
             label: 'Write-Through',
             detail:
-              'App writes to cache and DB synchronously. Guarantees warm cache and low read latency at the cost of higher write latency.',
+              'App writes to cache and DB synchronously. If both writes succeed and the cache entry is correctly populated, subsequent reads can hit a warm cache; write latency increases and partial failure/invalidation must be handled.',
           },
           {
             label: 'Write-Back (Write-Behind)',
@@ -300,7 +300,7 @@ export const CORE_ROADMAP_MODULES: RoadmapModule[] = [
           {
             label: 'Dead-Letter Queues (DLQ)',
             detail:
-              'Isolates poison-pill messages after bounded retries so a single malformed payload never blocks the entire partition.',
+              'Routes repeatedly failing messages to a dead-letter path after bounded retries, when configured; ordering, retry policy and consumer implementation determine whether a poison message blocks partition progress.',
           },
         ],
         table: {
@@ -472,7 +472,7 @@ export const DISTRIBUTED_ALGORITHMS: DistributedAlgoDeepDive[] = [
     mechanics: [
       'Leader Election: Nodes start as Followers. If no leader heartbeat arrives within a randomized election timeout (150–300ms), a node becomes a Candidate, increments its Term, and requests votes. A majority quorum (⌊N/2⌋ + 1) elects the Leader.',
       'Log Replication: The Leader appends client writes to its log and broadcasts AppendEntries RPCs. Once a majority acknowledges, the entry is committed and applied to every node’s state machine.',
-      'Safety: Log matching and term numbers guarantee that any newly elected leader contains all previously committed entries.',
+      'Safety: Under Raft's voting, term, log-matching and quorum rules, a newly elected leader preserves entries that were committed in prior terms; this depends on protocol assumptions and correct implementation.',
     ],
     timeComplexity: 'Minimum 1 network round-trip (RTT) to a majority quorum per write',
     spaceComplexity: 'O(Log Entries) durable WAL + periodic state snapshots',
@@ -668,7 +668,7 @@ export const REASONING_QUIZ_ITEMS: ReasoningQuizItem[] = [
     ],
     answerSummary: 'Bloom Filter in front of Cache/DB (O(k) negative rejection)',
     reasoning:
-      'This is a classic Cache Penetration attack. A Bloom Filter containing all valid user IDs fits in a tiny fraction of RAM (~10 bits/user) and guarantees zero false negatives: any non-existent ID hitting a 0 bit is immediately rejected in O(k) before ever touching PostgreSQL (optionally paired with short-TTL null caching).',
+      'This is a cache-penetration defense. A Bloom filter can represent a large set compactly; memory per key depends on the target false-positive rate (about 10 bits/key is only an illustrative sizing point). For a standard filter without deletions, inserted keys are not false negatives: any 0 bit proves absence, while a positive result may be false and must be checked against PostgreSQL. Lookup costs O(k) hash probes under the usual model; size the filter and rebuild/update it consistently with the source of truth.',
   },
   {
     id: 'q5-clock-drift',
