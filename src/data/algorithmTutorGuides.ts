@@ -441,7 +441,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Passing gossip across a town in waves: after 1 wave everyone 1 hop away knows the cheapest deal; after V - 1 waves every shortest path is settled—if wave V still improves anything, a negative-cost infinite money loop exists.',
     interviewScript30s:
-      '"Because negative edge weights break Dijkstra’s greedy assumption, I relax all E edges across V - 1 rounds in O(V · E). A V-th pass cleanly detects negative cycles, and K + 1 snapshot rounds solve K-stop flight limits."',
+      '"Because negative edge weights break Dijkstra’s greedy assumption, Bellman-Ford relaxes E edges across at most V - 1 rounds in O(V · E) time. A further pass detects negative cycles reachable from the chosen source (initialize all distances to 0 to detect a cycle anywhere); K + 1 snapshot rounds solve K-stop flight limits."',
     chooseWhen: 'Graphs with negative edge weights, negative-cycle detection, or shortest paths capped at <= K edges.',
     avoidWhen: 'All weights are non-negative on large sparse graphs (Dijkstra is dramatically faster).',
     followUpTwists: [
@@ -852,7 +852,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you find primes in `[L, R]` when `R = 10^12` and `R - L <= 10^6`?',
         invariantShift: 'Use a Segmented Sieve: sieve base primes up to √R = 10^6, then mark their multiples inside the shifted `[0..R-L]` window.',
-        complexityImpact: 'O((R - L + √R) log log R) time, O(R - L) space.',
+        complexityImpact: 'O((R - L + √R) log log R) time, O((R - L) + √R) space for the segment plus base-prime list.',
       },
     ],
   },
