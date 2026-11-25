@@ -2581,7 +2581,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "dispositionedUnitCount": 0,
+      "learnerUnitCount": null,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/generation.test.mjs",
