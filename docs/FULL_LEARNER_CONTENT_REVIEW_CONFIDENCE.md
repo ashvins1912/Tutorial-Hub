@@ -143,3 +143,18 @@ Added regression assertions for modular multiplication and the 3-way partition c
 - Test commit: `2c903b4df3b8163ffacab5d0c6ec3fed935dacdf`
 - Run #713 is in progress for the test commit. Run #712 remains in progress at type-check; it has not established downstream validation.
 - The source and test blobs were re-fetched. The test includes the new assertions; test execution is pending.
+
+
+## Fourth focused technical pass: graph bounds and edge cases
+
+The next source pass tightened three graph-algorithm claims:
+
+- **Floyd-Warshall:** documented that negative cycles make affected shortest-path distances unbounded/undefined, despite support for negative edges.
+- **0-1 BFS:** removed the incorrect assertion that each edge relaxes at most once; a vertex may be re-enqueued after improvement. Retained the O(V + E) bound for the standard relaxation/stale-entry implementation.
+- **Bidirectional BFS:** qualified O(b^(d/2)) as a balanced-branching model rather than a universal bound for irregular graphs.
+
+Regression assertions were added and the source/test blobs re-fetched.
+
+- Graph source commits: `ff01fff234b3875f03c8e7b93a7435e89c4cef92`, `65f8a949853108509685a9a7783ebd98b11b492f`
+- Test commit: `2e6c7fdf19b0b80a5109c6a473f9cc41b05cdb62`
+- Run #714 passed all listed validation steps and frontend build on its tested commit. New graph assertions require validation on the current final head; that run is pending/in progress.
