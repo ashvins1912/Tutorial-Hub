@@ -115,6 +115,10 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['mos-algorithm'].followUpTwists.find(x => /reduce pointer movement/i.test(x.question)).complexityImpact, /not a fixed percentage/i);
   assert.match(guides['convex-hull-trick'].followUpTwists.find(x => /floating-point precision/i.test(x.question)).invariantShift, /fixed-width 64-bit products can still overflow/i);
   assert.match(guides['suffix-array-lcp'].followUpTwists.find(x => /Longest Common Substring/i.test(x.question)).invariantShift, /separator is absent from both strings/i);
+  assert.match(guides['fenwick-tree-bit'].simpleAnalogy, /O\(log N\) steps/i);
+  assert.match(guides['manachers-algorithm'].interviewScript30s, /separator absent from the input/i);
+  assert.match(guides['bipartite-graph-coloring'].simpleAnalogy, /odd-length rivalry cycle/i);
+  assert.match(guides['meet-in-the-middle'].simpleAnalogy, /match complementary sums/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
