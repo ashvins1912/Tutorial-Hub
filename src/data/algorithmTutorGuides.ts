@@ -546,14 +546,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Growing a fiber-optic cable network outward from headquarters: at every step, plug in whichever unconnected building has the cheapest single cable to your already-wired cluster.',
     interviewScript30s:
-      '"Prim’s grows one MST component greedily using a Min-Heap of crossing edges in O(E log V), and on complete dense graphs (like Min Cost to Connect All Points) an array-based Prim’s avoids building O(V²) edges to run in O(V²) time and O(V) space."',
+      '"Prim’s grows an MST component greedily using a Min-Heap; with an indexed/decrease-key heap it runs in O(E log V), while lazy duplicate-entry heaps are commonly bounded as O(E log E). On dense complete graphs (like Min Cost to Connect All Points), array-based Prim’s avoids building O(V²) edges and runs in O(V²) time and O(V) space."',
     chooseWhen: 'Dense Minimum Spanning Tree graphs (e.g., all-pairs Manhattan points where E = V²).',
     avoidWhen: 'Edges are already given as a sparse sorted edge list (Kruskal + Union-Find is cleaner).',
     followUpTwists: [
       {
         question: 'Why does Prim’s beat Kruskal on Min Cost to Connect All Points (#1584, N = 1,000)?',
         invariantShift: 'Kruskal allocates & sorts N²/2 = 500k edges; array-based Prim’s tracks `minDist[v]` on the fly without storing the full graph.',
-        complexityImpact: 'O(V²) time and O(V) space instead of O(V² log V) / O(V²).',
+        complexityImpact: 'O(V²) time and O(V) auxiliary space, avoiding explicit O(V²) edge storage; standard Kruskal on the materialized complete graph takes O(V² log V) time and O(V²) space.',
       },
       {
         question: 'What if the graph is disconnected?',
