@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "baseline": {
-    "registryBlobSha": "e1f6a60c26d0f0f0c65b97464fc31c2feb230d94",
+    "registryBlobSha": "c27cc39cf21772661427d3311555078fedf1079b",
     "registrySurfaceCount": 22,
     "contentSourcePathCount": 154,
-    "testSourcePathCount": 24,
-    "allRegisteredPathCount": 178
+    "testSourcePathCount": 25,
+    "allRegisteredPathCount": 179
   },
   "purpose": "Exhaustive path-level audit ledger. Registry membership is inventory only. No path is marked reviewed unless every relevant unit and behavior is dispositioned with evidence.",
   "status": "in_progress",
@@ -2575,6 +2575,15 @@
       "evidence": []
     },
     {
+      "path": "tests/content-authoring/dsa-roadmap-quality.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "tests/content-authoring/generation.test.mjs",
       "roles": [
         "test",
@@ -2918,21 +2927,41 @@
       "evidence": [
         "tests/content-authoring/matrix-problem-bank-quality.test.mjs: m32 expected output includes (1,1)"
       ]
+    },
+    {
+      "unitId": "dsa-roadmap:55-topic-pitfall-and-practice-scaffolds",
+      "sourcePath": "src/data/completeDsaRoadmap.ts",
+      "reviewStatus": "content-added-awaiting-ci",
+      "finding": "54 of 55 roadmap topics had no pitfalls and all topics relied on generic fallback practice labels.",
+      "fix": "Added contextual pitfalls and four guided practice prompts derived from each topic's title, subtopics, recognition signal and outcome; explicitly documented these as scaffolds, not a bespoke problem set.",
+      "evidence": [
+        "tests/content-authoring/dsa-roadmap-quality.test.mjs: 55-topic structure, no generic placeholder and contextual prompt assertions"
+      ]
+    },
+    {
+      "unitId": "dsa-roadmap:outcomes-practice-and-progress-ui",
+      "sourcePath": "src/components/CompleteDsaRoadmap.tsx",
+      "reviewStatus": "ui-corrected-awaiting-ci",
+      "finding": "Topic outcomes and practice were not visible in the roadmap UI; progress could count stale topic/gate IDs and search omitted outcomes/practice/pitfalls.",
+      "fix": "Render outcomes and guided practice, search all learning dispositions, deduplicate valid progress/gates, expose pressed/current states and label self-marked mastery.",
+      "evidence": [
+        "tests/content-authoring/dsa-roadmap-quality.test.mjs: roadmap UI and progress assertions"
+      ]
     }
   ],
   "counts": {
     "registeredContentPathCount": 154,
-    "testPathCount": 24,
-    "allPathCount": 178,
+    "testPathCount": 25,
+    "allPathCount": 179,
     "reviewedPaths": 0,
-    "reviewedUnits": 16,
+    "reviewedUnits": 18,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 6,
     "unresolvedP0": 0,
     "unresolvedP1": 0,
-    "contentAddedUnitsAwaitingCi": 3,
+    "contentAddedUnitsAwaitingCi": 4,
     "contentCorrectedUnitsAwaitingCi": 4,
-    "uiCorrectedUnitsAwaitingCi": 3
+    "uiCorrectedUnitsAwaitingCi": 4
   },
   "limitations": [
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
