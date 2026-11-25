@@ -24,10 +24,12 @@ import {
   computeTopicMastery,
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
+  recordPredictionCheckpointEvidence,
   scoreAssessmentDimensions,
   scorePatternRecognitionAttempt,
 } from '../../shared/masteryEngine';
 import { auditCurriculumGovernance } from '../../shared/learningValidator';
+import { buildLearningTrace } from '../../shared/traceEngine';
 
 const router = express.Router();
 
@@ -181,9 +183,22 @@ router.post('/mastery/evidence', requireAuth, async (req: Request, res: Response
   }
 
   if (typeof body.checkpointCorrect === 'boolean') {
-    next.predictionCheckpointsTotal += 1;
-    if (body.checkpointCorrect) next.predictionCheckpointsCorrect += 1;
-    else next.mistakesCount += 1;
+    const hasCheckpointIdentity = typeof body.checkpointId === 'string' || typeof body.checkpointTraceId === 'string';
+    const traceId = typeof body.checkpointTraceId === 'string' ? body.checkpointTraceId : '';
+    const checkpointId = typeof body.checkpointId === 'string' ? body.checkpointId : '';
+    const trace = topic.traceIds.includes(traceId) ? buildLearningTrace(traceId) : null;
+    const checkpointIsCanonical = Boolean(checkpointId && trace?.steps.some((step) => step.checkpoint?.id === checkpointId));
+    if (!hasCheckpointIdentity || checkpointIsCanonical) {
+      const checkpointEvidence = recordPredictionCheckpointEvidence(
+        next,
+        checkpointIsCanonical ? checkpointId : undefined,
+        body.checkpointCorrect
+      );
+      next.predictionCheckpointResults = checkpointEvidence.predictionCheckpointResults;
+      next.predictionCheckpointsTotal = checkpointEvidence.predictionCheckpointsTotal;
+      next.predictionCheckpointsCorrect = checkpointEvidence.predictionCheckpointsCorrect;
+      next.mistakesCount = checkpointEvidence.mistakesCount;
+    }
   }
 
   if (typeof body.verifiedProblemId === 'string') {
