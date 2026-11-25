@@ -863,7 +863,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     interviewScript30s:
       '"Euclidean GCD shrinks arguments logarithmically via `gcd(a, b) = gcd(b, a % b)` in O(log min(a, b)), while Extended GCD finds Bézout coefficients `ax + by = gcd` for modular inverses even when the modulus is composite."',
     chooseWhen: 'Simplifying fractions, Water & Jug reachability (`target % gcd(x, y) === 0`), LCM, modular inverses.',
-    avoidWhen: 'Modulus is prime and Fermat’s Little Theorem (`a^(p-2) mod p`) is already available via fast pow.',
+    avoidWhen: 'When the modulus is prime and a is not divisible by it, Fermat’s theorem may be a convenient alternative if modular exponentiation is available; Extended GCD also works whenever gcd(a, m) = 1.',
     followUpTwists: [
       {
         question: 'How do you avoid integer overflow when computing `lcm(a, b)`?',
@@ -882,9 +882,9 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Instead of multiplying 2 by itself 1,000 times, keep squaring it (2, 4, 16, 256...) and only multiply into your result for the 1-bits of the binary exponent—finishing in just 10 steps.',
     interviewScript30s:
-      '"Binary squaring inspects each bit of exponent `e` while reducing modulo `M` every multiplication, computing `a^e mod M` in O(log e) time and O(1) space without overflow."',
+      '"Binary exponentiation inspects each bit of exponent `e`, using O(log e) modular multiplications and O(1) auxiliary space. Reduce after each multiplication, but use a sufficiently wide/exact modular-multiply operation (such as BigInt in JavaScript) to avoid intermediate overflow."',
     chooseWhen: 'Large powers up to 10^18, combinatorics nCr mod 10^9+7 (Fermat inverse), Matrix Exponentiation for O(log N) linear recurrences.',
-    avoidWhen: 'Base or modulus exceeds 2^26 in JS Number (use BigInt to prevent 53-bit float precision loss).',
+    avoidWhen: 'The product of intermediate operands can exceed JavaScript Number safe-integer precision (use BigInt or a proven safe modular-multiplication method); reducing modulo M after an already-inexact multiplication is too late.',
     followUpTwists: [
       {
         question: 'How do you compute the 10^18-th Fibonacci number mod 10^9+7?',
@@ -952,7 +952,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you protect Quickselect against O(N²) worst case on all-duplicate arrays?',
         invariantShift: 'Combine Randomized Pivot with 3-Way Dutch Partition (`< pivot`, `== pivot`, `> pivot`): if target lies in the equal band, return immediately!',
-        complexityImpact: 'O(N) even when all 10^5 elements are identical.',
+        complexityImpact: 'O(N) for an all-equal array with 3-way partitioning (the equal band is resolved in one partition pass); randomized pivoting alone does not guarantee linear worst-case time on arbitrary inputs.',
       },
       {
         question: 'When should you prefer a Min-Heap over Quickselect in a system design interview?',
