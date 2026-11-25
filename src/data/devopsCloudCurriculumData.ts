@@ -512,7 +512,7 @@ ENTRYPOINT ["/api"]`,
       whatItIs:
         'Separating what runs (immutable versioned artifacts) from who is allowed to connect (short-lived runtime secrets injected securely into memory).',
       problemSolved:
-        'Prevents baking database passwords into Docker images or Git repos, and makes every rollback 100% deterministic because artifacts never mutate.',
+        'Keeps database passwords out of Docker images and source control when secrets are injected securely at runtime. Immutable, versioned artifacts make rollback more reproducible, but a full rollback also depends on compatible configuration, database migrations, external state and available dependencies.',
       whatBreaksIfSkipped:
         'A leaked .env file compromises production databases for months, and overwriting :latest tags makes emergency rollbacks impossible to reproduce.',
     },
