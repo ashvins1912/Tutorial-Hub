@@ -91,28 +91,41 @@ export function DpLearningLab() {
         ))}
       </div>
       <div className="mt-4 space-y-2">
-        {visibleProblems.map(([level, name, goal]) => (
-          <div
-            key={name}
-            className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700"
-          >
-            <button
-              type="button"
-              onClick={() => toggle(name)}
-              aria-label={'Mark ' + name + ' complete'}
-              className={completed.includes(name) ? 'mt-0.5 text-emerald-500' : 'mt-0.5 text-slate-300'}
-            >
-              <CheckCircle2 className="h-5 w-5" />
-            </button>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold">{name}</span>
-                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">· {level}</span>
+        {visibleProblems.map((problem, problemIndex) => {
+          const isDone = completedSet.has(problem.name);
+          const isOpen = expandedProblem === problem.name;
+          const panelId = 'dp-practice-details-' + problemIndex;
+          return <article key={problem.name} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-start gap-3 p-3">
+              <button
+                type="button"
+                onClick={() => toggle(problem.name)}
+                aria-pressed={isDone}
+                aria-label={isDone ? 'Mark ' + problem.name + ' incomplete' : 'Mark ' + problem.name + ' complete'}
+                className={isDone ? 'mt-0.5 text-emerald-500' : 'mt-0.5 text-slate-300'}
+              >
+                {isDone ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+              </button>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold">{problem.name}</span>
+                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400">· {problem.level}</span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">{problem.goal}</p>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">{goal}</p>
+              <button type="button" onClick={() => setExpandedProblem(isOpen ? null : problem.name)} aria-expanded={isOpen} aria-controls={panelId} aria-label={isOpen ? 'Hide details for ' + problem.name : 'Show details for ' + problem.name} className="shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold text-indigo-600 dark:border-slate-700 dark:text-indigo-300">
+                {isOpen ? 'Hide' : 'Details'}
+              </button>
             </div>
-          </div>
-        ))}
+            <div id={panelId} hidden={!isOpen} className="space-y-2 border-t border-slate-100 bg-slate-50 p-4 text-sm dark:border-slate-800 dark:bg-slate-950/40">
+              {isOpen ? <>
+                <p><span className="font-semibold">Problem:</span> {problem.statement}</p>
+                <p className="break-words"><span className="font-semibold">Example:</span> {problem.example}</p>
+                <p><span className="font-semibold">Hint:</span> {problem.hint}</p>
+              </> : null}
+            </div>
+          </article>;
+        })}
       </div>
     </article>
   </section>;
