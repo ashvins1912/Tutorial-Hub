@@ -3004,6 +3004,16 @@
         "tests/learning-engine/pattern-forge-pilot.test.mjs: canonical helper regression; CI run pending"
       ],
       "reviewStatus": "corrected-awaiting-ci"
+    },
+    {
+      "unitId": "pattern-forge:master-stage-unpublished-status-banner",
+      "sourcePath": "src/features/pattern-forge-unified/components/StageMasterView.tsx",
+      "reviewStatus": "ui-corrected-awaiting-ci",
+      "finding": "The Master stage displayed the mastery dashboard for inventory-only topics without an explicit publication/assessment gap banner, which could imply a fully published course.",
+      "fix": "Added a status banner for non-Published topics explaining that full five-stage content and transfer assessment are not published and that the dashboard does not certify course completion.",
+      "evidence": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: source-level unpublished-stage fallback/status assertions"
+      ]
     }
   ],
   "counts": {
@@ -3011,14 +3021,14 @@
     "testPathCount": 26,
     "allPathCount": 180,
     "reviewedPaths": 0,
-    "reviewedUnits": 22,
+    "reviewedUnits": 23,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 9,
     "unresolvedP0": 0,
     "unresolvedP1": 1,
     "contentAddedUnitsAwaitingCi": 4,
     "contentCorrectedUnitsAwaitingCi": 4,
-    "uiCorrectedUnitsAwaitingCi": 5
+    "uiCorrectedUnitsAwaitingCi": 6
   },
   "limitations": [
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
@@ -3037,7 +3047,7 @@
       "impact": "Learners cannot complete the full five-stage course for 25 canonical patterns; the inventory should remain clearly unpublished until complete verified content is authored.",
       "disposition": "Open; do not claim Pattern Forge course coverage is complete. Author and validate each topic's Understand, deterministic traces/checkpoints, multi-language implementations/test suites, practice/debugging, assessment, mastery and revision content.",
       "evidence": [
-        "tests/learning-engine/pattern-forge-pilot.test.mjs: governance assertion reports 3 published and 25 structurally valid only"
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: governance reports 3 Published and 25 structurally valid only; regression test confirms remaining 25 have no authored traces/problems/assessments and are unpublished"
       ]
     }
   ]
