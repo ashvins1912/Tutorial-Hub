@@ -103,7 +103,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'fast-slow-pointers': {
     algorithmId: 'fast-slow-pointers',
     simpleAnalogy:
-      'Two runners on a track where one runs twice as fast: on a straight road the fast runner finishes when the slow runner hits the exact halfway point; on a circular loop they are guaranteed to lap and collide.',
+      'Two runners move around a circular track at different speeds: if the faster runner gains on the slower runner, their positions eventually coincide after a whole-number number of steps. This models cycle detection; the proof depends on the step sizes and cycle structure, not on a straight-road halfway point.',
     interviewScript30s:
       '"Using a 1-step slow pointer and 2-step fast pointer detects cycles and splits lists in half in O(N) time and O(1) memory, avoiding an O(N) visited HashSet."',
     chooseWhen: 'Linked list cycle detection, cycle entry node, midpoint split, or implicit duplicate cycle (Find Duplicate Number #287).',
@@ -273,7 +273,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Splitting a shuffled stack of exams in half repeatedly until each pile has 1 paper, then neatly zipping pairs of sorted piles together while counting out-of-order pairs for free.',
     interviewScript30s:
-      '"Merge Sort guarantees worst-case O(N log N) and stability via T(N) = 2T(N/2) + O(N), while QuickSort gives O(1) extra space in practice when using randomized 3-way partitioning."',
+      '"Merge Sort has worst-case O(N log N) time and is stable when the merge preserves equal-key order; array implementations typically use O(N) auxiliary storage. Randomized 3-way QuickSort has expected O(N log N) time on suitable randomization assumptions and handles duplicates well, but it is not a general O(1)-auxiliary-space guarantee because recursion uses stack space and worst-case time remains O(N²)."',
     chooseWhen: 'Linked-list sorting, guaranteed O(N log N) stability, counting inversions / reverse pairs.',
     avoidWhen: 'Keys are bounded integers [0..K] where Counting/Radix/Cyclic Sort runs in O(N).',
     followUpTwists: [
