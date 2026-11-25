@@ -3,9 +3,9 @@
 ## Inventory snapshot
 
 - Registered learning surfaces: 22.
-- Reconciled content source paths: 153; registered test paths: 24; all unique registered paths: 177.
+- Reconciled content source paths: 154; registered test paths: 24; all unique registered paths: 178.
 - DSA course: 23 stable modules; 195 concepts; 138 glossary entries; 42 course code examples.
-- Dynamic Programming lab: 8 guided lessons and 20 practice problems. The 20 practice items now include a statement, example and hint each.
+- Dynamic Programming lab: 8 guided lessons and 20 practice problems. The 20 practice items now include a statement, example and hint each. The eight guided lesson records are extracted into a testable data module.
 - Matrix problem bank: 42 stable problem IDs, eight pattern groups and three difficulty levels.
 - Path-level completion is intentionally 0/177 at this stage. Registry reconciliation is not a review disposition.
 
@@ -39,7 +39,7 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 
 - CI run #812 passed the full listed suite and frontend build on tested commit `3ab3d99f1b916e291ca5976023b80efa45a6769c` before the later DP/matrix additions.
 - The latest registry, ledger, DP practice, matrix data/UI and additional tests are newer than #812 and require completed final-head CI.
-- The focused audit ledger currently records 12 content/UI units awaiting CI: 6 corrections, 2 additions, 2 content corrections and 2 UI corrections.
+- The focused audit ledger currently records 13 content/UI units awaiting CI: 6 corrections, 3 additions, 2 content corrections and 2 UI corrections.
 - The 177 registered paths and every unit inside them remain unreviewed except for the explicitly listed focused units. The full platform audit is not complete.
 
 ## Confidence statement
