@@ -39,7 +39,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "goal": "Split circular adjacency into two ranges.",
     "statement": "Houses form a circle; first and last are adjacent. Maximise non-adjacent sum.",
     "example": "[2,3,2] → 3",
-    "hint": "For n>1 solve [0,n−2] and [1,n−1]."
+    "hint": "For n>1, solve the two linear ranges that exclude either the first or last house, then take their maximum."
   },
   {
     "level": "Core",
