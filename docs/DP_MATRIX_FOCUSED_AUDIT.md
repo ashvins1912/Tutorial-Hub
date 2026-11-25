@@ -3,11 +3,11 @@
 ## Inventory snapshot
 
 - Registered learning surfaces: 22.
-- Reconciled content source paths: 154; registered test paths: 24; all unique registered paths: 178.
+- Reconciled content source paths: 154; registered test paths: 26; all unique registered paths: 180.
 - DSA course: 23 stable modules; 195 concepts; 138 glossary entries; 42 course code examples.
 - Dynamic Programming lab: 8 guided lessons and 20 practice problems. The 20 practice items now include a statement, example and hint each. The eight guided lesson records are extracted into a testable data module.
 - Matrix problem bank: 42 stable problem IDs, eight pattern groups and three difficulty levels.
-- Path-level completion is intentionally 0/177 at this stage. Registry reconciliation is not a review disposition.
+- Path-level completion is intentionally 0/180; inventory registration is not review disposition. Registry reconciliation is not a review disposition.
 
 ## Corrections and additions in this pass
 
@@ -37,10 +37,11 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 
 ## Current verification
 
-- CI run #812 passed the full listed suite and frontend build on tested commit `3ab3d99f1b916e291ca5976023b80efa45a6769c` before the later DP/matrix additions.
-- The Latest registry, ledger, DP lesson extraction/search, matrix sample correction and UI/test changes are newer than #812 and require completed final-head CI.
-- The focused audit ledger currently records 16 content/UI units awaiting CI: 6 corrections, 3 additions, 2 content corrections and 2 UI corrections.
-- The 178 registered paths and every unit inside them remain unreviewed except for the explicitly listed focused units. The full platform audit is not complete.
+- CI #891 passed on content/test commit `7f94da1ab2aa156af4f59c8b1a0f919c1fed693f` (type-check, DSA inventories/pilot/solutions, security and content authorization checks, learning-surface and ledger validation, advisory scans and frontend build).
+- CI #892 passed on report commit `035cebbce1bbf743a63afccc689a8efe701adfc1`; no application source changed between #891 and #892.
+- Latest registry/ledger and Pattern Forge mastery-stepper accessibility test were added after #892. Run #898 is validating test commit `fe0a7a0a387122dddec64b6c6e4429bfd26be6d5` and is still in progress at this update.
+- The focused audit ledger currently records **19 units** awaiting final evidence: 6 targeted corrections, 4 content additions, 4 content corrections and 5 UI corrections. `verifiedUnits` remains 0 by design until evidence-backed unit disposition; path-level completion remains 0/180.
+- The registered path inventory now includes 22 surfaces, 154 content paths, 26 test paths and 180 unique paths. Dynamic/DB/generated/user-authored content remains to be reconciled beyond this static registry.
 
 ## Confidence statement
 
@@ -58,11 +59,11 @@ Each of the 42 matrix problems now includes a concrete example input and expecte
 - Clarified House Robber's DP state as a prefix length, aligned its recurrence/base with the rolling implementation, and documented the choose-none behavior for empty/all-negative inputs.
 - DP practice now searches problem names, goals, statements, examples, hints and levels, and announces an empty result. The Java code heading explicitly says these are method snippets requiring imports/class context.
 - Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the current extraction and cleanup are newer than the latest completed validation and must be checked on final head.
-- The ledger now records 16 focused units: 6 targeted corrections, 3 content additions, 4 content corrections and 3 UI corrections, all pending exact-head CI. This is still a focused set; path-level completion remains 0/178.
+- The ledger now records 19 focused units: 6 targeted corrections, 4 content additions, 4 content corrections and 5 UI corrections, all awaiting final evidence. This is still a focused set; path-level completion remains 0/180.
 
 
 ## DSA roadmap focused pass
 
-The 55-topic roadmap was inspected. 54 topics had no authored pitfalls and all topics used a generic practice fallback; the UI also omitted the outcome and practice fields. The roadmap helper now generates contextual scaffold prompts from each topic's title, first subtopic, recognition signal and outcome; the UI renders learning outcomes and guided practice, searches those fields, filters/deduplicates persisted progress and exposes mastery state.
+The 55-topic roadmap was inspected. The helper supplies contextual scaffold prompts from each topic's title, first subtopic, recognition signal and outcome; the sliding-window topic now includes explicit pitfalls about negative values, frequency updates and monotonicity. The UI renders outcomes and practice prompts, searches those fields, filters/deduplicates persisted progress and exposes mastery state. It now explicitly disclaims that prompts are full problem briefs, worked solutions or proofs.
 
 These prompts are explicitly labeled as scaffolds, not topic-specific fully worked problem sets. The new roadmap quality test checks the 55-topic inventory, stable IDs, prerequisite references, required outcomes/pitfalls/practice and UI state/search assertions. Whole-roadmap semantic review remains open.
