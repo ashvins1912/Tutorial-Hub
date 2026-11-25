@@ -1455,7 +1455,7 @@ export const DATABASE_MASTERY_QUIZ: DatabaseQuizQuestion[] = [
     options: [
       {
         id: 'a',
-        text: 'Log-based change data capture (CDC) reads committed changes from PostgreSQL's write-ahead log (WAL) and publishes them asynchronously. It avoids an application-level dual write, but delivery guarantees depend on the connector, checkpointing, retries, WAL retention, schema handling and downstream availability. Consumers should be idempotent and monitor lag. CDC does not create an atomic transaction across PostgreSQL and a downstream system.',
+        text: 'Log-based change data capture (CDC) reads committed changes from the PostgreSQL write-ahead log (WAL) and publishes them asynchronously. It avoids an application-level dual write, but delivery guarantees depend on the connector, checkpointing, retries, WAL retention, schema handling and downstream availability. Consumers should be idempotent and monitor lag. CDC does not create an atomic transaction across PostgreSQL and a downstream system.',
         isCorrect: true,
         reason:
           'Correct! Dual writes cannot share an atomic transaction across Postgres and HTTP APIs. Tailing logical WAL with Debezium captures committed database changes for downstream consumers. Convergence still depends on connector health, retained WAL, consumer retries/checkpoints, idempotent writes, schema compatibility and lag monitoring; a connector outage or retention gap needs an explicit recovery plan.',
