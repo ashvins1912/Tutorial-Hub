@@ -20,7 +20,7 @@ The repository snapshot contains 525 tracked blobs. These are inventory figures,
 ## Work included in this PR
 
 1. `docs/LEARNER_CONTENT_TECHNICAL_WRITING_STANDARD.md`: detailed writing and technical-review standard grounded in the requested books/educators, with original content only.
-2. `scripts/audit-learner-content-sentence-inventory.mjs`: extracts static literal/JSX text candidates from registered source paths, records file/line/property and marks every candidate unreviewed by default.
+2. `scripts/audit-learner-content-sentence-inventory.mjs`: extracts static literal/JSX text candidates from registered source paths, records file/line/property and marks every candidate unreviewed by default. CI extracted 72,747 candidates from 149 sources; these include internal/non-rendered/code strings and are not a sentence-review completion count.
 3. `tests/content-authoring/learner-content-inventory.test.mjs`: verifies broad source coverage, source-path integrity and that extraction does not silently mark content reviewed.
 4. `package.json`: exposes `npm run audit:learner-sentences`.
 5. `src/data/dsaCompleteLessons.ts` and `src/components/CompleteDsaCourse.tsx`: added 46 plain-language term definitions/examples across all 23 DSA modules and a dedicated glossary UI; improved code-example reading with line numbers, a clear explanation label and a guided trace prompt.
