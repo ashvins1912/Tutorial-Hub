@@ -50,7 +50,7 @@ These are registry path counts, not rendered sentence counts. The repository had
 ## Validation
 
 - Local typecheck/build was not available in this execution environment.
-- GitHub Actions passed typecheck, the content-authoring tests (including the sentence inventory and glossary tests), existing regression checks and frontend build on commit `dd7c6a1e4b1291b3621b8a1cd5b6d582d52b0fab`.
+- GitHub Actions passed typecheck, the content-authoring tests (including the sentence inventory and glossary tests), existing regression checks and frontend build on commit `b7414030d292d42db948bdf3eac3153744f91f36`. The latest head contains evidence-document updates after that successful source validation; its workflow is running.
 - Later changes are primarily additional source wording and evidence updates; validate the current head before merge.
 - Do not merge until current-head typecheck, inventory test, existing regressions and build pass and remaining review gates are resolved or explicitly scoped.
 
