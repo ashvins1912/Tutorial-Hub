@@ -12,6 +12,7 @@ test('arrays pilot is a complete learning unit, not only an outline', () => {
   assert.ok(lesson.codeExamples.every((item) => item.language && item.title && item.code && item.explanation));
   assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'JavaScript (Node.js)' && item.title === 'Difference array for offline range additions'));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.assessment.length >= 5, 'assessment must test transfer, edge cases and complexity');
 });
@@ -22,7 +23,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-test('arrays Java and Python examples execute against expected outputs', () => {
+test('arrays Java, JavaScript and Python examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'arrays');
   const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const pythonExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Python'));
@@ -51,6 +52,24 @@ test('arrays Java and Python examples execute against expected outputs', () => {
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
     const execute = spawnSync('java', ['ArrayLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+
+    const javascriptExample = lesson.codeExamples.find((item) => item.language === 'JavaScript (Node.js)' && item.title === 'Difference array for offline range additions');
+    assert.ok(javascriptExample, 'JavaScript difference-array example must exist');
+    const javascriptSource = javascriptExample.code + `
+if (JSON.stringify(applyRangeAdds([1, 2, 3, 4, 5], [[1, 3, 4], [2, 4, -2]])) !== JSON.stringify([1, 6, 5, 6, 3])) throw new Error('overlapping updates');
+if (JSON.stringify(applyRangeAdds([7], [[0, 0, 5]])) !== JSON.stringify([12])) throw new Error('last-index sentinel');
+if (JSON.stringify(applyRangeAdds([1, 2, 3], [])) !== JSON.stringify([1, 2, 3])) throw new Error('no updates');
+if (JSON.stringify(applyRangeAdds([], [])) !== JSON.stringify([])) throw new Error('empty input');
+let invalidRangeRejected = false;
+try { applyRangeAdds([1, 2], [[0, 2, 1]]); } catch (error) { invalidRangeRejected = error instanceof RangeError; }
+if (!invalidRangeRejected) throw new Error('invalid range must reject');
+let unsafeDifferenceRejected = false;
+try { applyRangeAdds([Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER], []); } catch (error) { unsafeDifferenceRejected = error instanceof RangeError; }
+if (!unsafeDifferenceRejected) throw new Error('unsafe difference must reject');
+`;
+    writeFileSync(join(directory, 'array_lesson_examples.js'), javascriptSource);
+    const javascript = spawnSync('node', ['array_lesson_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(javascript.status, 0, javascript.stderr || javascript.stdout);
 
     const pythonSource = pythonExamples.map((item) => item.code).join('\n\n') + '\nassert build_prefix([3, -2, 5, 1]) == [0, 3, 1, 6, 7]\nassert sum_range(build_prefix([3, -2, 5, 1]), 1, 4) == 4\nassert apply_range_adds([1, 2, 3, 4, 5], [(1, 3, 4), (2, 4, -2)]) == [1, 6, 5, 6, 3]\nassert apply_range_adds([7], [(0, 0, 5)]) == [12]\nassert apply_range_adds([1, 2, 3], []) == [1, 2, 3]\nassert apply_range_adds([], []) == []\n';
     writeFileSync(join(directory, 'array_lesson_examples.py'), pythonSource);

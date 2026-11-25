@@ -127,6 +127,52 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       { language: 'Java 21', title: 'Prefix sums and half-open range queries', code: 'static long[] buildPrefix(int[] values) {\n    long[] prefix = new long[values.length + 1];\n    for (int i = 0; i < values.length; i++) {\n        prefix[i + 1] = prefix[i] + values[i];\n    }\n    return prefix;\n}\n\nstatic long sumRange(long[] prefix, int left, int rightExclusive) {\n    if (left < 0 || rightExclusive < left || rightExclusive >= prefix.length) {\n        throw new IndexOutOfBoundsException();\n    }\n    return prefix[rightExclusive] - prefix[left];\n}', explanation: 'prefix[i] is the sum of the first i values. A query [left,rightExclusive) subtracts the prefix before left from the prefix at the right boundary. rightExclusive == n is valid.' },
       { language: 'Java 21', title: 'Stable in-place compaction', code: 'static int removeValue(int[] values, int target) {\n    int write = 0;\n    for (int read = 0; read < values.length; read++) {\n        if (values[read] != target) {\n            values[write++] = values[read];\n        }\n    }\n    return write;\n}', explanation: 'The read pointer visits each original element once. The write pointer never moves ahead of read, so unread values are not overwritten. The retained prefix preserves original order.' },
       { language: 'Java 21', title: 'Difference array for offline range additions', code: 'static long[] applyRangeAdds(int[] values, int[][] updates) {\n    long[] diff = new long[values.length + 1];\n    if (values.length > 0) diff[0] = values[0];\n    for (int i = 1; i < values.length; i++) diff[i] = (long) values[i] - values[i - 1];\n    for (int[] update : updates) {\n        int left = update[0], rightInclusive = update[1], delta = update[2];\n        if (left < 0 || rightInclusive < left || rightInclusive >= values.length) throw new IndexOutOfBoundsException();\n        diff[left] += delta;\n        diff[rightInclusive + 1] -= delta;\n    }\n    long[] result = new long[values.length];\n    long running = 0;\n    for (int i = 0; i < values.length; i++) {\n        running += diff[i];\n        result[i] = running;\n    }\n    return result;\n}', explanation: 'Each inclusive update writes only two boundary deltas. A final prefix scan applies all updates in O(n + u) time and O(n) extra space. The n+1 sentinel makes rightInclusive + 1 safe when the update ends at the final element.' },
+      { language: 'JavaScript (Node.js)', title: 'Difference array for offline range additions', code: `function applyRangeAdds(values, updates) {
+  if (!Array.isArray(values) || !Array.isArray(updates)) {
+    throw new TypeError('values and updates must be arrays');
+  }
+  if (!values.every(Number.isSafeInteger)) {
+    throw new RangeError('values must contain safe integers');
+  }
+
+  const diff = new Array(values.length + 1).fill(0);
+  if (values.length > 0) diff[0] = values[0];
+  for (let i = 1; i < values.length; i++) {
+    diff[i] = values[i] - values[i - 1];
+    if (!Number.isSafeInteger(diff[i])) {
+      throw new RangeError('difference exceeds JavaScript safe integer range');
+    }
+  }
+
+  for (const update of updates) {
+    if (!Array.isArray(update) || update.length !== 3) {
+      throw new TypeError('each update must be [left, rightInclusive, delta]');
+    }
+    const [left, rightInclusive, delta] = update;
+    if (![left, rightInclusive, delta].every(Number.isSafeInteger)) {
+      throw new RangeError('update values must be safe integers');
+    }
+    if (left < 0 || rightInclusive < left || rightInclusive >= values.length) {
+      throw new RangeError('invalid inclusive update range');
+    }
+    diff[left] += delta;
+    diff[rightInclusive + 1] -= delta;
+    if (!Number.isSafeInteger(diff[left]) || !Number.isSafeInteger(diff[rightInclusive + 1])) {
+      throw new RangeError('update delta exceeds JavaScript safe integer range');
+    }
+  }
+
+  const result = [];
+  let running = 0;
+  for (let i = 0; i < values.length; i++) {
+    running += diff[i];
+    if (!Number.isSafeInteger(running)) {
+      throw new RangeError('result exceeds JavaScript safe integer range');
+    }
+    result.push(running);
+  }
+  return result;
+}`, explanation: 'Each inclusive update writes two boundary deltas, then one prefix scan materializes the final values in O(n + u) time and O(n) extra space. The n+1 sentinel safely handles an update ending at the final element. Because JavaScript Number is exact only within the safe-integer range, this version rejects unsafe inputs and intermediate results.' },
       { language: 'Python 3', title: 'Prefix sums and range queries', code: 'def build_prefix(values):\n    prefix = [0]\n    for value in values:\n        prefix.append(prefix[-1] + value)\n    return prefix\n\ndef sum_range(prefix, left, right_exclusive):\n    if left < 0 or right_exclusive < left or right_exclusive >= len(prefix):\n        raise IndexError(\"invalid range\")\n    return prefix[right_exclusive] - prefix[left]', explanation: 'Python integers grow as needed, but the invariant is the same. The right endpoint is exclusive, matching Python slicing.' },
       { language: 'Python 3', title: 'Difference array for offline range additions', code: 'def apply_range_adds(values, updates):\n    diff = [0] * (len(values) + 1)\n    if values:\n        diff[0] = values[0]\n    for i in range(1, len(values)):\n        diff[i] = values[i] - values[i - 1]\n    for left, right_inclusive, delta in updates:\n        if left < 0 or right_inclusive < left or right_inclusive >= len(values):\n            raise IndexError("invalid update range")\n        diff[left] += delta\n        diff[right_inclusive + 1] -= delta\n    result = []\n    running = 0\n    for i in range(len(values)):\n        running += diff[i]\n        result.append(running)\n    return result', explanation: 'Boundary deltas encode each inclusive update; one prefix scan materializes the final values. Runtime is O(n + u), where u is the number of updates.' }
     ],

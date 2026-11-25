@@ -45,3 +45,8 @@ The Arrays reference lesson now includes matching Java 21 and Python 3 differenc
 ### Difference-array initial-state correction
 
 A follow-up regression review caught that initializing `diff[i]` with `values[i]` only works for a zero-based initial array. The implementation now derives the initial difference representation (`diff[0] = values[0]`; `diff[i] = values[i] - values[i-1]`) before applying update boundary deltas. Java uses a widened subtraction to avoid 32-bit overflow when adjacent input values are far apart. Executable tests cover overlapping updates, final-index sentinel handling, no updates, and empty input. The earlier CI failure was caused by this initial-state defect; the corrected change is being revalidated.
+
+
+### JavaScript difference-array parity
+
+The Arrays reference lesson now also includes a Node.js implementation of offline inclusive range additions. It preserves the initial array through the difference representation, uses the `n + 1` sentinel, and rejects malformed ranges and unsafe JavaScript integer intermediates rather than silently returning imprecise Number results. CI executes the stored Java 21, JavaScript (Node.js), and Python 3 examples against overlapping updates, final-index updates, no updates, empty input, and invalid/unsafe cases. This remains a lesson-level implementation improvement, not a claim that the complete Arrays topic or all 293 interview records are source-verified.
