@@ -302,7 +302,7 @@ export const SQL_MASTERY_PATTERNS: SqlMasteryPattern[] = [
     title: 'DDL: Declarative Partitioning, Constraints & Zero-Downtime Migrations',
     subtitle: 'CREATE, ALTER, TRUNCATE, PARTITION BY RANGE, CONCURRENTLY & lock_timeout',
     simpleEnglish:
-      'Structure tables with time-ordered IDs and monthly drawers you can detach in milliseconds, and always add a 2-second lock seatbelt before altering live production tables.',
+      'For time-based retention, consider range partitioning so old partitions can be detached or dropped instead of deleting every row. Plan lock_timeout and statement_timeout for each migration based on the operation and service SLO; rehearse lock behavior and retry safely rather than relying on a universal two-second value.',
     standardDefinition:
       'Data Definition Language (DDL) schema orchestration governing physical table layout, declarative range partitioning, integrity constraints, and non-blocking metadata evolution.',
     antiPatternTitle: 'Anti-Pattern: Blocking DDL & Random UUIDv4 + Bulk DELETE',
