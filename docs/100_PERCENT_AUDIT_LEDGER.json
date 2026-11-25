@@ -1,0 +1,2614 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "branch": "main",
+    "registryBlobSha": "8854ef3fe2f56c1ee095e65c0adea92a149a2d78",
+    "registrySurfaceCount": 22,
+    "contentSourcePathCount": 149,
+    "testSourcePathCount": 15,
+    "allRegisteredPathCount": 164
+  },
+  "purpose": "Exhaustive path-level audit ledger. Registry membership is inventory only. No path is marked reviewed unless every relevant unit and behavior is dispositioned with evidence.",
+  "status": "in_progress",
+  "completionRule": "All content units, runtime variants and applicable UI states must have evidence-backed dispositions; static path review alone does not establish 100% learner-visible coverage.",
+  "surfaces": [
+    {
+      "surfaceId": "solver",
+      "title": "Universal problem solver",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "knowledge-engine",
+      "title": "Concept knowledge engine",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "ai-academy",
+      "title": "AI engineering academy",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "workspace",
+      "title": "DSA curriculum workspace",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "algorithms",
+      "title": "Algorithms studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "fuzzy-search",
+      "title": "N-gram and fuzzy search lab",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "ood",
+      "title": "OOP, SOLID and design patterns",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "ai-engineering",
+      "title": "AI engineering studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "db-internals",
+      "title": "Database internals studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "devops-cloud",
+      "title": "DevOps and cloud studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "flight-simulator",
+      "title": "SDLC and architecture flight simulator",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "languages",
+      "title": "Programming languages studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "full-stack",
+      "title": "Full-stack systems studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "system-design",
+      "title": "System design studio",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "revision",
+      "title": "Quick revision hub",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "skill-tree",
+      "title": "Noob-to-pro skill tree",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "schemas",
+      "title": "Database and API schemas reference",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "roadmap",
+      "title": "Topic and interview problem bank",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "sprint",
+      "title": "Interview sprint war room",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "community",
+      "title": "Community and pair programming",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "profile",
+      "title": "Learner profile and progress",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    },
+    {
+      "surfaceId": "pattern-forge",
+      "title": "Pattern Forge unified five-stage learning workspace",
+      "contentStatus": "not_reviewed",
+      "uiStatus": "not_reviewed",
+      "contentUnitsTotal": null,
+      "contentUnitsDispositioned": 0,
+      "requiredStatesTotal": null,
+      "requiredStatesDispositioned": 0,
+      "unresolvedFindings": []
+    }
+  ],
+  "paths": [
+    {
+      "path": "server/modules/content-authoring/contentAuthoring.routes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/aiAcademyProgressRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/codeExecutionRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/cognitiveRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "revision"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/communityRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "community"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/contentBootstrapRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/interviewProblemRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/learningEngineRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/learningProgressRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "knowledge-engine",
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/problemRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/profileRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/sprintRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "sprint"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/systemDesignAiRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/universalSolverRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/routes/userStateRoutes.ts",
+      "roles": [
+        "api"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "server/seed/bigTechTopicSeed.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "sprint"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "shared/learningContract.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "shared/masteryEngine.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "shared/patternForgeCurriculum.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "shared/pilotPatternsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "shared/traceEngine.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/AiEngineeringStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "ai-engineering"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/algorithms/AlgorithmsStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/algorithms/AlgorithmVisualStage.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/algorithms/SortingAlgorithmLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/cognitive/ConceptAcademyDrawer.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "skill-tree"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/cognitive/NoobToProSkillTree.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "skill-tree",
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/CommunityHubView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "community"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/CompleteDsaCourse.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/CompleteDsaRoadmap.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/database/DatabaseInternalsStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/database/DatabasePracticeWorkbench.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/database/DeadlockWaitForVisualizer.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/database/PitrRecoveryPlayground.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/database/QueryPipelinePlayground.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/devops/CloudDevCompleteTutorial.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/devops/DevOpsCloudStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/devops/DevOpsInteractiveSimulators.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/devops/DevOpsVisualPlayground.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/flight/FlightMermaidViewer.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "flight-simulator"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/flight/FlightSimulatorStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "flight-simulator"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fullstack/FullStackStoryboardAnimator.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fullstack/FullStackSystemsStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fullstack/RuntimeAndInfraInternalsLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fullstack/StorageAndDiagnosticsLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fuzzy/NGramFuzzyStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fuzzy/NGramVisualStage.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/fuzzy/PruningLogicSimulator.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/interview/ProductCompanyMasterBankView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/interview/TopicPatternExplorer.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/languages/CollectionsConcurrencyPlayground.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/languages/LanguagePracticeWorkbench.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/languages/LanguagesTutorialStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/languages/LanguageVisualAnimator.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/languages/MultithreadingTelemetryLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/languages/OopCustomDsAcademy.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "ood"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/MasteryStepper.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/OodAnimationStage.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "ood"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/OodPrinciplesStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "ood"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/PairProgrammingCanvas.jsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "community"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/Patterns28RoadmapView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/ProblemBank45View.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/profile/DbSyncInspectorCard.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/profile/MonthlyLearningResetCard.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/ProfileStatsView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/QuickRevisionHub.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "revision"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/SchemasReferenceView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "schemas"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/shared/MasteryReviewPanel.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "revision"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/sprint/Mock45SimulatorModal.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "sprint"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/sprint/SprintConfiguratorModal.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "sprint"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/sprint/SprintWarRoomDashboard.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "sprint"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/system-design/FrontierLlmArchitectureLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "ai-engineering"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/system-design/RealWorldArchitecturesAndInterviewLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/system-design/SystemDfdSimulator.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/system-playground/SystemPlayground.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/SystemDesignLearningAcademy.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/components/SystemDesignStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/academyResources.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "revision"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/aiEngineeringData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-engineering"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/aiStudioDeepEnrichmentData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-engineering"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/algorithmCombinationsAndRoadmap.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/algorithmsCatalog.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "solver",
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/algorithmsMasterAdvancedPack.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/algorithmsMasterCorePack.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/algorithmsMasterSystemsPack.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/canonicalDataRegistry.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/completeDsaRoadmap.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace",
+        "skill-tree"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/curriculum.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace",
+        "skill-tree"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/databaseInternalsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/databaseTaxonomyAndSqlData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/databaseVisualData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/dbQueryDataFlowData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "db-internals"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/devopsCloudCurriculumData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/devopsCloudDeepGapsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/dockerK8sCloudDevTutorialData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "devops-cloud"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/dsa28Patterns.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "roadmap",
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/dsaCompleteLessons.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/flightSimulatorData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "flight-simulator"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/fullStackArchitectureData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/fullStackDeepEnrichmentData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/fuzzyCurriculumModules.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/highRoi45.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "roadmap",
+        "sprint"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/javaPythonCodingMasteryData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/langCollectionsConcurrencyData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/langConcurrencyExceptionsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/languagesTutorialData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "languages"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/llmFrontierArchitectureData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-engineering"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/mongooseSchemas.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "db-internals",
+        "schemas"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/ngramTaxonomy.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/ngramTaxonomyPart1.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/ngramTaxonomyPart2.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "fuzzy-search"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/ood/extendedPatternsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ood"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/ood/oopsAndSolidData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ood"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/ood/patternsAndOodData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ood"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/problems.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/productCompanyMasterBank.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/realWorldPlaygroundBlueprints.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/realWorldSystemBlueprintsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/runtimeAndInfraInternalsData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "full-stack"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/systemDesignData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/systemDesignMasterRoadmapData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/systemDfdLibraryData.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "system-design"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/data/topInterview100.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/ai-academy/components/AIEngineeringAcademy.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/ai-academy/data/aiEngineeringCurriculum.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/ai-academy/data/aiEngineeringDeepDiveLessons.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/ai-academy/data/aiEngineeringExtraLessons.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/ai-academy/data/aiEngineeringMcpSystems.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/ai-academy/data/aiEngineeringRagSystems.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/intelligent-engine/components/CodeExecutionLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/intelligent-engine/components/IntelligentEngineStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/intelligent-engine/components/PublishedLessonView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/components/StageImplementView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/components/StageMasterView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/components/StagePracticeView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/components/StageUnderstandView.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/UnifiedPatternForgeWorkspace.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/pattern-forge-unified/useUnifiedLearningStore.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/solver-studio/AdaptiveCoachPanel.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/solver-studio/GuidedLogicBuilderPanel.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/solver-studio/OptimizationCheckerPanel.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/solver-studio/PulledProblemLibraryPanel.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/solver-studio/systemProblemsAdapter.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/solver-studio/UniversalSolverStudio.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "solver"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/topics/components/CurriculumWorkbench.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/features/topics/data/curriculumIndex.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/store/usePatternForgeStore.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "src/store/useSprintStore.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/ai-academy-curriculum.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/ai-academy-progress.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "ai-academy"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/application-content-audit.test.mjs",
+      "roles": [
+        "global-test"
+      ],
+      "surfaceIds": [],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/code-execution.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/generation.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/learning-content-quality-audit.test.mjs",
+      "roles": [
+        "global-test"
+      ],
+      "surfaceIds": [],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/learning-progress-grading.test.mjs",
+      "roles": [
+        "global-test"
+      ],
+      "surfaceIds": [],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/learning-progress.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "profile"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/learning-runtime.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/phase1.test.mjs",
+      "roles": [
+        "global-test"
+      ],
+      "surfaceIds": [],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/published-lesson-security.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "knowledge-engine"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/visualization-renderer.test.mjs",
+      "roles": [
+        "global-test"
+      ],
+      "surfaceIds": [],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/dsa/arrays-batch-01.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "workspace",
+        "algorithms"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/dsa/master-interview-inventory.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "workspace",
+        "roadmap"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
+      "path": "tests/learning-engine/pattern-forge-pilot.test.mjs",
+      "roles": [
+        "test",
+        "global-test"
+      ],
+      "surfaceIds": [
+        "pattern-forge"
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    }
+  ],
+  "reviewedUnits": [
+    {
+      "unitId": "dsa-course:stacks-queues:js-sliding-window-maximum",
+      "sourcePath": "src/data/dsaCompleteLessons.ts",
+      "reviewStatus": "corrected-awaiting-ci",
+      "finding": "JavaScript head-cursor deque retained expired indices, causing O(n) backing storage despite O(k) auxiliary-space claim.",
+      "fix": "Periodic stale-prefix compaction added; code explanation now states O(n) amortized compaction and O(k) retained index storage.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-structure-inventory.test.mjs: brute-force correctness and compaction guard"
+      ]
+    },
+    {
+      "unitId": "dsa-course:hash-map:java-two-sum",
+      "sourcePath": "src/data/dsaCompleteLessons.ts",
+      "reviewStatus": "corrected-awaiting-ci",
+      "finding": "int subtraction for target-value could overflow and create a false complement match.",
+      "fix": "Widened subtraction to long and range-check before narrowing in map and set examples.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-code-examples.test.mjs: Java compilation/runtime overflow cases"
+      ]
+    },
+    {
+      "unitId": "dsa-course:binary-tree:java-diameter",
+      "sourcePath": "src/data/dsaCompleteLessons.ts",
+      "reviewStatus": "corrected-awaiting-ci",
+      "finding": "Static diameter accumulator could retain the previous tree's result across calls.",
+      "fix": "Replaced static field with per-call accumulator and return value.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-code-examples.test.mjs: repeated independent tree calls"
+      ]
+    }
+  ],
+  "counts": {
+    "registeredContentPathCount": 149,
+    "testPathCount": 15,
+    "allPathCount": 164,
+    "reviewedPaths": 0,
+    "reviewedUnits": 3,
+    "verifiedUnits": 0,
+    "correctedUnitsAwaitingCi": 3,
+    "unresolvedP0": 0,
+    "unresolvedP1": 0
+  },
+  "limitations": [
+    "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
+    "Dynamic/database/generated/user-authored content and UI state variants are not yet fully enumerated.",
+    "The three corrected DSA units await current-head CI; do not count them verified until tests pass."
+  ]
+}
