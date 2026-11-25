@@ -357,7 +357,7 @@ def has_cycle(head):
         fast = fast.next.next
         if slow is fast:
             return True
-    return False`, explanation: 'The algorithm is O(n) time and O(1) auxiliary space. Python is compares node object identity, not values. Reversal mutates the original nodes.' },
+    return False`, explanation: 'The algorithm is O(n) time and O(1) auxiliary space. Python's is operator compares node object identity, not values. Reversal mutates the original nodes.' },
     ],
     traceExercises: [
       'Reverse A → B → C → null. After each iteration, draw prev, curr, next and all next arrows.',
@@ -2474,7 +2474,7 @@ static boolean hasPairWithSum(int[] values, int target) {
         earlier.add(value);
     }
     return false;
-}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup illustrates the earlier-values invariant and answers existence in expected O(n) time with O(n) space. Use a map instead when the actual matching indices must be returned.' }
+}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup widens complement arithmetic before subtraction and checks the int range, then applies the earlier-values invariant. Expected O(n) time and O(n) space. Use a map instead when matching indices are required.' }
     ],
     traceExercises: [
       'Trace LinkedHashSet on [4,1,2,1,3,4]. Show membership and output after each input.',
@@ -2647,7 +2647,7 @@ static boolean hasPairWithSum(int[] values, int target) {
         earlierIndex.putIfAbsent(values[i], i);
     }
     return new int[0];
-}`, explanation: 'Lookup occurs before insertion so an element cannot pair with itself. putIfAbsent retains the earliest index for duplicate values. Expected O(n) time and O(n) space.' }
+}`, explanation: 'Lookup occurs before insertion so an element cannot pair with itself. Complement arithmetic is widened before subtraction and range-checked before narrowing, avoiding int-overflow false positives. putIfAbsent retains the earliest index for duplicate values. Expected O(n) time and O(n) space.' }
     ],
     traceExercises: [
       'Frequency trace: process [a,b,a,c,b,a] and write the full map after each item.',
