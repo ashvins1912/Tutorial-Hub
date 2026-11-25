@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -182,6 +182,7 @@ export default function App() {
 
   const [workspaceMode, setWorkspaceMode] = useState<'curriculum' | 'classic-lab'>('curriculum');
   const [jumpTopicId, setJumpTopicId] = useState<string | null>(null);
+  const consumeExternalTopic = useCallback(() => setJumpTopicId(null), []);
   const [drillModalOpen, setDrillModalOpen] = useState(false);
 
   const [academyOpen, setAcademyOpen] = useState(false);
@@ -590,7 +591,7 @@ export default function App() {
         <main className="flex-1 w-full">
           <UnifiedPatternForgeWorkspace
             externalTopicId={jumpTopicId}
-            onConsumeExternalTopic={() => setJumpTopicId(null)}
+            onConsumeExternalTopic={consumeExternalTopic}
           />
         </main>
       ) : activeView === 'solver' ? (
