@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "baseline": {
-    "registryBlobSha": "fa63408b0a94122836993d0620d5d175ab11c715",
+    "registryBlobSha": "e1f6a60c26d0f0f0c65b97464fc31c2feb230d94",
     "registrySurfaceCount": 22,
-    "contentSourcePathCount": 153,
+    "contentSourcePathCount": 154,
     "testSourcePathCount": 24,
-    "allRegisteredPathCount": 177
+    "allRegisteredPathCount": 178
   },
   "purpose": "Exhaustive path-level audit ledger. Registry membership is inventory only. No path is marked reviewed unless every relevant unit and behavior is dispositioned with evidence.",
   "status": "in_progress",
@@ -1609,6 +1609,15 @@
       "evidence": []
     },
     {
+      "path": "src/data/dpGuidedLessons.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "src/data/dpPracticeProblems.ts",
       "roles": [
         "data"
@@ -2762,7 +2771,7 @@
     },
     {
       "unitId": "dp-lab:guided-code-bounds-and-complexity",
-      "sourcePath": "src/components/DpLearningLab.tsx",
+      "sourcePath": "src/data/dpGuidedLessons.ts",
       "reviewStatus": "content-corrected-awaiting-ci",
       "finding": "Several DP examples used int without bounds, could silently overflow, lacked input/memo guards, and LCS compared UTF-16 char units.",
       "fix": "Added nonnegative/bounded stair inputs, checked long arithmetic, memo length validation, long grid/knapsack states, code-point LCS, and a split-based interval loop with explicit k<r.",
@@ -2812,9 +2821,9 @@
     }
   ],
   "counts": {
-    "registeredContentPathCount": 153,
+    "registeredContentPathCount": 154,
     "testPathCount": 24,
-    "allPathCount": 177,
+    "allPathCount": 178,
     "reviewedPaths": 0,
     "reviewedUnits": 13,
     "verifiedUnits": 0,
