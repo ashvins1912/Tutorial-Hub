@@ -78,3 +78,23 @@ This PR makes targeted corrections in three canonical web-UI content files and r
 - Content-only edits; no routes, component behavior, canonical IDs, learner progress, quiz history, API contracts or database schema changes intended.
 - No deployment, hosting changes or external costs.
 - Validate with the repository's normal typecheck, lint, content-quality audit, tests and production build. Review animation output manually to confirm the revised text remains accurate in context.
+
+
+## Additional semantic corrections from the expanded source review
+
+The review was extended beyond the initial three files to algorithm catalogs, tutor guides and system-design roadmap content. The following source-level claims were corrected:
+
+| Source | Finding | Correction |
+|---|---|---|
+| `src/data/algorithmsCatalog.ts` | Sliding-window complexity was stated as a guaranteed bound without explaining the amortized pointer argument. | Added the at-most-once entry/exit reasoning for O(N) total pointer movement. |
+| `src/data/algorithmsCatalog.ts` | Floyd cycle collision bound used an undefined `C` and omitted cycle-entry distance. | Replaced with the finite-cycle eventual-meeting statement and noted the bound depends on cycle length and entry distance. |
+| `src/data/algorithmsCatalog.ts` | Activity selection presented earliest-finish as universally applicable. | Explicitly scoped it to unweighted maximum-cardinality interval selection and distinguished weighted interval scheduling. |
+| `src/data/algorithmTutorGuides.ts` | Fast/slow pointer analogy described an inaccurate straight-road halfway behavior. | Replaced with a circular-track explanation and clarified that the proof depends on step sizes and cycle structure. |
+| `src/data/algorithmTutorGuides.ts` | Randomized 3-way QuickSort was described as O(1) extra space “in practice.” | Clarified expected time assumptions, recursion-stack space and worst-case O(N²) time. |
+| `src/data/algorithmsMasterAdvancedPack.ts` | Bloom filter false-negative statement lacked its no-deletions/standard-filter assumptions; disk-read reduction was a fixed unsupported percentage. | Qualified correctness and replaced the fixed percentage with workload/filter-dependent behavior. |
+| `src/data/systemDesignMasterRoadmapData.ts` | Cache warmness, dead-letter isolation, and Raft leader safety were stated as unconditional guarantees. | Added success/configuration/failure conditions and protocol assumptions. |
+| `src/data/systemDesignData.ts` | Kafka ordering was stated globally. | Clarified ordering is within a partition and depends on partition-key design. |
+
+## Verification note
+
+These corrections were verified by re-fetching the changed source files on the review branch and checking the replacement text. Repository tests/build could not be run from this environment because a direct Git clone failed due to unavailable network name resolution; no CI run has been observed for the latest branch head. The changes therefore remain subject to CI and code-owner review.
