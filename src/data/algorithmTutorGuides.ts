@@ -154,7 +154,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you speed up Word Ladder when branching factor is huge?',
         invariantShift: 'Run Bidirectional BFS expanding whichever frontier set (start vs end) is currently smaller.',
-        complexityImpact: 'Cuts search space from O(b^d) down to O(b^(d/2)).',
+        complexityImpact: 'Often explores about O(b^(d/2)) states when branching is roughly balanced and the frontiers meet near the middle; this is a useful model, not a universal bound for irregular graphs.',
       },
       {
         question: 'What if edge weights are strictly {0, 1} (e.g., Minimum Cost Grid Path)?',
@@ -994,7 +994,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Can a node be pushed into the deque more than once in 0-1 BFS?',
         invariantShift: 'Yes—if first reached via a w=1 edge and later improved via a w=0 edge, it re-enters at the front; guard with `if (d > dist[u]) continue` just like Dijkstra.',
-        complexityImpact: 'Each edge relaxes at most once → still strictly O(V + E).',
+        complexityImpact: 'A vertex can be re-enqueued after improvement; do not claim each edge relaxes only once. With distance relaxation and stale-entry checks, standard 0-1 BFS is O(V + E), and a vertex may have multiple deque entries.',
       },
       {
         question: 'What if edge weights are small integers 0..K (e.g., K <= 10)?',
