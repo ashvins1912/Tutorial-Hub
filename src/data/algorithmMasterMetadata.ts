@@ -78,7 +78,7 @@ const MASTER_40_COMPLEXITY_LEAPS: Record<string, string> = {
   'sql-joins-volcano': 'O(|R| · |S|) nested-loop join → O(|R| + |S|) pipelined Hash / Sort-Merge Volcano iterator',
   'consistent-hashing-dht': 'O(K) full-cache invalidation on mod N → O(K / N) minimal remapping with virtual nodes',
   'raft-paxos-consensus': 'Split-brain async primary → Linearizable 2F+1 quorum consensus in 1 RTT steady state',
-  'gossip-phi-accrual': 'O(N²) all-to-all heartbeat storms → O(1)/node fanout · O(log N) epidemic convergence',
+  'gossip-phi-accrual': 'O(N²) all-to-all heartbeat storms → bounded per-node fanout with probabilistic epidemic dissemination; convergence rounds depend on membership, network, and failure assumptions',
   'merkle-tree-sync': 'O(N) full replica dataset diff → O(k log(N/k)) hierarchical hash-tree anti-entropy repair',
   'vector-clocks-lamport': 'Physical-clock order can disagree with causality; vector clocks represent causal partial order and detect concurrent updates, using O(N) vector entries for N participants',
   'crdt-gcounter-orset': 'Cross-region coordination can be avoided for local G-Counter/OR-Set updates; replicas converge under the CRDT merge rule when updates are eventually delivered',
@@ -474,7 +474,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Sorting all circular rotations of a book pushes identical words next to each other so the last column becomes long runs of repeated letters—which compress tightly AND let you search any phrase backward using just letter counts.',
     interviewScript30s:
-      '"BWT clusters contextually similar characters for Run-Length/Huffman compression (bzip2). By the Last-to-First (LF) mapping property, pairing BWT with `C[]` cumulative counts and `Occ(c, r)` checkpoints creates an FM-Index that counts any pattern in O(|P|) without decompressing."',
+      '"BWT clusters contextually similar characters for Run-Length/Huffman compression (bzip2). By the Last-to-First (LF) mapping property, pairing BWT with `C[]` cumulative counts and `Occ(c, r)` rank queries creates an FM-Index that counts a pattern without decompressing. Query cost is O(|P|) when rank is O(1) (e.g., a fixed alphabet with suitable checkpoints); a Wavelet Tree typically adds a log-alphabet factor."',
     chooseWhen: 'Human genome alignment (Bowtie2, BWA), bzip2 compression, and compressed full-text substring indexing.',
     avoidWhen: 'Mutable live documents with frequent random character edits (rebuilding BWT/Suffix Array is O(N)).',
     followUpTwists: [
@@ -486,7 +486,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How does Bowtie2 keep the `Occ(c, r)` table small for a 3-billion-base genome?',
         invariantShift: 'Store `Occ` checkpoints only every 64 or 128 positions (or use a Wavelet Tree) and count the short gap using CPU `popcount` bitmasks.',
-        complexityImpact: 'Cuts index RAM from ~40 GB down to ~2 GB while keeping O(|P|) search.',
+        complexityImpact: 'Checkpoint sampling trades rank-query work for lower index memory; exact RAM and search cost depend on alphabet, checkpoint interval, and rank data structure.',
       },
     ],
   },
@@ -726,7 +726,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Splitting a giant sheet of graph paper strictly in half until a piece fits your drawing; when you finish, if the matching twin half beside it is also free, tape them back together in one step.',
     interviewScript30s:
-      '"The Buddy Allocator rounds requests up to powers of 2 (`2^k`) and splits larger free blocks in half on demand. On `free(addr, order)`, its twin buddy’s address is computed in O(1) via `addr ^ (1 << order)`, enabling O(log M) coalescing with zero external fragmentation."',
+      '"The Buddy Allocator rounds requests up to powers of 2 (`2^k`) and splits larger free blocks in half on demand. On `free(addr, order)`, its twin buddy’s address is computed in O(1) via `addr ^ (1 << order)`, enabling coalescing across at most O(log M) block orders. Buddy allocation can still suffer external fragmentation because free blocks of incompatible sizes cannot always combine."',
     chooseWhen: 'OS kernel physical page-frame allocators (Linux `alloc_pages`), slab backends, and real-time embedded memory pools.',
     avoidWhen: 'Many odd-sized allocations just above a power of 2 (e.g., 65 bytes wastes 63 bytes of internal fragmentation—pair with a Slab Allocator).',
     followUpTwists: [
@@ -768,7 +768,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Updating a highway billboard while cars zoom past: build the entire new sign backstage, swap the pointer in one atomic click (CAS), and wait until every car already on the bridge finishes passing (RCU grace period) before recycling the old sign.',
     interviewScript30s:
-      '"Mutexes stall readers and risk priority inversion. Compare-And-Swap (CAS) loops atomically retry pointer updates without blocking (Michael-Scott Queue), while Read-Copy-Update (RCU) lets readers run with ZERO locks or atomic writes by deferring old-memory reclamation until a grace period passes."',
+      '"Mutexes can block readers and risk priority inversion. Compare-And-Swap (CAS) loops retry pointer updates without taking a mutex (Michael-Scott Queue), but are not automatically wait-free. RCU read-side critical sections are typically very low-overhead and avoid reader-side locks; old memory is reclaimed only after a grace period, with exact guarantees depending on the RCU implementation."',
     chooseWhen: 'OS routing tables & kernel lists (Linux RCU), HFT lock-free queues, and read-mostly shared configs at 100M+ QPS.',
     avoidWhen: 'Write-heavy multi-object atomic transactions (mutexes or STM are simpler and avoid CAS livelock storms).',
     followUpTwists: [
@@ -780,7 +780,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Why does RCU outperform Reader-Writer Locks (RWLock) on 64-core servers?',
         invariantShift: 'Even shared RWLock readers atomically increment a shared counter, causing massive cross-core cache-line bouncing; RCU readers issue zero shared writes, scaling linearly with core count.',
-        complexityImpact: 'O(1) wait-free read scalability across all CPU cores.',
+        complexityImpact: 'O(1) read-side work in common RCU designs; do not call it wait-free across all implementations or workloads, and scalability depends on grace-period/reclamation behavior.',
       },
     ],
   },
@@ -789,7 +789,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A multi-volume encyclopedia index: internal directory volumes hold hundreds of guide words per page so you reach any article in 3 page flips, and every leaf volume links straight to the next volume for instant chapter-wide scans.',
     interviewScript30s:
-      '"Unlike binary trees (height ~30 → 30 random disk seeks), a B+ Tree packs hundreds of separator keys into 4KB–16KB internal pages and keeps all payloads in doubly linked leaf pages—reaching 100M+ rows in just 3–4 page reads and scanning ranges sequentially."',
+      '"A B+ Tree packs many separator keys into 4KB–16KB internal pages and keeps payloads in linked leaves, reducing tree height and supporting sequential range scans. The number of page reads depends on fanout, page occupancy, cache hits, and storage layout; a large table may require only a few uncached index-page reads, but this is not a fixed guarantee."',
     chooseWhen: 'OLTP relational indexes (PostgreSQL, MySQL InnoDB, SQLite) requiring fast point lookups, predictable latency, and ordered `BETWEEN` range scans.',
     avoidWhen: 'Write-heavy petabyte append/time-series workloads where random in-place 16KB page updates bottleneck disk IOPS (use LSM-Trees).',
     followUpTwists: [
@@ -801,7 +801,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Why do random UUIDv4 primary keys hurt InnoDB B+ Tree write performance compared to UUIDv7/BIGSERIAL?',
         invariantShift: 'UUIDv4 inserts into random leaf pages, causing frequent 50% page splits, cache-buffer misses, and write amplification; monotonic UUIDv7 appends cleanly to the rightmost leaf.',
-        complexityImpact: '3–5× higher write throughput and ~2× denser page fill factor.',
+        complexityImpact: 'Monotonic keys often improve locality and reduce random page splits; throughput and page-fill gains depend on workload, page size, concurrency, and database implementation.',
       },
     ],
   },
@@ -821,7 +821,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'Compare Size-Tiered Compaction (STCS) vs Leveled Compaction (LCS) across Read/Write/Space amplification.',
-        invariantShift: 'STCS minimizes write amplification (great for append-heavy writes) but risks 2× temporary disk space and higher read amp; LCS enforces non-overlapping key ranges per level (10× tighter space & faster reads) at higher write amp.',
+        invariantShift: 'STCS often reduces write amplification at the cost of higher read/space amplification; LCS keeps non-overlapping key ranges per level to improve read predictability at higher write amplification. Temporary space and amplification ratios depend on level sizing, compaction policy, and workload.',
         complexityImpact: 'Fundamental RUM (Read/Update/Memory) storage tradeoff.',
       },
     ],
