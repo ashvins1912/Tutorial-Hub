@@ -172,3 +172,8 @@ Regression assertions were added and source/test blobs were re-fetched.
 - Source commit: `02bdc80400b446d386e731c6f1166cf6f6515e48`
 - Test commit: `87c4a70b56cc80128c2c2886afc723cde5c50a8b`
 - Run #718 was in progress at type-check when last polled. It tested the prior graph-caveat commit; the newest test/evidence commits still require their own completed validation.
+
+
+## CI follow-up: assertion targeting correction
+
+Run #718 failed in the new high-risk tutor-guide test because the bidirectional-BFS complexity assertion searched the `bidirectional-bfs` guide, while the Word Ladder follow-up is registered under `tree-bfs-dfs`. The assertion was corrected to inspect the owning guide in commit `351c51a8f3ff60d711db4509474c89c8b74cdfab`. This was a test-selection error, not a reported application/type-check/build failure. Run #721 was still at type-check when polled; the assertion-fix commit needs completed CI.
