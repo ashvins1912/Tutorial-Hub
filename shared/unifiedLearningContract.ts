@@ -169,8 +169,12 @@ export function validateCanonicalLearningUnit(
     if (!stage.content.some((item) => item.trim())) {
       add('missing-stage-content', `${stagePath}.content`, `The ${stage.id} stage needs authored content.`);
     }
-    if (stage.evidenceRequirements.length === 0) {
-      add('missing-stage-evidence', `${stagePath}.evidenceRequirements`, `The ${stage.id} stage needs evidence requirements.`);
+    if (stage.evidenceRequirements.length === 0 || !stage.evidenceRequirements.some((requirement) => requirement.required)) {
+      add(
+        'missing-stage-evidence',
+        `${stagePath}.evidenceRequirements`,
+        `The ${stage.id} stage needs at least one required evidence requirement.`
+      );
     }
 
     for (const assetId of stage.assetIds) {
@@ -180,6 +184,13 @@ export function validateCanonicalLearningUnit(
     }
 
     for (const requirement of stage.evidenceRequirements) {
+      if (requirement.objectiveIds.length === 0) {
+        add(
+          'missing-stage-evidence',
+          `${stagePath}.evidenceRequirements`,
+          `Evidence requirement ${requirement.id} must map to at least one objective.`
+        );
+      }
       if (!requirement.id?.trim()) {
         add('missing-id', `${stagePath}.evidenceRequirements`, 'Evidence requirement needs a stable ID.');
       } else if (evidenceIds.has(requirement.id)) {
