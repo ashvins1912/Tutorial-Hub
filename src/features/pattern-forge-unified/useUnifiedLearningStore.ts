@@ -109,6 +109,11 @@ interface UnifiedLearningStoreState {
 
 const initialLocal = readLocalPayload();
 
+// Share one in-flight hydration request across StrictMode effect replays and
+// accidental workspace remounts. Without this guard, overlapping requests can
+// repeatedly publish fresh objects into Zustand while the view is mounting.
+let hydrationPromise: Promise<void> | null = null;
+
 export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, get) => ({
   activeTopicId: 'hashmap-hashset-lookup',
   activeStage: 'understand',
@@ -134,51 +139,60 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
 
   setActiveWorkspaceTab: (tab) => set({ activeWorkspaceTab: tab }),
 
-  hydrateFromServer: async () => {
-    try {
-      const [masteryRes, revRes] = await Promise.all([
-        apiFetch('/api/learning/mastery'),
-        apiFetch('/api/learning/revisions'),
-      ]);
-      if (masteryRes.ok) {
-        const data = (await masteryRes.json()) as {
-          mastery?: TopicMasterySummary[];
-          assessmentHistory?: AssessmentAttempt[];
-        };
-        const nextEvidence: Record<string, MasteryEvidence> = { ...get().evidenceByTopic };
-        for (const item of data.mastery ?? []) {
-          if (item.evidence && item.evidence.updatedAt) {
-            nextEvidence[item.topicId] = item.evidence;
-          }
-        }
-        const nextRevisions: Record<string, RevisionSchedule> = { ...get().revisionsByTopic };
-        if (revRes.ok) {
-          const revData = (await revRes.json()) as { revisions?: RevisionSchedule[] };
-          for (const rev of revData.revisions ?? []) {
-            nextRevisions[rev.topicId] = rev;
-          }
-        }
-        const nextHistory = Array.isArray(data.assessmentHistory) && data.assessmentHistory.length > 0
-          ? data.assessmentHistory
-          : get().assessmentHistory;
+  hydrateFromServer: () => {
+    if (get().hydrated) return Promise.resolve();
+    if (hydrationPromise) return hydrationPromise;
 
-        set({
-          evidenceByTopic: nextEvidence,
-          assessmentHistory: nextHistory,
-          revisionsByTopic: nextRevisions,
-          hydrated: true,
-        });
-        writeLocalPayload({
-          evidenceByTopic: nextEvidence,
-          assessmentHistory: nextHistory,
-          revisionsByTopic: nextRevisions,
-        });
-        return;
+    hydrationPromise = (async () => {
+      try {
+        const [masteryRes, revRes] = await Promise.all([
+          apiFetch('/api/learning/mastery'),
+          apiFetch('/api/learning/revisions'),
+        ]);
+        if (masteryRes.ok) {
+          const data = (await masteryRes.json()) as {
+            mastery?: TopicMasterySummary[];
+            assessmentHistory?: AssessmentAttempt[];
+          };
+          const nextEvidence: Record<string, MasteryEvidence> = { ...get().evidenceByTopic };
+          for (const item of data.mastery ?? []) {
+            if (item.evidence && item.evidence.updatedAt) {
+              nextEvidence[item.topicId] = item.evidence;
+            }
+          }
+          const nextRevisions: Record<string, RevisionSchedule> = { ...get().revisionsByTopic };
+          if (revRes.ok) {
+            const revData = (await revRes.json()) as { revisions?: RevisionSchedule[] };
+            for (const rev of revData.revisions ?? []) {
+              nextRevisions[rev.topicId] = rev;
+            }
+          }
+          const nextHistory = Array.isArray(data.assessmentHistory) && data.assessmentHistory.length > 0
+            ? data.assessmentHistory
+            : get().assessmentHistory;
+
+          set({
+            evidenceByTopic: nextEvidence,
+            assessmentHistory: nextHistory,
+            revisionsByTopic: nextRevisions,
+            hydrated: true,
+          });
+          writeLocalPayload({
+            evidenceByTopic: nextEvidence,
+            assessmentHistory: nextHistory,
+            revisionsByTopic: nextRevisions,
+          });
+          return;
+        }
+      } catch {
+        // Offline / local fallback remains authoritative
       }
-    } catch {
-      // Offline / local fallback remains authoritative
-    }
-    set({ hydrated: true });
+      set({ hydrated: true });
+    })().finally(() => {
+      hydrationPromise = null;
+    });
+
+    return hydrationPromise;
   },
 
   getTopicMastery: (topicId) => {
