@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ALGORITHM_TUTOR_GUIDES } from '../../src/data/algorithmTutorGuides.ts';
+import { MASTER_40_TUTOR_GUIDES } from '../../src/data/algorithmMasterMetadata.ts';
 
 const expectedGuideIds = [
   'prefix-sum-hash',
@@ -59,7 +60,9 @@ const expectedGuideIds = [
 ];
 
 test('algorithm tutor guides have complete, non-empty teaching contracts', () => {
-  assert.deepEqual(Object.keys(ALGORITHM_TUTOR_GUIDES).sort(), [...expectedGuideIds].sort(), 'registered guide inventory must be fully represented in this quality gate');
+  assert.equal(Object.keys(MASTER_40_TUTOR_GUIDES).length, 40, 'master guide inventory must match its declared 40-guide contract');
+  const expectedMergedGuideIds = [...new Set([...expectedGuideIds, ...Object.keys(MASTER_40_TUTOR_GUIDES)])].sort();
+  assert.deepEqual(Object.keys(ALGORITHM_TUTOR_GUIDES).sort(), expectedMergedGuideIds, 'merged guide inventory must equal local plus master guide sources');
   for (const [key, guide] of Object.entries(ALGORITHM_TUTOR_GUIDES)) {
     assert.equal(guide.algorithmId, key, `algorithmId mismatch for ${key}`);
     for (const field of ['simpleAnalogy', 'interviewScript30s', 'chooseWhen', 'avoidWhen']) {
