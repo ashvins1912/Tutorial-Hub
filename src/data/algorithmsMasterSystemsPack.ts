@@ -854,7 +854,7 @@ def diff_merkle(node_a, node_b):
         step: 1,
         title: 'Compare Root Hashes Across Replica A & Replica B',
         explanation: '4 data blocks: Replica A=[k0, k1, k2, k3], Replica B=[k0, k1, k2_CORRUPT, k3]. Root hashes differ → descend!',
-        invariantCheck: 'If roots matched, sync terminates in 1 hash comparison (32 bytes)!',
+        invariantCheck: 'If roots match, synchronization can stop at this subtree under the hash-collision-resistance assumption; compare canonicalized data and hash parameters consistently.',
         variables: [{ name: 'rootA', value: '0x9a1f' }, { name: 'rootB', value: '0x4c8e (DIFF!)' }],
         array: ['Root: DIFF', 'L(0..1)', 'R(2..3)'],
         highlightIndices: [0],
@@ -862,7 +862,7 @@ def diff_merkle(node_a, node_b):
       {
         step: 2,
         title: 'Prune Entire Left Subtree [0..1] Instantly!',
-        explanation: 'hash(L_A) === hash(L_B) → blocks 0 and 1 are 100% identical! Skip Left branch completely without sending data!',
+        explanation: 'hash(L_A) === hash(L_B) → treat blocks 0 and 1 as matching under the cryptographic hash's collision-resistance assumption. Skip this branch without sending its contents; if hashes differ, descend to locate changed leaves.',
         invariantCheck: 'Halves search space at every tree level.',
         variables: [{ name: 'L(0..1)', value: 'MATCH ✓ (SKIP)' }, { name: 'R(2..3)', value: 'DIFF → descend' }],
         array: ['L(0..1) MATCH ✓', 'R(2..3) DIFF'],
