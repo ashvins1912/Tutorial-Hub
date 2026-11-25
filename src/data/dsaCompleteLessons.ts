@@ -1555,7 +1555,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     sourcePages: [7],
     promise: 'Understand FIFO processing, queue implementations, circular buffers and when a deque is more useful than a basic queue.',
     mentalModel: 'A queue is a line with two controlled ends: new work joins at the rear and the oldest eligible work leaves at the front. The invariant is ordering by arrival, unless the problem explicitly defines priorities or both-end operations.',
-    keyTerms: [{"term":"Circular buffer","definition":"A fixed array whose indices wrap around.","example":"next = (tail + 1) % capacity."},{"term":"Head","definition":"The index of the next item to remove.","example":"Dequeue reads head, then advances it."}],
+    keyTerms: [{"term":"Circular buffer","definition":"A fixed array whose indices wrap around.","example":"next = (tail + 1) % capacity."},{"term":"Head","definition":"The index of the next item to remove.","example":"Dequeue reads head, then advances it."},{"term":"Front-index compaction","definition":"Move live queue items to the beginning when a consumed prefix grows, preventing unbounded retained storage.","example":"Compact after a threshold of dequeues so each item is moved only occasionally."}],
     concepts: [
       'FIFO means first-in, first-out: enqueue adds at the rear; dequeue removes from the front; peek reads the front without removing it.',
       'An array queue with a moving front index avoids shifting every remaining element after dequeue, but needs compaction or a circular-buffer strategy to reuse freed slots.',
@@ -2695,7 +2695,7 @@ static boolean hasPairWithSum(int[] values, int target) {
     sourcePages: [12],
     promise: 'Use pointers moving at different speeds to detect cycles, locate midpoints and reason about linked-list structure in constant extra space.',
     mentalModel: 'Two pointers share a traversal but advance at different rates. Their relative motion reveals structure: if a cycle exists, the faster pointer eventually catches the slower one; in a linear list, the fast pointer reaches the end first.',
-    keyTerms: [{"term":"Tortoise and hare","definition":"Pointers move at different speeds through a sequence.","example":"Slow moves one node; fast moves two."},{"term":"Cycle entry","definition":"The first node that belongs to a loop.","example":"Reset one pointer to head and advance both one step after the meeting."}],
+    keyTerms: [{"term":"Tortoise and hare","definition":"Pointers move at different speeds through a sequence.","example":"Slow moves one node; fast moves two."},{"term":"Cycle entry","definition":"The first node that belongs to a loop.","example":"Reset one pointer to head and advance both one step after the meeting."},{"term":"Cycle length","definition":"Number of distinct nodes in the loop before the sequence repeats.","example":"After a meeting, count one full traversal around the cycle."}],
     concepts: [
       'Slow pointer advances one node per iteration; fast pointer advances two. Always check fast and fast.next before dereferencing fast.next.next.',
       'In an acyclic list, fast reaches null (or its next reaches null); slow is then at or near the midpoint depending on list length and loop condition.',
