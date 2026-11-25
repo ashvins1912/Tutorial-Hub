@@ -892,16 +892,16 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'consistent-hashing-dht': {
     algorithmId: 'consistent-hashing-dht',
     simpleAnalogy:
-      'Seating servers around a circular clock face: each key walks clockwise to the first server it meets. Adding a new server only steals keys from its single clockwise neighbor—and giving each server 150 "virtual seats" balances the pie evenly.',
+      'Seating servers around a circular clock face: each key walks clockwise to the first server it meets. Adding a new server moves keys from nearby ring ranges; virtual nodes improve balance statistically, but the result depends on token count and key distribution.',
     interviewScript30s:
-      '"Modulo hashing (`hash(k) % N`) remaps ~100% of keys when a node joins or dies. Consistent Hashing places keys and virtual nodes on a hash ring, moving only `K / N` keys on topology changes. Chord adds O(log N) finger tables; Rendezvous Hashing picks `argmax hash(k, node)` with zero ring state."',
+      '"Modulo hashing (`hash(k) % N`) can remap most keys when the shard count changes. Consistent Hashing places keys and virtual nodes on a hash ring and limits movement to affected ranges; the expected fraction depends on ring size and distribution. Chord adds O(log N) finger-table routing; Rendezvous Hashing picks `argmax hash(k, node)` without ring state."',
     chooseWhen: 'Distributed caches (Memcached, Redis Cluster), Dynamo/Cassandra sharding, CDNs, and sticky load balancers.',
     avoidWhen: 'Hot celebrity keys skew load onto one shard regardless of ring balance (requires key salting or local read-through caching).',
     followUpTwists: [
       {
         question: 'Why are Virtual Nodes (vnodes) mandatory in production Consistent Hashing?',
-        invariantShift: 'With only 1 point per server, random placement creates 3–5× shard imbalance and causes a dead node’s entire load to slam one neighbor; 100–200 vnodes/server cut variance to < 5% and spread failover across the whole cluster.',
-        complexityImpact: 'O(log(N · V)) lookup, uniform load balance, heterogeneous hardware weighting.',
+        invariantShift: 'With one token per server, random placement can create substantial shard imbalance and concentrate failover load. More virtual nodes usually improve balance and spread movement, but variance depends on vnode count, hashing, and workload.',
+        complexityImpact: 'O(log(N · V)) lookup; more virtual nodes improve statistical balance and can support heterogeneous weights, but do not guarantee uniform load for skewed keys.',
       },
       {
         question: 'When is Rendezvous (Highest Random Weight) Hashing cleaner than a Ring?',
