@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const source = readFileSync(path.join(root, 'src/components/DpLearningLab.tsx'), 'utf8');
+const source = readFileSync(path.join(root, 'src/data/dpGuidedLessons.ts'), 'utf8');
 const javaLiterals = [];
 for (let position = 0; (position = source.indexOf('java: "', position)) >= 0;) {
   const quoteStart = position + 6;
