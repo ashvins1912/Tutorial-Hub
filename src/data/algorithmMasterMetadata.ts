@@ -187,7 +187,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'When can Linear Search actually beat Binary Search in wall-clock latency?',
         invariantShift: 'For N ≤ 32–64 contiguous integers, sequential CPU cache prefetching and zero branch mispredictions outperform random-jumping binary search.',
-        complexityImpact: 'Still O(N) asymptotic, but 2–4× faster constant factor on L1 cache lines.',
+        complexityImpact: 'Still O(N) asymptotic; constant-factor wins for small/cache-hot inputs are hardware- and workload-dependent and should be benchmarked.',
       },
       {
         question: 'How does Sentinel Linear Search eliminate one comparison per loop iteration?',
@@ -381,7 +381,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you optimize Trie memory in Word Search II (LC 212) to avoid TLE?',
         invariantShift: 'Store the full `word` string at leaf nodes (eliminating string concatenation) and prune empty leaf branches backward once found.',
-        complexityImpact: 'Prunes already-matched branches in O(1) amortized, cutting runtime 5–10×.',
+        complexityImpact: 'Prunes already-matched branches in O(1) amortized; actual speedup depends on dictionary size, prefix distribution, and cached Top-K maintenance.',
       },
     ],
   },
@@ -460,7 +460,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you handle a driver standing right on the border of two Quadtree quadrants?',
         invariantShift: 'Query using a bounding box centered on the user (`[x-r, x+r] × [y-r, y+r]`), which automatically intersects all bordering quadrants and filters exact Euclidean radius.',
-        complexityImpact: 'O(log N + K) with zero boundary-miss bugs.',
+        complexityImpact: 'Correctly includes intersecting neighboring quadrants; query cost depends on tree balance and spatial distribution and can be O(N) in the worst case.',
       },
       {
         question: 'What happens if two points share the exact same `(x, y)` coordinates during subdivision?',
@@ -711,7 +711,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     followUpTwists: [
       {
         question: 'Why does a single full-table scan wipe out an LRU cache, and how does ARC stop it?',
-        invariantShift: 'Every scanned page enters LRU as "most recent", evicting hot working-set pages. ARC puts new pages in T1 (recency); hot pages promoted to T2 (frequency) survive the scan untouched.',
+        invariantShift: 'Every scanned page enters LRU as "most recent", which can evict hot working-set pages. ARC adapts between recency and frequency; pages promoted to T2 can be better protected from one-time scans, but no policy guarantees every hot page survives every workload.',
         complexityImpact: 'Still O(1) per access with high hit-rate stability.',
       },
       {
@@ -775,7 +775,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'What is the ABA problem in a lock-free CAS stack/queue and how do you prevent it?',
         invariantShift: 'Thread 1 reads `A`, stalls while another thread pops `A`, pops `B`, and recycles memory back to `A`—so Thread 1’s CAS falsely succeeds! Fix with Tagged/Versioned Pointers (`(ptr, version++)`) or Hazard Pointers.',
-        complexityImpact: 'O(1) monotonic version tag eliminates ABA corruption completely.',
+        complexityImpact: 'A tagged/versioned pointer helps detect ABA; finite tag wrap and safe memory reclamation still need to be addressed.',
       },
       {
         question: 'Why does RCU outperform Reader-Writer Locks (RWLock) on 64-core servers?',
@@ -795,7 +795,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     followUpTwists: [
       {
         question: 'Why do databases store row payloads ONLY in B+ Tree leaves instead of internal nodes (like classic B-Trees)?',
-        invariantShift: 'Keeping payloads out of internal pages maximizes branching factor (fanout ~500+), shrinks tree height from 5→3, and lets sibling leaf pointers power sequential range scans without revisiting parents.',
+        invariantShift: 'Keeping payloads out of internal pages increases fanout and reduces tree height; actual fanout and page depth depend on key/pointer sizes, page size, fill factor, and row count. Linked leaves support sequential range scans.',
         complexityImpact: 'Cuts random disk I/Os per lookup and accelerates range scans 10×.',
       },
       {
