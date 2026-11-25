@@ -11,20 +11,58 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
   const modules = asArray(raw.modules);
   const expectedIds = new Set(sections.filter((section) => section.required).map((section) => section.id));
   const seenIds = new Set<string>();
+  const warnings: string[] = [];
   for (const item of modules) {
     if (!item || typeof item !== 'object') throw new Error('GENERATED_MODULE_INVALID');
     const module = item as Record<string, unknown>;
     if (!isText(module.sectionId) || !isText(module.title) || !isText(module.contentMarkdown)) throw new Error('GENERATED_MODULE_INCOMPLETE');
     if (seenIds.has(module.sectionId)) throw new Error('GENERATED_MODULE_DUPLICATE_SECTION');
     seenIds.add(module.sectionId);
-    if (!sections.some((section) => section.id === module.sectionId)) throw new Error('GENERATED_MODULE_UNKNOWN_SECTION');
+    const section = sections.find((candidate) => candidate.id === module.sectionId);
+    if (!section) throw new Error('GENERATED_MODULE_UNKNOWN_SECTION');
+
+    const codeExamples = asArray(module.codeExamples);
+    const workedExamples = asArray(module.workedExamples);
+    const reasoningSteps = asArray(module.reasoningSteps);
+    if (['explanation', 'reasoning', 'code'].includes(section.blockType) && workedExamples.length === 0) {
+      warnings.push(`Module "${module.title}" has no worked example or counterexample.`);
+    }
+    if (section.blockType === 'code' && codeExamples.length === 0) {
+      warnings.push(`Code module "${module.title}" has no code example.`);
+    }
+    if (section.blockType === 'reasoning' && reasoningSteps.length < 2) {
+      warnings.push(`Reasoning module "${module.title}" should show at least two explicit reasoning steps.`);
+    }
+    for (const example of workedExamples) {
+      if (!example || typeof example !== 'object' || Array.isArray(example)) {
+        warnings.push(`Module "${module.title}" contains a malformed worked example.`);
+        continue;
+      }
+      const worked = example as Record<string, unknown>;
+      if (!isText(worked.title) || !isText(worked.explanation)) {
+        warnings.push(`Module "${module.title}" has a worked example missing its title or explanation.`);
+      }
+      if (!isText(worked.input) || !isText(worked.output)) {
+        warnings.push(`Worked example "${String(worked.title || module.title)}" should state its input and expected output.`);
+      }
+    }
+    for (const example of codeExamples) {
+      if (!example || typeof example !== 'object' || Array.isArray(example)) {
+        warnings.push(`Module "${module.title}" contains a malformed code example.`);
+        continue;
+      }
+      const code = example as Record<string, unknown>;
+      if (!isText(code.language) || !isText(code.code) || !isText(code.explanation)) {
+        warnings.push(`Module "${module.title}" has a code example missing language, code or explanation.`);
+      }
+    }
   }
   const missing = [...expectedIds].filter((id) => !seenIds.has(id));
   if (missing.length) throw new Error(`GENERATED_REQUIRED_SECTIONS_MISSING:${missing.join(',')}`);
   const visualizations = asArray(raw.visualizations);
   const quiz = asArray(raw.quiz);
   const practiceTasks = asArray(raw.practiceTasks);
-  const warnings: string[] = [];
+  if (!asArray(raw.learningObjectives).some(isText)) warnings.push('No measurable learning objectives were supplied.');
   const sourceUrls = new Set((sourceText.match(/https?:\/\/[^\s)\]>]+/g) || []).map((url) => url.replace(/[.,;]+$/, '')));
   const candidateReferences = asArray(raw.references).filter((ref): ref is Record<string, unknown> => !!ref && typeof ref === 'object' && isText((ref as Record<string, unknown>).label) && isText((ref as Record<string, unknown>).url));
   const allowedReferences = candidateReferences.filter((ref) => sourceUrls.has(String(ref.url).replace(/[.,;]+$/, '')));
@@ -90,7 +128,7 @@ export function validateGeneratedLesson(value: unknown, sections: LearningSectio
     ...(domainSimulator ? { domainSimulator } : {}),
     references: allowedReferences.map((ref) => ({ label: String(ref.label), url: String(ref.url), suppliedByUser: true })),
     qualityNotes: asArray(raw.qualityNotes).filter(isText),
-    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and objective-linked quiz structure checked', 'Optional algorithm and domain simulator configuration shape checked'], warnings },
+    validation: { status: 'unverified-draft', checks: ['JSON structure valid', 'Required learning sections present', 'Visualization and objective-linked quiz structure checked', 'Worked-example and code-example evidence checked for quality warnings', 'Optional algorithm and domain simulator configuration shape checked'], warnings },
   };
   return { lesson, warnings };
 }
