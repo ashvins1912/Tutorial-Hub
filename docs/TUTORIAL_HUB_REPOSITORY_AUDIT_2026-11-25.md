@@ -3,7 +3,8 @@
 **Audit date:** 2026-11-25  
 **Repository:** `ashvins1912/Tutorial-Hub`  
 **Branch audited:** `main`  
-**Audited HEAD:** `512c342ac17825398b9aafde24b706ecd1d9a3a6`  
+**Historical audit HEAD:** `512c342ac17825398b9aafde24b706ecd1d9a3a6`  
+**Current documentation baseline:** `cf4e90b4f2102a4ea72f60c78717d56386f7ca60` (2026-11-25; 22 registered surfaces)  
 **Method:** GitHub tree/API inspection, review of canonical audit ledgers, representative frontend/backend/content sources, recent pull-request history, GitHub Actions run and job logs.  
 **Evidence boundary:** Static code and documentation review. No deployed browser walkthrough, live database verification, screen-reader test, mobile-device test, or learner study is claimed.
 
@@ -14,11 +15,11 @@ Tutorial Hub has a broad multi-academy learning architecture and substantial lea
 The repository has useful foundations: a typed learning-surface registry, content-quality ledger, topic-candidate extractor, DSA lesson contracts, Pattern Forge's five-stage curriculum, deterministic trace generation, domain-specific prediction simulators, objective-linked quiz/progress support, content-authoring/publishing controls, and a CI workflow.
 
 However:
-- all 21 registered learning surfaces remain `contentStatus: not_assessed` and `verificationStatus: not_assessed` in the application-wide ledger;
+- all 22 registered learning surfaces remain `contentStatus: not_assessed` and `verificationStatus: not_assessed` in the application-wide ledger;
 - the 28-pattern Pattern Forge curriculum has 3 published reference pilots and 25 inventory-only patterns;
-- the latest `main` CI run fails at the registry audit because the new `pattern-forge` TopView is missing from the canonical surface registry;
+- the earlier registry mismatch was repaired in PR #58; current main CI is green after the Heap example-array and Java test-selector corrections;
 - the latest run did not reach the downstream content-ledger audit, topic inventory job, or production build;
-- the previous successful run predates the latest Pattern Forge navigation commit and therefore does not validate current HEAD.
+- the current main workflow run `45531461528` on `cf4e90b4f2102a4ea72f60c78717d56386f7ca60` passed, including type-check, content/registry validators, topic inventory and frontend build.
 
 This audit does not recommend a bulk content rewrite. The best route is to repair the current integration/CI failure, complete the evidence inventory, then use a small, reviewed pilot to establish a reusable teaching standard.
 
@@ -40,7 +41,7 @@ Do not use the 442 figure as the current audited-HEAD file count: it is the regi
 
 ## 3. Current application surface inventory
 
-The canonical registry contains 21 entries:
+The canonical registry contains 22 entries:
 1. Universal problem solver
 2. Concept knowledge engine
 3. AI engineering academy
@@ -70,7 +71,7 @@ The application also includes cross-cutting components for problem decomposition
 ## 4. Audit evidence and status interpretation
 
 The ledger `docs/learning-content-quality-audit.json`:
-- was dated 2026-11-24;
+- was refreshed to the current documentation baseline on 2026-11-25;
 - declares the 2026-11-24 earlier baseline commit `8c83bc6d2bed2222ae08a524a78c20b1ede9d930`;
 - covers the 21 surface IDs present in the registry;
 - sets all content statuses to `not_assessed`;
@@ -314,3 +315,15 @@ This section supersedes time-sensitive CI and inventory statements above where t
 - This follow-up is static repository and CI evidence only. It does not claim a production browser walkthrough, manual assistive-technology review, independent SME review or learner study.
 
 The overall all-topic content-quality audit therefore remains open. Continue with topic-level evidence collection and risk-based pilots; do not bulk-promote inventory records or change publication status without the required review evidence.
+
+
+## Current-state addendum — 2026-11-25
+
+This document began as a static audit at the historical HEAD above. The integration failures recorded in the original LRN-001 section are historical and have since been resolved:
+
+- PR #58 registered Pattern Forge and refreshed the 22-surface registry and ledger.
+- PR #60 refreshed the content-quality standard baseline.
+- Heap code-example placement and the Java/JavaScript test selector were corrected in PRs #56 and #57; current main validation is green.
+- Current baseline commit: `cf4e90b4f2102a4ea72f60c78717d56386f7ca60`; the registry and ledger now point to this commit and continue to preserve all 22 surfaces as `not_assessed` until lesson-level evidence is recorded.
+
+The remaining substantive work is still open: complete topic-level inventories and evidence-backed review across all surfaces; author and verify the 25 inventory-only Pattern Forge topics; reconcile and author the 293 DSA question records beyond blueprint status; and improve cross-surface tests, accessibility, technical review and learner-transfer evidence. Static CI success validates the repository's current automated checks, not the full learning experience or learner outcomes.
