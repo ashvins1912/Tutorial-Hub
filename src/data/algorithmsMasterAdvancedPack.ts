@@ -221,8 +221,8 @@ def splay(x):
       {
         step: 4,
         title: 'Exact Nearest Neighbor Returned: (8, 1)',
-        explanation: 'Found exact nearest neighbor in O(log N) expected time without scanning pruned half-spaces.',
-        invariantCheck: 'Exact Euclidean nearest neighbor guaranteed.',
+        explanation: 'The search returns the exact nearest neighbor when the pruning bound and distance comparisons are implemented correctly. A balanced k-d tree can be efficient on favorable, low-dimensional data, but nearest-neighbor search has O(N) worst-case behavior and can visit many points in high dimensions.',
+        invariantCheck: 'Exact result (assuming correct distance and pruning calculations).',
         variables: [{ name: 'nearest', value: '(8, 1)' }, { name: 'dist', value: '√2 ≈ 1.41' }],
         array: ['(8,1)'],
         matchedIndices: [0],
