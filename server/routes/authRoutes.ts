@@ -125,8 +125,10 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
           $set: updateSet,
           $setOnInsert: {
             supabaseUserId: user.id,
-            fullName: metaFullName,
-            avatarUrl: metaAvatarUrl,
+            // MongoDB forbids the same path in both $set and $setOnInsert.
+            // Only insert metadata fields that aren't already in updateSet.
+            ...(updateSet.fullName === undefined ? { fullName: metaFullName } : {}),
+            ...(updateSet.avatarUrl === undefined ? { avatarUrl: metaAvatarUrl } : {}),
           },
         },
         { new: true, upsert: true, setDefaultsOnInsert: true }
