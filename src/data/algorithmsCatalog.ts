@@ -978,7 +978,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     spaceComplexity: 'O(N)',
     complexityLeap: 'O(N²) look-ahead scans → O(N) push/pop once per index',
     coreIdea:
-      'Keep indices in a stack whose values stay strictly monotonic (e.g., decreasing). Whenever a new larger element arrives, it is the FIRST greater element for every smaller index sitting on top of the stack—pop and resolve them immediately.',
+      'Keep indices in a stack whose referenced values follow a monotonic order (for this next-strictly-greater pattern, non-increasing from bottom to top). When a new value is strictly larger than the top value, it is the first strictly greater value to the right for that popped index: no earlier index between them could have resolved it, because the stack preserves unresolved candidates.',
     mentalModelSteps: [
       'Store INDICES (not just values) on the stack so you can compute index distances i - prevIdx.',
       'For each day i, while stack is non-empty and arr[i] > arr[stack.top()], pop prevIdx.',
@@ -986,14 +986,14 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Push i onto the stack as unresolved until a future warmer day arrives.',
     ],
     loopInvariant:
-      'Temperatures referenced by indices in the stack are always strictly non-increasing from bottom to top.',
+      'Temperatures referenced by stack indices are non-increasing from bottom to top; equal temperatures may remain together because this example resolves only strictly warmer days.',
     whenToUse: [
       'Next Greater / Next Smaller Element (Daily Temperatures)',
       'Largest Rectangle in Histogram (nearest smaller bar on both left & right)',
       'Stock Span, Online Stock Span, Sum of Subarray Minimums',
     ],
     whenItFails:
-      'If you need the maximum inside a fixed sliding window width k, upgrade to a Monotonic Deque so you can also evict expired indices from the front.',
+      'For a fixed-width sliding-window maximum, use a monotonic deque: it supports removing expired indices from the front while maintaining candidate maxima at the back. A stack alone cannot efficiently expire candidates by index.',
     linkedTopics: ['Monotonic Stack'],
     linkedProblemSlugs: ['daily-temperatures', 'largest-rectangle-in-histogram', 'valid-parentheses', 'min-stack'],
     featuredLabId: 'daily-temperatures',
@@ -1133,9 +1133,9 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     spaceComplexity: 'O(H) DFS / O(W) BFS',
     complexityLeap: 'O(N²) repeated subtree height calls → O(N) single traversal',
     coreIdea:
-      'Use Level-Order BFS (snapshot queue.size() per depth) whenever depth/level grouping or shortest root-to-leaf distance matters. Use Postorder DFS (compute left, compute right, combine at parent) whenever a node needs subtree heights, sums, or LCA answers.',
+      'Use level-order BFS (process a snapshot of the queue size) for depth grouping and shortest paths in an unweighted tree. Use postorder DFS (compute child results, then combine at the parent) for subtree heights, sums, and many diameter or path problems. Lowest common ancestor has its own traversal and return logic; choose the variant that matches the tree type and problem.',
     mentalModelSteps: [
-      'BFS: Enqueue root. On each wave, freeze levelSize = q.length and pop exactly levelSize nodes.',
+      'BFS: Enqueue the root. At each level, save levelSize = q.length and process exactly that many nodes; children added during the level belong to the next wave.',
       'Push each popped node’s non-null left and right children for the next depth wave.',
       'DFS Postorder: Separate what a recursive call RETURNS to its parent (single branch) from the GLOBAL best updated at the node (curved path).',
     ],
@@ -1147,7 +1147,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'BST sorted validation / kth smallest → Inorder DFS',
     ],
     whenItFails:
-      'Do not use BFS on a deep skewed tree if memory is tight (though DFS stack can reach O(N) on skewed trees too—mention both space bounds!).',
+      'BFS can require O(W) queue space, where W is the maximum level width; DFS uses O(H) call-stack space for a recursive traversal, where H is tree height and can be O(N) for a skewed tree. Choose based on tree shape and memory constraints.',
     linkedTopics: ['Trees DFS/BFS'],
     linkedProblemSlugs: [
       'binary-tree-level-order',
