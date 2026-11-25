@@ -656,7 +656,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     avoidWhen: 'Queries are online or require O(log N) worst-case latency.',
     followUpTwists: [
       {
-        question: 'How do you cut Mo’s constant factor nearly in half?',
+        question: 'How can you reduce pointer movement in Mo’s Algorithm?',
         invariantShift: 'Use Hilbert Curve ordering or Alternating Parity (even blocks sort R ascending, odd blocks sort R descending) so R sweeps like a snake.',
         complexityImpact: 'Same asymptotic Mo bound; snake/Hilbert ordering can reduce pointer movement in practice, but the gain depends on query distribution and is not a fixed percentage.',
       },
@@ -746,7 +746,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How do you find Longest Common Substring of two strings A and B?',
-        invariantShift: 'Build Suffix Array + LCP on `A + "#" + B` and take max `LCP[i]` across adjacent suffixes belonging to different strings.',
+        invariantShift: 'Build Suffix Array + LCP on `A + separator + B`, where the separator is absent from both strings (or is an out-of-alphabet sentinel), and take max LCP across adjacent suffixes belonging to different strings; ensure LCP cannot cross the separator.',
         complexityImpact: 'O((N + M) log(N + M)) time.',
       },
     ],
@@ -830,7 +830,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How do you avoid floating-point precision errors when checking line intersections?',
-        invariantShift: 'Cross-multiply with 64-bit BigInt: `(c2 - c1) * (m1 - m3) >= (c3 - c1) * (m1 - m2)` (mind denominator signs).',
+        invariantShift: 'Cross-multiply the intersection comparison using exact, sufficiently wide arithmetic (for JavaScript use BigInt; fixed-width 64-bit products can still overflow). Keep slope/order assumptions explicit and account for denominator signs.',
         complexityImpact: 'Exact integer arithmetic with zero precision drift.',
       },
     ],
