@@ -2890,7 +2890,7 @@
       "finding": "Search omitted complexity/hints and did not trim query; completion count used raw persisted length and hardcoded 42; filter and solved states lacked accessible labels/pressed states.",
       "fix": "Search all problem fields using trimmed query, count valid deduplicated IDs, derive total from catalog, add select labels/pressed states and persistent controlled details.",
       "evidence": [
-        "tests/content-authoring/matrix-problem-bank-quality.test.mjs: catalog/UI assertions"
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs: 42-item inventory and UI search/progress/accessibility assertions"
       ]
     },
     {
@@ -2948,9 +2948,9 @@
       "sourcePath": "src/components/CompleteDsaRoadmap.tsx",
       "reviewStatus": "ui-corrected-awaiting-ci",
       "finding": "Topic outcomes and practice were not visible in the roadmap UI; progress could count stale topic/gate IDs and search omitted outcomes/practice/pitfalls.",
-      "fix": "Render outcomes and guided practice, search all learning dispositions, deduplicate valid progress/gates, expose pressed/current states and label self-marked mastery.",
+      "fix": "Render outcomes and practice scaffolds; search all learning dispositions; deduplicate valid progress/gates; expose pressed/current states and self-marked mastery; remove the overclaim that brief prompts constitute proofs or complete independent practice, and label them as scaffolds.",
       "evidence": [
-        "tests/content-authoring/dsa-roadmap-quality.test.mjs: roadmap UI and progress assertions"
+        "tests/content-authoring/dsa-roadmap-quality.test.mjs: source-level search, state and honest-scope assertions"
       ]
     }
   ],
