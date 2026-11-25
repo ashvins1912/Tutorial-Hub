@@ -240,3 +240,14 @@ Validation evidence:
 - Source and test blobs were re-fetched after the edits (source `f196b7040c88e24f031ebf0c58009eb52a36a9c4`; test `267a7f00e339d443647d8ec89a80143da8d3fa30`).
 
 This improves coverage of the 53 tutor-guide records, but does **not** certify all 149 registered source paths or every runtime/UI state in the full platform.
+
+
+## Tenth focused technical pass: exact arithmetic and cross-string boundaries
+
+Three further assumptions were made explicit:
+
+- **Mo’s Algorithm:** changed the follow-up question to ask about reducing pointer movement without promising a fixed percentage.
+- **Convex Hull Trick:** replaced the misleading “64-bit BigInt” wording with exact/sufficiently wide arithmetic; fixed-width 64-bit products can overflow, and slope/order/denominator assumptions matter.
+- **Suffix Array + LCP:** the separator between strings must be absent from both inputs (or outside the alphabet), and LCP must not cross that separator.
+
+Regression assertions were added (source commit `e99a8ffdd7f199018534d33414e89482eeb4a44c`; test commit `3bab0ce3510e58bc819dd51540cdeef536474e3f`). Run #743 validated the earlier nine-pass/inventory head; this pass and the current report update need a completed current-head run.
