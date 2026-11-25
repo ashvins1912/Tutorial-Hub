@@ -38,9 +38,9 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 ## Current verification
 
 - CI run #812 passed the full listed suite and frontend build on tested commit `3ab3d99f1b916e291ca5976023b80efa45a6769c` before the later DP/matrix additions.
-- The latest registry, ledger, DP practice, matrix data/UI and additional tests are newer than #812 and require completed final-head CI.
-- The focused audit ledger currently records 13 content/UI units awaiting CI: 6 corrections, 3 additions, 2 content corrections and 2 UI corrections.
-- The 177 registered paths and every unit inside them remain unreviewed except for the explicitly listed focused units. The full platform audit is not complete.
+- The Latest registry, ledger, DP lesson extraction/search, matrix sample correction and UI/test changes are newer than #812 and require completed final-head CI.
+- The focused audit ledger currently records 16 content/UI units awaiting CI: 6 corrections, 3 additions, 2 content corrections and 2 UI corrections.
+- The 178 registered paths and every unit inside them remain unreviewed except for the explicitly listed focused units. The full platform audit is not complete.
 
 ## Confidence statement
 
@@ -50,3 +50,12 @@ High confidence in the current structural denominators and the exact tests that 
 ### Matrix problem examples
 
 Each of the 42 matrix problems now includes a concrete example input and expected output. The expanded problem panel shows the prompt, example, expected result, approach, complexity and Java hint. The matrix quality test requires both example fields for every stable ID and checks representative outputs (including kth-smallest, target-sum submatrices, eight-direction path length and Game of Life).
+
+
+### Follow-up content/UI pass (25 November 2026)
+
+- Corrected the Pacific–Atlantic Water Flow matrix sample: the expected coordinates now include `(1,1)`, which is reachable from both oceans. Added a regression assertion for that coordinate.
+- Clarified House Robber's DP state as a prefix length, aligned its recurrence/base with the rolling implementation, and documented the choose-none behavior for empty/all-negative inputs.
+- DP practice now searches problem names, goals, statements, examples, hints and levels, and announces an empty result. The Java code heading explicitly says these are method snippets requiring imports/class context.
+- Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the current extraction and cleanup are newer than the latest completed validation and must be checked on final head.
+- The ledger now records 16 focused units: 6 targeted corrections, 3 content additions, 4 content corrections and 3 UI corrections, all pending exact-head CI. This is still a focused set; path-level completion remains 0/178.
