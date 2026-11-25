@@ -114,7 +114,7 @@ export const INTERVIEW_FRAMEWORK_STEPS: FrameworkStep[] = [
     summary:
       'Proactively attack your own design. Surface failure modes before the interviewer asks and justify every box you add.',
     checkpoints: [
-      'Eliminate Single Points of Failure (SPOFs) across load balancers, compute, and databases.',
+      'Identify single points of failure across load balancers, compute and databases; reduce them with redundancy and tested failover, then document remaining dependency risks.',
       'Mitigate database hot shards, celebrity skew, and replication lag.',
       'Protect storage against cache stampedes (thundering herd) and cache penetration.',
       'Handle network partitions, retries with idempotency keys, and observability metrics.',
@@ -455,7 +455,7 @@ export const DISTRIBUTED_ALGORITHMS: DistributedAlgoDeepDive[] = [
     mechanics: [
       'Maintain an m-bit array initialized to 0 alongside k independent hash functions.',
       'Insert(x): Compute all k hash indices h₁(x)…hₖ(x) mod m and set those k bits to 1.',
-      'Query(x): Check all k bit positions — if ANY bit is 0, x is 100% absent (zero false negatives). If all are 1, x is probably present (small false-positive probability).',
+      'Query(x): Check all k bit positions — if ANY bit is 0, x is absent from the represented set. A correctly built standard Bloom filter without deletions has no false negatives for inserted items. If all bits are 1, x may be present or may be a false positive; check the source of truth.',
     ],
     timeComplexity: 'O(k) for insert and lookup (independent of dataset size n)',
     spaceComplexity: 'O(m) bits (~10 bits per element yields ~1% false-positive rate)',
@@ -657,7 +657,7 @@ export const REASONING_QUIZ_ITEMS: ReasoningQuizItem[] = [
       },
       {
         id: 'c',
-        label: 'Place a Bloom Filter of valid user IDs in front of Redis/DB to reject absent keys in O(k) with zero false negatives',
+        label: 'Place a correctly maintained standard Bloom filter (without deletions) of valid user IDs in front of Redis/DB to reject definitely absent keys in O(k); positives still require an authoritative lookup',
         isCorrect: true,
       },
       {

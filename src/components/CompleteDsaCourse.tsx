@@ -7,9 +7,10 @@ import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { CatalogSearchInput } from './ui';
 
-type SectionKey = 'learningOutcomes' | 'prerequisites' | 'concepts' | 'deepDive' | 'recognition' | 'method' | 'workedExample' | 'traceExercises' | 'implementationSteps' | 'codeExamples' | 'correctness' | 'complexity' | 'pitfalls' | 'practice' | 'assessment' | 'realWorldApplications' | 'interviewChecks' | 'revisionPrompts';
+type SectionKey = 'keyTerms' | 'learningOutcomes' | 'prerequisites' | 'concepts' | 'deepDive' | 'recognition' | 'method' | 'workedExample' | 'traceExercises' | 'implementationSteps' | 'codeExamples' | 'correctness' | 'complexity' | 'pitfalls' | 'practice' | 'assessment' | 'realWorldApplications' | 'interviewChecks' | 'revisionPrompts';
 
 const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
+  { key: 'keyTerms', title: 'Key terms in plain words', intro: 'Learn each term with a short definition and a concrete example before moving into the deeper explanation.' },
   { key: 'learningOutcomes', title: 'What you will be able to do', intro: 'Observable outcomes that define when this topic is understood.' },
   { key: 'prerequisites', title: 'Prerequisites and foundations', intro: 'What to know first, with a clear bridge back when needed.' },
   { key: 'concepts', title: 'Concepts to understand', intro: 'Learn the vocabulary and mechanics before memorising templates.' },
@@ -32,14 +33,27 @@ const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
 
 type LessonProgress = Record<string, string[]>;
 function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
-  if (section === 'codeExamples') {
-    return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => (
-      <article key={example.title} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800"><h4 className="text-sm font-semibold">{example.title}</h4><span className="text-xs text-slate-500">{example.language}</span></div>
-        <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-800 dark:text-slate-200"><code>{example.code}</code></pre>
-        <p className="border-t border-slate-100 p-4 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300">{example.explanation}</p>
+  if (section === 'keyTerms') {
+    return <div className="grid gap-3 sm:grid-cols-2">{(lesson.keyTerms ?? []).map((item) => (
+      <article key={item.term} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.term}</h4>
+        <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{item.definition}</p>
+        {item.example ? <p className="mt-2 rounded-md bg-white px-3 py-2 text-xs leading-relaxed text-slate-600 dark:bg-slate-900 dark:text-slate-400"><span className="font-semibold">Example:</span> {item.example}</p> : null}
       </article>
     ))}</div>;
+  }
+  if (section === 'codeExamples') {
+    return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => {
+      const codeLines = example.code.split('\n');
+      return <article key={example.title} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800"><h4 className="text-sm font-semibold">{example.title}</h4><span className="rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">{example.language}</span></div>
+        <div className="border-b border-slate-100 bg-white dark:border-slate-700 dark:bg-slate-950">
+          <div className="flex items-center justify-between px-4 pt-3"><span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Code walkthrough</span><span className="text-[11px] text-slate-400">Read the line numbers with the explanation</span></div>
+          <pre className="overflow-x-auto p-4 text-sm leading-6 text-slate-800 dark:text-slate-200"><code>{codeLines.map((line, index) => <span key={index} className="flex min-w-max"><span aria-hidden="true" className="mr-4 inline-block w-6 shrink-0 select-none text-right text-slate-400">{index + 1}</span><span>{line || ' '}{'\n'}</span></span>)}</code></pre>
+        </div>
+        <div className="border-t border-slate-100 bg-sky-50/60 p-4 dark:border-slate-700 dark:bg-sky-950/20"><h5 className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">What the code is doing</h5><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{example.explanation}</p><p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Study tip: predict the next state, trace the variables, then explain why each update is safe before changing the code.</p></div>
+      </article>;
+    })}</div>;
   }
   if (section === 'practice') {
     return <div className="grid gap-3 sm:grid-cols-2">{lesson.practice.map((item, index) => (
@@ -66,7 +80,7 @@ export function CompleteDsaCourse() {
   } = useAsyncCatalog('dsa-complete-lessons');
   const [activeId, setActiveId] = useState(DSA_COMPLETE_LESSONS[0].id);
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState<SectionKey[]>(['concepts', 'recognition', 'method', 'workedExample']);
+  const [expanded, setExpanded] = useState<SectionKey[]>(['keyTerms', 'recognition', 'method', 'workedExample']);
   const [progress, setProgress] = useAccountState<LessonProgress>('dsa-course-progress', {});
   const active = DSA_COMPLETE_LESSONS.find((lesson) => lesson.id === activeId) ?? DSA_COMPLETE_LESSONS[0];
   const filtered = useMemo(() => {

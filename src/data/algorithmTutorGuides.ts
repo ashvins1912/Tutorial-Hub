@@ -27,8 +27,8 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     followUpTwists: [
       {
         question: 'What if we need subarray sum DIVISIBLE by K with negative numbers?',
-        invariantShift: 'Store normalized remainder `((prefix % k) + k) % k` as the HashMap key; matching remainders mean the slice between them is divisible by K.',
-        complexityImpact: 'Still O(N) time, O(min(N, K)) space.',
+        invariantShift: 'For non-zero K, normalize with a positive modulus such as `((prefix % absK) + absK) % absK`; equal remainders identify subarrays divisible by |K|. Handle K = 0 separately as a zero-sum subarray problem.',
+        complexityImpact: 'O(N) time, O(min(N, |K|)) map space for K ≠ 0; K = 0 uses the separate zero-sum formulation.',
       },
       {
         question: 'What if the array receives online point updates between sum queries?',
@@ -42,14 +42,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Two readers starting at opposite ends of a sorted bookshelf walking inward: whenever the pair is too big, the right person steps left; whenever too small, the left person steps right.',
     interviewScript30s:
-      '"On a sorted array (or bounded walls), moving the dominated pointer provably discards an entire row of worse pairs, dropping O(N²) search to O(N) in strictly O(1) space."',
+      '"For a sorted pair-search problem with a valid elimination invariant, moving the dominated pointer discards a whole set of candidates; the scan is O(N) time and O(1) auxiliary space, excluding input and output. This bound does not apply automatically to every two-pointer variant."',
     chooseWhen: 'Sorted pair/triplet sums, palindromes, in-place deduplication, or wall-bounded water area.',
     avoidWhen: 'Unsorted array where original indices cannot be destroyed (use HashMap instead).',
     followUpTwists: [
       {
         question: 'How do you extend 2Sum Sorted to 3Sum or K-Sum without duplicate tuples?',
         invariantShift: 'Sort once, fix outer anchors, run converging 2-pointer inside, and skip adjacent equal values on every level.',
-        complexityImpact: 'O(N^(K-1)) time, O(1) auxiliary space (excluding output).',
+        complexityImpact: 'For fixed K, the common sorted recursive K-Sum approach is O(N^(K-1)) time in the usual worst-case bound and O(K) recursion space (or O(1) when K is treated as a fixed constant), excluding output; sorting adds O(N log N) time and implementation-dependent stack space.',
       },
       {
         question: 'What if the input arrives as a Linked List instead of an array?',
@@ -63,7 +63,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A stretchy rubber frame sliding rightward across a tape: stretch the right edge to collect new items, and pull the left edge forward whenever the frame breaks your rule.',
     interviewScript30s:
-      '"Since frequencies or non-negative sums change monotonically as the window grows or shrinks, both pointers cross the array at most once—achieving O(N) amortized time instead of O(N²)."',
+      '"For constraints whose validity is monotone under window expansion/shrinking (for example, non-negative sum bounds or at-most-K distinct values), each pointer advances at most N times, giving O(N) time. Frequency counts alone do not make every window condition monotone."',
     chooseWhen: 'Longest or shortest contiguous subarray/substring with positive values or character counts.',
     avoidWhen: 'Negative values are present in sum constraints (monotonicity breaks -> use Prefix Sum + HashMap).',
     followUpTwists: [
@@ -84,7 +84,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Opening a dictionary straight to the middle: every single guess throws away half the remaining pages, turning a 1-million-page search into just 20 flips.',
     interviewScript30s:
-      '"Notice the feasibility predicate is monotonic (False..False then True..True). Binary searching the answer range [lo..hi] with an O(N) checker solves this in O(N log(Range)) without enumerating every candidate."',
+      '"Confirm the feasibility predicate is monotonic (False..False then True..True, or the reverse). Binary-searching a candidate range of size R with an O(N) checker costs O(N log R) time, plus checker setup and any preprocessing; define R from the actual bounds."',
     chooseWhen: 'Sorted arrays, rotated sorted arrays, peaks, or "minimize the maximum / maximize the minimum" optimization.',
     avoidWhen: 'Feasibility predicate flips back and forth non-monotonically.',
     followUpTwists: [
@@ -96,14 +96,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you prevent infinite loops between left-biased and right-biased mid?',
         invariantShift: 'Pair floor mid (`lo + ((hi - lo) >> 1)`) strictly with `hi = mid; else lo = mid + 1`.',
-        complexityImpact: 'Guaranteed O(log(hi - lo)) termination.',
+        complexityImpact: 'For an inclusive integer range, O(log(hi - lo + 1)) iterations; the exact bound depends on the interval convention.',
       },
     ],
   },
   'fast-slow-pointers': {
     algorithmId: 'fast-slow-pointers',
     simpleAnalogy:
-      'Two runners move around a circular track at different speeds: if the faster runner gains on the slower runner, their positions eventually coincide after a whole-number number of steps. This models cycle detection; the proof depends on the step sizes and cycle structure, not on a straight-road halfway point.',
+      'For cycle detection, a slow pointer advances one step and a fast pointer two; inside a cycle they eventually meet. The same speed pattern can locate a linked-list midpoint when no cycle is present, but the two uses have different stopping conditions.',
     interviewScript30s:
       '"Using a 1-step slow pointer and 2-step fast pointer detects cycles and splits lists in half in O(N) time and O(1) memory, avoiding an O(N) visited HashSet."',
     chooseWhen: 'Linked list cycle detection, cycle entry node, midpoint split, or implicit duplicate cycle (Find Duplicate Number #287).',
@@ -124,7 +124,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'monotonic-stack': {
     algorithmId: 'monotonic-stack',
     simpleAnalogy:
-      'People standing in line looking forward: anyone shorter than a tall newcomer behind them is permanently blocked from view and pops out of the line immediately.',
+      'As you scan from left to right, a taller new person makes shorter unresolved people behind them no longer candidates for the next-greater-to-the-right answer; pop those indices from the stack.',
     interviewScript30s:
       '"Instead of scanning forward O(N²) from each index, I keep unresolved indices in monotonic order on a stack. Each element enters once and pops once when resolved, guaranteeing amortized O(N)."',
     chooseWhen: 'Next Greater/Smaller Element, Daily Temperatures, Stock Span, Largest Rectangle in Histogram.',
@@ -154,7 +154,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you speed up Word Ladder when branching factor is huge?',
         invariantShift: 'Run Bidirectional BFS expanding whichever frontier set (start vs end) is currently smaller.',
-        complexityImpact: 'Cuts search space from O(b^d) down to O(b^(d/2)).',
+        complexityImpact: 'Often explores about O(b^(d/2)) states when branching is roughly balanced and the frontiers meet near the middle; this is a useful model, not a universal bound for irregular graphs.',
       },
       {
         question: 'What if edge weights are strictly {0, 1} (e.g., Minimum Cost Grid Path)?',
@@ -208,10 +208,10 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'dijkstra-shortest-path': {
     algorithmId: 'dijkstra-shortest-path',
     simpleAnalogy:
-      'A GPS exploring toll roads: always lock in the cheapest unvisited intersection next because adding more positive tolls later can never make a longer route cheaper.',
+      'A GPS with non-negative edge costs repeatedly settles the unvisited intersection with the smallest tentative distance. No later path can improve it once all edge costs are non-negative.',
     interviewScript30s:
       '"With non-negative weights, the smallest unsettled vertex popped from the Min-Heap is permanently optimal. Skipping stale entries (`if (d > dist[u]) continue`) keeps total runtime O((V + E) log V)."',
-    chooseWhen: 'Single-source shortest paths or min-max effort grid paths with strictly non-negative weights.',
+    chooseWhen: 'Single-source shortest paths when all edge weights are non-negative.',
     avoidWhen: 'Any edge has a negative weight (use Bellman-Ford) or edges are all unweighted (use plain BFS).',
     followUpTwists: [
       {
@@ -222,7 +222,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you count the NUMBER of distinct shortest paths modulo 10^9+7?',
         invariantShift: 'Maintain `ways[v]`: on strict improvement `ways[v] = ways[u]`; on tie (`d + w === dist[v]`) add `ways[v] += ways[u]`.',
-        complexityImpact: 'Same O((V + E) log V) time.',
+        complexityImpact: 'O((V + E) log V) time for Dijkstra with a binary heap, assuming strictly positive edge weights for this simple path-count update. Zero-weight edges can create cycles in the shortest-path subgraph; define whether counting walks or simple paths and use a suitable method before applying this recurrence.',
       },
     ],
   },
@@ -233,7 +233,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     interviewScript30s:
       '"Since we must enumerate all valid configurations under small N, I use Choose -> Explore -> Unchoose with O(1) conflict sets (or Trie edges) to prune invalid subtrees before recursing."',
     chooseWhen: 'Subsets, permutations, combinations, Sudoku, N-Queens, Word Search II (with Trie pruning).',
-    avoidWhen: 'Asked only for the COUNT or OPTIMAL score with large N > 25 (switch to Dynamic Programming).',
+    avoidWhen: 'Backtracking is a poor fit when the search space is huge and pruning is weak. For counting or optimization, consider DP only when subproblems overlap and a compact state/transition exists; otherwise consider branch-and-bound, meet-in-the-middle, or problem-specific pruning. There is no universal N threshold.',
     followUpTwists: [
       {
         question: 'How do you handle duplicate input numbers without generating duplicate subsets?',
@@ -243,7 +243,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you optimize N-Queens conflict checks from O(N) to O(1)?',
         invariantShift: 'Use 3 integer bitmasks (cols, diag1, diag2) to test & toggle valid positions in single CPU bit instructions.',
-        complexityImpact: 'O(N!) with ~10× faster constant factor.',
+        complexityImpact: 'The search remains exponential with an O(N!) worst-case upper bound; bitmasks reduce conflict-check work to O(1) per candidate on supported integer widths, but the speedup depends on implementation and runtime (do not promise a fixed multiplier).',
       },
     ],
   },
@@ -294,14 +294,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Packing maximum meetings into one room by always picking whichever meeting ends soonest—leaving the largest possible unbooked afternoon for everything else.',
     interviewScript30s:
-      '"By sorting intervals by end time (or tracking the farthest reach frontier), an exchange argument proves the greedy choice can never do worse than any optimal schedule, solving it in O(N log N) or O(N)."',
+      '"For unweighted maximum-cardinality interval scheduling, sorting by end time and choosing the next compatible interval is optimal by an exchange argument. Farthest-reach greedy is a different rule used in problems such as Jump Game or interval covering and needs its own invariant."',
     chooseWhen: 'Interval merging/scheduling, Jump Game, Gas Station, Huffman coding, Kruskal/Prim MST.',
     avoidWhen: 'A tiny 3-item counterexample disproves greedy (e.g., Coin Change [1, 3, 4] for target 6 -> use DP).',
     followUpTwists: [
       {
         question: 'How do you prove to an interviewer that Greedy is actually optimal here?',
         invariantShift: 'State a 2-sentence Exchange Argument: assume an optimal solution differs at the first step, swap in the greedy choice, and prove feasibility + equal-or-better score.',
-        complexityImpact: 'Eliminates DP table overhead (often O(N²) -> O(N log N) or O(N)).',
+        complexityImpact: 'A proven greedy rule can avoid a DP table for that specific problem; weighted interval scheduling needs a different DP approach.',
       },
       {
         question: 'What if intervals also carry different profit weights (Weighted Job Scheduling)?',
@@ -368,7 +368,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'What if the graph has 10^5 nodes in a straight chain causing RecursionError?',
-        invariantShift: 'Replace recursion with an explicit heap-allocated stack storing `(node, state)` frames.',
+        invariantShift: 'Replace recursion with an explicit stack storing `(node, state)` frames; this avoids recursion-depth limits but uses O(V) auxiliary stack memory in the worst case.',
         complexityImpact: 'O(V + E) time, zero call-stack limit risk.',
       },
     ],
@@ -376,7 +376,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'union-find-dsu': {
     algorithmId: 'union-find-dsu',
     simpleAnalogy:
-      'Friend circles merging at a party: each group picks one team captain, and whenever you ask who your captain is, you remember the top captain directly (Path Compression) so future checks are instant.',
+      'Friend circles merging at a party: each group has a representative. Path compression makes nodes point closer to the representative after a lookup, so later operations are faster on average.',
     interviewScript30s:
       '"Pairing Path Compression with Union-by-Size merges components and tests connectivity in inverse-Ackermann O(α(N)) ≈ O(1) amortized time—far faster than re-running DFS per edge."',
     chooseWhen: 'Dynamic connectivity, Redundant Connection, Accounts Merge, Kruskal MST, Number of Provinces.',
@@ -418,20 +418,20 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'kmp-rabin-karp': {
     algorithmId: 'kmp-rabin-karp',
     simpleAnalogy:
-      'KMP remembers how much of your search word already matches the start of itself so you never re-read text backward; Rabin-Karp turns every window into a numeric fingerprint you update in O(1).',
+      'KMP reuses the longest matching prefix-suffix after a mismatch, so the text cursor never moves backward; Rabin-Karp updates a rolling fingerprint in O(1) arithmetic per window, but hash matches are probabilistic unless verified.',
     interviewScript30s:
-      '"KMP builds the LPS border table in O(M) so the text cursor never rewinds—guaranteeing O(N + M) worst-case matching. For multi-pattern or duplicate-length checks, Rabin-Karp rolls a polynomial hash in O(1) per shift."',
-    chooseWhen: 'Guaranteed worst-case O(N + M) substring search, periodic strings, Longest Duplicate Substring.',
+      '"KMP builds the LPS table in O(M) and guarantees O(N + M) worst-case matching. Rabin-Karp updates a polynomial hash in O(1) arithmetic per shift; expected performance is fast with suitable hashing, but collisions require verification and can worsen runtime."',
+    chooseWhen: 'Use KMP for guaranteed worst-case O(N + M) single-pattern search and periodic strings; use Rabin-Karp for rolling-hash candidate detection (e.g., duplicate substrings) when collision verification/handling is included.',
     avoidWhen: 'Typo-tolerant fuzzy matching is required (use N-Gram Inverted Index + Damerau-Levenshtein).',
     followUpTwists: [
       {
         question: 'How do you eliminate hash collision hacks against Rabin-Karp?',
         invariantShift: 'Use Double Hashing with two large coprime moduli (e.g., 10^9+7 and 10^9+9) and verify exact string match on hit.',
-        complexityImpact: 'Collision probability drops to ~10^-18 while staying O(N).',
+        complexityImpact: 'With suitable random-hash assumptions, double hashing makes accidental collisions very unlikely; verify a hash match against the actual substring when correctness must be exact.',
       },
       {
         question: 'How does KMP find the Shortest Palindrome by prepending characters (#214)?',
-        invariantShift: 'Compute LPS of `s + "#" + reverse(s)`: `lps[last]` gives the longest palindromic prefix in O(N).',
+        invariantShift: 'Compute LPS of `s + separator + reverse(s)`, choosing a separator absent from s (or an out-of-alphabet sentinel); `lps[last]` gives the longest palindromic prefix in O(N).',
         complexityImpact: 'O(N) time, O(N) space.',
       },
     ],
@@ -439,9 +439,9 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'bellman-ford': {
     algorithmId: 'bellman-ford',
     simpleAnalogy:
-      'Passing gossip across a town in waves: after 1 wave everyone 1 hop away knows the cheapest deal; after V - 1 waves every shortest path is settled—if wave V still improves anything, a negative-cost infinite money loop exists.',
+      'Passing cost updates across a town in waves: after at most V - 1 full edge-relaxation passes, shortest distances from the source are settled for reachable vertices when no reachable negative cycle exists. An improvement on pass V signals a negative cycle reachable from that source.',
     interviewScript30s:
-      '"Because negative edge weights break Dijkstra’s greedy assumption, I relax all E edges across V - 1 rounds in O(V · E). A V-th pass cleanly detects negative cycles, and K + 1 snapshot rounds solve K-stop flight limits."',
+      '"Because negative edge weights break Dijkstra’s greedy assumption, Bellman-Ford relaxes E edges across at most V - 1 rounds in O(V · E) time. A further pass detects negative cycles reachable from the chosen source (initialize all distances to 0 to detect a cycle anywhere); K + 1 snapshot rounds solve K-stop flight limits."',
     chooseWhen: 'Graphs with negative edge weights, negative-cycle detection, or shortest paths capped at <= K edges.',
     avoidWhen: 'All weights are non-negative on large sparse graphs (Dijkstra is dramatically faster).',
     followUpTwists: [
@@ -462,7 +462,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Checking every city pair on a flight map by asking one layover city `k` at a time: "Is flying i -> k -> j cheaper than my current best i -> j?"',
     interviewScript30s:
-      '"With V <= 400 and all-pairs distance queries, Floyd-Warshall runs a 3-loop DP (`k` outermost!) computing all shortest paths in O(V³) time and O(V²) space, naturally supporting negative edges."',
+      '"With V <= 400 and all-pairs distance queries, Floyd-Warshall runs a 3-loop DP (`k` outermost!) in O(V³) time and O(V²) space, supporting negative edges but not negative cycles: distances for pairs that can pass through a negative cycle are undefined (unbounded below)."',
     chooseWhen: 'Dense small graphs (V <= 400) needing all-pairs shortest paths or transitive closure.',
     avoidWhen: 'V > 1,000 (O(V³) = 10^9 ops -> run Dijkstra from each source or Johnson’s algorithm).',
     followUpTwists: [
@@ -546,14 +546,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Growing a fiber-optic cable network outward from headquarters: at every step, plug in whichever unconnected building has the cheapest single cable to your already-wired cluster.',
     interviewScript30s:
-      '"Prim’s grows one MST component greedily using a Min-Heap of crossing edges in O(E log V), and on complete dense graphs (like Min Cost to Connect All Points) an array-based Prim’s avoids building O(V²) edges to run in O(V²) time and O(V) space."',
+      '"Prim’s grows an MST component greedily using a Min-Heap; with an indexed/decrease-key heap it runs in O(E log V), while lazy duplicate-entry heaps are commonly bounded as O(E log E). On dense complete graphs (like Min Cost to Connect All Points), array-based Prim’s avoids building O(V²) edges and runs in O(V²) time and O(V) space."',
     chooseWhen: 'Dense Minimum Spanning Tree graphs (e.g., all-pairs Manhattan points where E = V²).',
     avoidWhen: 'Edges are already given as a sparse sorted edge list (Kruskal + Union-Find is cleaner).',
     followUpTwists: [
       {
         question: 'Why does Prim’s beat Kruskal on Min Cost to Connect All Points (#1584, N = 1,000)?',
         invariantShift: 'Kruskal allocates & sorts N²/2 = 500k edges; array-based Prim’s tracks `minDist[v]` on the fly without storing the full graph.',
-        complexityImpact: 'O(V²) time and O(V) space instead of O(V² log V) / O(V²).',
+        complexityImpact: 'O(V²) time and O(V) auxiliary space, avoiding explicit O(V²) edge storage; standard Kruskal on the materialized complete graph takes O(V² log V) time and O(V²) space.',
       },
       {
         question: 'What if the graph is disconnected?',
@@ -586,7 +586,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'fenwick-tree-bit': {
     algorithmId: 'fenwick-tree-bit',
     simpleAnalogy:
-      'A super-compact accounting ladder where each rung stores a power-of-two chunk of numbers: climbing up (`i += i & -i`) updates your total in ~17 steps, and stepping down (`i -= i & -i`) sums any prefix in ~17 steps.',
+      'A compact accounting ladder where each rung stores a power-of-two chunk: update with `i += i & -i` and query a prefix with `i -= i & -i`, each in O(log N) steps (about 14 steps for N = 10,000).',
     interviewScript30s:
       '"For invertible operations like prefix sums or inversion counting with online point updates, a 1-indexed Fenwick Tree uses just 10 lines of code and N space with tiny constant-factor O(log N) updates and queries."',
     chooseWhen: 'Dynamic prefix sums, Count Smaller After Self, 2D mutable range sums, online order statistics.',
@@ -651,19 +651,19 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A warehouse picker with 10,000 range orders: instead of running wildly back and forth across aisles, group orders by starting aisle block of size √N and sort right endpoints smoothly so the cart barely moves.',
     interviewScript30s:
-      '"When offline range queries lack an associative merge (like counting distinct elements or mode frequency), sorting queries by `(L / √N, R)` bounds pointer slides to O((N + Q) √N)."',
+      '"For offline range queries whose statistic supports efficient add/remove operations but lacks a simpler segment-tree merge (for example, distinct count or mode frequency), sort queries by `(L / √N, R)` to bound pointer movement by O((N + Q) √N)."',
     chooseWhen: 'Offline static range queries with non-mergeable aggregates (distinct count, frequency-squared) where N, Q <= 10^5.',
     avoidWhen: 'Queries are online or require O(log N) worst-case latency.',
     followUpTwists: [
       {
-        question: 'How do you cut Mo’s constant factor nearly in half?',
+        question: 'How can you reduce pointer movement in Mo’s Algorithm?',
         invariantShift: 'Use Hilbert Curve ordering or Alternating Parity (even blocks sort R ascending, odd blocks sort R descending) so R sweeps like a snake.',
-        complexityImpact: 'Same O((N + Q)√N), ~35–45% fewer pointer steps.',
+        complexityImpact: 'Same asymptotic Mo bound; snake/Hilbert ordering can reduce pointer movement in practice, but the gain depends on query distribution and is not a fixed percentage.',
       },
       {
         question: 'Can Mo’s Algorithm support point updates?',
         invariantShift: 'Add a 3rd time dimension `t` with block size `N^(2/3)` (Mo’s with Updates).',
-        complexityImpact: 'O(Q · N^(2/3)) time.',
+        complexityImpact: 'For Q queries and U point updates, the common N^(2/3)-block Mo-with-updates scheme has O((N + Q + U) · N^(2/3)) pointer/time work under the standard movement model; the exact bound depends on query/update mix and ordering.',
       },
     ],
   },
@@ -672,7 +672,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Measuring how far every suffix matches the start of the string while remembering the furthest "already-copied mirror window" [L..R] so you copy known prefix lengths in O(1) before scanning new chars.',
     interviewScript30s:
-      '"Z-Algorithm computes for every index i the longest common prefix with s[0..] in strict O(N) time by reusing matches inside the rightmost Z-box [L..R]. Concatenating `pat + "$" + text` solves pattern search without LPS fallback confusion."',
+      '"Z-Algorithm computes for every index i the longest common prefix with s[0..] in strict O(N) time by reusing matches inside the rightmost Z-box [L..R]. Concatenating `pat + separator + text` solves pattern search; choose a separator that cannot occur in either input (or an out-of-alphabet sentinel) to avoid false cross-boundary matches."',
     chooseWhen: 'Linear pattern search, Longest Prefix-Suffix, counting pattern occurrences, Sum of Scores of Built Strings.',
     avoidWhen: 'Streaming character-by-character text where you cannot concatenate pattern + text upfront (use KMP).',
     followUpTwists: [
@@ -693,7 +693,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Standing inside a giant hall of mirrors: if you already know a huge palindrome centered at C, any center on the right half mirrors the exact palindrome radius of its twin on the left half—skipping redundant expansion.',
     interviewScript30s:
-      '"Inserting `#` separators unifies odd and even palindromes, and mirroring radii inside the rightmost palindrome `[L..R]` computes every palindrome center radius in strict O(N) instead of O(N²)."',
+      '"Inserting a separator absent from the input (or an out-of-alphabet sentinel) unifies odd and even palindromes; mirroring radii inside the rightmost palindrome `[L..R]` computes all center radii in O(N) instead of O(N²)."',
     chooseWhen: 'Longest Palindromic Substring or Palindromic Substrings count when N = 10^5 requires O(N).',
     avoidWhen: 'N <= 1,000 in a short interview where Expand-Around-Center O(N²) / O(1) is quicker to code bug-free.',
     followUpTwists: [
@@ -704,8 +704,8 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'Why do we add sentinel characters `^` and `$` at both ends of the transformed string?',
-        invariantShift: 'Distinct sentinels stop the inner expansion loop cleanly without writing array bounds checks on every iteration.',
-        complexityImpact: 'Cleaner loop and zero out-of-bounds bugs.',
+        invariantShift: 'Choose distinct left/right sentinels that cannot occur in the input; they stop expansion at the boundaries without per-iteration bounds checks.',
+        complexityImpact: 'Cleaner loop; correctness still depends on sentinels being outside the input alphabet and on consistent transformed-index handling.',
       },
     ],
   },
@@ -725,8 +725,8 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How does Stream of Characters (#1032) solve online suffix queries simply?',
-        invariantShift: 'Insert words REVERSED into a Trie (or run Aho-Corasick forward) to check incoming stream characters in O(1) per char.',
-        complexityImpact: 'O(1) per streamed character with Aho-Corasick automaton.',
+        invariantShift: 'For the reversed-Trie online suffix-query approach, scan backward up to the maximum word length (O(L) worst case per query). A prebuilt Aho-Corasick automaton can process a stream in amortized O(1) state-transition work per character, but reporting matches adds O(matches); preprocessing and memory depend on total pattern length.',
+        complexityImpact: 'Amortized O(1) state-transition work per streamed character after preprocessing, plus O(matches) to report outputs; this is not a constant-time per-query guarantee.',
       },
     ],
   },
@@ -746,7 +746,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How do you find Longest Common Substring of two strings A and B?',
-        invariantShift: 'Build Suffix Array + LCP on `A + "#" + B` and take max `LCP[i]` across adjacent suffixes belonging to different strings.',
+        invariantShift: 'Build Suffix Array + LCP on `A + separator + B`, where the separator is absent from both strings (or is an out-of-alphabet sentinel), and take max LCP across adjacent suffixes belonging to different strings; ensure LCP cannot cross the separator.',
         complexityImpact: 'O((N + M) log(N + M)) time.',
       },
     ],
@@ -830,7 +830,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How do you avoid floating-point precision errors when checking line intersections?',
-        invariantShift: 'Cross-multiply with 64-bit BigInt: `(c2 - c1) * (m1 - m3) >= (c3 - c1) * (m1 - m2)` (mind denominator signs).',
+        invariantShift: 'Cross-multiply the intersection comparison using exact, sufficiently wide arithmetic (for JavaScript use BigInt; fixed-width 64-bit products can still overflow). Keep slope/order assumptions explicit and account for denominator signs.',
         complexityImpact: 'Exact integer arithmetic with zero precision drift.',
       },
     ],
@@ -852,7 +852,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you find primes in `[L, R]` when `R = 10^12` and `R - L <= 10^6`?',
         invariantShift: 'Use a Segmented Sieve: sieve base primes up to √R = 10^6, then mark their multiples inside the shifted `[0..R-L]` window.',
-        complexityImpact: 'O((R - L + √R) log log R) time, O(R - L) space.',
+        complexityImpact: 'O((R - L + √R) log log R) time, O((R - L) + √R) space for the segment plus base-prime list.',
       },
     ],
   },
@@ -863,12 +863,12 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     interviewScript30s:
       '"Euclidean GCD shrinks arguments logarithmically via `gcd(a, b) = gcd(b, a % b)` in O(log min(a, b)), while Extended GCD finds Bézout coefficients `ax + by = gcd` for modular inverses even when the modulus is composite."',
     chooseWhen: 'Simplifying fractions, Water & Jug reachability (`target % gcd(x, y) === 0`), LCM, modular inverses.',
-    avoidWhen: 'Modulus is prime and Fermat’s Little Theorem (`a^(p-2) mod p`) is already available via fast pow.',
+    avoidWhen: 'When the modulus is prime and a is not divisible by it, Fermat’s theorem may be a convenient alternative if modular exponentiation is available; Extended GCD also works whenever gcd(a, m) = 1.',
     followUpTwists: [
       {
         question: 'How do you avoid integer overflow when computing `lcm(a, b)`?',
         invariantShift: 'Divide BEFORE multiplying: `(a / gcd(a, b)) * b`.',
-        complexityImpact: 'O(log min(a, b)) time, prevents intermediate overflow.',
+        complexityImpact: 'O(log min(a, b)) time; divide before multiplying to reduce overflow risk, but still use a wide/exact type and check whether the final LCM fits the result type.',
       },
       {
         question: 'When does a modular multiplicative inverse of `a` modulo `m` exist?',
@@ -880,11 +880,11 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'modular-exponentiation': {
     algorithmId: 'modular-exponentiation',
     simpleAnalogy:
-      'Instead of multiplying 2 by itself 1,000 times, keep squaring it (2, 4, 16, 256...) and only multiply into your result for the 1-bits of the binary exponent—finishing in just 10 steps.',
+      'Instead of multiplying 2 by itself 1,000 times, square the base at each exponent bit and multiply it into the result only for set bits; the number of squarings and conditional multiplies grows logarithmically with the exponent.',
     interviewScript30s:
-      '"Binary squaring inspects each bit of exponent `e` while reducing modulo `M` every multiplication, computing `a^e mod M` in O(log e) time and O(1) space without overflow."',
+      '"Binary exponentiation inspects each bit of exponent `e`, using O(log e) modular multiplications and O(1) auxiliary space. Reduce after each multiplication, but use a sufficiently wide/exact modular-multiply operation (such as BigInt in JavaScript) to avoid intermediate overflow."',
     chooseWhen: 'Large powers up to 10^18, combinatorics nCr mod 10^9+7 (Fermat inverse), Matrix Exponentiation for O(log N) linear recurrences.',
-    avoidWhen: 'Base or modulus exceeds 2^26 in JS Number (use BigInt to prevent 53-bit float precision loss).',
+    avoidWhen: 'The product of intermediate operands can exceed JavaScript Number safe-integer precision (use BigInt or a proven safe modular-multiplication method); reducing modulo M after an already-inexact multiplication is too late.',
     followUpTwists: [
       {
         question: 'How do you compute the 10^18-th Fibonacci number mod 10^9+7?',
@@ -945,14 +945,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Finding the 5th-tallest student in a gym: pick a random height divider, send shorter students left and taller right—then completely ignore whichever side cannot contain #5!',
     interviewScript30s:
-      '"Because we only recurse into the ONE partition containing index `N - K`, expected work forms the geometric series N + N/2 + N/4 + ... = O(N) average time and O(1) space—beating O(N log K) heaps in memory."',
+      '"Quickselect partitions in place and continues only in the side containing target index `N - K`; with randomized pivots its expected running time is O(N), but the expected recurrence is not a guaranteed half-size geometric series. Iterative partitioning uses O(1) auxiliary space; recursive implementations also use stack space (expected O(log N), worst O(N))."',
     chooseWhen: 'K-th Largest Element, K Closest Points to Origin, Top-K Frequent (over unique frequencies) when in-place mutation is allowed.',
     avoidWhen: 'Input is an online unbounded stream (use bounded Min-Heap) or adversarial worst-case O(N) is strictly demanded without randomization.',
     followUpTwists: [
       {
         question: 'How do you protect Quickselect against O(N²) worst case on all-duplicate arrays?',
         invariantShift: 'Combine Randomized Pivot with 3-Way Dutch Partition (`< pivot`, `== pivot`, `> pivot`): if target lies in the equal band, return immediately!',
-        complexityImpact: 'O(N) even when all 10^5 elements are identical.',
+        complexityImpact: 'O(N) for an all-equal array with 3-way partitioning (the equal band is resolved in one partition pass); randomized pivoting alone does not guarantee linear worst-case time on arbitrary inputs.',
       },
       {
         question: 'When should you prefer a Min-Heap over Quickselect in a system design interview?',
@@ -994,7 +994,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Can a node be pushed into the deque more than once in 0-1 BFS?',
         invariantShift: 'Yes—if first reached via a w=1 edge and later improved via a w=0 edge, it re-enters at the front; guard with `if (d > dist[u]) continue` just like Dijkstra.',
-        complexityImpact: 'Each edge relaxes at most once → still strictly O(V + E).',
+        complexityImpact: 'A vertex can be re-enqueued after improvement; do not claim each edge relaxes only once. With distance relaxation and stale-entry checks, standard 0-1 BFS is O(V + E), and a vertex may have multiple deque entries.',
       },
       {
         question: 'What if edge weights are small integers 0..K (e.g., K <= 10)?',
@@ -1008,7 +1008,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Instead of digging one giant tunnel from New York to Boston, two crews dig from both ends and meet in the middle—cutting the total dirt excavated from a giant circle into two tiny half-radius circles.',
     interviewScript30s:
-      '"Since both start and end states are known upfront in an unweighted graph, I expand two hash-set frontiers and always step the smaller one—slashing O(b^d) states down to O(b^(d/2)) until the sets intersect."',
+      '"When both endpoints are known in an unweighted graph, bidirectional BFS expands from both ends and often reduces work from about O(b^d) to O(b^(d/2)) under roughly balanced branching and a meeting near the middle. Expanding the smaller frontier is a practical heuristic; irregular graphs do not have that universal bound."',
     chooseWhen: 'Word Ladder, Open the Lock, or social-network shortest paths where branching factor b is huge and target is known.',
     avoidWhen: 'Target is unknown (e.g., nearest exit), graph is weighted (requires modified bidirectional Dijkstra stopping criteria), or edges are irreversible.',
     followUpTwists: [
@@ -1048,7 +1048,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'bipartite-graph-coloring': {
     algorithmId: 'bipartite-graph-coloring',
     simpleAnalogy:
-      'Seating wedding guests at two tables where rivals cannot sit together: seat the first guest at Table A, every rival at Table B, their rivals back at Table A—if anyone ends up sitting with a rival, a 3-way (odd) rivalry loop makes it impossible.',
+      'Seating wedding guests at two tables where rivals cannot sit together: seat the first guest at Table A, every rival at Table B, their rivals back at Table A—if anyone ends up sitting with a rival, an odd-length rivalry cycle makes a two-table seating impossible.',
     interviewScript30s:
       '"A graph is bipartite iff it contains no odd-length cycle. I iterate across every uncolored component, run BFS assigning alternating 0/1 colors, and return false the instant an edge connects two same-colored nodes—O(V + E) time and O(V) space."',
     chooseWhen: 'Is Graph Bipartite (LC 785), Possible Bipartition (LC 886), odd-cycle detection, or 2-shift conflict scheduling.',
@@ -1071,7 +1071,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Standing at a conference hall door with a clicker: +1 every time a meeting starts, -1 every time a meeting ends (letting people exit before new ones enter at the same minute), and remembering the highest number ever shown on the clicker.',
     interviewScript30s:
-      '"I flatten every [start, end) interval into (+1) and (-1) timeline events, sort by timestamp with -1 before +1 on ties, and sweep a single active counter in O(N log N) time—scaling effortlessly to timestamps up to 10^9."',
+      '"For non-empty half-open intervals [start, end), I flatten each into (+1) and (-1) timeline events, sort by timestamp with -1 before +1 on ties, and sweep a single active counter in O(N log N) time. Ignore empty intervals (start === end) so they do not decrement before incrementing; large coordinates do not change the comparison-based bound."',
     chooseWhen: 'Meeting Rooms II, Car Pooling with large coordinates, My Calendar overlaps, and The Skyline Problem.',
     avoidWhen: 'Intervals arrive online one-by-one requiring instant peak queries after each insert (use TreeMap or Lazy Segment Tree).',
     followUpTwists: [
@@ -1103,7 +1103,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How do you track the 90th percentile (P90) instead of the 50th percentile?',
-        invariantShift: 'Keep the exact same two heaps, but rebalance to maintain `lo.size ≈ 9 * hi.size` instead of `lo.size ≈ hi.size`!',
+        invariantShift: 'Keep the lower Max-Heap at about 9 times the upper Min-Heap size for a nearest-rank 90th percentile; read `hi.top()` as P90 (with careful size handling for small N).',
         complexityImpact: 'Still O(log N) add and O(1) P90 read.',
       },
     ],
@@ -1132,7 +1132,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'meet-in-the-middle': {
     algorithmId: 'meet-in-the-middle',
     simpleAnalogy:
-      'Trying to open a 40-switch combination lock by brute force takes a trillion tries (2^40). Split the switches into Left 20 and Right 20 (1 million each), list all outcomes of each half, and match pairs in seconds!',
+      'Trying to open a 40-switch combination lock by brute force takes about 1 trillion tries (2^40). Split the switches into Left 20 and Right 20 (about 1 million outcomes each), list each half, then match complementary sums instead of enumerating all 2^40 combinations.',
     interviewScript30s:
       '"At N = 40 with 10^9 values, 2^N backtracking TLEs and subset-sum DP OOMs. Splitting into two halves of N/2 creates two 2^(N/2) lists (~10^6), sorts the right half, and binary searches complements in O(N · 2^(N/2))—a square-root speedup over 2^N."',
     chooseWhen: 'N is roughly 30–44 AND values are too large (10^7–10^9) or negative for pseudo-polynomial DP (LC 1755, LC 2035, 4Sum II).',
