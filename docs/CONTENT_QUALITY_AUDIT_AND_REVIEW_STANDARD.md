@@ -1,8 +1,8 @@
 # Application-wide content quality audit and review standard
 
 **Audit date:** 2026-11-25  
-**Baseline:** `main` at `512c342ac17825398b9aafde24b706ecd1d9a3a6`  
-**Scope:** All 21 registered learning surfaces in `docs/learning-surface-registry.json`  
+**Baseline:** `main` at `8ee0a4e7dd90b11053ea4fce5253eaf82f395593`  
+**Scope:** All 22 registered learning surfaces in `docs/learning-surface-registry.json`  
 **Method:** Static source and curriculum review. Browser walkthroughs, learner studies, screen-reader testing and subject-matter sign-off are not claimed.
 
 ## 1. Purpose and evidence boundary
@@ -120,6 +120,13 @@ The surface ledger maps existing paths; it is not yet a complete nested lesson i
 
 ## 8. Current baseline and honest status
 
-The registry contains 21 surfaces. The audit ledger covers those 21 surfaces and preserves their `not_assessed` content and verification states until topic-level evidence exists. The repository already has stronger evidence in selected DSA pilot lessons and AI Academy curriculum tests; those local tests should be linked to the exact lesson IDs in a later topic-level ledger rather than generalized to an entire surface.
+The registry contains 22 surfaces, and the audit ledger covers all 22 exactly once. All 22 surfaces retain `not_assessed` content and verification states until topic-level evidence exists. The repository already has stronger evidence in selected DSA pilot lessons and AI Academy curriculum tests; those local tests should be linked to the exact lesson IDs in a later topic-level ledger rather than generalized to an entire surface.
 
 **Exit condition for this PR:** ledger coverage, path integrity, status integrity and CI validation. It does not claim that all lessons have been rewritten or verified.
+
+
+### Baseline refresh — 2026-11-25
+
+The previous header and Section 8 count were stale after Pattern Forge was registered. This standard now records the verified `main` baseline `8ee0a4e7dd90b11053ea4fce5253eaf82f395593`, with 22 registered surfaces and 510 tracked files. The matching machine-readable registry and ledger were refreshed in PR #58. Main workflow run `45530994950` passed all validation steps, including TypeScript, DSA and Pattern Forge checks, registry/ledger validators, topic inventory, and frontend build.
+
+This refresh does not change any surface to content-complete or verified. The all-topic quality audit remains open; the ledger's 22 `not_assessed` statuses are intentional until topic-level evidence and review are recorded.
