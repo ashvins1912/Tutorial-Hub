@@ -65,6 +65,13 @@ test('100 percent audit ledger reconciles every registered content and test path
   assert.equal(ledger.counts.contentAddedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'content-added-awaiting-ci').length);
   assert.equal(ledger.counts.contentCorrectedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'content-corrected-awaiting-ci').length);
   assert.equal(ledger.counts.uiCorrectedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'ui-corrected-awaiting-ci').length);
+  assert.ok(Array.isArray(ledger.openFindings));
+  for (const finding of ledger.openFindings) {
+    assert.ok(expected.has(finding.sourcePath), 'unregistered open finding path: ' + finding.sourcePath);
+    assert.equal(finding.status, 'open');
+  }
+  assert.equal(ledger.counts.unresolvedP0, ledger.openFindings.filter((finding) => finding.status === 'open' && finding.severity === 'P0').length);
+  assert.equal(ledger.counts.unresolvedP1, ledger.openFindings.filter((finding) => finding.status === 'open' && finding.severity === 'P1').length);
   assert.equal(ledger.counts.reviewedPaths, 0);
   assert.equal(
     ledger.counts.correctedUnitsAwaitingCi + ledger.counts.contentAddedUnitsAwaitingCi +
