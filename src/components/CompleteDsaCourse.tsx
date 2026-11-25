@@ -14,13 +14,13 @@ const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
   { key: 'learningOutcomes', title: 'What you will be able to do', intro: 'Observable outcomes that define when this topic is understood.' },
   { key: 'prerequisites', title: 'Prerequisites and foundations', intro: 'What to know first, with a clear bridge back when needed.' },
   { key: 'concepts', title: 'Concepts to understand', intro: 'Learn the vocabulary and mechanics before memorising templates.' },
-  { key: 'deepDive', title: 'Complete topic explanation', intro: 'Build from intuition to underlying mechanics, assumptions and variations.' },
+  { key: 'deepDive', title: 'Topic deep dive', intro: 'Build from intuition to underlying mechanics, assumptions and variations.' },
   { key: 'recognition', title: 'When should I use this?', intro: 'Recognise the problem signals and the assumptions that make the technique valid.' },
   { key: 'method', title: 'How to derive a solution', intro: 'A repeatable reasoning process from the direct approach to a justified algorithm.' },
   { key: 'workedExample', title: 'Worked example', intro: 'Follow the reasoning step by step; trace the state on paper before coding.' },
   { key: 'traceExercises', title: 'Predict and trace', intro: 'Try each state transition before checking the explanation.' },
   { key: 'implementationSteps', title: 'Implementation guide', intro: 'Translate the reasoning into safe, maintainable code.' },
-  { key: 'codeExamples', title: 'Runnable code examples', intro: 'Study language-specific implementations and why each important line exists.' },
+  { key: 'codeExamples', title: 'Code examples and walkthroughs', intro: 'Study language-specific implementations and why each important line exists.' },
   { key: 'correctness', title: 'Correctness and invariants', intro: 'Understand why the algorithm works, not just that it passes examples.' },
   { key: 'complexity', title: 'Time and space complexity', intro: 'Know what is counted and why the bound follows.' },
   { key: 'pitfalls', title: 'Common mistakes', intro: 'Use these as a pre-submit checklist.' },
@@ -51,7 +51,7 @@ function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionK
           <div className="flex items-center justify-between px-4 pt-3"><span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Code walkthrough</span><span className="text-[11px] text-slate-400">Read the line numbers with the explanation</span></div>
           <pre tabIndex={0} aria-label={`${example.language} code example: ${example.title}`} aria-describedby={`dsa-code-explanation-${lesson.id}-${exampleIndex}`} className="overflow-x-auto p-4 text-sm leading-6 text-slate-800 dark:text-slate-200"><code>{codeLines.map((line, index) => <span key={index} className="flex min-w-max"><span aria-hidden="true" className="mr-4 inline-block w-6 shrink-0 select-none text-right text-slate-400">{index + 1}</span><span>{line || ' '}{'\n'}</span></span>)}</code></pre>
         </div>
-        <div className="border-t border-slate-100 bg-sky-50/60 p-4 dark:border-slate-700 dark:bg-sky-950/20"><h5 id={`dsa-code-explanation-${lesson.id}-${exampleIndex}`} className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">What the code is doing</h5><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{example.explanation}</p><p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Study tip: predict the next state, trace the variables, then explain why each update is safe before changing the code.</p></div>
+        <div id={`dsa-code-explanation-${lesson.id}-${exampleIndex}`} className="border-t border-slate-100 bg-sky-50/60 p-4 dark:border-slate-700 dark:bg-sky-950/20"><h5 className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">What the code is doing</h5><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{example.explanation}</p><p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Study tip: predict the next state, trace the variables, then explain why each update is safe before changing the code.</p></div>
       </article>;
     })}</div>;
   }
@@ -86,8 +86,18 @@ export function CompleteDsaCourse() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return DSA_COMPLETE_LESSONS;
-    return DSA_COMPLETE_LESSONS.filter((lesson) =>
-      [lesson.title, lesson.promise, lesson.mentalModel, ...lesson.concepts, ...lesson.recognition].join(' ').toLowerCase().includes(q));
+    const searchableText = (lesson: DsaLesson) => [
+      lesson.title, lesson.promise, lesson.mentalModel,
+      ...(lesson.keyTerms ?? []).flatMap((item) => [item.term, item.definition, item.example]),
+      ...lesson.concepts, ...lesson.deepDive, ...lesson.recognition, ...lesson.method,
+      ...lesson.workedExample, ...lesson.traceExercises, ...lesson.implementationSteps,
+      ...lesson.correctness, ...lesson.complexity, ...lesson.pitfalls,
+      ...lesson.learningOutcomes, ...lesson.prerequisites, ...lesson.interviewChecks,
+      ...lesson.assessment, ...lesson.realWorldApplications, ...lesson.revisionPrompts,
+      ...(lesson.practice ?? []).flatMap((item) => [item.task, item.goal, item.level]),
+      ...(lesson.codeExamples ?? []).flatMap((item) => [item.title, item.language, item.explanation]),
+    ].join(' ').toLowerCase();
+    return DSA_COMPLETE_LESSONS.filter((lesson) => searchableText(lesson).includes(q));
   }, [DSA_COMPLETE_LESSONS, search]);
   const doneCount = DSA_COMPLETE_LESSONS.filter((lesson) => (progress[lesson.id]?.length ?? 0) === DSA_LESSON_STEPS.length).length;
   const toggleStep = (step: string) => {
@@ -103,12 +113,12 @@ export function CompleteDsaCourse() {
       <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-6 text-white sm:p-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300"><GraduationCap className="h-4 w-4" /> Complete DSA Academy · {DSA_COMPLETE_LESSONS.length} modules</div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300"><GraduationCap className="h-4 w-4" /> DSA Academy · {DSA_COMPLETE_LESSONS.length} modules</div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Learn to solve, not memorise</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">Each module takes you from mental model to recognition, derivation, worked reasoning, complexity, pitfalls and independent practice. Mark a learning step only after you can perform it without copying.</p>
           </div>
           <div className="min-w-44 rounded-xl border border-white/15 bg-white/10 p-4">
-            <div className="text-xs text-slate-300">Modules mastered</div>
+            <div className="text-xs text-slate-300">Modules self-marked complete</div>
             <div className="mt-1 text-3xl font-bold tabular-nums">{doneCount}<span className="text-base text-slate-400"> / {DSA_COMPLETE_LESSONS.length}</span></div>
             <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/15"><div className="h-full rounded-full bg-sky-400" style={{ width: (doneCount / DSA_COMPLETE_LESSONS.length * 100) + '%' }} /></div>
           </div>
@@ -147,7 +157,7 @@ export function CompleteDsaCourse() {
           const isOpen = expanded.includes(meta.key);
           return <section key={meta.key} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <button type="button" onClick={() => toggleSection(meta.key)} aria-expanded={isOpen} aria-controls={`dsa-section-${meta.key}`} className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5"><div><h3 className="text-sm font-bold sm:text-base">{meta.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{meta.intro}</p></div>{isOpen ? <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />}</button>
-            {isOpen && <div id={`dsa-section-${meta.key}`} className="border-t border-slate-100 p-4 dark:border-slate-800 sm:p-5"><SectionList lesson={active} section={meta.key} /></div>}
+            <div id={`dsa-section-${meta.key}`} hidden={!isOpen} className="border-t border-slate-100 p-4 dark:border-slate-800 sm:p-5">{isOpen ? <SectionList lesson={active} section={meta.key} /> : null}</div>
           </section>;
         })}
 
