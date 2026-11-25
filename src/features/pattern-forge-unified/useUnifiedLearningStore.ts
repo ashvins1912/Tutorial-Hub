@@ -213,7 +213,9 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
       if (!hasCheckpointIdentity || checkpointIsCanonical) {
         const checkpointEvidence = recordPredictionCheckpointEvidence(
           next,
-          checkpointIsCanonical ? checkpointId : undefined,
+          checkpointIsCanonical && typeof traceId === 'string' && typeof checkpointId === 'string'
+            ? `${traceId}:${checkpointId}`
+            : undefined,
           payload.checkpointCorrect
         );
         next.predictionCheckpointResults = checkpointEvidence.predictionCheckpointResults;
