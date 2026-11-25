@@ -63,3 +63,23 @@ test('every DSA Java course code example compiles as a snippet', { skip: !hasJdk
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('code walkthrough examples store real newline characters for line numbering', () => {
+  const titles = [
+    'A loop with an explicit invariant',
+    'Lower bound in a sorted array',
+    'Validate a strict BST with global bounds',
+    'Generate all subsets with choose/explore/unchoose',
+    '0/1 knapsack with one-dimensional compression',
+    'BFS shortest distances in an unweighted graph',
+    '2D prefix sum rectangle query',
+    'Fixed-capacity circular queue',
+  ];
+  const all = examples;
+  for (const title of titles) {
+    const example = all.find((item) => item.title === title);
+    assert.ok(example, 'missing line-numbered code example: ' + title);
+    assert.ok(example.code.split('\\n').length > 1,
+      title + ': code UI splits on real newline characters, not escaped backslash-n text');
+  }
+});
