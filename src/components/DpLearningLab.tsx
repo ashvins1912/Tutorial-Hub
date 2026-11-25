@@ -4,6 +4,10 @@ import { useAccountState } from '../hooks/useAccountState';
 import { DP_PRACTICE_PROBLEMS } from '../data/dpPracticeProblems';
 import { DP_GUIDED_LESSONS } from '../data/dpGuidedLessons';
 
+
+
+
+
 const stages = ['Understand the question', 'Define the state', 'Write the transition', 'Set base cases', 'Choose calculation order', 'Code and test', 'Analyse complexity'];
 export function DpLearningLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
