@@ -34,12 +34,12 @@ type LessonProgress = Record<string, string[]>;
 function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
   if (section === 'codeExamples') {
     return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => {
-      const codeLines = example.code.split('\\n');
+      const codeLines = example.code.split('\n');
       return <article key={example.title} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800"><h4 className="text-sm font-semibold">{example.title}</h4><span className="rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">{example.language}</span></div>
         <div className="border-b border-slate-100 bg-white dark:border-slate-700 dark:bg-slate-950">
           <div className="flex items-center justify-between px-4 pt-3"><span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Code walkthrough</span><span className="text-[11px] text-slate-400">Read the line numbers with the explanation</span></div>
-          <pre className="overflow-x-auto p-4 text-sm leading-6 text-slate-800 dark:text-slate-200"><code>{codeLines.map((line, index) => <span key={index} className="flex min-w-max"><span aria-hidden="true" className="mr-4 inline-block w-6 shrink-0 select-none text-right text-slate-400">{index + 1}</span><span>{line || ' '}{'\\n'}</span></span>)}</code></pre>
+          <pre className="overflow-x-auto p-4 text-sm leading-6 text-slate-800 dark:text-slate-200"><code>{codeLines.map((line, index) => <span key={index} className="flex min-w-max"><span aria-hidden="true" className="mr-4 inline-block w-6 shrink-0 select-none text-right text-slate-400">{index + 1}</span><span>{line || ' '}{'\n'}</span></span>)}</code></pre>
         </div>
         <div className="border-t border-slate-100 bg-sky-50/60 p-4 dark:border-slate-700 dark:bg-sky-950/20"><h5 className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">What the code is doing</h5><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{example.explanation}</p><p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Study tip: predict the next state, trace the variables, then explain why each update is safe before changing the code.</p></div>
       </article>;
