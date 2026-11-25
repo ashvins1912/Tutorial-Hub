@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
   "baseline": {
-    "branch": "main",
-    "registryBlobSha": "8854ef3fe2f56c1ee095e65c0adea92a149a2d78",
+    "registryBlobSha": "7d2719d6515a050ea679fbc1bb08a12d3964f13c",
     "registrySurfaceCount": 22,
-    "contentSourcePathCount": 149,
-    "testSourcePathCount": 15,
-    "allRegisteredPathCount": 164
+    "contentSourcePathCount": 153,
+    "testSourcePathCount": 23,
+    "allRegisteredPathCount": 176
   },
   "purpose": "Exhaustive path-level audit ledger. Registry membership is inventory only. No path is marked reviewed unless every relevant unit and behavior is dispositioned with evidence.",
   "status": "in_progress",
@@ -805,6 +804,15 @@
       "evidence": []
     },
     {
+      "path": "src/components/DpLearningLab.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "src/components/flight/FlightMermaidViewer.tsx",
       "roles": [
         "component"
@@ -1055,6 +1063,15 @@
       "dispositionedUnitCount": 0,
       "findings": [],
       "evidence": []
+    },
+    {
+      "path": "src/components/MatrixProblemBank.tsx",
+      "roles": [
+        "component"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
     },
     {
       "path": "src/components/OodAnimationStage.tsx",
@@ -1592,6 +1609,15 @@
       "evidence": []
     },
     {
+      "path": "src/data/dpPracticeProblems.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "src/data/dsa28Patterns.ts",
       "roles": [
         "data"
@@ -1760,6 +1786,15 @@
       "dispositionedUnitCount": 0,
       "findings": [],
       "evidence": []
+    },
+    {
+      "path": "src/data/matrixProblems.ts",
+      "roles": [
+        "data"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
     },
     {
       "path": "src/data/mongooseSchemas.ts",
@@ -2351,6 +2386,15 @@
       "evidence": []
     },
     {
+      "path": "tests/content-authoring/100-percent-audit-ledger.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "tests/content-authoring/ai-academy-curriculum.test.mjs",
       "roles": [
         "test",
@@ -2406,6 +2450,51 @@
       "dispositionedUnitCount": 0,
       "findings": [],
       "evidence": []
+    },
+    {
+      "path": "tests/content-authoring/dp-learning-lab-quality.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
+      "path": "tests/content-authoring/dsa-course-code-example-syntax.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
+      "path": "tests/content-authoring/dsa-course-code-examples.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
+      "path": "tests/content-authoring/dsa-course-structure-inventory.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
+      "path": "tests/content-authoring/dsa-course-ui-accessibility.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
     },
     {
       "path": "tests/content-authoring/generation.test.mjs",
@@ -2477,6 +2566,15 @@
       "evidence": []
     },
     {
+      "path": "tests/content-authoring/matrix-problem-bank-quality.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "tests/content-authoring/phase1.test.mjs",
       "roles": [
         "global-test"
@@ -2546,6 +2644,15 @@
       "dispositionedUnitCount": 0,
       "findings": [],
       "evidence": []
+    },
+    {
+      "path": "tests/dsa/topic-completeness-pilot.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
     },
     {
       "path": "tests/learning-engine/pattern-forge-pilot.test.mjs",
@@ -2626,9 +2733,9 @@
     }
   ],
   "counts": {
-    "registeredContentPathCount": 149,
-    "testPathCount": 15,
-    "allPathCount": 164,
+    "registeredContentPathCount": 153,
+    "testPathCount": 23,
+    "allPathCount": 176,
     "reviewedPaths": 0,
     "reviewedUnits": 6,
     "verifiedUnits": 0,
