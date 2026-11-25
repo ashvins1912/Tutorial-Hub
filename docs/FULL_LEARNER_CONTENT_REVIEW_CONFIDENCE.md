@@ -263,3 +263,15 @@ Four final polish/correctness issues were corrected in the 53-guide file:
 - **Meet in the Middle:** removed the universal “in seconds” promise and described matching complementary sums.
 
 Regression assertions were added (source commit `8f763f52f76f667b06e99e922a59181eaa6fe05b`; test commit `327f602da555e130369a92dc4811fe234613d72b`). Current-head validation is pending; no result is claimed for this pass.
+
+
+## Twelfth focused technical pass: clarify related algorithms and query semantics
+
+Four teaching details were tightened:
+
+- **Fast/slow pointers:** separated Floyd cycle detection from the related midpoint-finding use, including their different stopping conditions.
+- **Monotonic stack:** clarified the next-greater-to-the-right invariant instead of an ambiguous line-of-sight analogy.
+- **Mo’s Algorithm:** removed the inaccurate “lacks an associative merge” criterion; Mo is appropriate when offline queries support efficient add/remove updates and a simpler merge structure is unsuitable.
+- **Dual heaps / P90:** specified the nearest-rank size convention and that the 90th percentile is read from the upper min-heap top.
+
+Regression assertions were added (source commit `1193671a5daf0ec6ee25c3c44761536c31c7966d`; test commit `b4e0033f91f444e6c223b8e379a18a8ece2b5643`). This pass requires a completed final-head CI run.
