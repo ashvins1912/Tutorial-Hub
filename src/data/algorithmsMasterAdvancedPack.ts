@@ -716,7 +716,7 @@ def hopcroft_karp(n_left, n_right, adj):
     mentalModel:
       'Trace edges until you hit a dead end—record that vertex on your return path (post-order!), then backtrack to splice in any unvisited side-loops seamlessly.',
     coreInvariant:
-      'Directed Eulerian Path exists iff every node has in==out EXCEPT at most one start (out−in=1) and one end (in−out=1). Post-order append guarantees dead-end edges sit at the very end of the final itinerary!',
+      'A directed Eulerian path requires the degree-balance rule (one start with out−in=1 and one end with in−out=1, or all vertices balanced for a circuit) plus connectivity of all nonzero-degree vertices in the underlying undirected graph. Hierholzer’s algorithm uses edge traversal and reverse postorder to construct the trail.',
     whenToUse: [
       'LC 332 Reconstruct Itinerary (lexicographically smallest flight route using every ticket once!).',
       'LC 2097 Valid Arrangement of Pairs and LC 753 Cracking the Safe (De Bruijn sequences).',
@@ -955,7 +955,7 @@ def eulerian_itinerary(tickets: list[list[str]], start="JFK") -> list[str]:
     }
     if (!changed) break;
   }
-  // Step 3: Reweight edges to guaranteed >= 0
+  // Step 3: With Bellman-Ford potentials and no negative cycle, reweight edges to non-negative reduced costs
   const adj = Array.from({ length: n }, () => []);
   for (const [u, v, w] of edges) adj[u].push([v, w + h[u] - h[v]]);
   // Step 4: Dijkstra from each vertex + un-reweight
