@@ -193,3 +193,6 @@ Run #721 failed because the test assertion pointed at the wrong guide (fixed in 
 
 
 A further correction in this pass addressed **Quickselect**: the expected O(N) bound is no longer described as a guaranteed half-size geometric series, and the guide distinguishes iterative O(1) auxiliary space from recursive stack space. Regression assertions cover both points (source commit `1016c34036240702c2654b5112f6c1660b14244c`, test commit `ff00b6e716cd0f7b0f6c4c5e4ab545108fda46dc`). Run #727 was in progress at type-check; the newest Quickselect test/evidence commit requires a completed current-head run.
+
+
+The same pass also corrected **Prim/Kruskal dense-graph comparisons**: Prim’s heap bound now distinguishes indexed/decrease-key from lazy duplicate heaps, and the dense complete-graph comparison explicitly includes Kruskal’s materialized edge-storage cost. Regression assertions were added (source commit `bc3c1f8a1506c182eb37121f0922d45f2da35e5a`, test commit `0531266f562ca7d29226b2585c8a72339723ca1c`). These latest changes require their own completed validation.
