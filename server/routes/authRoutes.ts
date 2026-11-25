@@ -21,6 +21,11 @@ export interface DevAccountRecord {
 
 const devAccountStore = new Map<string, DevAccountRecord>();
 
+function isMongoDuplicateKey(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error &&
+    (error as { code?: unknown }).code === 11000;
+}
+
 export function getAllDevAccounts(): DevAccountRecord[] {
   return Array.from(devAccountStore.values());
 }
@@ -112,42 +117,63 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       updateSet.fullName = metaFullName;
     }
 
-    const account = await UserAccount.findOneAndUpdate(
-      { supabaseUserId: user.id },
-      {
-        $set: updateSet,
-        $setOnInsert: {
-          supabaseUserId: user.id,
-          fullName: metaFullName,
-          avatarUrl: metaAvatarUrl,
-        },
-      },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    );
-
-    // Guarantee a brand-new user starts with strictly zero metrics, zero XP, empty queues/logs
-    await UserBrainProfile.updateOne(
-      { userId: user.id },
-      {
-        $setOnInsert: {
-          userId: user.id,
-          currentTier: INITIAL_BRAIN_PROFILE.currentTier,
-          cognitiveMetrics: {
-            signalRecognitionScore: 0,
-            bottleneckDiagnosisScore: 0,
-            logicAssemblyAccuracy: 0,
-            paperDryRunStreak: 0,
+    let account;
+    try {
+      account = await UserAccount.findOneAndUpdate(
+        { supabaseUserId: user.id },
+        {
+          $set: updateSet,
+          $setOnInsert: {
+            supabaseUserId: user.id,
+            fullName: metaFullName,
+            avatarUrl: metaAvatarUrl,
           },
-          activityLog: [],
-          passedTopicQuizzes: [],
-          completedProblemIds: [],
-          completedWarmupDrills: [],
-          masteredProblemSlugs: [],
-          spacedRepetitionQueue: [],
         },
-      },
-      { upsert: true }
-    );
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+    } catch (accountError) {
+      // Concurrent /me calls can both observe no account, then race on the unique
+      // supabaseUserId index. Recover by updating the account created by the winner.
+      if (!isMongoDuplicateKey(accountError)) throw accountError;
+      account = await UserAccount.findOneAndUpdate(
+        { supabaseUserId: user.id },
+        { $set: updateSet },
+        { new: true }
+      );
+      if (!account) throw accountError;
+    }
+
+    // Guarantee a brand-new user starts with strictly zero metrics, zero XP, empty queues/logs.
+    // A duplicate-key race here means another concurrent request already created
+    // the unique user profile; treat that as successful idempotent provisioning.
+    try {
+      await UserBrainProfile.updateOne(
+        { userId: user.id },
+        {
+          $setOnInsert: {
+            userId: user.id,
+            currentTier: INITIAL_BRAIN_PROFILE.currentTier,
+            cognitiveMetrics: {
+              signalRecognitionScore: 0,
+              bottleneckDiagnosisScore: 0,
+              logicAssemblyAccuracy: 0,
+              paperDryRunStreak: 0,
+            },
+            activityLog: [],
+            passedTopicQuizzes: [],
+            completedProblemIds: [],
+            completedWarmupDrills: [],
+            masteredProblemSlugs: [],
+            spacedRepetitionQueue: [],
+          },
+        },
+        { upsert: true }
+      );
+    } catch (profileError) {
+      if (!isMongoDuplicateKey(profileError)) throw profileError;
+      const alreadyProvisioned = await UserBrainProfile.exists({ userId: user.id });
+      if (!alreadyProvisioned) throw profileError;
+    }
 
     // Community invite processing is a best-effort side effect. A malformed or
     // unavailable invite record must not prevent an authenticated learner from signing in.
