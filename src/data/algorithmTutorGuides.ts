@@ -439,7 +439,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'bellman-ford': {
     algorithmId: 'bellman-ford',
     simpleAnalogy:
-      'Passing gossip across a town in waves: after 1 wave everyone 1 hop away knows the cheapest deal; after V - 1 waves every shortest path is settled—if wave V still improves anything, a negative-cost infinite money loop exists.',
+      'Passing cost updates across a town in waves: after at most V - 1 full edge-relaxation passes, shortest distances from the source are settled for reachable vertices when no reachable negative cycle exists. An improvement on pass V signals a negative cycle reachable from that source.',
     interviewScript30s:
       '"Because negative edge weights break Dijkstra’s greedy assumption, Bellman-Ford relaxes E edges across at most V - 1 rounds in O(V · E) time. A further pass detects negative cycles reachable from the chosen source (initialize all distances to 0 to detect a cycle anywhere); K + 1 snapshot rounds solve K-stop flight limits."',
     chooseWhen: 'Graphs with negative edge weights, negative-cycle detection, or shortest paths capped at <= K edges.',
@@ -1008,7 +1008,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Instead of digging one giant tunnel from New York to Boston, two crews dig from both ends and meet in the middle—cutting the total dirt excavated from a giant circle into two tiny half-radius circles.',
     interviewScript30s:
-      '"Since both start and end states are known upfront in an unweighted graph, I expand two hash-set frontiers and always step the smaller one—slashing O(b^d) states down to O(b^(d/2)) until the sets intersect."',
+      '"When both endpoints are known in an unweighted graph, bidirectional BFS expands from both ends and often reduces work from about O(b^d) to O(b^(d/2)) under roughly balanced branching and a meeting near the middle. Expanding the smaller frontier is a practical heuristic; irregular graphs do not have that universal bound."',
     chooseWhen: 'Word Ladder, Open the Lock, or social-network shortest paths where branching factor b is huge and target is known.',
     avoidWhen: 'Target is unknown (e.g., nearest exit), graph is weighted (requires modified bidirectional Dijkstra stopping criteria), or edges are irreversible.',
     followUpTwists: [
