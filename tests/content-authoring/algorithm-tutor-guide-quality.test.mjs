@@ -34,4 +34,7 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.ok(streamQuery, 'Stream of Characters follow-up should exist');
   assert.match(streamQuery.complexityImpact, /O\(matches\)/i);
   assert.match(streamQuery.invariantShift, /O\(L\) worst case per query/i);
+  assert.match(guides['modular-exponentiation'].interviewScript30s, /sufficiently wide\/exact modular-multiply/i);
+  assert.match(guides['modular-exponentiation'].avoidWhen, /reducing modulo M after an already-inexact multiplication is too late/i);
+  assert.match(guides.quickselect.followUpTwists.find(x => /all-duplicate arrays/i.test(x.question)).complexityImpact, /3-way partitioning/i);
 });
