@@ -337,3 +337,18 @@ A deeper pass through the 40 master-guide complexity profiles and bespoke upgrad
 Source commits: `dbaf52714699cbafb632af663fe4f1bde568474a`, `037a5b599886c40126e3d6caab5e00faf72afe9f`, `fbbe9bd411e954ceaabee374b2a9978a9da50117`, `2c0eaad86267f2343eb0723e3605d1a67450e074`, `bcf1b99cf12c7874e59b6ae0cd576ac9d12e7ad1`, `b8a15e1cb209c362053658794cafeb2f5c23c479`, and `0ac8c165176c60437fb64a7109344175f3674e63`. Regression assertions are in test commit `14b4bad04b6a0095f31b5149febcf9a04c58145b`.
 
 Run #758 passed the complete listed validation suite and frontend build for the corrected 94-guide inventory head. Runs #761 and #762 also passed all listed validations and frontend build on their tested commits. The newest master-profile/source assertions and report commit require a new completed final-head run.
+
+
+## Additional master-guide audit: implementation thresholds and I/O assumptions
+
+A further pass removed remaining implementation-dependent claims in the master guide set:
+
+- Linear-search and insertion-sort cutoffs are now benchmark/implementation dependent rather than universal N thresholds.
+- Linked-list dummy-head use is described as simplifying edge handling, not making pointer code “bug-free.”
+- Skip-list lock-free behavior is scoped to specialized CAS/reclamation implementations.
+- Hash-table resize thresholds and Trie child-access complexity are qualified by implementation assumptions.
+- External merge pass count is expressed from initial run count and merge fan-in.
+- ARIES CLR claims now distinguish idempotent undo progress from total recovery work after repeated crashes.
+- SQL Hash Join is labeled expected O(R + S) when the build side fits memory; vectorized speedups are hardware/workload dependent.
+
+Source commit: `70f8d8574364c54f820568ad7e51fe90f4bee6de`; regression assertions: `b4a9f10cdaf7d5dcc1412fb1b69faae4896d38cb`. The current report/test/source head requires completed CI.
