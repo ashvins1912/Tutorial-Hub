@@ -52,16 +52,29 @@ export const UnifiedPatternForgeWorkspace: React.FC<UnifiedPatternForgeWorkspace
   const getTopicMastery = useUnifiedLearningStore((s) => s.getTopicMastery);
 
   const [sidebarFilter, setSidebarFilter] = useState<'all' | 'pilot' | 'inventory'>('all');
+  // Consume each external navigation request at most once. A parent callback may
+  // legitimately change identity after it clears the request; that must not cause
+  // this effect to dispatch another store update.
+  const lastConsumedExternalTopicRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     void hydrateFromServer();
   }, [hydrateFromServer]);
 
   useEffect(() => {
-    if (externalTopicId && PATTERN_FORGE_TOPICS.some((t) => t.id === externalTopicId)) {
-      setActiveTopicId(externalTopicId, 'understand');
-      onConsumeExternalTopic?.();
+    if (
+      !externalTopicId ||
+      !PATTERN_FORGE_TOPICS.some((t) => t.id === externalTopicId) ||
+      lastConsumedExternalTopicRef.current === externalTopicId
+    ) {
+      return;
     }
+
+    // Mark before invoking parent/store callbacks so synchronous renders cannot
+    // re-enter the same navigation request.
+    lastConsumedExternalTopicRef.current = externalTopicId;
+    setActiveTopicId(externalTopicId, 'understand');
+    onConsumeExternalTopic?.();
   }, [externalTopicId, onConsumeExternalTopic, setActiveTopicId]);
 
   const activeTopic = useMemo(
