@@ -114,20 +114,24 @@
       "title": "DSA curriculum workspace",
       "kind": "curriculum",
       "navigation": "primary",
-      "summary": "Topic-first DSA curriculum, staged problem learning and classic problem-solving workspace.",
+      "summary": "Topic-first DSA curriculum, staged problem learning, DP practice lab, matrix problem bank and classic problem-solving workspace.",
       "qualityState": "inventory",
       "verificationState": "not_assessed",
       "componentPaths": [
         "src/features/topics/components/CurriculumWorkbench.tsx",
         "src/components/CompleteDsaCourse.tsx",
         "src/components/CompleteDsaRoadmap.tsx",
-        "src/components/MasteryStepper.tsx"
+        "src/components/MasteryStepper.tsx",
+        "src/components/DpLearningLab.tsx",
+        "src/components/MatrixProblemBank.tsx"
       ],
       "dataSources": [
         "src/features/topics/data/curriculumIndex.ts",
         "src/data/completeDsaRoadmap.ts",
         "src/data/dsaCompleteLessons.ts",
-        "src/data/curriculum.ts"
+        "src/data/curriculum.ts",
+        "src/data/dpPracticeProblems.ts",
+        "src/data/matrixProblems.ts"
       ],
       "apiRoutes": [
         "server/routes/contentBootstrapRoutes.ts",
@@ -135,7 +139,15 @@
       ],
       "testFiles": [
         "tests/dsa/arrays-batch-01.test.mjs",
-        "tests/dsa/master-interview-inventory.test.mjs"
+        "tests/dsa/master-interview-inventory.test.mjs",
+        "tests/content-authoring/dsa-course-structure-inventory.test.mjs",
+        "tests/content-authoring/dsa-course-code-examples.test.mjs",
+        "tests/content-authoring/dsa-course-code-example-syntax.test.mjs",
+        "tests/content-authoring/dsa-course-ui-accessibility.test.mjs",
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs",
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs",
+        "tests/content-authoring/100-percent-audit-ledger.test.mjs",
+        "tests/dsa/topic-completeness-pilot.test.mjs"
       ]
     },
     {
