@@ -47,4 +47,6 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['manachers-algorithm'].followUpTwists.find(x => /sentinel characters/i.test(x.question)).invariantShift, /cannot occur in the input/i);
   assert.match(guides.quickselect.interviewScript30s, /expected recurrence is not a guaranteed half-size geometric series/i);
   assert.match(guides.quickselect.interviewScript30s, /recursive implementations also use stack space/i);
+  assert.match(guides['prims-mst'].interviewScript30s, /indexed\/decrease-key heap/i);
+  assert.match(guides['prims-mst'].followUpTwists.find(x => /Prim’s beat Kruskal/i.test(x.question)).complexityImpact, /explicit O\(V²\) edge storage/i);
 });
