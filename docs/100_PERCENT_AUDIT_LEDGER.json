@@ -2613,6 +2613,16 @@
       "evidence": [
         "tests/content-authoring/dsa-course-code-examples.test.mjs: Java subset output-cap runtime test"
       ]
+    },
+    {
+      "unitId": "dsa-course-ui:complete-course-search-and-accessibility",
+      "sourcePath": "src/components/CompleteDsaCourse.tsx",
+      "reviewStatus": "corrected-awaiting-ci",
+      "finding": "Search omitted glossary/deep-dive/practice/code explanation content; selection/progress state was not announced; code blocks lacked keyboard focus and explicit explanation association; completion wording overstated self-assessment.",
+      "fix": "Search all lesson content fields, add pressed/expanded/controls semantics, persistent controlled panels, keyboard-focusable labeled code blocks linked to explanations, and honest self-marked completion copy.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-ui-accessibility.test.mjs: source-level accessibility and search assertions"
+      ]
     }
   ],
   "counts": {
@@ -2620,9 +2630,9 @@
     "testPathCount": 15,
     "allPathCount": 164,
     "reviewedPaths": 0,
-    "reviewedUnits": 5,
+    "reviewedUnits": 6,
     "verifiedUnits": 0,
-    "correctedUnitsAwaitingCi": 5,
+    "correctedUnitsAwaitingCi": 6,
     "unresolvedP0": 0,
     "unresolvedP1": 0
   },
