@@ -8,7 +8,7 @@ A complete structural pass identified 23 stable lesson IDs and counted entries i
 
 | Teaching unit | Entries |
 |---|---:|
-| Plain-language key terms | 46 |
+| Plain-language key terms | 138 |
 | Concepts | 195 |
 | Worked-example steps | 111 |
 | Implementation steps | 172 |
@@ -73,3 +73,10 @@ A source-to-UI check found that eight JSON-encoded Java examples stored literal 
 The bitmask-subset example also materialized all `2^n` subsets into memory with only a shift-width guard. It now requires a caller-provided `maxSubsets` cap before allocation and explains the Θ(n·2^n) output-size cost.
 
 The new syntax suite parses every JavaScript example, compiles every Python example, and compiles all Java snippets (with minimal missing-node type stubs where the snippet relies on surrounding course context). A separate Java execution test covers overflow, independent tree calls and subset output caps. These checks establish syntax/selected behavior only; they do not certify every example's semantics.
+
+
+## Glossary expansion across all 23 DSA modules
+
+The prior 46 terms (two per module) were too thin for the requested concept coverage. Added 92 original plain-language glossary entries, bringing the course to **138 terms across 23 modules** (at least five per module; several modules now have six or seven). New entries cover prerequisites/postconditions, array aggregates, node identity, Unicode units, amortized cost, lower/upper bounds, window invariants, tree diameter, BST duplicate policy, heapify, backtracking state restoration, greedy proof tools, DP state/recurrence, graph traversal, matrix transforms, ring buffers, sorting stability, search predicates, answer-space feasibility, two's complement, hash contracts and pointer-cycle concepts.
+
+The expanded inventory test now checks at least five terms per module, unique term names within a module, and nonempty definition/example for every term. This is a structural/editorial completeness gate; it does not yet certify every glossary definition's technical accuracy.
