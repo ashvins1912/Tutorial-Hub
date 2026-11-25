@@ -9,7 +9,8 @@ import { CatalogSearchInput } from './ui';
 
 type SectionKey = 'keyTerms' | 'learningOutcomes' | 'prerequisites' | 'concepts' | 'deepDive' | 'recognition' | 'method' | 'workedExample' | 'traceExercises' | 'implementationSteps' | 'codeExamples' | 'correctness' | 'complexity' | 'pitfalls' | 'practice' | 'assessment' | 'realWorldApplications' | 'interviewChecks' | 'revisionPrompts';
 
-const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [\n  { key: 'keyTerms', title: 'Key terms in plain words', intro: 'Learn each term with a short definition and a concrete example before moving into the deeper explanation.' },
+const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
+  { key: 'keyTerms', title: 'Key terms in plain words', intro: 'Learn each term with a short definition and a concrete example before moving into the deeper explanation.' },
   { key: 'learningOutcomes', title: 'What you will be able to do', intro: 'Observable outcomes that define when this topic is understood.' },
   { key: 'prerequisites', title: 'Prerequisites and foundations', intro: 'What to know first, with a clear bridge back when needed.' },
   { key: 'concepts', title: 'Concepts to understand', intro: 'Learn the vocabulary and mechanics before memorising templates.' },
