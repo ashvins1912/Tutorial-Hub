@@ -396,7 +396,9 @@ test('trace player submits stable checkpoint IDs and both API paths validate the
   assert.match(tracePlayer, /checkpointTraceId: trace\.id/);
   assert.match(tracePlayer, /checkpointId: activeCheckpoint\.id/);
   assert.match(clientStore, /trace\?\.steps\.some\(\(step\) => step\.checkpoint\?\.id === checkpointId\)/);
+  assert.match(clientStore, /\$\{traceId\}:\$\{checkpointId\}/);
   assert.match(serverRoute, /trace\?\.steps\.some\(\(step\) => step\.checkpoint\?\.id === checkpointId\)/);
+  assert.match(serverRoute, /\$\{traceId\}:\$\{checkpointId\}/);
 });
 
 test('adaptive spaced revision advances on independent recall and pulls back on struggles', () => {
