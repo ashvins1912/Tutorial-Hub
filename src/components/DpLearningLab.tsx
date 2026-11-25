@@ -4,11 +4,6 @@ import { useAccountState } from '../hooks/useAccountState';
 import { DP_PRACTICE_PROBLEMS } from '../data/dpPracticeProblems';
 import { DP_GUIDED_LESSONS } from '../data/dpGuidedLessons';
 
- n must be nonnegative.', order: 'Calculate from i = 2 up to n because each answer needs the previous two.', complexity: 'O(n) additions and O(1) auxiliary space for the rolling version; the long result is checked and the sample accepts n in 0..91.', java: "long climbStairs(int n) {\n    if (n < 0 || n > 91) throw new IllegalArgumentException(\"n must be 0..91 for long\");\n    if (n <= 1) return 1L;\n    long twoBack = 1L, oneBack = 1L;\n    for (int i = 2; i <= n; i++) {\n        long current = Math.addExact(oneBack, twoBack);\n        twoBack = oneBack;\n        oneBack = current;\n    }\n    return oneBack;\n}", checkpoint: 'Can you explain why the answer for step 5 depends only on steps 4 and 3?' },
-  { title: '2. Memoization: recursion + cache', idea: 'First write the natural recursive question. Before solving a state, check whether its answer is already stored. This keeps the easy-to-understand recursive structure while removing repeated work.', state: 'solve(i) = number of ways to reach stair i.', recurrence: 'solve(i) = solve(i - 1) + solve(i - 2)', base: 'For n=0 or 1 return 1. Allocate memo with n+1 entries and fill with -1; n must be 0..91.', order: 'The call stack discovers dependencies on demand. Each state is fully calculated once.', complexity: 'O(n) arithmetic operations; O(n) memo plus O(n) recursion stack. The long result is checked; n is limited to 0..91.', java: "long solve(int n, long[] memo) {\n    if (n < 0 || n > 91 || memo == null || memo.length <= n)\n        throw new IllegalArgumentException(\"n must be 0..91 and memo length n+1\");\n    if (n <= 1) return 1L;\n    if (memo[n] != -1L) return memo[n];
-
-
-
 const stages = ['Understand the question', 'Define the state', 'Write the transition', 'Set base cases', 'Choose calculation order', 'Code and test', 'Analyse complexity'];
 export function DpLearningLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
