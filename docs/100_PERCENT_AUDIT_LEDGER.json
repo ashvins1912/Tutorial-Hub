@@ -2799,6 +2799,16 @@
       "evidence": [
         "tests/content-authoring/matrix-problem-bank-quality.test.mjs: catalog/UI assertions"
       ]
+    },
+    {
+      "unitId": "matrix-bank:42-example-input-output-pairs",
+      "sourcePath": "src/data/matrixProblems.ts",
+      "reviewStatus": "content-added-awaiting-ci",
+      "finding": "The 42 matrix problem records lacked concrete example inputs and expected outputs, making them difficult to practice or verify.",
+      "fix": "Added one input/example and expected result to each of the 42 stable problem IDs; UI now displays them in keyboard-focusable example/output blocks.",
+      "evidence": [
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs: all 42 entries require examples and expected outputs plus selected known-result assertions"
+      ]
     }
   ],
   "counts": {
@@ -2806,12 +2816,12 @@
     "testPathCount": 24,
     "allPathCount": 177,
     "reviewedPaths": 0,
-    "reviewedUnits": 12,
+    "reviewedUnits": 13,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 6,
     "unresolvedP0": 0,
     "unresolvedP1": 0,
-    "contentAddedUnitsAwaitingCi": 2,
+    "contentAddedUnitsAwaitingCi": 3,
     "contentCorrectedUnitsAwaitingCi": 2,
     "uiCorrectedUnitsAwaitingCi": 2
   },
