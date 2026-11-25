@@ -73,7 +73,7 @@ Do not report 100% until the denominator is reconciled, every in-scope unit and 
 
 ## Execution order
 
-1. Reconcile the 22-surface/149-path PR #69 registry with current main and discover missing routes, sources and dynamic loaders.
+1. Reconcile PR #69's original 22-surface/149-path registry against current main; the current static registry has 22 surfaces, 154 content paths and 26 test paths (180 unique paths). Continue discovering missing routes, sources and dynamic loaders.
 2. Build an exact unit inventory across all topics, courses and concepts; deduplicate only with explicit canonical IDs and references.
 3. Audit each unit in source order, recording findings before edits; fix by severity and add regression coverage.
 4. Trace runtime content from API/DB/seed/generation/cache to rendered UI and audit each variant.
