@@ -978,7 +978,7 @@ debezium_old_test  | f      | 1120045100 | 1120045100
     remediationSteps: [
       'Terminate the 19-day idle-in-transaction session (`SELECT pg_terminate_backend(4421);`) and drop the abandoned replication slot (`SELECT pg_drop_replication_slot(\'debezium_old_test\');`).',
       'Raise `autovacuum_vacuum_cost_limit` and run targeted `VACUUM (FREEZE, VERBOSE, PARALLEL 4) ledger_events;` to advance `relfrozenxid` before reaching 2B.',
-      'Set `idle_in_transaction_session_timeout = \'5min\'` and `max_slot_wal_keep_size` in postgresql.conf so abandoned consumers can never pin WAL/xmin again.',
+      'Use `idle_in_transaction_session_timeout` to limit abandoned idle transactions and set `max_slot_wal_keep_size` to bound retained WAL where appropriate. These settings do not guarantee that every inactive replication slot stops pinning `xmin`; monitor slot `active`, `restart_lsn` and `xmin`, alert on lag, and document slot invalidation/recovery.',
     ],
   },
   {
