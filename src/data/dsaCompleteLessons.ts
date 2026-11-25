@@ -681,6 +681,12 @@ function slidingMaximum(values, k) {
   for (let right = 0; right < values.length; right++) {
     const left = right - k + 1;
     while (head < candidates.length && candidates[head] < left) head++;
+    // Bound retained stale indices: active candidates are at most k, and
+    // compacting after k expired entries keeps the backing array O(k).
+    if (head >= k || (head > 0 && head * 2 >= candidates.length)) {
+      candidates.splice(0, head);
+      head = 0;
+    }
     while (candidates.length > head
         && values[candidates[candidates.length - 1]] <= values[right]) {
       candidates.pop();
@@ -689,7 +695,7 @@ function slidingMaximum(values, k) {
     if (left >= 0) answer.push(values[candidates[head]]);
   }
   return answer;
-}`, explanation: 'The queue transfers only when the output stack is empty, preserving FIFO order with O(1) amortized operations. The window deque stores indices in increasing order and values in decreasing order; a head cursor avoids costly Array.shift(). Both algorithms are O(n) overall for their respective operation/input sequences.' },
+}`, explanation: 'The queue transfers only when the output stack is empty, preserving FIFO order with O(1) amortized operations. The window deque stores indices in increasing order and values in decreasing order. A head cursor avoids Array.shift(); periodic stale-prefix compaction keeps retained index storage O(k) with O(n) amortized total compaction work. Sliding maximum is O(n) time and O(k) auxiliary space, excluding the O(n) output.' },
       { language: 'Python 3', title: 'Queue with two stacks and sliding-window maximum', code: `class TwoStackQueue:
     def __init__(self):
         self.incoming = []
