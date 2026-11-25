@@ -164,16 +164,16 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Prefix Sum',
     category: 'Array & String Patterns',
     visualType: 'prefix-hash',
-    tagline: 'Turn O(N²) subarray range sums into O(1) complement lookups.',
+    tagline: 'Turn O(N²) subarray checks into expected O(N) time with hash-map complement lookups.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(N)',
     complexityLeap: 'O(N²) nested range sum → O(N) single running total sweep',
     coreIdea:
-      'Every contiguous slice [i+1 .. j] has sum Prefix[j] - Prefix[i]. Instead of scanning backward to find all starting points i, store the frequency of every earlier Prefix[i] in a hash map and query Prefix[j] - k in O(1).',
+      'Every contiguous slice [i+1 .. j] has sum Prefix[j] - Prefix[i]. Instead of scanning backward to find all starting points i, store the frequency of every earlier Prefix[i] in a hash map and query Prefix[j] - k with an expected O(1) hash-map lookup (worst-case lookup can be slower).',
     mentalModelSteps: [
       'Seed the hash map with {0: 1} to represent an empty prefix before index 0.',
       'Maintain a single running sum variable prefix as you scan left to right.',
-      'At index j, add freq[prefix - k] to your total answer count.',
+      'At index j, add freq[prefix - k] to the answer; the frequency records how many earlier prefixes match.',
       'Increment freq[prefix] AFTER checking so you never pair an index with itself.',
     ],
     loopInvariant:
@@ -184,7 +184,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Fast repeated immutable range sum queries sum(l, r) = P[r+1] - P[l]',
     ],
     whenItFails:
-      'Do not use Sliding Window when negative numbers exist—shrinking the left boundary no longer guarantees a smaller sum. Prefix Sum + Hash Map solves negatives effortlessly.',
+      'For target-sum subarray counting, a sliding window is not generally valid when negative values are present: removing a value may increase the sum. Prefix sums with a frequency map handle negative values; their O(N) time bound is expected under typical hash-map behavior. For repeated immutable range-sum queries, a prefix array alone supports O(1) queries after O(N) preprocessing.',
     linkedTopics: ['Arrays & Prefix Sum'],
     linkedProblemSlugs: ['subarray-sum-equals-k', 'two-sum', 'product-of-array-except-self', 'first-missing-positive'],
     featuredLabId: 'two-sum',
@@ -323,8 +323,8 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       {
         step: 6,
         title: 'Index 4: x = 2 → prefix = 5 (Done)',
-        explanation: 'Need 5 - 3 = 2 → not in map. Final answer: 3 contiguous subarrays sum to k = 3 in 5 linear operations.',
-        invariantCheck: 'Total work = O(N) instead of checking N(N+1)/2 pairs.',
+        explanation: 'Need 5 - 3 = 2 → not in map. Final answer: 3 contiguous subarrays sum to k = 3. The scan is expected O(N) time with a hash map and O(N) auxiliary space.',
+        invariantCheck: 'Expected total work is O(N), instead of checking N(N+1)/2 subarrays; hash-table worst-case behavior depends on collisions.',
         variables: [
           { name: 'j', value: '4' },
           { name: 'prefix', value: '5' },
@@ -353,16 +353,16 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Two Pointers',
     category: 'Array & String Patterns',
     visualType: 'two-pointers',
-    tagline: 'Eliminate O(N²) pairs by discarding the pointer that cannot improve the bound.',
+    tagline: 'Reduce pair checks to O(N) when the problem has a proven monotonic rule for safely discarding candidates.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(1)',
     complexityLeap: 'O(N²) all pairs → O(N) single inward sweep in O(1) space',
     coreIdea:
-      'Place L at the start and R at the end. At every step, compute the objective for (L, R), then move the pointer whose extreme value limits the result—proving mathematically that no skipped pair could ever beat the current candidate.',
+      'For a problem with a valid discard proof, place L and R at opposite ends and evaluate the current pair. Move only the pointer that the proof shows cannot lead to a better remaining answer. The rule depends on the objective: for container area, move the shorter wall; for a sorted target-sum pair, move L when the sum is too small and R when it is too large. Do not apply one pointer-movement rule to every two-pointer problem.',
     mentalModelSteps: [
       'Start pointers at opposite extremes: L = 0, R = n - 1.',
       'Evaluate the current pair (e.g., area = (R - L) * min(h[L], h[R]) or sum = a[L] + a[R]).',
-      'Identify the bottleneck wall (the shorter height, or the side pushing sum away from target).',
+      'Choose the movement rule proved for this problem (for container area, move the shorter wall; for sorted pair sum, move the side that moves the sum toward the target).',
       'Advance only the limiting pointer inward until L meets R.',
     ],
     loopInvariant:
@@ -373,7 +373,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Palindrome validation or in-place array partitioning',
     ],
     whenItFails:
-      'Fails on unsorted pair-sum problems if you need original indices without sorting (use Hash Map instead).',
+      'For pair-sum on unsorted input, sorting is safe only if you retain the original index associated with each value and map the result back. If preserving order or avoiding sorting matters, a hash map may be a better fit. The converging-pointer method also requires a monotonic discard rule; it is not a generic replacement for checking all pairs.',
     linkedTopics: ['Two Pointers'],
     linkedProblemSlugs: ['container-with-most-water', 'trapping-rain-water', '3sum', 'valid-palindrome-ii'],
     featuredLabId: 'trapping-rain-water',
@@ -507,12 +507,12 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Sliding Window',
     category: 'Array & String Patterns',
     visualType: 'sliding-window',
-    tagline: 'Expand right to explore, contract left strictly until the window invariant holds.',
+    tagline: 'Advance the right edge; move the left edge only when a proven rule restores the required window condition.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(min(N, |Σ|))',
     complexityLeap: 'O(N²) rescan every substring → O(N) amortized two-pointer slide',
     coreIdea:
-      'Maintain a contiguous window [L .. R] and an O(1) state tracker (char counts or last-seen indices). Move R forward one element at a time; whenever the window violates the rule (like a duplicate char), advance L forward until valid again.',
+      'Maintain a contiguous window [L .. R] and update a compact state (such as a running sum, character counts or last-seen indices). Advance R one step at a time. If the validity condition of the problem is monotonic under removing elements, move L forward until the condition is restored; some problems permit a direct jump. State updates are often O(1), while hash-map operations are expected O(1).',
     mentalModelSteps: [
       'Initialize left = 0 and a frequency map / last-seen index map.',
       'Expand right across indices 0 .. n - 1, adding s[right] into the window.',
@@ -520,14 +520,14 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Record the optimal window length (or shortest valid window) when the invariant holds.',
     ],
     loopInvariant:
-      'After the shrink/jump step at each right index, [left .. right] is guaranteed to contain 100% distinct characters.',
+      'After the adjustment at each right index, [left .. right] satisfies the problem-specific window invariant. For the longest-substring-without-repeating-characters example, that invariant is that every character in the current window is distinct.',
     whenToUse: [
       'Longest/shortest contiguous substring or subarray meeting a monotonic condition',
       'Fixed-size window max/average (with Deque or running sum)',
       'At most K distinct characters or minimum window covering target string t',
     ],
     whenItFails:
-      'Breaks on non-contiguous subsequences (use DP) or subarrays with negative numbers (use Prefix Sum + Hash Map).',
+      'A sliding window is not a universal solution for arbitrary subarray constraints. It is unsuitable when the required condition cannot be maintained by moving boundaries monotonically—for example, target-sum counting with negative values. Fixed-size windows and other explicitly maintained window statistics can still work with negative values.',
     linkedTopics: ['Sliding Window'],
     linkedProblemSlugs: [
       'longest-substring-without-repeating',
@@ -699,7 +699,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Binary Search',
     category: 'Searching & Sorting',
     visualType: 'binary-search',
-    tagline: 'Halve sorted, rotated, or monotonic answer spaces in O(log N) comparisons.',
+    tagline: 'Halve sorted or monotonic search spaces in O(log N); rotated arrays need distinct values for the usual bound.',
     timeComplexity: 'O(log N) with distinct values; O(N) worst case with duplicates',
     spaceComplexity: 'O(1)',
     complexityLeap: 'O(N) linear scan → O(log N) when values distinguish the sorted half; duplicates can require linear shrinking',
@@ -708,13 +708,13 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     mentalModelSteps: [
       'Maintain closed search range [L, R] and compute overflow-safe mid = L + (R - L) // 2.',
       'Check if nums[mid] == target first.',
-      'Determine which half is sorted: if nums[L] <= nums[mid], left [L..mid] is sorted; else right [mid..R] is sorted.',
+      'For a rotated array with distinct values, one half is sorted: if nums[L] <= nums[mid], left [L..mid] is sorted; otherwise right [mid..R] is sorted. With duplicates, equal boundary values can make this test ambiguous; safely shrink equal boundaries, accepting an O(N) worst case.',
       'Check if target lies inside the sorted half bounds to discard the opposite 50% safely.',
     ],
     loopInvariant:
       'If target exists in the array, it is strictly contained inside the remaining bracket [L, R].',
     whenToUse: [
-      'Sorted or rotated sorted array lookup in O(log N)',
+      'Sorted-array lookup in O(log N); rotated-array lookup in O(log N) with distinct values, and up to O(N) with duplicates',
       'Minimum feasible speed/capacity problems (Binary Search on Answer: Koko, Ship Packages)',
       'Finding first/last occurrence (lower_bound / upper_bound) or median partition',
     ],
@@ -779,8 +779,8 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     frames: [
       {
         step: 1,
-        title: 'Initial bracket [0..6], target = 2',
-        explanation: 'Rotated array [6, 7, 1, 2, 3, 4, 5]. Compute mid = 3 → nums[3] = 2? Let’s search target = 4 to see 3 halvings!',
+        title: 'Initial bracket [0..6], target = 4',
+        explanation: 'Search for target = 4 in rotated array [6, 7, 1, 2, 3, 4, 5]. The initial midpoint is index 3, where nums[3] = 2, so the target is not found yet.',
         invariantCheck: 'Searching target = 4 in [6, 7, 1, 2, 3, 4, 5]. Full range [0..6] active.',
         variables: [
           { name: 'target', value: '4' },
@@ -978,7 +978,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     spaceComplexity: 'O(N)',
     complexityLeap: 'O(N²) look-ahead scans → O(N) push/pop once per index',
     coreIdea:
-      'Keep indices in a stack whose values stay strictly monotonic (e.g., decreasing). Whenever a new larger element arrives, it is the FIRST greater element for every smaller index sitting on top of the stack—pop and resolve them immediately.',
+      'Keep indices in a stack whose referenced values follow a monotonic order (for this next-strictly-greater pattern, non-increasing from bottom to top). When a new value is strictly larger than the top value, it is the first strictly greater value to the right for that popped index: no earlier index between them could have resolved it, because the stack preserves unresolved candidates.',
     mentalModelSteps: [
       'Store INDICES (not just values) on the stack so you can compute index distances i - prevIdx.',
       'For each day i, while stack is non-empty and arr[i] > arr[stack.top()], pop prevIdx.',
@@ -986,14 +986,14 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Push i onto the stack as unresolved until a future warmer day arrives.',
     ],
     loopInvariant:
-      'Temperatures referenced by indices in the stack are always strictly non-increasing from bottom to top.',
+      'Temperatures referenced by stack indices are non-increasing from bottom to top; equal temperatures may remain together because this example resolves only strictly warmer days.',
     whenToUse: [
       'Next Greater / Next Smaller Element (Daily Temperatures)',
       'Largest Rectangle in Histogram (nearest smaller bar on both left & right)',
       'Stock Span, Online Stock Span, Sum of Subarray Minimums',
     ],
     whenItFails:
-      'If you need the maximum inside a fixed sliding window width k, upgrade to a Monotonic Deque so you can also evict expired indices from the front.',
+      'For a fixed-width sliding-window maximum, use a monotonic deque: it supports removing expired indices from the front while maintaining candidate maxima at the back. A stack alone cannot efficiently expire candidates by index.',
     linkedTopics: ['Monotonic Stack'],
     linkedProblemSlugs: ['daily-temperatures', 'largest-rectangle-in-histogram', 'valid-parentheses', 'min-stack'],
     featuredLabId: 'daily-temperatures',
@@ -1133,9 +1133,9 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     spaceComplexity: 'O(H) DFS / O(W) BFS',
     complexityLeap: 'O(N²) repeated subtree height calls → O(N) single traversal',
     coreIdea:
-      'Use Level-Order BFS (snapshot queue.size() per depth) whenever depth/level grouping or shortest root-to-leaf distance matters. Use Postorder DFS (compute left, compute right, combine at parent) whenever a node needs subtree heights, sums, or LCA answers.',
+      'Use level-order BFS (process a snapshot of the queue size) for depth grouping and shortest paths in an unweighted tree. Use postorder DFS (compute child results, then combine at the parent) for subtree heights, sums, and many diameter or path problems. Lowest common ancestor has its own traversal and return logic; choose the variant that matches the tree type and problem.',
     mentalModelSteps: [
-      'BFS: Enqueue root. On each wave, freeze levelSize = q.length and pop exactly levelSize nodes.',
+      'BFS: Enqueue the root. At each level, save levelSize = q.length and process exactly that many nodes; children added during the level belong to the next wave.',
       'Push each popped node’s non-null left and right children for the next depth wave.',
       'DFS Postorder: Separate what a recursive call RETURNS to its parent (single branch) from the GLOBAL best updated at the node (curved path).',
     ],
@@ -1147,7 +1147,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'BST sorted validation / kth smallest → Inorder DFS',
     ],
     whenItFails:
-      'Do not use BFS on a deep skewed tree if memory is tight (though DFS stack can reach O(N) on skewed trees too—mention both space bounds!).',
+      'BFS can require O(W) queue space, where W is the maximum level width; DFS uses O(H) call-stack space for a recursive traversal, where H is tree height and can be O(N) for a skewed tree. Choose based on tree shape and memory constraints.',
     linkedTopics: ['Trees DFS/BFS'],
     linkedProblemSlugs: [
       'binary-tree-level-order',
@@ -1471,8 +1471,9 @@ def topo_sort(n, prereqs):
   const q = [];
   for (let i = 0; i < n; i++) if (indeg[i] === 0) q.push(i);
   const order = [];
-  while (q.length) {
-    const u = q.shift();
+  let head = 0;
+  while (head < q.length) {
+    const u = q[head++]; // O(1) dequeue; avoid Array.shift() reindexing
     order.push(u);
     for (const v of adj[u]) {
       if (--indeg[v] === 0) q.push(v);
@@ -1583,11 +1584,11 @@ def topo_sort(n, prereqs):
     category: 'Tree & Graph Traversal',
     visualType: 'dijkstra-graph',
     tagline: 'Greedily settle the closest unvisited vertex via Min-Heap edge relaxation.',
-    timeComplexity: 'O(E log V)',
+    timeComplexity: 'O(V + E log(E + 1)) with a binary min-heap and lazy duplicate entries',
     spaceComplexity: 'O(V + E)',
-    complexityLeap: 'O(V²) dense scan → O(E log V) priority-queue relaxation',
+    complexityLeap: 'O(V²) dense scan → O(V + E log(E + 1)) heap-based relaxation',
     coreIdea:
-      'Maintain a Min-Heap of (distance, node) starting with (0, source). Because all edge weights are non-negative, the first time a node is popped from the Min-Heap its shortest distance is permanently locked—relax all its outgoing edges.',
+      'Maintain a min-heap of (distance, node) entries, starting with (0, source). With non-negative edge weights, a node popped with a distance equal to its current best distance is settled: no later path can improve it. Lazy heaps may contain older entries, so skip a popped entry when its distance is greater than dist[node].',
     mentalModelSteps: [
       'Initialize dist[source] = 0 and all other dist[v] = ∞; push (0, source) to Min-Heap.',
       'Pop the smallest (d, u). If d > dist[u], skip it (stale heap entry).',
@@ -1602,7 +1603,7 @@ def topo_sort(n, prereqs):
       'Pair with Disjoint Set Union (Union-Find) for MST / dynamic grouping (Accounts Merge)',
     ],
     whenItFails:
-      'Fails if NEGATIVE edge weights exist! Switch to Bellman-Ford O(V·E) when negative weights or limited K-stop constraints appear.',
+      'Dijkstra requires non-negative edge weights. For graphs with negative edges (and no reachable negative cycle), use Bellman-Ford; for a bounded number of edges or stops, use a state-aware dynamic-programming or layered shortest-path formulation. The examples assume path-distance sums fit the chosen numeric type.',
     linkedTopics: ['Union-Find & Shortest Path'],
     linkedProblemSlugs: ['network-delay-time', 'swim-in-rising-water', 'accounts-merge', 'find-if-path-exists'],
     templates: {
@@ -1624,32 +1625,67 @@ def dijkstra(graph, src):
       js: `function dijkstra(adj, src, n) {
   const dist = new Array(n).fill(Infinity);
   dist[src] = 0;
-  const pq = [[0, src]];
-  while (pq.length) {
-    pq.sort((a, b) => a[0] - b[0]);
-    const [d, u] = pq.shift();
-    if (d > dist[u]) continue;
+  const heap = [];
+  const push = item => {
+    heap.push(item);
+    let i = heap.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (heap[p][0] <= heap[i][0]) break;
+      [heap[p], heap[i]] = [heap[i], heap[p]];
+      i = p;
+    }
+  };
+  const pop = () => {
+    const min = heap[0];
+    const last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      let i = 0;
+      while (true) {
+        const l = 2 * i + 1, r = l + 1;
+        let smallest = i;
+        if (l < heap.length && heap[l][0] < heap[smallest][0]) smallest = l;
+        if (r < heap.length && heap[r][0] < heap[smallest][0]) smallest = r;
+        if (smallest === i) break;
+        [heap[i], heap[smallest]] = [heap[smallest], heap[i]];
+        i = smallest;
+      }
+    }
+    return min;
+  };
+  push([0, src]);
+  while (heap.length) {
+    const [d, u] = pop();
+    if (d > dist[u]) continue; // ignore stale entry
     for (const [v, w] of adj[u]) {
-      if (d + w < dist[v]) {
-        dist[v] = d + w;
-        pq.push([dist[v], v]);
+      const nd = d + w;
+      if (nd < dist[v]) {
+        dist[v] = nd;
+        push([nd, v]);
       }
     }
   }
   return dist;
 }`,
-      java: `public int[] dijkstra(List<int[]>[] adj, int src, int n) {
-  int[] dist = new int[n];
-  Arrays.fill(dist, Integer.MAX_VALUE);
-  dist[src] = 0;
-  PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));
-  pq.offer(new int[]{0, src});
+      java: `public long[] dijkstra(List<int[]>[] adj, int src, int n) {
+  long[] dist = new long[n];
+  Arrays.fill(dist, Long.MAX_VALUE);
+  dist[src] = 0L;
+  PriorityQueue<long[]> pq = new PriorityQueue<>(Comparator.comparingLong(a -> a[0]));
+  pq.offer(new long[]{0L, src});
   while (!pq.isEmpty()) {
-    int[] cur = pq.poll();
-    if (cur[0] > dist[cur[1]]) continue;
-    for (int[] e : adj[cur[1]]) {
-      int nd = cur[0] + e[1];
-      if (nd < dist[e[0]]) { dist[e[0]] = nd; pq.offer(new int[]{nd, e[0]}); }
+    long[] cur = pq.poll();
+    long d = cur[0];
+    int u = (int) cur[1];
+    if (d > dist[u]) continue; // ignore stale entry
+    for (int[] e : adj[u]) {
+      int v = e[0], weight = e[1];
+      long nd = d + weight;
+      if (nd < dist[v]) {
+        dist[v] = nd;
+        pq.offer(new long[]{nd, v});
+      }
     }
   }
   return dist;
@@ -1718,7 +1754,7 @@ def dijkstra(graph, src):
         step: 5,
         title: 'Settle E (4) → Relax D (4+1=5) → All Shortest Paths Locked!',
         explanation: 'Pop (4, E) and improve D from 6 → 5 via A→C→B→E→D! Final shortest distances: A:0, C:1, B:3, E:4, D:5.',
-        invariantCheck: 'Optimal shortest-path tree found in O(E log V).',
+        invariantCheck: 'Shortest distances finalized; with a lazy binary heap the bound is O(V + E log(E + 1)).',
         variables: [
           { name: 'distances', value: 'A:0 C:1 B:3 E:4 D:5' },
         ],
@@ -1739,13 +1775,13 @@ def dijkstra(graph, src):
     category: 'Optimization & Decision Making',
     visualType: 'backtracking-tree',
     tagline: 'Choose → Explore → Unchoose over decision trees with early bound pruning.',
-    timeComplexity: 'O(b^d) pruned',
-    spaceComplexity: 'O(d) stack',
+    timeComplexity: 'Exponential in the worst case; pruning reduces explored branches but does not change the worst-case class',
+    spaceComplexity: 'O(d) auxiliary path/recursion space, excluding stored results',
     complexityLeap: 'Unpruned exhaustive search → early-cut DFS decision tree',
     coreIdea:
-      'Build candidate solutions incrementally on a single mutable path array. Push a choice, recurse deeper, then POP (undo) the choice on return. Sort inputs or attach a Trie so impossible branches terminate immediately.',
+      'Build candidate solutions incrementally on a mutable path. Choose an option, recurse, then undo that choice before exploring the next branch. Pruning is valid only when a proven bound shows a branch cannot produce a solution; sorting can make such bounds easier to check. A trie can also stop word-search branches that no dictionary word can complete.',
     mentalModelSteps: [
-      'Check base case (remain == 0 → clone current path into results).',
+      'Check the base case (remain == 0 → copy the current path into results). For Combination Sum, assume candidates are positive; otherwise the recursion may not make progress.',
       'Loop candidate index i from start .. n-1 to avoid duplicate permutations.',
       'PRUNE early: if sorted cand[i] > remain, break immediately.',
       'Choose path.push(cand[i]), recurse dfs(i, remain - cand[i]), then Unchoose path.pop().',
@@ -1758,7 +1794,7 @@ def dijkstra(graph, src):
       'Grid word matching accelerated with a Prefix Trie (Word Search II)',
     ],
     whenItFails:
-      'If the problem only asks for the COUNT or MIN/MAX value (not listing every path), switch to Dynamic Programming to collapse exponential branches into polynomial states.',
+      'If the task asks only for a count or optimum and many branches reach the same state, dynamic programming or memoization may merge repeated work. This is not automatically polynomial: the number of distinct states and transitions determines the bound. If every solution must be listed, output size itself may be exponential.',
     linkedTopics: ['Backtracking & Tries'],
     linkedProblemSlugs: ['combination-sum', 'subsets', 'implement-trie', 'word-search-ii'],
     templates: {
@@ -1876,7 +1912,7 @@ def dijkstra(graph, src):
     coreIdea:
       'Define one crystal-clear state meaning (e.g., dp[x] = minimum coins needed to make amount x). Express dp[x] from smaller already-solved subproblems dp[x - coin] + 1 and evaluate in topological order.',
     mentalModelSteps: [
-      'Define State: dp[x] = fewest coins summing to x (sentinel ∞ initially).',
+      'Define state: dp[x] = the minimum number of coins needed to make amount x (use a sentinel for unreachable states). Assume coin denominations are positive integers and amount is non-negative.',
       'Set Base Case: dp[0] = 0 (zero coins needed to make amount 0).',
       'Write Transition: dp[x] = min(dp[x], 1 + dp[x - c]) for every coin c <= x.',
       'Order: iterate x from 1 to amount so every x - c is already finalized.',
@@ -1885,7 +1921,7 @@ def dijkstra(graph, src):
       'After completing iteration x, dp[0 .. x] all hold exact globally optimal minimum coin counts.',
     whenToUse: [
       'Counting ways or finding min/max cost with overlapping subproblems',
-      'Optimal choices where greedy fails (e.g., coins [1, 3, 4], target 6 → 3+3 beats greedy 4+1+1)',
+      'Minimum-coin change where greedy can fail (for coins [1, 3, 4] and target 6, greedy takes 4+1+1 = 3 coins, while 3+3 = 2)',
       'Knapsack, Grid Paths, LCS / Edit Distance, LIS',
     ],
     whenItFails:
@@ -2014,7 +2050,7 @@ def dijkstra(graph, src):
     shortName: 'Merge / Quick Sort',
     category: 'Searching & Sorting',
     visualType: 'merge-sort',
-    tagline: 'Split recursively to base-1 slices and zip sorted halves back in O(N log N).',
+    tagline: 'Split until each part has at most one item, then merge sorted halves in O(N log N).',
     timeComplexity: 'O(N log N)',
     spaceComplexity: 'O(N)',
     complexityLeap: 'O(N²) Bubble/Insertion Sort → guaranteed O(N log N) stable sort',
@@ -2027,14 +2063,14 @@ def dijkstra(graph, src):
       'Combine: merge two sorted lists with two pointers in O(N) linear work per level (log N levels).',
     ],
     loopInvariant:
-      'At every recursion level, each subarray returned upward is strictly sorted in ascending order.',
+      'Each recursive call returns its segment in non-decreasing order; the merge step preserves that order while combining two sorted segments.',
     whenToUse: [
       'Guaranteed O(N log N) worst-case stable sorting (unlike QuickSort worst-case O(N²))',
-      'Sorting Linked Lists in O(1) auxiliary space (Merge Sort Linked List)',
+      'Sorting linked lists with iterative merge sort in O(1) auxiliary space; recursive linked-list merge sort uses O(log N) stack space',
       'Merge K Sorted Lists (divide-and-conquer pairing) & Count Inversions',
     ],
     whenItFails:
-      'Requires O(N) auxiliary buffer on arrays; if in-place O(log N) stack memory is critical and stability is unnecessary, consider HeapSort or randomized QuickSort.',
+      'Array merge sort typically needs O(N) auxiliary buffer space. If in-place O(1) extra array space is required and stability is unnecessary, HeapSort offers O(N log N) worst-case time; randomized QuickSort is often fast in practice but has O(N²) worst-case time.',
     linkedTopics: ['Linked Lists', 'Modified Binary Search'],
     linkedProblemSlugs: ['merge-k-sorted-lists', 'median-of-two-sorted-arrays', 'reverse-linked-list', 'binary-search-classic'],
     templates: {
