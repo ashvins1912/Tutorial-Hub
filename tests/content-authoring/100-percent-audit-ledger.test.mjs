@@ -66,5 +66,10 @@ test('100 percent audit ledger reconciles every registered content and test path
   assert.equal(ledger.counts.contentCorrectedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'content-corrected-awaiting-ci').length);
   assert.equal(ledger.counts.uiCorrectedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'ui-corrected-awaiting-ci').length);
   assert.equal(ledger.counts.reviewedPaths, 0);
-  assert.equal(ledger.counts.correctedUnitsAwaitingCi, ledger.reviewedUnits.length);
+  assert.equal(
+    ledger.counts.correctedUnitsAwaitingCi + ledger.counts.contentAddedUnitsAwaitingCi +
+    ledger.counts.contentCorrectedUnitsAwaitingCi + ledger.counts.uiCorrectedUnitsAwaitingCi,
+    ledger.reviewedUnits.length,
+    'reviewed-unit status buckets must reconcile to the total'
+  );
 });
