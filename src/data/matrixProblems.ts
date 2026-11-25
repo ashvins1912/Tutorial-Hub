@@ -10,6 +10,8 @@ export interface MatrixProblem {
   approach: string;
   complexity: string;
   javaHint: string;
+  example: string;
+  expectedOutput: string;
 }
 
 export const MATRIX_PROBLEMS: MatrixProblem[] = [
