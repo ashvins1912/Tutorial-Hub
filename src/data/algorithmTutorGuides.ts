@@ -418,10 +418,10 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'kmp-rabin-karp': {
     algorithmId: 'kmp-rabin-karp',
     simpleAnalogy:
-      'KMP remembers how much of your search word already matches the start of itself so you never re-read text backward; Rabin-Karp turns every window into a numeric fingerprint you update in O(1).',
+      'KMP reuses the longest matching prefix-suffix after a mismatch, so the text cursor never moves backward; Rabin-Karp updates a rolling fingerprint in O(1) arithmetic per window, but hash matches are probabilistic unless verified.',
     interviewScript30s:
-      '"KMP builds the LPS border table in O(M) so the text cursor never rewinds—guaranteeing O(N + M) worst-case matching. For multi-pattern or duplicate-length checks, Rabin-Karp rolls a polynomial hash in O(1) per shift."',
-    chooseWhen: 'Guaranteed worst-case O(N + M) substring search, periodic strings, Longest Duplicate Substring.',
+      '"KMP builds the LPS table in O(M) and guarantees O(N + M) worst-case matching. Rabin-Karp updates a polynomial hash in O(1) arithmetic per shift; expected performance is fast with suitable hashing, but collisions require verification and can worsen runtime."',
+    chooseWhen: 'Use KMP for guaranteed worst-case O(N + M) single-pattern search and periodic strings; use Rabin-Karp for rolling-hash candidate detection (e.g., duplicate substrings) when collision verification/handling is included.',
     avoidWhen: 'Typo-tolerant fuzzy matching is required (use N-Gram Inverted Index + Damerau-Levenshtein).',
     followUpTwists: [
       {
@@ -658,7 +658,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you cut Mo’s constant factor nearly in half?',
         invariantShift: 'Use Hilbert Curve ordering or Alternating Parity (even blocks sort R ascending, odd blocks sort R descending) so R sweeps like a snake.',
-        complexityImpact: 'Same O((N + Q)√N), ~35–45% fewer pointer steps.',
+        complexityImpact: 'Same asymptotic Mo bound; snake/Hilbert ordering can reduce pointer movement in practice, but the gain depends on query distribution and is not a fixed percentage.',
       },
       {
         question: 'Can Mo’s Algorithm support point updates?',
@@ -868,7 +868,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you avoid integer overflow when computing `lcm(a, b)`?',
         invariantShift: 'Divide BEFORE multiplying: `(a / gcd(a, b)) * b`.',
-        complexityImpact: 'O(log min(a, b)) time, prevents intermediate overflow.',
+        complexityImpact: 'O(log min(a, b)) time; divide before multiplying to reduce overflow risk, but still use a wide/exact type and check whether the final LCM fits the result type.',
       },
       {
         question: 'When does a modular multiplicative inverse of `a` modulo `m` exist?',
@@ -880,7 +880,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'modular-exponentiation': {
     algorithmId: 'modular-exponentiation',
     simpleAnalogy:
-      'Instead of multiplying 2 by itself 1,000 times, keep squaring it (2, 4, 16, 256...) and only multiply into your result for the 1-bits of the binary exponent—finishing in just 10 steps.',
+      'Instead of multiplying 2 by itself 1,000 times, square the base at each exponent bit and multiply it into the result only for set bits; the number of squarings and conditional multiplies grows logarithmically with the exponent.',
     interviewScript30s:
       '"Binary exponentiation inspects each bit of exponent `e`, using O(log e) modular multiplications and O(1) auxiliary space. Reduce after each multiplication, but use a sufficiently wide/exact modular-multiply operation (such as BigInt in JavaScript) to avoid intermediate overflow."',
     chooseWhen: 'Large powers up to 10^18, combinatorics nCr mod 10^9+7 (Fermat inverse), Matrix Exponentiation for O(log N) linear recurrences.',
