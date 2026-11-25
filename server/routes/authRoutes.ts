@@ -10,6 +10,11 @@ import { computeUserProgressSummary } from '../services/userStatsService';
 
 const router = express.Router();
 
+function isMongoDuplicateKey(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error &&
+    (error as { code?: unknown }).code === 11000;
+}
+
 export interface DevAccountRecord {
   supabaseUserId: string;
   email: string;
@@ -112,42 +117,63 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       updateSet.fullName = metaFullName;
     }
 
-    const account = await UserAccount.findOneAndUpdate(
-      { supabaseUserId: user.id },
-      {
-        $set: updateSet,
-        $setOnInsert: {
-          supabaseUserId: user.id,
-          fullName: metaFullName,
-          avatarUrl: metaAvatarUrl,
+    let account;
+    try {
+      account = await UserAccount.findOneAndUpdate(
+        { supabaseUserId: user.id },
+        {
+          $set: updateSet,
+          $setOnInsert: {
+            supabaseUserId: user.id,
+            // Avoid conflicting MongoDB update paths: a field cannot appear
+            // in both $set and $setOnInsert in the same operation.
+            ...(updateSet.fullName === undefined ? { fullName: metaFullName } : {}),
+            ...(updateSet.avatarUrl === undefined ? { avatarUrl: metaAvatarUrl } : {}),
+          },
         },
-      },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    );
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+    } catch (accountError) {
+      // Concurrent /me calls may race to insert the same unique user account.
+      if (!isMongoDuplicateKey(accountError)) throw accountError;
+      account = await UserAccount.findOneAndUpdate(
+        { supabaseUserId: user.id },
+        { $set: updateSet },
+        { new: true }
+      );
+      if (!account) throw accountError;
+    }
 
     // Guarantee a brand-new user starts with strictly zero metrics, zero XP, empty queues/logs
-    await UserBrainProfile.updateOne(
-      { userId: user.id },
-      {
-        $setOnInsert: {
-          userId: user.id,
-          currentTier: INITIAL_BRAIN_PROFILE.currentTier,
-          cognitiveMetrics: {
-            signalRecognitionScore: 0,
-            bottleneckDiagnosisScore: 0,
-            logicAssemblyAccuracy: 0,
-            paperDryRunStreak: 0,
+    try {
+      await UserBrainProfile.updateOne(
+        { userId: user.id },
+        {
+          $setOnInsert: {
+            userId: user.id,
+            currentTier: INITIAL_BRAIN_PROFILE.currentTier,
+            cognitiveMetrics: {
+              signalRecognitionScore: 0,
+              bottleneckDiagnosisScore: 0,
+              logicAssemblyAccuracy: 0,
+              paperDryRunStreak: 0,
+            },
+            activityLog: [],
+            passedTopicQuizzes: [],
+            completedProblemIds: [],
+            completedWarmupDrills: [],
+            masteredProblemSlugs: [],
+            spacedRepetitionQueue: [],
           },
-          activityLog: [],
-          passedTopicQuizzes: [],
-          completedProblemIds: [],
-          completedWarmupDrills: [],
-          masteredProblemSlugs: [],
-          spacedRepetitionQueue: [],
         },
-      },
-      { upsert: true }
-    );
+        { upsert: true }
+      );
+    } catch (profileError) {
+      // Another request may have created the unique profile concurrently.
+      if (!isMongoDuplicateKey(profileError)) throw profileError;
+      const alreadyProvisioned = await UserBrainProfile.exists({ userId: user.id });
+      if (!alreadyProvisioned) throw profileError;
+    }
 
     // Community invite processing is a best-effort side effect. A malformed or
     // unavailable invite record must not prevent an authenticated learner from signing in.
