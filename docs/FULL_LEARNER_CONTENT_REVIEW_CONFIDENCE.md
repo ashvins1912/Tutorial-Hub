@@ -122,3 +122,8 @@ Added regression assertions for these assumptions to `tests/content-authoring/al
 - Regression test commit: `ba835ea10429dc462b0c0507cd40984eeb8ce725`
 - Validation run #709 was queued for the source correction when checked. The test commit's run had not yet appeared in the workflow-run lookup.
 - These are additional targeted corrections; whole-guide and whole-platform completion remains unverified.
+
+
+## Test-commit validation update
+
+Validation run **#710** was created for test commit `ba835ea10429dc462b0c0507cd40984eeb8ce725`. At the latest job check, dependency installation was in progress and type-check plus all downstream checks were pending. This run therefore does not yet establish test success. The evidence-report update itself will also require final-head validation.
