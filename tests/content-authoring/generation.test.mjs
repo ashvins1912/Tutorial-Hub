@@ -12,7 +12,7 @@ const validLesson = {
   title: 'Binary Search',
   summary: 'Search sorted data by repeatedly halving the search interval.',
   learningObjectives: ['Understand the invariant'],
-  modules: sections.map((section) => ({ sectionId: section.id, title: section.title, purpose: section.purpose, contentMarkdown: 'Detailed explanation of the topic.', keyPoints: ['Maintain a valid search interval'], reasoningSteps: ['Compare the middle element'], workedExamples: [], codeExamples: [] })),
+  modules: sections.map((section, index) => ({ sectionId: section.id, title: section.title, purpose: section.purpose, contentMarkdown: 'Detailed explanation of the topic.', keyPoints: ['Maintain a valid search interval'], reasoningSteps: ['Compare the middle element', 'Keep the half that can still contain the target'], workedExamples: index === 0 ? [{ title: 'Trace target 7', input: '[1, 3, 5, 7, 9], target 7', output: 'index 3', explanation: 'The midpoint value equals the target, so return its index.' }] : [], codeExamples: index === 0 ? [{ language: 'Java 21', code: 'return values[mid];', explanation: 'Return the value at the verified midpoint.' }] : [] })),
   visualizations: [{ id: 'flow', title: 'Search interval', type: 'mermaid', description: 'Interval narrowing', source: 'flowchart TD\n A-->B' }],
   quiz: [{ question: 'What does the invariant represent?', type: 'single-choice', options: ['A valid interval', 'A random index'], correctAnswer: 'A valid interval', explanation: 'The invariant preserves the target if it exists.', difficulty: 'beginner', objectiveIds: ['Understand the invariant'] }],
   practiceTasks: [{ title: 'Trace a search', instructions: 'Trace target 7 in a sorted list.', expectedOutcome: 'Show interval updates.', difficulty: 'beginner' }],
@@ -34,6 +34,18 @@ test('validates complete required section coverage and visualizations', () => {
   assert.equal(result.lesson.validation.status, 'unverified-draft');
   assert.equal(result.lesson.modules.length, 2);
   assert.equal(result.warnings.length, 0);
+});
+
+test('warns when a generated module lacks worked evidence or a code explanation', () => {
+  const lesson = {
+    ...validLesson,
+    modules: validLesson.modules.map((module, index) => index === 0
+      ? { ...module, workedExamples: [], codeExamples: [{ language: 'Java 21', code: 'return values[mid];', explanation: '' }] }
+      : module),
+  };
+  const result = validateGeneratedLesson(lesson, sections);
+  assert.ok(result.warnings.some((warning) => /no worked example or counterexample/.test(warning)));
+  assert.ok(result.warnings.some((warning) => /code example missing language, code or explanation/.test(warning)));
 });
 
 test('rejects quiz questions without valid objective bindings', () => {
