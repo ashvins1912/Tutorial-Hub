@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { DP_PRACTICE_PROBLEMS } from '../../src/data/dpPracticeProblems.ts';
+import { DP_GUIDED_LESSONS } from '../../src/components/DpLearningLab.tsx';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const source = readFileSync(path.join(root, 'src/components/DpLearningLab.tsx'), 'utf8');
@@ -42,7 +43,26 @@ test('DP guided lessons have all eight numbered steps and explicit arithmetic bo
   assert.match(source, /for \(int k = l; k < r; k\+\+\)/);
 });
 
-test('DP lab UI exposes accessible lesson, hint, and practice states', () => {
+test('DP guided lessons have unique complete structures and accurate House Robber prefix state', () => {
+  assert.equal(DP_GUIDED_LESSONS.length, 8);
+  assert.equal(new Set(DP_GUIDED_LESSONS.map((lesson) => lesson.title)).size, 8);
+  for (const lesson of DP_GUIDED_LESSONS) {
+    for (const field of ['idea', 'state', 'recurrence', 'base', 'order', 'complexity', 'java', 'checkpoint']) {
+      assert.ok(lesson[field]?.trim(), lesson.title + ': missing ' + field);
+    }
+  }
+  const robber = DP_GUIDED_LESSONS.find((lesson) => lesson.title.includes('House Robber'));
+  assert.ok(robber);
+  assert.match(robber.state, /first i houses/i);
+  assert.match(robber.base, /dp\\[0\\] = 0/);
+  assert.match(robber.recurrence, /money\\[i - 1\\]/);
+  assert.match(robber.java, /twoBack = 0L, oneBack = 0L/);
+  assert.match(robber.complexity, /all-negative.*returns 0/i);
+  assert.match(DP_GUIDED_LESSONS[5].order, /0\\/1.*descends.*Unbounded.*ascends/i);
+  assert.match(DP_GUIDED_LESSONS[6].complexity, /code points/i);
+});
+
+test('DP lab UI exposes accessible lesson, hint, search, and practice states', () => {
   assert.match(source, /aria-pressed=\{i === lessonIndex\}/);
   assert.match(source, /aria-current=\{i === lessonIndex \? 'step' : undefined\}/);
   assert.match(source, /h-11 w-11/);
