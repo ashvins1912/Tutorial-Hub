@@ -78,3 +78,29 @@ test('DSA course structure totals remain transparent and reviewable', () => {
   assert.equal(totals.learningOutcomes, 129);
   assert.equal(totals.prerequisites, 82);
 });
+
+
+test('JavaScript sliding-window maximum matches brute force and bounds stale index retention', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  const example = lesson.codeExamples.find((item) => item.title === 'Queue with two stacks and sliding-window maximum');
+  assert.ok(example, 'missing JavaScript sliding-window example');
+  assert.match(example.code, /candidates\.splice\(0, head\)/, 'stale prefix must be compacted');
+  assert.match(example.code, /head >= k/, 'compaction must bound retained stale indices by the window size');
+  const module = { exports: {} };
+  runInNewContext(example.code + '\\nmodule.exports = { slidingMaximum };', { module });
+  const slidingMaximum = module.exports.slidingMaximum;
+  const cases = [
+    { values: [5, 5, 5, 5, 5, 5], k: 2 },
+    { values: [1, 2, 3, 4, 5, 6], k: 3 },
+    { values: [6, 5, 4, 3, 2, 1], k: 4 },
+    { values: [-8, 0, -8, 3, 3, -2], k: 3 },
+    { values: [1], k: 1 },
+  ];
+  for (const { values, k } of cases) {
+    const expected = Array.from({ length: values.length - k + 1 }, (_, i) => Math.max(...values.slice(i, i + k)));
+    assert.deepEqual(Array.from(slidingMaximum(values, k)), expected);
+  }
+  assert.throws(() => slidingMaximum([1, 2], 0), /invalid window/);
+  assert.throws(() => slidingMaximum([1, 2], 3), /invalid window/);
+});
