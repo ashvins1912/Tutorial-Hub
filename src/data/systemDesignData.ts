@@ -296,7 +296,7 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
         step: 2,
         title: 'Presence Lookup & Kafka Routing',
         activeNodes: ['redis-cache', 'kafka-queue'],
-        packetNote: 'Redis identifies recipient’s active gateway; Kafka guarantees ordered delivery.',
+        packetNote: 'Redis identifies the recipient’s active gateway; Kafka preserves order within a partition, not across all partitions. Choose the partition key to match the required per-recipient ordering scope.',
         latencyMs: 19,
       },
       {
