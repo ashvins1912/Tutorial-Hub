@@ -8,6 +8,7 @@ import type {
   TopicMasterySummary,
 } from '../../../shared/learningContract';
 import {
+  addVerifiedProblemEvidence,
   computeNextRevisionSchedule,
   computeTopicMastery,
   createEmptyMasteryEvidence,
@@ -172,7 +173,7 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
     const existing =
       get().evidenceByTopic[topicId] ??
       createEmptyMasteryEvidence(topicId, topic?.version.version ?? '1.0.0');
-    return computeTopicMastery(existing);
+    return computeTopicMastery(existing, topic?.problems);
   },
 
   recordEvidence: async (payload) => {
@@ -205,14 +206,11 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
     if (payload.verifiedProblemId) {
       const prob = topic.problems.find((p) => p.id === payload.verifiedProblemId);
       if (prob) {
-        if (!next.implementationsVerified.includes(prob.id)) {
-          next.implementationsVerified = [...next.implementationsVerified, prob.id];
-        }
-        const edgeCount = prob.testSuite.cases.filter((c) => c.isEdgeCase || c.isBoundary).length;
-        next.edgeCasesPassed = Math.max(next.edgeCasesPassed, next.edgeCasesPassed + edgeCount);
-        if (prob.category === 'debugging' && !next.debuggingExercisesPassed.includes(prob.id)) {
-          next.debuggingExercisesPassed = [...next.debuggingExercisesPassed, prob.id];
-        }
+        const verified = addVerifiedProblemEvidence(next, prob, topic.problems);
+        next.implementationsVerified = verified.implementationsVerified;
+        next.edgeCasesPassed = verified.edgeCasesPassed;
+        next.debuggingExercisesPassed = verified.debuggingExercisesPassed;
+        next.tracesCompleted = verified.tracesCompleted;
       }
     }
 
