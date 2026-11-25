@@ -158,3 +158,17 @@ Regression assertions were added and the source/test blobs re-fetched.
 - Graph source commits: `ff01fff234b3875f03c8e7b93a7435e89c4cef92`, `65f8a949853108509685a9a7783ebd98b11b492f`
 - Test commit: `2e6c7fdf19b0b80a5109c6a473f9cc41b05cdb62`
 - Run #714 passed all listed validation steps and frontend build on its tested commit. New graph assertions require validation on the current final head; that run is pending/in progress.
+
+
+## Fifth focused technical pass: reachability and auxiliary space
+
+Two further correctness/complexity details were corrected:
+
+- **Bellman-Ford:** the extra relaxation pass detects negative cycles reachable from the chosen source; detecting a cycle anywhere requires initializing all distances to zero (or adding a super-source).
+- **Segmented Sieve:** auxiliary space now includes both the [L, R] segment and the base-prime list up to square root of R.
+
+Regression assertions were added and source/test blobs were re-fetched.
+
+- Source commit: `02bdc80400b446d386e731c6f1166cf6f6515e48`
+- Test commit: `87c4a70b56cc80128c2c2886afc723cde5c50a8b`
+- Run #718 was in progress at type-check when last polled. It tested the prior graph-caveat commit; the newest test/evidence commits still require their own completed validation.
