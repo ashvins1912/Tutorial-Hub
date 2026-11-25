@@ -51,6 +51,10 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['prims-mst'].followUpTwists.find(x => /Prim’s beat Kruskal/i.test(x.question)).complexityImpact, /explicit O\(V²\) edge storage/i);
   assert.match(guides['bellman-ford'].simpleAnalogy, /reachable vertices when no reachable negative cycle exists/i);
   assert.match(guides['bidirectional-bfs'].interviewScript30s, /irregular graphs do not have that universal bound/i);
+  assert.match(guides['kmp-rabin-karp'].interviewScript30s, /collisions require verification/i);
+  assert.match(guides['mos-algorithm'].followUpTwists.find(x => /constant factor nearly in half/i.test(x.question)).complexityImpact, /not a fixed percentage/i);
+  assert.match(guides['euclidean-extended-gcd'].followUpTwists.find(x => /integer overflow when computing/i.test(x.question)).complexityImpact, /final LCM fits/i);
+  assert.match(guides['modular-exponentiation'].simpleAnalogy, /grows logarithmically/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
