@@ -699,7 +699,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Binary Search',
     category: 'Searching & Sorting',
     visualType: 'binary-search',
-    tagline: 'Halve sorted, rotated, or monotonic answer spaces in O(log N) comparisons.',
+    tagline: 'Halve sorted or monotonic search spaces in O(log N); rotated arrays need distinct values for the usual bound.',
     timeComplexity: 'O(log N) with distinct values; O(N) worst case with duplicates',
     spaceComplexity: 'O(1)',
     complexityLeap: 'O(N) linear scan → O(log N) when values distinguish the sorted half; duplicates can require linear shrinking',
@@ -708,13 +708,13 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     mentalModelSteps: [
       'Maintain closed search range [L, R] and compute overflow-safe mid = L + (R - L) // 2.',
       'Check if nums[mid] == target first.',
-      'Determine which half is sorted: if nums[L] <= nums[mid], left [L..mid] is sorted; else right [mid..R] is sorted.',
+      'For a rotated array with distinct values, one half is sorted: if nums[L] <= nums[mid], left [L..mid] is sorted; otherwise right [mid..R] is sorted. With duplicates, equal boundary values can make this test ambiguous; safely shrink equal boundaries, accepting an O(N) worst case.',
       'Check if target lies inside the sorted half bounds to discard the opposite 50% safely.',
     ],
     loopInvariant:
       'If target exists in the array, it is strictly contained inside the remaining bracket [L, R].',
     whenToUse: [
-      'Sorted or rotated sorted array lookup in O(log N)',
+      'Sorted-array lookup in O(log N); rotated-array lookup in O(log N) with distinct values, and up to O(N) with duplicates',
       'Minimum feasible speed/capacity problems (Binary Search on Answer: Koko, Ship Packages)',
       'Finding first/last occurrence (lower_bound / upper_bound) or median partition',
     ],
@@ -779,8 +779,8 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     frames: [
       {
         step: 1,
-        title: 'Initial bracket [0..6], target = 2',
-        explanation: 'Rotated array [6, 7, 1, 2, 3, 4, 5]. Compute mid = 3 → nums[3] = 2? Let’s search target = 4 to see 3 halvings!',
+        title: 'Initial bracket [0..6], target = 4',
+        explanation: 'Search for target = 4 in rotated array [6, 7, 1, 2, 3, 4, 5]. The initial midpoint is index 3, where nums[3] = 2, so the target is not found yet.',
         invariantCheck: 'Searching target = 4 in [6, 7, 1, 2, 3, 4, 5]. Full range [0..6] active.',
         variables: [
           { name: 'target', value: '4' },
