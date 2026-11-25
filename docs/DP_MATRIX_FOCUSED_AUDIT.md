@@ -45,3 +45,8 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 ## Confidence statement
 
 High confidence in the current structural denominators and the exact tests that pass on their tested commits. Moderate confidence in the specific corrected examples after their targeted tests complete. No defensible 100% semantic, pedagogical or UI confidence claim for the whole platform until all registered and discovered dynamic sources, units, states, viewports and accessibility checks are dispositioned with evidence.
+
+
+### Matrix problem examples
+
+Each of the 42 matrix problems now includes a concrete example input and expected output. The expanded problem panel shows the prompt, example, expected result, approach, complexity and Java hint. The matrix quality test requires both example fields for every stable ID and checks representative outputs (including kth-smallest, target-sum submatrices, eight-direction path length and Game of Life).
