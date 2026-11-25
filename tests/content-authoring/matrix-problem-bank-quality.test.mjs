@@ -43,6 +43,7 @@ test('matrix problem bank has an exact, stable and structurally complete invento
   assert.match(byId('m25').expectedOutput, /5/);
   assert.match(byId('m31').expectedOutput, /2/);
   assert.match(byId('m40').expectedOutput, /0,1,0/);
+  assert.match(byId('m32').expectedOutput, /\(1,1\)/, 'Pacific-Atlantic sample must include the centre cell that reaches both oceans');
   assert.match(byId('m30').example, /\[\['X','X','X','X'\]/);
   assert.match(byId('m33').example, /ABCCED/);
 });
