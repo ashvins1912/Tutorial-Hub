@@ -30,7 +30,7 @@ test('every DSA Python course code example compiles', { skip: !pythonCommand }, 
     const files = [];
     pythonExamples.forEach((example, index) => {
       const file = path.join(dir, 'snippet_' + index + '.py');
-      writeFileSync(file, example.code + '\\n', 'utf8');
+      writeFileSync(file, example.code + '\n', 'utf8');
       files.push(file);
     });
     execFileSync(pythonCommand, ['-m', 'py_compile', ...files], { stdio: 'pipe' });
@@ -53,7 +53,7 @@ test('every DSA Java course code example compiles as a snippet', { skip: !hasJdk
       if (/\\bListNode\\b/.test(code) && !/\\bclass\\s+ListNode\\b/.test(code)) {
         stubs.push('static class ListNode { int val; ListNode next; ListNode(int v) { val = v; } }');
       }
-      const source = 'import java.util.*;\\nimport java.util.stream.*;\\nclass DsaSnippet' + index + ' {\\n' + stubs.join('\\n') + '\\n' + code + '\\n}\\n';
+      const source = 'import java.util.*;\nimport java.util.stream.*;\nclass DsaSnippet' + index + ' {\n' + stubs.join('\n') + '\n' + code + '\n}\n';
       const file = path.join(dir, 'DsaSnippet' + index + '.java');
       writeFileSync(file, source, 'utf8');
       files.push(file);
