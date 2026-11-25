@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Code2, Cpu, Database, Layers, Search, Target } from 'lucide-react';
 import { SYSTEM_DFD_PATTERNS } from '../data/systemDfdLibraryData';
+import {
+  HANDBOOK_EXTRA_CATEGORIES,
+  HANDBOOK_TOPIC_ENRICHMENTS,
+} from '../data/systemDesignHandbookData';
 import { useAccountState } from '../hooks/useAccountState';
 import { usePatternForgeStore } from '../store/usePatternForgeStore';
 import { DatabaseVisualAnimator } from './database/DatabaseVisualAnimator';
@@ -46,6 +50,7 @@ const TOPIC_TO_SYSTEM_DFD: Record<string, string> = {
 };
 
 const CATEGORY_TO_SYSTEM_DFD: Record<string, string> = {
+  foundations: 'rate-limiter-gateway',
   pillars: 'cache-aside-read',
   network: 'realtime-chat-fanout',
   traffic: 'rate-limiter-gateway',
@@ -54,6 +59,10 @@ const CATEGORY_TO_SYSTEM_DFD: Record<string, string> = {
   cache: 'cache-aside-read',
   distributed: 'write-behind-queue',
   architecture: 'write-behind-queue',
+  'algo-ds-production': 'bloom-url-shortener',
+  'lld-solid-patterns': 'cache-aside-read',
+  'arch-security-dr': 'rate-limiter-gateway',
+  'case-studies-walkthroughs': 'write-behind-queue',
 };
 
 const TOPIC_TO_DB_DFD: Record<string, string> = {
@@ -91,12 +100,13 @@ type Topic = {
   id: string; title: string; level: 'Foundation' | 'Intermediate' | 'Advanced';
   model: string; internals: string; use: string; tradeoff: string; example: string;
   interview: string; exercise: string; answer: string;
+  prerequisites?: string; realLifeAnalogy?: string; masteryTest?: string;
 };
 type Category = { id: string; title: string; outcome: string; topics: Topic[] };
 const t = (id:string,title:string,level:Topic['level'],model:string,internals:string,use:string,tradeoff:string,example:string,interview:string,exercise:string,answer:string):Topic =>
   ({id,title,level,model,internals,use,tradeoff,example,interview,exercise,answer});
 
-const curriculum: Category[] = [
+const baseCurriculum: Category[] = [
  { id:'pillars', title:'1. Core system pillars & trade-offs', outcome:'Reason about scale, latency, availability, consistency and correctness before choosing technology.', topics:[
  t('vertical-horizontal','Vertical vs horizontal scaling','Foundation','Vertical scaling makes one machine bigger; horizontal scaling adds more machines and distributes work.','Scale-up increases CPU, RAM or disk on one node. Scale-out requires request distribution, shared or partitioned state, replication and failure handling. Stateless services are easiest to scale horizontally.','Scale vertically for simple workloads or as a fast first step. Scale horizontally when capacity, resilience or geographic distribution requires multiple nodes.','Vertical is operationally simple but has a hardware ceiling and single-node blast radius. Horizontal adds coordination, network calls, data consistency and operational complexity.','A Spring Boot API can first move from 2 to 8 vCPU; later multiple stateless replicas sit behind a load balancer while sessions move to Redis.','How would you scale a stateful monolith without breaking user sessions?','Draw the same API on one large VM and on three replicas. Identify where session state lives.','Externalise session/state, make requests safe across replicas, then add health-checked load balancing and data scaling.'),
  t('latency-throughput','Latency vs throughput','Foundation','Latency is how long one request takes; throughput is how many requests a system completes per unit time.','Measure end-to-end latency and component latency separately. Throughput depends on concurrency, resource capacity, queueing and service time. Use percentiles (p50/p95/p99), not averages alone.','Latency matters for interactive requests; throughput matters for batch jobs, ingestion and capacity planning. Most systems need both.','Increasing concurrency can raise throughput until saturation, then queueing causes tail latency to explode. Batching improves throughput but may add wait time.','A bulk order-import endpoint batches 500 rows to improve DB throughput, while checkout keeps a low-latency synchronous path.','Why can throughput improve while p99 latency gets worse?','Given 100 ms average service time and 100 concurrent workers, estimate the theoretical service capacity and list why real capacity is lower.','Little’s Law: in-flight work L = arrival rate λ × average time W. Saturation and queueing increase W sharply.'),
@@ -184,6 +194,12 @@ const curriculum: Category[] = [
  ]}
 ];
 
+const curriculum: Category[] = [
+  HANDBOOK_EXTRA_CATEGORIES[0],
+  ...baseCurriculum,
+  ...HANDBOOK_EXTRA_CATEGORIES.slice(1),
+];
+
 const storageKey = 'patternforge-system-design-academy-v1';
 type Progress = Record<string, { done: boolean; note: string }>;
 export function SystemDesignLearningAcademy({
@@ -227,7 +243,16 @@ export function SystemDesignLearningAcademy({
   }, [externalTarget, onConsumeExternalTarget]);
 
   const category = curriculum.find(c => c.id === categoryId) ?? curriculum[0];
-  const topic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
+  const rawTopic = category.topics.find(x => x.id === topicId) ?? category.topics[0];
+  const enrichment = HANDBOOK_TOPIC_ENRICHMENTS[rawTopic.id];
+  const topic: Topic = enrichment
+    ? {
+        ...rawTopic,
+        prerequisites: rawTopic.prerequisites ?? enrichment.prerequisites,
+        realLifeAnalogy: rawTopic.realLifeAnalogy ?? enrichment.realLifeAnalogy,
+        masteryTest: rawTopic.masteryTest ?? enrichment.masteryTest,
+      }
+    : rawTopic;
   const matchedDbFlowId = TOPIC_TO_DB_DFD[topic.id];
   const matchedSystemDfdId = TOPIC_TO_SYSTEM_DFD[topic.id] ?? CATEGORY_TO_SYSTEM_DFD[category.id] ?? 'cache-aside-read';
   const matchedSystemDfd = SYSTEM_DFD_PATTERNS.find((p) => p.id === matchedSystemDfdId) ?? SYSTEM_DFD_PATTERNS[0];
@@ -339,6 +364,36 @@ export function SystemDesignLearningAcademy({
               ))}
             </div>
           </div>
+          {(topic.realLifeAnalogy || topic.prerequisites) && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {topic.realLifeAnalogy && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3.5 space-y-1">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">
+                    Plain-English real-life analogy
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {topic.realLifeAnalogy}
+                  </p>
+                </div>
+              )}
+              {topic.prerequisites && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3.5 space-y-1">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100">
+                    Prerequisites &amp; mastery self-check
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <span className="font-medium text-slate-800 dark:text-slate-200">Prerequisites:</span>{' '}
+                    {topic.prerequisites}
+                  </p>
+                  {topic.masteryTest && (
+                    <p className="text-sky-700 dark:text-sky-400 leading-relaxed pt-1">
+                      <span className="font-medium">Check:</span> {topic.masteryTest}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <div className="mt-5 space-y-2">{sections.map(([id,title,body])=><section key={id} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><button onClick={()=>setOpened(opened===id?'':id)} aria-expanded={opened===id} className="flex w-full items-center justify-between gap-3 p-4 text-left"><span className="text-sm font-semibold">{title}</span>{opened===id?<ChevronDown className="h-4 w-4"/>:<ChevronRight className="h-4 w-4"/>}</button>{opened===id&&<div className="border-t border-slate-100 p-4 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:text-slate-300">{body}</div>}</section>)}</div>
         </section>
         <section className="rounded-2xl border border-sky-200 bg-white p-5 dark:border-sky-900 dark:bg-slate-900 sm:p-6">

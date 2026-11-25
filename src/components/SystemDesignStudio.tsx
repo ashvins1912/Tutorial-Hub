@@ -7,6 +7,7 @@ import { SystemDfdSimulator as SystemDfdSimulatorBase } from './system-design/Sy
 import { RealWorldArchitecturesAndInterviewLab as RealWorldArchitecturesAndInterviewLabBase } from './system-design/RealWorldArchitecturesAndInterviewLab';
 import { InteractiveSystemMermaidFlows as InteractiveSystemMermaidFlowsBase } from './system-design/InteractiveSystemMermaidFlows';
 import { FrontierLlmArchitectureLab as FrontierLlmArchitectureLabBase } from './system-design/FrontierLlmArchitectureLab';
+import { SystemDesignHandbookView as SystemDesignHandbookViewBase } from './system-design/SystemDesignHandbookView';
 import {
   ArchitectureExplainerSidebar,
   type ActiveArchitecturePayload,
@@ -59,6 +60,9 @@ const InteractiveSystemMermaidFlows = withStudioBoundary(InteractiveSystemMermai
 });
 const FrontierLlmArchitectureLab = withStudioBoundary(FrontierLlmArchitectureLabBase, {
   studioName: 'ChatGPT, Gemini & Claude Architecture Internals Lab',
+});
+const SystemDesignHandbookView = withStudioBoundary(SystemDesignHandbookViewBase, {
+  studioName: 'System Design Learning Handbook (30 Chapters)',
 });
 import {
   DndContext,
@@ -624,6 +628,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
     | 'animations'
     | 'probabilistic'
     | 'academy'
+    | 'handbook'
   >('mermaid-flows');
   const [selectedDfdPatternId, setSelectedDfdPatternId] = useState<string>(SYSTEM_DFD_PATTERNS[0].id);
   const [selectedDbFlowId, setSelectedDbFlowId] = useState<string>(VISUAL_FLOW_SCENARIOS[0].id);
@@ -1222,6 +1227,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
             { id: 'animations', label: 'System Animations' },
             { id: 'probabilistic', label: 'Probabilistic Lab' },
             { id: 'academy', label: 'Deep Academy' },
+            { id: 'handbook', label: 'Learning Handbook (30 Ch)' },
           ]}
         />
 
@@ -1386,6 +1392,7 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
         subTab !== 'db-dfd' &&
         subTab !== 'probabilistic' &&
         subTab !== 'academy' &&
+        subTab !== 'handbook' &&
         subTab !== 'roadmap' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SYSTEM_SCENARIOS.map((sc) => (
@@ -2109,6 +2116,11 @@ export function SystemDesignStudio({ onOpenLabProblem }: SystemDesignStudioProps
           onOpenDfdPattern={handleOpenDfdPattern}
           onOpenLabProblem={handleOpenProblem}
         />
+      )}
+
+      {/* Mode 5: 30-Chapter System Design Learning Handbook */}
+      {subTab === 'handbook' && (
+        <SystemDesignHandbookView onOpenAcademyTopic={handleOpenAcademyTopic} />
       )}
 
       <TopicBridgeBar studioId="system-design" />

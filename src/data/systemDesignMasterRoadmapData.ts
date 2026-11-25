@@ -702,4 +702,132 @@ export const REASONING_QUIZ_ITEMS: ReasoningQuizItem[] = [
     reasoning:
       'Physical server clocks drift under NTP — if EU-West is 50ms ahead of US-East, an earlier write from EU-West carries a higher wall-clock timestamp and silently wipes out a causally newer write from US-East. Use Hybrid Logical Clocks (like CockroachDB) or Vector Clocks to preserve causal ordering.',
   },
+  {
+    id: 'q6-upi-timeout',
+    number: 6,
+    title: 'Uncertain Payment Timeout (UPI-Style)',
+    scenario:
+      'A customer scans a shop QR code and submits a payment. After 15 seconds, the mobile app receives a network timeout — no success or failure response arrived. The bank may have already debited the account. What should the client and payment service do next?',
+    options: [
+      {
+        id: 'a',
+        label: 'Assume the payment failed because it timed out and automatically generate a brand-new payment request',
+        isCorrect: false,
+      },
+      {
+        id: 'b',
+        label: 'Treat timeout as an uncertain outcome: query transaction status using the original transaction reference / idempotency key and reconcile asynchronously',
+        isCorrect: true,
+      },
+      {
+        id: 'c',
+        label: 'Switch from HTTPS to UDP so responses arrive faster without waiting for ACKs',
+        isCorrect: false,
+      },
+      {
+        id: 'd',
+        label: 'Delete the pending payment row immediately so the user can pay again cleanly',
+        isCorrect: false,
+      },
+    ],
+    answerSummary: 'Timeout is an uncertain outcome → Status Inquiry + Idempotency Key + Reconciliation',
+    reasoning:
+      'In distributed systems, a timeout never proves the remote bank did not commit the debit. Generating a new payment reference risks a double debit. Persist the payment in PROCESSING state with a unique transaction reference, query authoritative status, and run background reconciliation jobs.',
+  },
+  {
+    id: 'q7-quorum-rw',
+    number: 7,
+    title: 'Quorum Reads & Writes (N=3 Replicas)',
+    scenario:
+      'A replicated key-value store keeps N = 3 copies of each record. Your team debates using R = 2, W = 2 versus R = 1, W = 3. What is the key operational difference if one replica node goes down?',
+    options: [
+      {
+        id: 'a',
+        label: 'Both configurations tolerate 1 node failure identically for reads and writes',
+        isCorrect: false,
+      },
+      {
+        id: 'b',
+        label: 'R=2, W=2 satisfies R+W>N and tolerates 1 node failure for both reads and writes; R=1, W=3 gives fast single-node reads but blocks all writes whenever any 1 replica is down',
+        isCorrect: true,
+      },
+      {
+        id: 'c',
+        label: 'R=1, W=3 never overlaps reads and writes so it always returns stale data',
+        isCorrect: false,
+      },
+      {
+        id: 'd',
+        label: 'R+W>N automatically guarantees strict linearizability even with sloppy quorums and clock skew',
+        isCorrect: false,
+      },
+    ],
+    answerSummary: 'R=2, W=2 tolerates 1 outage on both paths; R=1, W=3 trades write availability for fast reads',
+    reasoning:
+      'Both R=2, W=2 (4 > 3) and R=1, W=3 (4 > 3) satisfy quorum overlap R + W > N. However, W = 3 requires every single replica to acknowledge writes, meaning a single node failure halts writes entirely. Also note that quorum arithmetic alone does not guarantee linearizability under concurrent writes or sloppy quorums.',
+  },
+  {
+    id: 'q8-btree-vs-lsm',
+    number: 8,
+    title: 'B+ Tree vs LSM Tree Storage Choice',
+    scenario:
+      'You are building an ingestion pipeline where 90% of database operations are high-volume sequential writes (telemetry and event records) alongside periodic key lookups. Why do write-optimized engines prefer an LSM tree over an in-place B+ tree?',
+    options: [
+      {
+        id: 'a',
+        label: 'LSM trees eliminate all background disk I/O and never need compaction',
+        isCorrect: false,
+      },
+      {
+        id: 'b',
+        label: 'LSM trees append to a WAL and in-memory memtable, flushing sorted SSTables sequentially instead of triggering random in-place B+ tree page splits (trading off compaction and multi-level read overhead)',
+        isCorrect: true,
+      },
+      {
+        id: 'c',
+        label: 'B+ trees cannot support range queries or sorted keys',
+        isCorrect: false,
+      },
+      {
+        id: 'd',
+        label: 'LSM trees store every record in RAM permanently without writing to disk',
+        isCorrect: false,
+      },
+    ],
+    answerSummary: 'LSM turns random writes into sequential SSTable flushes, trading off compaction & read amplification',
+    reasoning:
+      'B+ trees excel at ordered reads and range scans via linked leaf pages, but heavy random writes trigger page splits and random disk I/O. LSM trees write sequentially to a WAL + memtable and flush immutable sorted SSTables, using Bloom filters to curb multi-level read checks while paying background compaction write amplification.',
+  },
+  {
+    id: 'q9-multitenant-isolation',
+    number: 9,
+    title: 'Multi-Tenant SaaS Security Boundary',
+    scenario:
+      'An apartment community platform hosts 500 separate residential societies on one shared backend. The UI hides the "Visitor Logs" button for non-residents and sends X-Society-Id from the browser. Why is this architecture critically insecure?',
+    options: [
+      {
+        id: 'a',
+        label: 'It is secure as long as HTTPS/TLS is enabled on the load balancer',
+        isCorrect: false,
+      },
+      {
+        id: 'b',
+        label: 'Frontend hiding is not authorization and client headers can be forged; the backend must derive society_id from the authenticated server session, enforce RBAC, and scope every DB query, cache key and async export by tenant_id',
+        isCorrect: true,
+      },
+      {
+        id: 'c',
+        label: 'It fails only because HTTP headers cannot hold numeric IDs',
+        isCorrect: false,
+      },
+      {
+        id: 'd',
+        label: 'Adding a CDN in front of the API automatically enforces tenant isolation',
+        isCorrect: false,
+      },
+    ],
+    answerSummary: 'Enforce server-side session membership, RBAC and tenant_id scoping on every query, cache key and job',
+    reasoning:
+      'Any attacker can bypass the UI and forge X-Society-Id via curl. Always authenticate the caller, verify their society membership and role on the trusted backend, and enforce tenant_id predicates on SQL queries (with composite tenant indexes or RLS), Redis key prefixes and background exports.',
+  },
 ];

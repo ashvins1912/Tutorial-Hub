@@ -28,8 +28,11 @@ import {
   StatusCycleButton,
   toggleFilterValue,
 } from './shared/ProblemFilterBar';
-import { CatalogSearchInput, CopyButton, SegmentedTabBar } from './ui';
+import { CatalogSearchInput, SegmentedTabBar } from './ui';
 import { AddCustomProblemModal } from './AddCustomProblemModal';
+import { findLineByLinePatternFor28Id } from '../data/dsaLineByLineMasteryData';
+import { LineByLineCodeStudio } from './shared/LineByLineCodeStudio';
+import { Patterns20KarumanchiLab } from './shared/Patterns20KarumanchiLab';
 
 interface SolverHandoffProblem {
   id: string;
@@ -57,8 +60,7 @@ export interface Patterns28RoadmapViewProps {
   onAnalyzeInSolver?: (problem: SolverHandoffProblem) => void;
 }
 
-type RoadmapSubView = 'roadmap' | 'compact28' | 'custom' | 'templates';
-type TemplateLanguage = 'python' | 'typescript' | 'java';
+type RoadmapSubView = 'roadmap' | 'lineByLine' | 'compact28' | 'custom' | 'templates';
 
 const DIFFICULTY_TEXT_CLASS: Record<Dsa28Difficulty, string> = {
   Easy: 'text-emerald-600 dark:text-emerald-400',
@@ -89,7 +91,8 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
     templates[0]?.patternId ?? 'binary-search-on-answer'
   );
-  const [templateLang, setTemplateLang] = useState<TemplateLanguage>('python');
+  const [focusedBlueprintId, setFocusedBlueprintId] = useState<string | null>(null);
+  const [inlineBlueprintOpen, setInlineBlueprintOpen] = useState<boolean>(false);
   const [expandedStatementId, setExpandedStatementId] = useState<string | null>(null);
   const [standaloneModalOpen, setStandaloneModalOpen] = useState(false);
 
@@ -138,6 +141,11 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
   const activeTemplate = useMemo(
     () => templates.find((t) => t.patternId === selectedTemplateId) ?? templates[0],
     [templates, selectedTemplateId]
+  );
+
+  const activeLineByLineBlueprint = useMemo(
+    () => (activePattern ? findLineByLinePatternFor28Id(activePattern.id) : undefined),
+    [activePattern]
   );
 
   const compact28Rows = useMemo(
@@ -361,13 +369,14 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
           onChange={setSubView}
           tabs={[
             { id: 'roadmap', label: '28-Pattern Explorer', icon: Layers },
+            { id: 'lineByLine', label: '20 Patterns · Line-by-Line', count: 20, icon: BookOpen },
             { id: 'compact28', label: 'Compact 28 Revision List', icon: ListChecks },
             { id: 'custom', label: 'My Custom Problems', count: customProblems.length, icon: FileText },
             { id: 'templates', label: 'Trickiest Templates', count: templates.length, icon: Code2 },
           ]}
         />
 
-        {subView !== 'templates' && (
+        {subView !== 'templates' && subView !== 'lineByLine' && (
           <div className="flex flex-wrap items-center gap-2.5">
             <CatalogSearchInput
               value={searchQuery}
@@ -380,7 +389,7 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
       </div>
 
       {/* Filter Bar */}
-      {subView !== 'templates' && (
+      {subView !== 'templates' && subView !== 'lineByLine' && (
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <ProblemFilterBar
             selectedDifficulties={selectedDifficulties}
@@ -424,6 +433,17 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* VIEW 0: 20 CODING PATTERNS LINE-BY-LINE & KARUMANCHI FOUNDATIONS */}
+      {subView === 'lineByLine' && (
+        <Patterns20KarumanchiLab
+          initialPatternId={focusedBlueprintId ?? undefined}
+          onJumpTo28Pattern={(pattern28Id) => {
+            setSelectedPatternId(pattern28Id);
+            setSubView('roadmap');
+          }}
+        />
       )}
 
       {/* VIEW 1: 28-PATTERN ROADMAP EXPLORER */}
@@ -575,6 +595,66 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Inline Line-by-Line Code, Dry-Run & Karumanchi Proof Drawer */}
+            {activeLineByLineBlueprint && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+                <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70 dark:bg-slate-950/50">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                      <BookOpen className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                        Line-by-Line Implementation, Dry-Run &amp; Karumanchi Proof
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-700" aria-hidden="true">·</span>
+                      <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        {activeLineByLineBlueprint.karumanchiChapter}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFocusedBlueprintId(activeLineByLineBlueprint.id);
+                        setSubView('lineByLine');
+                      }}
+                      className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline whitespace-nowrap shrink-0"
+                    >
+                      Open Full Lab →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInlineBlueprintOpen((v) => !v)}
+                      aria-expanded={inlineBlueprintOpen}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-sky-500 whitespace-nowrap shrink-0"
+                    >
+                      <span>{inlineBlueprintOpen ? 'Hide Walkthrough' : 'Inspect Line-by-Line'}</span>
+                      {inlineBlueprintOpen ? (
+                        <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {inlineBlueprintOpen && (
+                  <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                        Karumanchi Proof:{' '}
+                      </strong>
+                      {activeLineByLineBlueprint.karumanchiFoundation}
+                    </p>
+                    <LineByLineCodeStudio
+                      blueprint={activeLineByLineBlueprint}
+                      compact
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Problem List Table */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
@@ -1265,42 +1345,13 @@ export const Patterns28RoadmapView: React.FC<Patterns28RoadmapViewProps> = ({
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1">
-                    {(
-                      [
-                        { id: 'python', label: 'Python' },
-                        { id: 'typescript', label: 'TypeScript' },
-                        { id: 'java', label: 'Java' },
-                      ] as const
-                    ).map((lang) => (
-                      <button
-                        key={lang.id}
-                        type="button"
-                        onClick={() => setTemplateLang(lang.id)}
-                        className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-colors whitespace-nowrap shrink-0 ${
-                          templateLang === lang.id
-                            ? 'bg-sky-500 text-slate-950 font-semibold'
-                            : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        {lang.label}
-                      </button>
-                    ))}
-                  </div>
-                  <CopyButton
-                    text={activeTemplate.code[templateLang]}
-                    label="Copy Template"
-                    copiedLabel="Copied"
-                    variant="dark-surface"
-                    size="xs"
-                  />
-                </div>
-                <pre className="p-4 text-xs font-mono text-slate-100 overflow-x-auto leading-relaxed">
-                  <code>{activeTemplate.code[templateLang]}</code>
-                </pre>
-              </div>
+              <LineByLineCodeStudio
+                rawCodeByLang={activeTemplate.code}
+                title={`${activeTemplate.title} · Line-by-Line Dissection`}
+                subtitle="Click any line, step with Prev/Next, or open Full Ledger to inspect why every line exists."
+                contextHint={activeTemplate.title}
+                compact
+              />
 
               <div className="pt-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-600 dark:text-rose-400">

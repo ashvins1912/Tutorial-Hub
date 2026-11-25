@@ -6,6 +6,15 @@ import { DpLearningLab } from './DpLearningLab';
 import { useAccountState } from '../hooks/useAccountState';
 import { useAsyncCatalog } from '../hooks/useAsyncCatalog';
 import { CatalogSearchInput } from './ui';
+import { LineByLineCodeStudio, type StudioCodeLanguage } from './shared/LineByLineCodeStudio';
+
+function resolveCourseLang(rawLang?: string): StudioCodeLanguage {
+  const lower = (rawLang ?? '').toLowerCase();
+  if (lower.includes('python') || lower === 'py') return 'python';
+  if (lower.includes('java') && !lower.includes('script')) return 'java';
+  if (lower.includes('javascript') || lower === 'js') return 'javascript';
+  return 'typescript';
+}
 
 type SectionKey = 'learningOutcomes' | 'prerequisites' | 'concepts' | 'deepDive' | 'recognition' | 'method' | 'workedExample' | 'traceExercises' | 'implementationSteps' | 'codeExamples' | 'correctness' | 'complexity' | 'pitfalls' | 'practice' | 'assessment' | 'realWorldApplications' | 'interviewChecks' | 'revisionPrompts';
 
@@ -33,13 +42,22 @@ const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
 type LessonProgress = Record<string, string[]>;
 function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
   if (section === 'codeExamples') {
-    return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => (
-      <article key={example.title} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800"><h4 className="text-sm font-semibold">{example.title}</h4><span className="text-xs text-slate-500">{example.language}</span></div>
-        <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-800 dark:text-slate-200"><code>{example.code}</code></pre>
-        <p className="border-t border-slate-100 p-4 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300">{example.explanation}</p>
-      </article>
-    ))}</div>;
+    return (
+      <div className="space-y-4">
+        {(lesson.codeExamples ?? []).map((example) => (
+          <div key={example.title} className="space-y-2">
+            <LineByLineCodeStudio
+              rawCode={example.code}
+              initialLanguage={resolveCourseLang(example.language)}
+              title={`${example.title} (${example.language})`}
+              subtitle={example.explanation}
+              contextHint={example.title}
+              compact
+            />
+          </div>
+        ))}
+      </div>
+    );
   }
   if (section === 'practice') {
     return <div className="grid gap-3 sm:grid-cols-2">{lesson.practice.map((item, index) => (
@@ -138,7 +156,9 @@ export function CompleteDsaCourse() {
         })}
 
         {active.id === 'dynamic-programming' && <DpLearningLab />}
-        {active.id === 'two-dimensional-arrays' && <MatrixProblemBank />}\n\n        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        {active.id === 'two-dimensional-arrays' && <MatrixProblemBank />}
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold">Your mastery checklist</h3><p className="mt-1 text-xs text-slate-500">Complete all eight steps through independent work, not by simply reading.</p></div><span className="text-sm font-bold tabular-nums">{progress[active.id]?.length ?? 0}/8</span></div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: ((progress[active.id]?.length ?? 0) / 8 * 100) + '%' }} /></div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">{DSA_LESSON_STEPS.map((step) => { const checked = progress[active.id]?.includes(step) ?? false; return <button key={step} type="button" onClick={() => toggleStep(step)} className="flex items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><span className={checked ? 'text-emerald-500' : 'text-slate-300'}>{checked ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}</span><span className={`text-xs leading-relaxed ${checked ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>{step}</span></button>; })}</div>
