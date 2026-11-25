@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "baseline": {
-    "registryBlobSha": "7d2719d6515a050ea679fbc1bb08a12d3964f13c",
+    "registryBlobSha": "fa63408b0a94122836993d0620d5d175ab11c715",
     "registrySurfaceCount": 22,
     "contentSourcePathCount": 153,
-    "testSourcePathCount": 23,
-    "allRegisteredPathCount": 176
+    "testSourcePathCount": 24,
+    "allRegisteredPathCount": 177
   },
   "purpose": "Exhaustive path-level audit ledger. Registry membership is inventory only. No path is marked reviewed unless every relevant unit and behavior is dispositioned with evidence.",
   "status": "in_progress",
@@ -2452,6 +2452,15 @@
       "evidence": []
     },
     {
+      "path": "tests/content-authoring/dp-learning-lab-code-examples.test.mjs",
+      "roles": [
+        "test"
+      ],
+      "surfaceIds": [
+        "workspace"
+      ]
+    },
+    {
       "path": "tests/content-authoring/dp-learning-lab-quality.test.mjs",
       "roles": [
         "test"
@@ -2730,18 +2739,81 @@
       "evidence": [
         "tests/content-authoring/dsa-course-ui-accessibility.test.mjs: source-level accessibility and search assertions"
       ]
+    },
+    {
+      "unitId": "dsa-course:glossary-expansion-138-terms",
+      "sourcePath": "src/data/dsaCompleteLessons.ts",
+      "reviewStatus": "content-added-awaiting-ci",
+      "finding": "Prior glossary contained only two terms per module and was thin relative to the concept inventory.",
+      "fix": "Added 92 plain-language term/definition/example entries across 23 modules; 138 total, with per-module uniqueness and required definition/example assertions.",
+      "evidence": [
+        "tests/content-authoring/dsa-course-structure-inventory.test.mjs: glossary completeness and uniqueness"
+      ]
+    },
+    {
+      "unitId": "dp-lab:20-practice-problem-briefs",
+      "sourcePath": "src/data/dpPracticeProblems.ts",
+      "reviewStatus": "content-added-awaiting-ci",
+      "finding": "DP roadmap previously provided only names/goals without standalone problem statements, examples or hints.",
+      "fix": "Added 20 structured practice briefs with statement, example and hint; wired detail disclosure into the learning UI.",
+      "evidence": [
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs: 20-item inventory and sample outputs"
+      ]
+    },
+    {
+      "unitId": "dp-lab:guided-code-bounds-and-complexity",
+      "sourcePath": "src/components/DpLearningLab.tsx",
+      "reviewStatus": "content-corrected-awaiting-ci",
+      "finding": "Several DP examples used int without bounds, could silently overflow, lacked input/memo guards, and LCS compared UTF-16 char units.",
+      "fix": "Added nonnegative/bounded stair inputs, checked long arithmetic, memo length validation, long grid/knapsack states, code-point LCS, and a split-based interval loop with explicit k<r.",
+      "evidence": [
+        "tests/content-authoring/dp-learning-lab-code-examples.test.mjs: compile and selected runtime boundary cases"
+      ]
+    },
+    {
+      "unitId": "dp-lab:practice-and-navigation-accessibility",
+      "sourcePath": "src/components/DpLearningLab.tsx",
+      "reviewStatus": "ui-corrected-awaiting-ci",
+      "finding": "Practice items were not expandable into statements/examples/hints; completion counts could include stale entries; lesson dots and state controls lacked accessible state/adequate targets.",
+      "fix": "Added problem details, valid-ID deduplicated progress, pressed/expanded states, persistent controlled panels, 44px numbered lesson targets and keyboard-focusable labeled code.",
+      "evidence": [
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs: practice/UI contract assertions"
+      ]
+    },
+    {
+      "unitId": "matrix-bank:numeric-complexity-hints",
+      "sourcePath": "src/data/matrixProblems.ts",
+      "reviewStatus": "content-corrected-awaiting-ci",
+      "finding": "Several matrix search and accumulation hints omitted wide product/value midpoints and overflow-safe sums/areas.",
+      "fix": "Clarified long total and midpoint for flattened search, long value bounds for kth/median, padded long difference arrays, long path/area sums and prefix sums.",
+      "evidence": [
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs: high-risk numeric assumption assertions"
+      ]
+    },
+    {
+      "unitId": "matrix-bank:search-progress-and-accessibility",
+      "sourcePath": "src/components/MatrixProblemBank.tsx",
+      "reviewStatus": "ui-corrected-awaiting-ci",
+      "finding": "Search omitted complexity/hints and did not trim query; completion count used raw persisted length and hardcoded 42; filter and solved states lacked accessible labels/pressed states.",
+      "fix": "Search all problem fields using trimmed query, count valid deduplicated IDs, derive total from catalog, add select labels/pressed states and persistent controlled details.",
+      "evidence": [
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs: catalog/UI assertions"
+      ]
     }
   ],
   "counts": {
     "registeredContentPathCount": 153,
-    "testPathCount": 23,
-    "allPathCount": 176,
+    "testPathCount": 24,
+    "allPathCount": 177,
     "reviewedPaths": 0,
-    "reviewedUnits": 6,
+    "reviewedUnits": 12,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 6,
     "unresolvedP0": 0,
-    "unresolvedP1": 0
+    "unresolvedP1": 0,
+    "contentAddedUnitsAwaitingCi": 2,
+    "contentCorrectedUnitsAwaitingCi": 2,
+    "uiCorrectedUnitsAwaitingCi": 2
   },
   "limitations": [
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
