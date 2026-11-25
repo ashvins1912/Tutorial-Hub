@@ -152,6 +152,13 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(MASTER_BESPOKE_UPGRADE_SPECS['raft-paxos-consensus'].optimal.time, /quorum RTT/i);
   assert.match(MASTER_BESPOKE_UPGRADE_SPECS['crdt-gcounter-orset'].optimal.bottleneckOrWin, /storage\/network latency remains/i);
   assert.match(MASTER_BESPOKE_UPGRADE_SPECS['bloom-filter'].optimal.bottleneckOrWin, /insert-only use/i);
+  assert.doesNotMatch(MASTER_40_TUTOR_GUIDES['consistent-hashing-dht'].interviewScript30s, /remaps ~100%/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['consistent-hashing-dht'].followUpTwists.find(x => /Virtual Nodes/i.test(x.question)).invariantShift, /depends on vnode count/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['hyperloglog'].recursiveSpaceBigO, /O\(m\) registers/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['lsm-tree-compaction'].iterativeTimeBigO, /O\(k\) plus level\/SSTable lookup/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['external-kway-merge'].recurrenceRelation, /merge fan-in/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['hash-table-probing'].recursiveSpaceBigO, /O\(1\) auxiliary state/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['crdt-gcounter-orset'].iterativeTimeBigO, /no synchronous cross-region consensus/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
