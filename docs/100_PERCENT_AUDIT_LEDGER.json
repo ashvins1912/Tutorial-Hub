@@ -3074,6 +3074,16 @@
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: server canonical checkpoint validation assertion"
       ]
+    },
+    {
+      "unitId": "dp-lab:practice-brief-assumptions-and-burst-balloons-score",
+      "sourcePath": "src/data/dpPracticeProblems.ts",
+      "reviewStatus": "content-corrected-awaiting-ci",
+      "finding": "Several DP practice briefs omitted relevant input boundaries or special cases; Burst Balloons statement described neighbors' product but omitted the balloon value itself.",
+      "fix": "Clarified Fibonacci n>=0 and overflow handling, House Robber base cases, House Robber II n=1, nonempty rectangular Minimum Path Sum grid, nonnegative Coin Change amount with amount=0, and exact Burst Balloons value[left]*value[i]*value[right] score with outside boundaries 1.",
+      "evidence": [
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs: problem statement assumptions and exact score assertions"
+      ]
     }
   ],
   "counts": {
@@ -3081,13 +3091,13 @@
     "testPathCount": 26,
     "allPathCount": 180,
     "reviewedPaths": 0,
-    "reviewedUnits": 29,
+    "reviewedUnits": 30,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 12,
     "unresolvedP0": 0,
     "unresolvedP1": 1,
     "contentAddedUnitsAwaitingCi": 4,
-    "contentCorrectedUnitsAwaitingCi": 6,
+    "contentCorrectedUnitsAwaitingCi": 7,
     "uiCorrectedUnitsAwaitingCi": 7
   },
   "limitations": [
