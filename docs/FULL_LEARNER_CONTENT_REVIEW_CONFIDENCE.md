@@ -251,3 +251,15 @@ Three further assumptions were made explicit:
 - **Suffix Array + LCP:** the separator between strings must be absent from both inputs (or outside the alphabet), and LCP must not cross that separator.
 
 Regression assertions were added (source commit `e99a8ffdd7f199018534d33414e89482eeb4a44c`; test commit `3bab0ce3510e58bc819dd51540cdeef536474e3f`). Run #743 validated the earlier nine-pass/inventory head; this pass and the current report update need a completed current-head run.
+
+
+## Eleventh focused technical pass: example-specific bounds and teaching analogies
+
+Four final polish/correctness issues were corrected in the 53-guide file:
+
+- **Fenwick Tree:** replaced a fixed “17 steps” claim for N=10,000 with O(log N) and the approximate 14-step example.
+- **Manacher:** stated that the transformed-string separator must be absent from the input or outside its alphabet.
+- **Bipartite coloring:** generalized the analogy from a 3-cycle to any odd-length cycle.
+- **Meet in the Middle:** removed the universal “in seconds” promise and described matching complementary sums.
+
+Regression assertions were added (source commit `8f763f52f76f667b06e99e922a59181eaa6fe05b`; test commit `327f602da555e130369a92dc4811fe234613d72b`). Current-head validation is pending; no result is claimed for this pass.
