@@ -231,7 +231,7 @@ Regression assertions cover these caveats. Source commit: `1d002ffe498f026970761
 
 ## Exact algorithm-guide inventory gate
 
-The tutor-guide module currently registers **53 guide IDs**. The quality test now stores the exact 53-ID inventory and requires exact key equality, matching `algorithmId`, complete non-empty teaching-contract fields, and at least one non-empty follow-up per guide. This prevents silent omission or accidental registration drift. Test commit: `b10001e767b54fb882c52f8d0a52884538b1075e`.
+The tutor-guide module defines **53 local guide IDs** and spreads **40 master guide IDs**, for **93 unique merged runtime guide IDs**. The quality test locks the 53 local IDs, checks the master source has 40 unique keys, and compares the runtime registry against the union of both sources. It also checks matching `algorithmId`, complete non-empty teaching-contract fields, and at least one non-empty follow-up per guide. This prevents silent omission or accidental registration drift. Test commit: `612289ea50e0a12370af39f88732cf7c7446ec8b`.
 
 Validation evidence:
 - Run #739 passed the full listed validation suite and frontend build on the prior head.
@@ -275,3 +275,8 @@ Four teaching details were tightened:
 - **Dual heaps / P90:** specified the nearest-rank size convention and that the 90th percentile is read from the upper min-heap top.
 
 Regression assertions were added (source commit `1193671a5daf0ec6ee25c3c44761536c31c7966d`; test commit `b4e0033f91f444e6c223b8e379a18a8ece2b5643`). This pass requires a completed final-head CI run.
+
+
+## Inventory-gate correction and CI repair
+
+Run #748 failed in the new exact-inventory assertion because it compared the runtime registry to only the 53 locally declared IDs and omitted the 40 imported master guides. The correct merged set is **93 unique guide IDs** (53 local + 40 master, no overlap). The test now imports `MASTER_40_TUTOR_GUIDES`, asserts its 40-key contract, and compares the runtime registry to the union. Test correction commit: `612289ea50e0a12370af39f88732cf7c7446ec8b`. The failure was in the newly authored inventory assertion; type-check and earlier DSA checks passed before it. A new CI run is required to validate the fix.
