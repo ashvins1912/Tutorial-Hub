@@ -1471,8 +1471,9 @@ def topo_sort(n, prereqs):
   const q = [];
   for (let i = 0; i < n; i++) if (indeg[i] === 0) q.push(i);
   const order = [];
-  while (q.length) {
-    const u = q.shift();
+  let head = 0;
+  while (head < q.length) {
+    const u = q[head++]; // O(1) dequeue; avoid Array.shift() reindexing
     order.push(u);
     for (const v of adj[u]) {
       if (--indeg[v] === 0) q.push(v);
@@ -1624,32 +1625,67 @@ def dijkstra(graph, src):
       js: `function dijkstra(adj, src, n) {
   const dist = new Array(n).fill(Infinity);
   dist[src] = 0;
-  const pq = [[0, src]];
-  while (pq.length) {
-    pq.sort((a, b) => a[0] - b[0]);
-    const [d, u] = pq.shift();
-    if (d > dist[u]) continue;
+  const heap = [];
+  const push = item => {
+    heap.push(item);
+    let i = heap.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (heap[p][0] <= heap[i][0]) break;
+      [heap[p], heap[i]] = [heap[i], heap[p]];
+      i = p;
+    }
+  };
+  const pop = () => {
+    const min = heap[0];
+    const last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      let i = 0;
+      while (true) {
+        const l = 2 * i + 1, r = l + 1;
+        let smallest = i;
+        if (l < heap.length && heap[l][0] < heap[smallest][0]) smallest = l;
+        if (r < heap.length && heap[r][0] < heap[smallest][0]) smallest = r;
+        if (smallest === i) break;
+        [heap[i], heap[smallest]] = [heap[smallest], heap[i]];
+        i = smallest;
+      }
+    }
+    return min;
+  };
+  push([0, src]);
+  while (heap.length) {
+    const [d, u] = pop();
+    if (d > dist[u]) continue; // ignore stale entry
     for (const [v, w] of adj[u]) {
-      if (d + w < dist[v]) {
-        dist[v] = d + w;
-        pq.push([dist[v], v]);
+      const nd = d + w;
+      if (nd < dist[v]) {
+        dist[v] = nd;
+        push([nd, v]);
       }
     }
   }
   return dist;
 }`,
-      java: `public int[] dijkstra(List<int[]>[] adj, int src, int n) {
-  int[] dist = new int[n];
-  Arrays.fill(dist, Integer.MAX_VALUE);
-  dist[src] = 0;
-  PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[0]));
-  pq.offer(new int[]{0, src});
+      java: `public long[] dijkstra(List<int[]>[] adj, int src, int n) {
+  long[] dist = new long[n];
+  Arrays.fill(dist, Long.MAX_VALUE);
+  dist[src] = 0L;
+  PriorityQueue<long[]> pq = new PriorityQueue<>(Comparator.comparingLong(a -> a[0]));
+  pq.offer(new long[]{0L, src});
   while (!pq.isEmpty()) {
-    int[] cur = pq.poll();
-    if (cur[0] > dist[cur[1]]) continue;
-    for (int[] e : adj[cur[1]]) {
-      int nd = cur[0] + e[1];
-      if (nd < dist[e[0]]) { dist[e[0]] = nd; pq.offer(new int[]{nd, e[0]}); }
+    long[] cur = pq.poll();
+    long d = cur[0];
+    int u = (int) cur[1];
+    if (d > dist[u]) continue; // ignore stale entry
+    for (int[] e : adj[u]) {
+      int v = e[0], weight = e[1];
+      long nd = d + weight;
+      if (nd < dist[v]) {
+        dist[v] = nd;
+        pq.offer(new long[]{nd, v});
+      }
     }
   }
   return dist;
