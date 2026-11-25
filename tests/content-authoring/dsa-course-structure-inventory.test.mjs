@@ -36,6 +36,9 @@ test('DSA course has a complete structural inventory for all lesson modules', ()
 
   for (const lesson of DSA_COMPLETE_LESSONS) {
     assert.ok(lesson.title?.trim(), lesson.id + ': missing title');
+    for (const field of arrayFields) {
+      assert.ok(count(lesson[field]) > 0, lesson.id + ': required teaching field is empty: ' + field);
+    }
     assert.ok(lesson.promise?.trim(), lesson.id + ': missing learning promise');
     assert.ok(count(lesson.keyTerms) > 0, lesson.id + ': add plain-language terms');
     assert.ok(count(lesson.concepts) > 0, lesson.id + ': add concept coverage');
@@ -67,6 +70,13 @@ test('DSA course structure totals remain transparent and reviewable', () => {
     DSA_COMPLETE_LESSONS.reduce((sum, lesson) => sum + count(lesson[field]), 0),
   ]));
   assert.equal(totals.keyTerms, 46);
+  assert.equal(totals.recognition, 96);
+  assert.equal(totals.method, 144);
+  assert.equal(totals.complexity, 109);
+  assert.equal(totals.correctness, 115);
+  assert.equal(totals.deepDive, 227);
+  assert.equal(totals.interviewChecks, 112);
+  assert.equal(totals.realWorldApplications, 106);
   assert.equal(totals.concepts, 195);
   assert.equal(totals.workedExample, 111);
   assert.equal(totals.implementationSteps, 172);
