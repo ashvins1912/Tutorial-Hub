@@ -1754,7 +1754,7 @@ def dijkstra(graph, src):
         step: 5,
         title: 'Settle E (4) → Relax D (4+1=5) → All Shortest Paths Locked!',
         explanation: 'Pop (4, E) and improve D from 6 → 5 via A→C→B→E→D! Final shortest distances: A:0, C:1, B:3, E:4, D:5.',
-        invariantCheck: 'Optimal shortest-path tree found in O(E log V).',
+        invariantCheck: 'Shortest distances finalized; with a lazy binary heap the bound is O(V + E log(E + 1)).',
         variables: [
           { name: 'distances', value: 'A:0 C:1 B:3 E:4 D:5' },
         ],
@@ -1775,13 +1775,13 @@ def dijkstra(graph, src):
     category: 'Optimization & Decision Making',
     visualType: 'backtracking-tree',
     tagline: 'Choose → Explore → Unchoose over decision trees with early bound pruning.',
-    timeComplexity: 'O(b^d) pruned',
-    spaceComplexity: 'O(d) stack',
+    timeComplexity: 'Exponential in the worst case; pruning reduces explored branches but does not change the worst-case class',
+    spaceComplexity: 'O(d) auxiliary path/recursion space, excluding stored results',
     complexityLeap: 'Unpruned exhaustive search → early-cut DFS decision tree',
     coreIdea:
-      'Build candidate solutions incrementally on a single mutable path array. Push a choice, recurse deeper, then POP (undo) the choice on return. Sort inputs or attach a Trie so impossible branches terminate immediately.',
+      'Build candidate solutions incrementally on a mutable path. Choose an option, recurse, then undo that choice before exploring the next branch. Pruning is valid only when a proven bound shows a branch cannot produce a solution; sorting can make such bounds easier to check. A trie can also stop word-search branches that no dictionary word can complete.',
     mentalModelSteps: [
-      'Check base case (remain == 0 → clone current path into results).',
+      'Check the base case (remain == 0 → copy the current path into results). For Combination Sum, assume candidates are positive; otherwise the recursion may not make progress.',
       'Loop candidate index i from start .. n-1 to avoid duplicate permutations.',
       'PRUNE early: if sorted cand[i] > remain, break immediately.',
       'Choose path.push(cand[i]), recurse dfs(i, remain - cand[i]), then Unchoose path.pop().',
@@ -1794,7 +1794,7 @@ def dijkstra(graph, src):
       'Grid word matching accelerated with a Prefix Trie (Word Search II)',
     ],
     whenItFails:
-      'If the problem only asks for the COUNT or MIN/MAX value (not listing every path), switch to Dynamic Programming to collapse exponential branches into polynomial states.',
+      'If the task asks only for a count or optimum and many branches reach the same state, dynamic programming or memoization may merge repeated work. This is not automatically polynomial: the number of distinct states and transitions determines the bound. If every solution must be listed, output size itself may be exponential.',
     linkedTopics: ['Backtracking & Tries'],
     linkedProblemSlugs: ['combination-sum', 'subsets', 'implement-trie', 'word-search-ii'],
     templates: {
@@ -1912,7 +1912,7 @@ def dijkstra(graph, src):
     coreIdea:
       'Define one crystal-clear state meaning (e.g., dp[x] = minimum coins needed to make amount x). Express dp[x] from smaller already-solved subproblems dp[x - coin] + 1 and evaluate in topological order.',
     mentalModelSteps: [
-      'Define State: dp[x] = fewest coins summing to x (sentinel ∞ initially).',
+      'Define state: dp[x] = the minimum number of coins needed to make amount x (use a sentinel for unreachable states). Assume coin denominations are positive integers and amount is non-negative.',
       'Set Base Case: dp[0] = 0 (zero coins needed to make amount 0).',
       'Write Transition: dp[x] = min(dp[x], 1 + dp[x - c]) for every coin c <= x.',
       'Order: iterate x from 1 to amount so every x - c is already finalized.',
@@ -1921,7 +1921,7 @@ def dijkstra(graph, src):
       'After completing iteration x, dp[0 .. x] all hold exact globally optimal minimum coin counts.',
     whenToUse: [
       'Counting ways or finding min/max cost with overlapping subproblems',
-      'Optimal choices where greedy fails (e.g., coins [1, 3, 4], target 6 → 3+3 beats greedy 4+1+1)',
+      'Minimum-coin change where greedy can fail (for coins [1, 3, 4] and target 6, greedy takes 4+1+1 = 3 coins, while 3+3 = 2)',
       'Knapsack, Grid Paths, LCS / Edit Distance, LIS',
     ],
     whenItFails:
