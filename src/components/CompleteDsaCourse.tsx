@@ -89,11 +89,11 @@ export function CompleteDsaCourse() {
     const searchableText = (lesson: DsaLesson) => [
       lesson.title, lesson.promise, lesson.mentalModel,
       ...(lesson.keyTerms ?? []).flatMap((item) => [item.term, item.definition, item.example]),
-      ...lesson.concepts, ...lesson.deepDive, ...lesson.recognition, ...lesson.method,
-      ...lesson.workedExample, ...lesson.traceExercises, ...lesson.implementationSteps,
-      ...lesson.correctness, ...lesson.complexity, ...lesson.pitfalls,
-      ...lesson.learningOutcomes, ...lesson.prerequisites, ...lesson.interviewChecks,
-      ...lesson.assessment, ...lesson.realWorldApplications, ...lesson.revisionPrompts,
+      ...(lesson.concepts ?? []), ...(lesson.deepDive ?? []), ...(lesson.recognition ?? []), ...(lesson.method ?? []),
+      ...(lesson.workedExample ?? []), ...(lesson.traceExercises ?? []), ...(lesson.implementationSteps ?? []),
+      ...(lesson.correctness ?? []), ...(lesson.complexity ?? []), ...(lesson.pitfalls ?? []),
+      ...(lesson.learningOutcomes ?? []), ...(lesson.prerequisites ?? []), ...(lesson.interviewChecks ?? []),
+      ...(lesson.assessment ?? []), ...(lesson.realWorldApplications ?? []), ...(lesson.revisionPrompts ?? []),
       ...(lesson.practice ?? []).flatMap((item) => [item.task, item.goal, item.level]),
       ...(lesson.codeExamples ?? []).flatMap((item) => [item.title, item.language, item.explanation]),
     ].join(' ').toLowerCase();
