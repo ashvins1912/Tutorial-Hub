@@ -507,12 +507,12 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Sliding Window',
     category: 'Array & String Patterns',
     visualType: 'sliding-window',
-    tagline: 'Expand right to explore, contract left strictly until the window invariant holds.',
+    tagline: 'Advance the right edge; move the left edge only when a proven rule restores the required window condition.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(min(N, |Σ|))',
     complexityLeap: 'O(N²) rescan every substring → O(N) amortized two-pointer slide',
     coreIdea:
-      'Maintain a contiguous window [L .. R] and an O(1) state tracker (char counts or last-seen indices). Move R forward one element at a time; whenever the window violates the rule (like a duplicate char), advance L forward until valid again.',
+      'Maintain a contiguous window [L .. R] and update a compact state (such as a running sum, character counts or last-seen indices). Advance R one step at a time. If the problem's validity condition is monotonic under removing elements, move L forward until the condition is restored; some problems permit a direct jump. State updates are often O(1), while hash-map operations are expected O(1).',
     mentalModelSteps: [
       'Initialize left = 0 and a frequency map / last-seen index map.',
       'Expand right across indices 0 .. n - 1, adding s[right] into the window.',
@@ -520,14 +520,14 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Record the optimal window length (or shortest valid window) when the invariant holds.',
     ],
     loopInvariant:
-      'After the shrink/jump step at each right index, [left .. right] is guaranteed to contain 100% distinct characters.',
+      'After the adjustment at each right index, [left .. right] satisfies the problem-specific window invariant. For the longest-substring-without-repeating-characters example, that invariant is that every character in the current window is distinct.',
     whenToUse: [
       'Longest/shortest contiguous substring or subarray meeting a monotonic condition',
       'Fixed-size window max/average (with Deque or running sum)',
       'At most K distinct characters or minimum window covering target string t',
     ],
     whenItFails:
-      'Breaks on non-contiguous subsequences (use DP) or subarrays with negative numbers (use Prefix Sum + Hash Map).',
+      'A sliding window is not a universal solution for arbitrary subarray constraints. It is unsuitable when the required condition cannot be maintained by moving boundaries monotonically—for example, target-sum counting with negative values. Fixed-size windows and other explicitly maintained window statistics can still work with negative values.',
     linkedTopics: ['Sliding Window'],
     linkedProblemSlugs: [
       'longest-substring-without-repeating',
