@@ -42,14 +42,14 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Two readers starting at opposite ends of a sorted bookshelf walking inward: whenever the pair is too big, the right person steps left; whenever too small, the left person steps right.',
     interviewScript30s:
-      '"On a sorted array (or bounded walls), moving the dominated pointer provably discards an entire row of worse pairs, dropping O(N²) search to O(N) in strictly O(1) space."',
+      '"For a sorted pair-search problem with a valid elimination invariant, moving the dominated pointer discards a whole set of candidates; the scan is O(N) time and O(1) auxiliary space, excluding input and output. This bound does not apply automatically to every two-pointer variant."',
     chooseWhen: 'Sorted pair/triplet sums, palindromes, in-place deduplication, or wall-bounded water area.',
     avoidWhen: 'Unsorted array where original indices cannot be destroyed (use HashMap instead).',
     followUpTwists: [
       {
         question: 'How do you extend 2Sum Sorted to 3Sum or K-Sum without duplicate tuples?',
         invariantShift: 'Sort once, fix outer anchors, run converging 2-pointer inside, and skip adjacent equal values on every level.',
-        complexityImpact: 'O(N^(K-1)) time, O(1) auxiliary space (excluding output).',
+        complexityImpact: 'For fixed K, the common sorted recursive K-Sum approach is O(N^(K-1)) time in the usual worst-case bound and O(K) recursion space (or O(1) when K is treated as a fixed constant), excluding output; sorting adds O(N log N) time and implementation-dependent stack space.',
       },
       {
         question: 'What if the input arrives as a Linked List instead of an array?',
@@ -84,7 +84,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Opening a dictionary straight to the middle: every single guess throws away half the remaining pages, turning a 1-million-page search into just 20 flips.',
     interviewScript30s:
-      '"Notice the feasibility predicate is monotonic (False..False then True..True). Binary searching the answer range [lo..hi] with an O(N) checker solves this in O(N log(Range)) without enumerating every candidate."',
+      '"Confirm the feasibility predicate is monotonic (False..False then True..True, or the reverse). Binary-searching a candidate range of size R with an O(N) checker costs O(N log R) time, plus checker setup and any preprocessing; define R from the actual bounds."',
     chooseWhen: 'Sorted arrays, rotated sorted arrays, peaks, or "minimize the maximum / maximize the minimum" optimization.',
     avoidWhen: 'Feasibility predicate flips back and forth non-monotonically.',
     followUpTwists: [
