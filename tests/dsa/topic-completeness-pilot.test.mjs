@@ -10,7 +10,7 @@ test('arrays pilot is a complete learning unit, not only an outline', () => {
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'arrays lesson requires substantive ' + field);
   }
   assert.ok(lesson.codeExamples.every((item) => item.language && item.title && item.code && item.explanation));
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.assessment.length >= 5, 'assessment must test transfer, edge cases and complexity');
@@ -24,7 +24,7 @@ import { spawnSync } from 'node:child_process';
 
 test('arrays Java and Python examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'arrays');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const pythonExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Python'));
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-arrays-'));
   try {
@@ -69,7 +69,7 @@ test('strings topic satisfies the complete learning-unit contract', () => {
   for (const field of required) {
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'strings lesson requires substantive ' + field);
   }
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
   assert.ok(lesson.deepDive.some((item) => /KMP/.test(item)));
   assert.ok(lesson.deepDive.some((item) => /Unicode/.test(item)));
@@ -79,7 +79,7 @@ test('strings topic satisfies the complete learning-unit contract', () => {
 
 test('strings Java and Python examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'strings');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-strings-'));
   try {
@@ -120,7 +120,7 @@ test('linked-list topic satisfies the complete learning-unit contract', () => {
     const minimum = field === 'codeExamples' ? 1 : 3;
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'linked-list lesson requires substantive ' + field);
   }
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.deepDive.some((item) => /Floyd/.test(item)));
   assert.ok(lesson.assessment.length >= 5);
@@ -218,7 +218,7 @@ test('stack and queue topic satisfies the complete learning-unit contract', () =
     const minimum = field === 'codeExamples' ? 2 : 3;
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'stack/queue lesson requires substantive ' + field);
   }
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.deepDive.some((item) => /amortized/i.test(item)));
   assert.ok(lesson.assessment.length >= 5);
@@ -453,7 +453,7 @@ test('set and map Java examples execute against expected outputs', () => {
   const setLesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'hash-set');
   const mapLesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'hash-map');
   const examples = [...setLesson.codeExamples, ...mapLesson.codeExamples]
-    .filter((item) => item.language.startsWith('Java'));
+    .filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-set-map-'));
   try {
     const javaSource = [
@@ -498,7 +498,7 @@ test('heap topic satisfies the complete learning-unit contract', () => {
 
 test('heap Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-'));
   try {
     const javaSource = [
@@ -543,7 +543,7 @@ test('sorting and searching Java examples execute against expected outputs', () 
   const sorting = DSA_COMPLETE_LESSONS.find((item) => item.id === 'sorting-algorithms');
   const searching = DSA_COMPLETE_LESSONS.find((item) => item.id === 'searching-algorithms');
   const examples = [...sorting.codeExamples, ...searching.codeExamples]
-    .filter((item) => item.language.startsWith('Java'));
+    .filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-sort-search-'));
   try {
     const javaSource = [
@@ -588,7 +588,7 @@ test('binary-search-on-answer topic satisfies the complete learning-unit contrac
 
 test('binary-search-on-answer Java example executes against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'binary-search-on-answer');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-answer-search-'));
   try {
     const javaSource = [
@@ -629,7 +629,7 @@ test('two pointers and sliding window satisfy the complete learning-unit contrac
 
 test('two pointers and sliding-window Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'two-pointers-window');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-two-pointers-'));
   try {
     const javaSource = [
@@ -670,7 +670,7 @@ test('bit manipulation topic satisfies the complete learning-unit contract', () 
 
 test('bit manipulation Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'bit-manipulation');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-bits-'));
   try {
     const javaSource = [
@@ -713,7 +713,7 @@ test('greedy topic satisfies the complete learning-unit contract', () => {
 
 test('greedy Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'greedy');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-greedy-'));
   try {
     const javaSource = [
@@ -756,7 +756,7 @@ test('fast and slow pointers satisfy the complete learning-unit contract', () =>
 
 test('fast and slow Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'fast-slow-pointers');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-fast-slow-'));
   try {
     const javaSource = [
