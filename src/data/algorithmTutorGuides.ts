@@ -431,7 +431,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How does KMP find the Shortest Palindrome by prepending characters (#214)?',
-        invariantShift: 'Compute LPS of `s + "#" + reverse(s)`: `lps[last]` gives the longest palindromic prefix in O(N).',
+        invariantShift: 'Compute LPS of `s + separator + reverse(s)`, choosing a separator absent from s (or an out-of-alphabet sentinel); `lps[last]` gives the longest palindromic prefix in O(N).',
         complexityImpact: 'O(N) time, O(N) space.',
       },
     ],
@@ -1071,7 +1071,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Standing at a conference hall door with a clicker: +1 every time a meeting starts, -1 every time a meeting ends (letting people exit before new ones enter at the same minute), and remembering the highest number ever shown on the clicker.',
     interviewScript30s:
-      '"I flatten every [start, end) interval into (+1) and (-1) timeline events, sort by timestamp with -1 before +1 on ties, and sweep a single active counter in O(N log N) time—scaling effortlessly to timestamps up to 10^9."',
+      '"For non-empty half-open intervals [start, end), I flatten each into (+1) and (-1) timeline events, sort by timestamp with -1 before +1 on ties, and sweep a single active counter in O(N log N) time. Ignore empty intervals (start === end) so they do not decrement before incrementing; large coordinates do not change the comparison-based bound."',
     chooseWhen: 'Meeting Rooms II, Car Pooling with large coordinates, My Calendar overlaps, and The Skyline Problem.',
     avoidWhen: 'Intervals arrive online one-by-one requiring instant peak queries after each insert (use TreeMap or Lazy Segment Tree).',
     followUpTwists: [
