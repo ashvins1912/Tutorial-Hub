@@ -39,9 +39,9 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 
 - CI #891/#892 passed the DSA/DP/Matrix content and report checks.
 - CI #898 passed the 180-path registry/ledger and Pattern Forge mastery-stepper test.
-- CI #909 passed the shared mastery evidence normalization fix (duplicate implementation IDs and legacy inflated edge-case totals), client/server use of the helper, Supabase Node-test environment fix, type-check, content/security validation, registry/ledger checks and frontend build.
-- The latest Mastery-stage unpublished-status banner, its regression assertion, and the open P1 ledger entry were added after #909. Runs #910/#911 are validating those changes and remain in progress at this update.
-- The focused ledger currently records **23 units**: 9 targeted corrections, 4 content additions, 4 content corrections and 6 UI corrections. It also records **1 open P1**: 25 Pattern Forge topics are inventory-only/unpublished. `verifiedUnits` remains 0 and path-level completion remains 0/180.
+- CI #909 passed the shared mastery evidence normalization fix, client/server use, Supabase Node-test environment fix, type-check, content/security validation, registry/ledger checks and frontend build.
+- **CI #931 passed** the current application/test head `3efd0260b6251e77defd68169a8425e2f14900ca`, including DSA28 complexity assumptions, duplicate problem/edge-case evidence, idempotent trace-scoped checkpoint records, >=80% mastery checkpoint gate, client/server canonical checkpoint validation, type-check and frontend build.
+- The ledger currently records **29 focused units**: 12 targeted corrections, 4 content additions, 6 content corrections and 7 UI corrections. It also records **1 open P1**: 25 Pattern Forge topics remain inventory-only/unpublished. `verifiedUnits` remains 0 and path-level completion remains 0/180.
 - Static registry: 22 surfaces, 154 content paths, 26 test paths, 180 unique paths. Dynamic/DB/generated/user-authored content remains to be reconciled.
 
 ## Confidence statement
@@ -60,7 +60,7 @@ Each of the 42 matrix problems now includes a concrete example input and expecte
 - Clarified House Robber's DP state as a prefix length, aligned its recurrence/base with the rolling implementation, and documented the choose-none behavior for empty/all-negative inputs.
 - DP practice now searches problem names, goals, statements, examples, hints and levels, and announces an empty result. The Java code heading explicitly says these are method snippets requiring imports/class context.
 - Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the repaired extraction and cleanup passed the full validation in #891/#892; #898 also passed after the new Pattern Forge test and registry update.
-- The ledger now records 23 focused units: 9 targeted corrections, 4 content additions, 4 content corrections and 6 UI corrections, all awaiting final evidence. One P1 blocker remains: 25 Pattern Forge topics are inventory-only. Path-level completion remains 0/180.
+- The ledger now records 29 focused units: 12 targeted corrections, 4 content additions, 6 content corrections and 7 UI corrections, all awaiting final evidence. One P1 blocker remains: 25 Pattern Forge topics are inventory-only. Path-level completion remains 0/180.
 
 
 ## DSA roadmap focused pass
