@@ -59,7 +59,7 @@ test('DP guided lessons have unique complete structures and accurate House Robbe
   assert.match(robber.recurrence, /money\[i - 1\]/);
   assert.match(robber.java, /twoBack = 0L, oneBack = 0L/);
   assert.match(robber.complexity, /all-negative.*returns 0/i);
-  assert.match(DP_GUIDED_LESSONS[5].order, /0\\/1.*descends.*Unbounded.*ascends/i);
+  assert.match(DP_GUIDED_LESSONS[5].order, /0\/1.*descends.*Unbounded.*ascends/i);
   assert.match(DP_GUIDED_LESSONS[6].complexity, /code points/i);
 });
 
