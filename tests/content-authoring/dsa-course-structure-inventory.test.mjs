@@ -10,6 +10,7 @@ const arrayFields = [
   'workedExample',
   'complexity',
   'pitfalls',
+  'practice',
   'interviewChecks',
   'learningOutcomes',
   'prerequisites',
