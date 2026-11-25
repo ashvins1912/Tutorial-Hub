@@ -27,4 +27,11 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['dijkstra-shortest-path'].followUpTwists.find(x => /distinct shortest paths/.test(x.question)).complexityImpact, /strictly positive edge weights/i);
   assert.match(guides['two-pointers'].interviewScript30s, /excluding input and output/i);
   assert.match(guides['binary-search'].interviewScript30s, /candidate range of size R/i);
+  assert.match(guides['prefix-sum-hash'].followUpTwists.find(x => /DIVISIBLE by K/i.test(x.question)).invariantShift, /K ≠ 0|non-zero K/i);
+  assert.match(guides['prefix-sum-hash'].followUpTwists.find(x => /DIVISIBLE by K/i.test(x.question)).complexityImpact, /K = 0/i);
+  assert.match(guides['sliding-window'].interviewScript30s, /validity is monotone/i);
+  const streamQuery = Object.values(guides).flatMap(g => g.followUpTwists).find(x => /Stream of Characters/i.test(x.question));
+  assert.ok(streamQuery, 'Stream of Characters follow-up should exist');
+  assert.match(streamQuery.complexityImpact, /O\(matches\)/i);
+  assert.match(streamQuery.invariantShift, /O\(L\) worst case per query/i);
 });
