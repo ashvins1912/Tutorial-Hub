@@ -47,10 +47,10 @@ test('every DSA Java course code example compiles as a snippet', { skip: !hasJdk
     javaExamples.forEach((example, index) => {
       let code = example.code;
       const stubs = [];
-      if (/\\bNode\\b/.test(code) && !/\\bclass\\s+Node\\b/.test(code)) {
+      if (/\bNode\b/.test(code) && !/\bclass\s+Node\b/.test(code)) {
         stubs.push('static class Node { int value; Node left, right, next; Node(int v) { value = v; } }');
       }
-      if (/\\bListNode\\b/.test(code) && !/\\bclass\\s+ListNode\\b/.test(code)) {
+      if (/\bListNode\b/.test(code) && !/\bclass\s+ListNode\b/.test(code)) {
         stubs.push('static class ListNode { int val; ListNode next; ListNode(int v) { val = v; } }');
       }
       const source = 'import java.util.*;\nimport java.util.stream.*;\nclass DsaSnippet' + index + ' {\n' + stubs.join('\n') + '\n' + code + '\n}\n';
