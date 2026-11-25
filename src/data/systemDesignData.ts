@@ -275,8 +275,8 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
     defaultReadWriteRatio: 5,
     defaultLatencyBudgetMs: 50,
     requiredComponents: [
-      { id: 'websocket-gw', whyNeeded: 'Maintains stateful bi-directional connections for instant message delivery.' },
-      { id: 'kafka-queue', whyNeeded: 'Reliably routes messages between sender gateway and recipient’s connected gateway.' },
+      { id: 'websocket-gw', whyNeeded: 'Maintains stateful two-way connections for low-latency messaging to connected clients; the connection itself does not provide durable delivery.' },
+      { id: 'kafka-queue', whyNeeded: 'Provides asynchronous transport between sender and recipient gateways; durability and delivery semantics depend on producer/consumer configuration and acknowledgements.' },
       { id: 'redis-cache', whyNeeded: 'Tracks online presence heartbeats and userId -> gatewayServerId routing.' },
       { id: 'consistent-sharding', whyNeeded: 'Partitions chat history by channel_id so message sequences scale horizontally.' },
     ],
