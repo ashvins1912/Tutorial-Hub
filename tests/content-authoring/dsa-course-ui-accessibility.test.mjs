@@ -28,6 +28,10 @@ test('DSA course search includes glossary, deep-dive, practice and code explanat
   assert.match(source, /lesson\.deepDive/);
   assert.match(source, /lesson\.practice/);
   assert.match(source, /lesson\.codeExamples/);
+  assert.match(source, /item\.code, item\.explanation/);
+  assert.match(source, /validProgressFor/);
+  assert.match(source, /Array\.isArray\(stored\)/);
+  assert.match(source, /activeCompletedSteps\.length/);
   assert.doesNotMatch(source, /Runnable code examples/);
   assert.doesNotMatch(source, /Modules mastered/);
 });
