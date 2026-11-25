@@ -17,7 +17,7 @@ export const MASTER_CORE_11_ALGORITHMS: AlgorithmDefinition[] = hydrateMasterAlg
     mentalModel:
       'Imagine checking keys on a keyring one by one until one opens the lock. Because the array has no ordering guarantee, no element can be skipped without risking a false negative.',
     coreInvariant:
-      'At index i, every element in [0..i−1] has been verified not to match the target; placing a sentinel at arr[N] eliminates the per-step bounds check.',
+      'At index i, every element in [0..i−1] has been verified not to match the target. A sentinel search can omit the per-step bounds check if it appends a sentinel in an extra slot or temporarily replaces the last element and restores it afterward.',
     whenToUse: [
       'Input array or linked list is unsorted and queried only once (sorting would cost O(N log N)).',
       'Small collections (N ≤ 32) where CPU cache locality beats binary search branch mispredictions.',
@@ -1202,7 +1202,7 @@ void insert(TrieNode root, String w) {
   }
   return { table, collisions };
 }`,
-      java: `// Double Hashing probe sequence eliminates primary & secondary clustering:
+      java: `// Double hashing avoids primary clustering and reduces secondary clustering with a suitable non-zero step; collisions can still occur:
 // index(i) = (h1(k) + i * h2(k)) % M   where h2(k) = R - (k % R) != 0`,
     },
     frames: [
