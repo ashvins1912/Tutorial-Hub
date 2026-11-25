@@ -1842,7 +1842,7 @@ def dijkstra(graph, src):
         step: 1,
         title: 'Root: candidates = [2, 3, 5], target = 5',
         explanation: 'Start at empty path [], remaining = 5. Branch first with smallest candidate 2.',
-        invariantCheck: 'Sorted candidates enable instant break when cand[i] > rem.',
+        invariantCheck: 'Candidates are sorted ascending, so when cand[i] > rem, every later candidate is also too large; break safely.',
         variables: [
           { name: 'path', value: '[]' },
           { name: 'remain', value: '5' },
@@ -1854,7 +1854,7 @@ def dijkstra(graph, src):
         step: 2,
         title: 'Choose 2 → Choose 2 → Prune! (remain = 1 < 2)',
         explanation: 'Path [2, 2] leaves remain = 1. Smallest candidate is 2 > 1, so prune entire subtree and backtrack!',
-        invariantCheck: 'Early pruning cuts off dead recursion immediately.',
+        invariantCheck: 'Pruning skips this branch because no remaining candidate can fit; backtrack to try the next choice.',
         variables: [
           { name: 'path', value: '[2, 2]' },
           { name: 'remain', value: '1 (PRUNE)' },
