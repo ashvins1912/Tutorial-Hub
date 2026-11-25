@@ -186,7 +186,7 @@ def compact_sstables(newer_run, older_run):
       {
         step: 4,
         title: 'Background K-Way Compaction Purges Stale Keys & Tombstones',
-        explanation: 'Merge L0_new + L0_old → single clean L1 SSTable `[[k1,v2], [k3,v9]]`. Reclaims disk space & eliminates read amplification!',
+        explanation: 'Merge L0_new + L0_old → a compacted L1 SSTable `[[k1,v2], [k3,v9]]`. Reclaims obsolete data and can reduce read amplification; it does not eliminate all reads or all amplification.',
         invariantCheck: 'Leveled compaction ensures disjoint key ranges at L1+ (at most 1 file checked per level!).',
         variables: [{ name: 'L1_compacted', value: '[(k1,v2),(k3,v9)]' }],
         array: ['L1: k1=v2', 'L1: k3=v9'],
@@ -311,13 +311,13 @@ def external_kway_merge(runs: list[list[int]]) -> list[int]:
     category: 'Database Storage & Query Engines',
     difficulty: 'Advanced',
     visualType: 'stream-partition',
-    tagline: 'Guarantee ACID Atomicity & Durability after sudden power loss via Write-Ahead Logging and 3-phase recovery: Analysis → Redo History → Undo Losers.',
+    tagline: 'Implement atomicity and durability across crashes using Write-Ahead Logging and ARIES-style Analysis → Redo History → Undo Losers, provided the storage flush, commit and recovery protocol is implemented correctly.',
     timeComplexity: 'O(Log since Checkpoint)',
     spaceComplexity: 'O(Active Txns + Dirty Pages)',
     mentalModel:
       'Think of an accountant’s fireproof ledger written BEFORE touching the cash register (STEAL/NO-FORCE): after a crash, (1) Analysis finds who didn’t finish, (2) Redo replays everything to exact crash state, and (3) Undo walks backwards reversing uncommitted "loser" transactions while writing CLR markers!',
     coreInvariant:
-      'Write-Ahead Logging Rule: a dirty page CANNOT be flushed to disk until its WAL record (LSN) is fsynced; `pageLSN >= record.LSN` makes Redo 100% idempotent even if the DB crashes AGAIN during recovery!',
+      'Write-Ahead Logging Rule: a dirty page must not be flushed before its required WAL records are durable. During redo, the pageLSN check skips changes already reflected on the page; this makes redo repeatable under ARIES logging and recovery rules, including a crash during recovery.',
     whenToUse: [
       'ACID relational databases (PostgreSQL, MySQL InnoDB, IBM DB2, SQL Server) supporting high-concurrency STEAL / NO-FORCE buffer pools.',
       'Designing durable stateful microservices, payment ledgers, and Raft replicated log recovery.',
@@ -620,7 +620,7 @@ def consistent_route(ring_hashes: list[int], ring_nodes: list[str], key_hash: in
     whenToUse: [
       'Strongly consistent cluster metadata & distributed locks: etcd (Kubernetes), CockroachDB, TiKV, Consul, ZooKeeper (ZAB), Google Spanner (Paxos).',
       'Tolerating up to `f` crash failures with `2f + 1` replicas (e.g., 3 nodes survive 1 crash; 5 nodes survive 2 crashes).',
-      'Eliminating split-brain via strict majority quorums + term fencing.',
+      'Eliminating split-brain via correctly configured majority quorums and term fencing under the consensus protocol assumptions.',
     ],
     whenItFails:
       'Cannot tolerate Byzantine (malicious/lying) nodes (use PBFT/HotStuff), halts writes if minority partition loses quorum (CP over AP in CAP), and degrades throughput if replicas span 200ms WAN links without Multi-Raft sharding.',
@@ -990,13 +990,13 @@ def diff_merkle(node_a, node_b):
     category: 'Distributed Systems & Consensus',
     difficulty: 'Advanced',
     visualType: 'array-cells-bit',
-    tagline: 'Guarantee Strong Eventual Consistency across offline & multi-region replicas with ZERO coordination locks via mathematical join-semilattice merges.',
+    tagline: 'Use join-semilattice merges to support strong eventual convergence for compatible CRDT state when updates are eventually delivered and merge rules are followed; this avoids coordination for those merges, not for every application invariant.',
     timeComplexity: 'O(N) merge · O(1) local write',
     spaceComplexity: 'O(N) replica slots / tags',
     mentalModel:
-      'Instead of arguing over one shared counter `x = x + 1` (where concurrent increments overwrite each other), a G-Counter gives EVERY replica its own private slot `[A:3, B:5, C:2]`: merging takes element-wise `max()`, and the total is `sum()`—order, duplicates, and delays NEVER corrupt the answer!',
+      'Instead of arguing over one shared counter `x = x + 1` (where concurrent increments overwrite each other), a G-Counter gives EVERY replica its own private slot `[A:3, B:5, C:2]`: merging takes element-wise `max()`, and the total is `sum()`—repeated or reordered merges do not double-count the same component; convergence requires each replica to update its own component monotonically and all updates to be eventually delivered.',
     coreInvariant:
-      'Join-Semilattice Laws: `merge(A, B)` is Commutative (`A⊔B = B⊔A`), Associative (`(A⊔B)⊔C = A⊔(B⊔C)`), and Idempotent (`A⊔A = A`) — guaranteeing every replica converges to the EXACT same state once messages arrive!',
+      'Join-Semilattice Laws: `merge(A, B)` is Commutative (`A⊔B = B⊔A`), Associative (`(A⊔B)⊔C = A⊔(B⊔C)`), and Idempotent (`A⊔A = A`) — so replicas that receive the same updates eventually converge to the same state, assuming the merge is applied and updates are eventually delivered.',
     whenToUse: [
       'Collaborative real-time editors (Figma, Google Docs/Yjs/Automerge), offline-first mobile apps, and multi-region active-active Redis Enterprise / Riak counters.',
       'Distributed like/view counters (PN-Counter = two G-Counters: `sum(P) − sum(N)`).',
