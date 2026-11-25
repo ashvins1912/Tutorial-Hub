@@ -190,3 +190,6 @@ Three additional source assumptions were made explicit:
 Regression assertions were added. The Manacher source correction is in commit `eaa81011d395ae48e3b7d505800c6364ebe7e443`; the Mo/Z source correction is `c1a48b891af6ffe3312ada7d3f3491b45d659a54`.
 
 Run #721 failed because the test assertion pointed at the wrong guide (fixed in `351c51a`). Run #725 was queued for the assertion fix; the latest source/report commit requires a completed final-head run.
+
+
+A further correction in this pass addressed **Quickselect**: the expected O(N) bound is no longer described as a guaranteed half-size geometric series, and the guide distinguishes iterative O(1) auxiliary space from recursive stack space. Regression assertions cover both points (source commit `1016c34036240702c2654b5112f6c1660b14244c`, test commit `ff00b6e716cd0f7b0f6c4c5e4ab545108fda46dc`). Run #727 was in progress at type-check; the newest Quickselect test/evidence commit requires a completed current-head run.
