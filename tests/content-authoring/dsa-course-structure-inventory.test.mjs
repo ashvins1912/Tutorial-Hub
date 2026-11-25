@@ -44,7 +44,9 @@ test('DSA course has a complete structural inventory for all lesson modules', ()
     const termNames = lesson.keyTerms.map((term) => term.term.trim().toLowerCase());
     assert.equal(new Set(termNames).size, termNames.length, lesson.id + ': duplicate glossary term');
     for (const term of lesson.keyTerms) {
-      assert.ok(term.term?.trim() && term.definition?.trim() && term.example?.trim(), lesson.id + ': glossary entry needs term, definition and example');
+      assert.ok(term.term?.trim(), lesson.id + ': glossary term is required');
+      assert.ok(term.definition?.trim().length >= 25, lesson.id + ': glossary definition must explain the concept, not just expand an acronym');
+      assert.ok(term.example?.trim().length >= 20, lesson.id + ': glossary example must be concrete enough to teach');
     }
     assert.ok(count(lesson.concepts) > 0, lesson.id + ': add concept coverage');
     assert.ok(count(lesson.recognition) > 0, lesson.id + ': add recognition cues');
