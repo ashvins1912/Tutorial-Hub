@@ -39,7 +39,7 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 
 - CI #891 passed on content/test commit `7f94da1ab2aa156af4f59c8b1a0f919c1fed693f` (type-check, DSA inventories/pilot/solutions, security and content authorization checks, learning-surface and ledger validation, advisory scans and frontend build).
 - CI #892 passed on report commit `035cebbce1bbf743a63afccc689a8efe701adfc1`; no application source changed between #891 and #892.
-- Latest registry/ledger and Pattern Forge mastery-stepper accessibility test were added after #892. Run #898 is validating test commit `fe0a7a0a387122dddec64b6c6e4429bfd26be6d5` and is still in progress at this update.
+- Latest registry/ledger and Pattern Forge mastery-stepper accessibility test were added after #892. CI #898 passed test commit `fe0a7a0a387122dddec64b6c6e4429bfd26be6d5`, including the new Pattern Forge mastery-stepper accessibility/progress test and current registry/ledger reconciliation. CI #899 is validating the latest audit-report commit and remains in progress.
 - The focused audit ledger currently records **19 units** awaiting final evidence: 6 targeted corrections, 4 content additions, 4 content corrections and 5 UI corrections. `verifiedUnits` remains 0 by design until evidence-backed unit disposition; path-level completion remains 0/180.
 - The registered path inventory now includes 22 surfaces, 154 content paths, 26 test paths and 180 unique paths. Dynamic/DB/generated/user-authored content remains to be reconciled beyond this static registry.
 
@@ -58,7 +58,7 @@ Each of the 42 matrix problems now includes a concrete example input and expecte
 - Corrected the Pacific–Atlantic Water Flow matrix sample: the expected coordinates now include `(1,1)`, which is reachable from both oceans. Added a regression assertion for that coordinate.
 - Clarified House Robber's DP state as a prefix length, aligned its recurrence/base with the rolling implementation, and documented the choose-none behavior for empty/all-negative inputs.
 - DP practice now searches problem names, goals, statements, examples, hints and levels, and announces an empty result. The Java code heading explicitly says these are method snippets requiring imports/class context.
-- Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the current extraction and cleanup are newer than the latest completed validation and must be checked on final head.
+- Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the repaired extraction and cleanup passed the full validation in #891/#892; #898 also passed after the new Pattern Forge test and registry update.
 - The ledger now records 19 focused units: 6 targeted corrections, 4 content additions, 4 content corrections and 5 UI corrections, all awaiting final evidence. This is still a focused set; path-level completion remains 0/180.
 
 
