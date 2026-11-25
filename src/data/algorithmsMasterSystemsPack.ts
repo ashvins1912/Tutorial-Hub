@@ -611,12 +611,12 @@ def consistent_route(ring_hashes: list[int], ring_nodes: list[str], key_hash: in
     difficulty: 'Advanced',
     visualType: 'weighted-network',
     tagline: 'Keep a replicated cluster strongly consistent despite node crashes & network partitions via monotonic Terms, Quorum Majority Votes, and AppendEntries commits.',
-    timeComplexity: '1 RTT per committed write',
+    timeComplexity: 'Typically one leader-to-quorum replication round trip after append; end-to-end client latency also includes client/network, batching and durable-write costs',
     spaceComplexity: 'O(Log Entries) + Snapshots',
     mentalModel:
       'Think of a parliament with numbered sessions (Terms): a node can only become Leader if a strict majority (`⌊N/2⌋ + 1`) votes for it AND its log is at least as up-to-date as voters—and an entry is committed ONLY once replicated on a majority!',
     coreInvariant:
-      'Quorum Intersection: any two majorities of N nodes overlap in at least 1 node! Therefore a newly elected Leader is mathematically guaranteed to hold every previously committed log entry (Election Safety + Log Matching).',
+      'Quorum intersection means any two majorities share at least one voter. That intersection is necessary but not sufficient by itself to prove a new leader has every committed entry. Raft's up-to-date-log voting rule, term restrictions and AppendEntries/log-matching rules combine with quorum intersection to preserve committed entries under the crash-fault model.',
     whenToUse: [
       'Strongly consistent cluster metadata & distributed locks: etcd (Kubernetes), CockroachDB, TiKV, Consul, ZooKeeper (ZAB), Google Spanner (Paxos).',
       'Tolerating up to `f` crash failures with `2f + 1` replicas (e.g., 3 nodes survive 1 crash; 5 nodes survive 2 crashes).',
