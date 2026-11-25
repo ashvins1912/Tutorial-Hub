@@ -231,7 +231,7 @@ Regression assertions cover these caveats. Source commit: `1d002ffe498f026970761
 
 ## Exact algorithm-guide inventory gate
 
-The tutor-guide module defines **53 local guide IDs** and spreads **40 master guide IDs**, for **93 unique merged runtime guide IDs**. The quality test locks the 53 local IDs, checks the master source has 40 unique keys, and compares the runtime registry against the union of both sources. It also checks matching `algorithmId`, complete non-empty teaching-contract fields, and at least one non-empty follow-up per guide. This prevents silent omission or accidental registration drift. Test commit: `612289ea50e0a12370af39f88732cf7c7446ec8b`.
+The tutor-guide module defines **54 local guide IDs** (including the unquoted `quickselect` key) and spreads **40 master guide IDs**, for **94 unique merged runtime guide IDs**. The quality test locks the 54 local IDs, checks the master source has 40 unique keys, and compares the runtime registry against the union of both sources. It also checks matching `algorithmId`, complete non-empty teaching-contract fields, and at least one non-empty follow-up per guide. This prevents silent omission or accidental registration drift. Test commit: `612289ea50e0a12370af39f88732cf7c7446ec8b`.
 
 Validation evidence:
 - Run #739 passed the full listed validation suite and frontend build on the prior head.
@@ -279,4 +279,20 @@ Regression assertions were added (source commit `1193671a5daf0ec6ee25c3c44761536
 
 ## Inventory-gate correction and CI repair
 
-Run #748 failed in the new exact-inventory assertion because it compared the runtime registry to only the 53 locally declared IDs and omitted the 40 imported master guides. The correct merged set is **93 unique guide IDs** (53 local + 40 master, no overlap). The test now imports `MASTER_40_TUTOR_GUIDES`, asserts its 40-key contract, and compares the runtime registry to the union. Test correction commit: `612289ea50e0a12370af39f88732cf7c7446ec8b`. The failure was in the newly authored inventory assertion; type-check and earlier DSA checks passed before it. A new CI run is required to validate the fix.
+Run #748 failed in the new exact-inventory assertion because it compared the runtime registry to only the locally declared IDs and omitted the imported master guides. The follow-up source inspection found **54 local guides** (the 53 quoted keys plus unquoted `quickselect`) and **40 master guides**, yielding **94 unique merged IDs**. The test now imports `MASTER_40_TUTOR_GUIDES`, asserts both source counts (54 and 40), and compares the runtime registry to their union. Test commits: `612289ea50e0a12370af39f88732cf7c7446ec8b`, `2397d894afe2d6a805ead99d5b80ef81328bca75`, and `f255c3b6b0c7b42062b7378182115a5c6a676187`. The failure was in the newly authored inventory assertion; type-check and earlier DSA checks passed before it. A new CI run is required to validate the final inventory fix.
+
+
+## Thirteenth focused technical pass: master-guide guarantees and inventory reconciliation
+
+The imported master-guide set was reviewed for high-risk claims and corrected:
+
+- Linear scan: removed an unsubstantiated fixed 2–4× performance promise and made the crossover hardware/data dependent.
+- Insertion sort: removed a universal ≤32 cutoff and clarified implementation-specific hybrid-sort thresholds.
+- Quadtree/Octree: replaced a general O(log N + K) range-query claim with distribution-sensitive typical behavior and O(N) worst-case traversal.
+- Bloom Filter: scoped no-false-negative behavior to correct insert/query hashing and intact insert-only storage; disk savings are workload-dependent.
+- Count-Min Sketch: replaced “O(1) space” with O((1/ε) log(1/δ)) counters and O(d) update/query time; stated the non-negative update assumption.
+- Additional master metadata corrections: self-balancing tree height wording, vector-clock causal semantics, and CRDT convergence under eventual delivery.
+
+Source commit: `b12390ec790df8c78fa97263e735201afaae9c7d`.
+
+**Inventory correction:** the actual merged tutor-guide registry is 94 unique IDs (54 local + 40 master), not 93. The local inventory test now includes `quickselect` explicitly. This correction supersedes the earlier 93-ID note above; the latest inventory test/report commits need completed CI.
