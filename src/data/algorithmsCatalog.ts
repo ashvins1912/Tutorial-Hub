@@ -164,16 +164,16 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Prefix Sum',
     category: 'Array & String Patterns',
     visualType: 'prefix-hash',
-    tagline: 'Turn O(N²) subarray range sums into O(1) complement lookups.',
+    tagline: 'Turn O(N²) subarray checks into expected O(N) time with hash-map complement lookups.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(N)',
     complexityLeap: 'O(N²) nested range sum → O(N) single running total sweep',
     coreIdea:
-      'Every contiguous slice [i+1 .. j] has sum Prefix[j] - Prefix[i]. Instead of scanning backward to find all starting points i, store the frequency of every earlier Prefix[i] in a hash map and query Prefix[j] - k in O(1).',
+      'Every contiguous slice [i+1 .. j] has sum Prefix[j] - Prefix[i]. Instead of scanning backward to find all starting points i, store the frequency of every earlier Prefix[i] in a hash map and query Prefix[j] - k with an expected O(1) hash-map lookup (worst-case lookup can be slower).',
     mentalModelSteps: [
       'Seed the hash map with {0: 1} to represent an empty prefix before index 0.',
       'Maintain a single running sum variable prefix as you scan left to right.',
-      'At index j, add freq[prefix - k] to your total answer count.',
+      'At index j, add freq[prefix - k] to the answer; the frequency records how many earlier prefixes match.',
       'Increment freq[prefix] AFTER checking so you never pair an index with itself.',
     ],
     loopInvariant:
@@ -184,7 +184,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Fast repeated immutable range sum queries sum(l, r) = P[r+1] - P[l]',
     ],
     whenItFails:
-      'Do not use Sliding Window when negative numbers exist—shrinking the left boundary no longer guarantees a smaller sum. Prefix Sum + Hash Map solves negatives effortlessly.',
+      'For target-sum subarray counting, a sliding window is not generally valid when negative values are present: removing a value may increase the sum. Prefix sums with a frequency map handle negative values; their O(N) time bound is expected under typical hash-map behavior. For repeated immutable range-sum queries, a prefix array alone supports O(1) queries after O(N) preprocessing.',
     linkedTopics: ['Arrays & Prefix Sum'],
     linkedProblemSlugs: ['subarray-sum-equals-k', 'two-sum', 'product-of-array-except-self', 'first-missing-positive'],
     featuredLabId: 'two-sum',
@@ -323,8 +323,8 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       {
         step: 6,
         title: 'Index 4: x = 2 → prefix = 5 (Done)',
-        explanation: 'Need 5 - 3 = 2 → not in map. Final answer: 3 contiguous subarrays sum to k = 3 in 5 linear operations.',
-        invariantCheck: 'Total work = O(N) instead of checking N(N+1)/2 pairs.',
+        explanation: 'Need 5 - 3 = 2 → not in map. Final answer: 3 contiguous subarrays sum to k = 3. The scan is expected O(N) time with a hash map and O(N) auxiliary space.',
+        invariantCheck: 'Expected total work is O(N), instead of checking N(N+1)/2 subarrays; hash-table worst-case behavior depends on collisions.',
         variables: [
           { name: 'j', value: '4' },
           { name: 'prefix', value: '5' },
