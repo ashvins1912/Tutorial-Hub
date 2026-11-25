@@ -37,6 +37,20 @@ test('canonical curriculum registers all 28 patterns preserving DSA28 canonical 
 
 test('canonical DSA28 complexity summaries state their algorithmic assumptions', () => {
   const byId = new Map(DSA28_PATTERNS.map((pattern) => [pattern.id, pattern]));
+  assert.equal(DSA28_PATTERNS.length, 28);
+  for (const pattern of DSA28_PATTERNS) {
+    assert.ok(pattern.timeComplexity?.trim(), pattern.id + ': time complexity must be stated');
+    assert.ok(pattern.spaceComplexity?.trim(), pattern.id + ': space complexity must be stated');
+  }
+  assert.match(byId.get('two-pointers-opposite-ends').timeComplexity, /monotone elimination invariant/i);
+  assert.match(byId.get('two-pointers-same-direction').timeComplexity, /each pointer advances at most n times/i);
+  assert.match(byId.get('fixed-sliding-window').timeComplexity, /one pass.*O\(1\) update/i);
+  assert.match(byId.get('kadanes-algorithm').timeComplexity, /maximum-subarray recurrence/i);
+  assert.match(byId.get('matrix-traversal-simulation').timeComplexity, /each cell is visited O\(1\) times/i);
+  assert.match(byId.get('fast-slow-pointers').timeComplexity, /finite termination condition/i);
+  assert.match(byId.get('in-place-linked-list-reversal').spaceComplexity, /iterative reversal.*recursive.*O\(n\)/i);
+  assert.match(byId.get('tree-dfs').spaceComplexity, /balanced.*skewed/i);
+  assert.match(byId.get('tree-bfs').spaceComplexity, /maximum tree width/i);
   assert.match(byId.get('hashmap-hashset-lookup').timeComplexity, /expected O\(1\)/i);
   assert.match(byId.get('dynamic-sliding-window').timeComplexity, /amortized.*monotone/i);
   assert.match(byId.get('cyclic-sort').timeComplexity, /only when.*bounded index range/i);
