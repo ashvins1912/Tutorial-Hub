@@ -137,19 +137,19 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
     id: 'url-shortener',
     title: 'Design a Scalable URL Shortener (TinyURL)',
     companyFrequency: 'Google · Amazon · Meta · Uber',
-    summary: 'Handle 100M+ daily redirects with sub-30ms P99 latency and collision-free short codes.',
+    summary: 'Illustrative workload: 100M+ daily redirects with a target P99 under 30 ms. Latency depends on region, network, cache hit rate and storage; short-code collisions must be handled with a uniqueness constraint and retry.'
     defaultDauMillions: 50,
     defaultReadWriteRatio: 100,
     defaultLatencyBudgetMs: 40,
     requiredComponents: [
       { id: 'load-balancer', whyNeeded: 'Traffic must be distributed across multiple stateless redirect servers to avoid a single point of failure.' },
       { id: 'api-gateway', whyNeeded: 'Stateless app servers decode Base62 keys and issue 301/302 redirects.' },
-      { id: 'redis-cache', whyNeeded: 'With a 100:1 read-to-write ratio, caching hot URLs in Redis absorbs 80%+ of redirect reads.' },
+      { id: 'redis-cache', whyNeeded: 'For this illustrative 100:1 read-to-write workload, Redis may improve the hit rate for hot URLs; set a cache-hit target from measured key popularity and validate it with load tests rather than assuming 80%+.' },
       { id: 'primary-db', whyNeeded: 'Durable storage for long-to-short URL mappings.' },
     ],
     recommendedComponents: [
       { id: 'bloom-filter', whyHelpful: 'A Bloom filter can reduce cache-penetration load by quickly testing whether a key is probably absent. It has false positives (a missing key may be reported as present), so it cannot reject every unknown key or replace rate limits and abuse controls.' },
-      { id: 'rate-limiter', whyNeeded: '', whyHelpful: 'Stops bots from exhausting Base62 keyspace or flooding write endpoints.' } as never,
+      { id: 'rate-limiter', whyNeeded: 'Bounds URL-creation requests per account or IP, protects backend capacity, and slows automated keyspace probing; pair it with abuse monitoring and uniqueness checks.', whyHelpful: 'Protects creation endpoints from bursts and automated abuse.' } as never,
     ].map((x) => ({ id: x.id, whyHelpful: x.whyHelpful })),
     animationSteps: [
       {
