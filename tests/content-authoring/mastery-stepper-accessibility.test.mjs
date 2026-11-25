@@ -18,5 +18,10 @@ test('Pattern Forge mastery stepper exposes the active and completed stage state
   assert.match(source, /aria-current=\{active \? 'step' : undefined\}/);
   assert.match(source, /aria-hidden="true"/);
   assert.match(source, /min-h-11/);
+  assert.match(source, /stageId === 1\) return progress\.quizSolved/);
+  assert.match(source, /stageId === 2\) return progress\.sandboxSolved/);
+  assert.match(source, /optimal\?\.init && optimal\?\.loop && optimal\?\.update/);
+  assert.match(source, /stageId === 4\) return progress\.bottleneckSolved/);
+  assert.match(source, /return progress\.feynmanCompleted/);
   assert.match(source, /if \(!problem\) return <div role="status"/);
 });
