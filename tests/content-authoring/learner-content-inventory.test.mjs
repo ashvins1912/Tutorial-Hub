@@ -33,12 +33,14 @@ test('DSA and published lesson code examples use readable line-numbered walkthro
   }
 });
 
-test('DSA Academy provides plain-language glossary entries across the course modules', () => {
+test('DSA Academy provides plain-language glossary entries across the course modules', async () => {
   const { readFileSync } = await import('node:fs');
   const lessonData = readFileSync(path.join(root, 'src/data/dsaCompleteLessons.ts'), 'utf8');
   const glossaryBlocks = (lessonData.match(/keyTerms: /g) || []).length;
   assert.equal(glossaryBlocks, 23, 'expected a glossary block for each current DSA lesson');
   assert.match(lessonData, /"term":"Invariant"/);
   assert.match(lessonData, /"term":"Monotonic predicate"/);
-  assert.match(lessonData, /"term":"Feasibility check"/);\n  const dsaUi = readFileSync(path.join(root, 'src/components/CompleteDsaCourse.tsx'), 'utf8');\n  assert.match(dsaUi, /section === 'keyTerms'/);
+  assert.match(lessonData, /"term":"Feasibility check"/);
+  const dsaUi = readFileSync(path.join(root, 'src/components/CompleteDsaCourse.tsx'), 'utf8');
+  assert.match(dsaUi, /section === 'keyTerms'/);
 });
