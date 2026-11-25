@@ -338,7 +338,7 @@ CREATE INDEX CONCURRENTLY idx_events_tenant_time ON events (tenant_id, created_a
 -- 3. Instant O(1) retention cleanup (milliseconds, zero vacuum bloat)
 ALTER TABLE events DETACH PARTITION events_2025_08 CONCURRENTLY;
 DROP TABLE events_2025_08;`,
-    productionImpact: '< 2ms metadata DDL · 0 blocked checkout traffic · O(1) partition drop',
+    productionImpact: 'Illustrative target: metadata-oriented partition retirement instead of row-by-row DELETE; benchmark lock duration, cleanup and traffic impact on the target PostgreSQL version',
     keyTakeaway:
       'In PostgreSQL, TRUNCATE avoids scanning and deleting rows one by one, but it takes strong locks and its storage/catalog work is not a universal wall-clock O(1) guarantee. Dropping or detaching a partition can make bulk retention much cheaper than row-by-row DELETE; physical file cleanup and lock behavior depend on the operation and engine. DELETE creates dead tuples that VACUUM must reclaim for reuse.',
   },
