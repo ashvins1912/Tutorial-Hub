@@ -56,7 +56,8 @@ const expectedGuideIds = [
   'sweep-line-events',
   'dual-heaps-median',
   'lis-patience-sorting',
-  'meet-in-the-middle'
+  'meet-in-the-middle',
+  'quickselect'
 ];
 
 test('algorithm tutor guides have complete, non-empty teaching contracts', () => {
