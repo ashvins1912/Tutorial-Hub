@@ -42,4 +42,7 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['tree-bfs-dfs'].followUpTwists.find(x => /speed up Word Ladder/i.test(x.question)).complexityImpact, /not a universal bound/i);
   assert.match(guides['bellman-ford'].interviewScript30s, /negative cycles reachable from the chosen source/i);
   assert.match(guides['sieve-of-eratosthenes'].followUpTwists.find(x => /primes in/i.test(x.question)).complexityImpact, /base-prime list/i);
+  assert.match(guides['mos-algorithm'].followUpTwists.find(x => /support point updates/i.test(x.question)).complexityImpact, /N \+ Q \+ U/i);
+  assert.match(guides['z-algorithm'].interviewScript30s, /separator that cannot occur/i);
+  assert.match(guides['manachers-algorithm'].followUpTwists.find(x => /sentinel characters/i.test(x.question)).invariantShift, /cannot occur in the input/i);
 });
