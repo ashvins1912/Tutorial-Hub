@@ -36,7 +36,7 @@ test('DP practice inventory contains 20 complete, unique problem briefs', () => 
 
 test('DP guided lessons have all eight numbered steps and explicit arithmetic bounds', () => {
   assert.match(lessonSource, /export const DP_GUIDED_LESSONS/);
-  for (let i = 1; i <= 8; i++) assert.match(source, new RegExp("title: '" + i + "\\."));
+  for (let i = 1; i <= 8; i++) assert.match(lessonSource, new RegExp("title: '" + i + "\\."));
   assert.match(lessonSource, /n > 91/);
   assert.match(lessonSource, /Math\.addExact/);
   assert.match(lessonSource, /long\[\] dp/);
