@@ -10,7 +10,7 @@ At branch creation, `docs/learning-surface-registry.json` mapped:
 - 22 learner-facing surfaces
 - 72 component paths
 - 62 canonical data paths
-- 15 API route paths
+- 15 API-route paths
 - 149 unique registered source paths in total
 
 These are registry path counts, not rendered sentence counts. The repository had 525 blobs at the same snapshot.
@@ -24,21 +24,22 @@ These are registry path counts, not rendered sentence counts. The repository had
 | `src/data/dsaCompleteLessons.ts` | Matrix indexing/traversal | Scoped row-outer/column-inner guidance to row-major traversal rather than presenting it as the only valid order. |
 | `src/data/systemDesignData.ts` | WebSocket and asynchronous message delivery | Clarified that a connection is not durable delivery and that transport semantics depend on configuration/acknowledgements. |
 | `src/data/systemDesignMasterRoadmapData.ts` | SPOF and Bloom-filter descriptions | Changed absolute SPOF elimination to risk reduction with tested failover; stated standard Bloom filter/no-deletion assumptions and source-of-truth verification. |
-| `src/data/algorithmsMasterCorePack.ts` | AVL trade-off and trie autocomplete claims | Removed unsupported faster-read/instant claims; distinguished prefix traversal from cached suggestion retrieval. |\n| `src/data/algorithmsMasterAdvancedPack.ts` | Splay tree, Count-Min Sketch, HyperLogLog and ARC explanations | Corrected amortized vs individual access, estimator assumptions, HLL leading-zero example, and ARC scan-resistance wording. |\n| `src/data/algorithmsMasterSystemsPack.ts` | LSM compaction, ARIES recovery and CRDT guarantees | Replaced unconditional guarantees with correct durability, eventual-delivery, monotonic-update and read-amplification conditions. |
-| `src/data/algorithmTutorGuides.ts` | Binary-search bounds, Dijkstra assumptions, greedy problem scopes, explicit DFS stack and hash matching | Clarified inclusive-range iteration bounds, non-negative edge weights, distinct greedy proofs, recursion-depth vs memory trade-off and exact-match verification after hash hits. |
-| `src/data/algorithmsMasterCorePack.ts` | Sentinel search, double hashing, AVL/trie and Huffman explanations | Clarified sentinel storage/restoration, clustering trade-offs, AVL read-performance assumptions, trie prefix/output costs and prefix-free decode time. |
-| `src/data/algorithmsMasterAdvancedPack.ts` | Bloom filter and probabilistic/system structures | Added no-deletion/maintenance assumptions, removed fixed 99% disk-I/O claim, qualified estimator bounds and corrected HLL leading-zero example/ARC guarantees. |
-
+| `src/data/algorithmsMasterCorePack.ts` | AVL, trie and Huffman explanations | Removed unsupported faster-read/instant claims; distinguished prefix traversal, cached suggestion and decoding costs. |
+| `src/data/algorithmsMasterCorePack.ts` | Sentinel search and double hashing | Clarified sentinel storage/restoration and that double hashing reduces clustering but does not eliminate collisions. |
+| `src/data/algorithmsMasterAdvancedPack.ts` | Splay tree, Count-Min Sketch, HyperLogLog and ARC | Corrected amortized vs individual access, estimator assumptions, HLL leading-zero example and ARC scan-resistance wording. |
+| `src/data/algorithmsMasterAdvancedPack.ts` | Bloom filter | Added no-deletion/maintenance assumptions and removed the fixed 99% disk-I/O claim. |
+| `src/data/algorithmsMasterSystemsPack.ts` | LSM compaction, ARIES recovery and CRDT guarantees | Replaced unconditional guarantees with durability, eventual-delivery, monotonic-update and read-amplification conditions. |
+| `src/data/algorithmTutorGuides.ts` | Binary-search bounds, Dijkstra, greedy, DFS and hash matching | Clarified inclusive-range bounds, non-negative edge weights, distinct greedy proofs, recursion-depth/memory trade-off and exact-match verification after hash hits. |
 | `src/data/dsaCompleteLessons.ts` + `src/components/CompleteDsaCourse.tsx` | DSA vocabulary and code-example reading | Added 46 plain-language term definitions/examples across all 23 course modules, a glossary section, line numbers, language label, explanation heading and guided trace prompt. |
 | `src/features/intelligent-engine/components/PublishedLessonView.tsx` | Published lesson structure and code | Improved key-point/reasoning hierarchy and line-numbered code with a distinct explanation area. |
 | `docs/LEARNER_CONTENT_TECHNICAL_WRITING_STANDARD.md` | Editorial/technical criteria | Added book-informed original teaching and review standards, algorithms/system-design checks and UI/accessibility criteria. |
 | `scripts/audit-learner-content-sentence-inventory.mjs` | Static discovery | Added candidate sentence-unit extraction for registered sources with exact file/line/property and default `unreviewed` status. |
-| `tests/content-authoring/learner-content-inventory.test.mjs` | Inventory and UI regression | Added checks for source coverage, unreviewed labeling and line-numbered explanation UI. |
+| `tests/content-authoring/learner-content-inventory.test.mjs` | Inventory and UI regression | Added checks for source coverage, unreviewed labeling, glossary coverage and line-numbered explanation UI. |
 
 ## Review state
 
 - Targeted semantic review: completed for the specific claims listed above.
-- Static sentence inventory: implemented; CI execution is pending/being validated.
+- Static sentence inventory: implemented and passed its regression test on an earlier PR head; latest-head CI is still running.
 - All 149 registered sources manually reviewed line by line: **not yet complete**.
 - Database-published, AI-generated, user-authored and other runtime content: **not yet exhaustively traced and reviewed**.
 - Full responsive/accessibility/manual UI verification: **not yet complete**.
@@ -47,9 +48,9 @@ These are registry path counts, not rendered sentence counts. The repository had
 ## Validation
 
 - Local typecheck/build was not available in this execution environment.
-- GitHub Actions run: check the PR checks for the current head; do not infer pass from a previous commit.
-- Earlier PR #68 CI failures were caused by syntax errors that were fixed before PR #68 was merged; they are not validation of this new branch.
-- Do not merge until the current head's typecheck, inventory test, existing regression tests and build have completed successfully and remaining review gates are resolved or explicitly scoped.
+- GitHub Actions passed typecheck, the content-authoring tests, existing regression checks and frontend build on commit `1ce051137445332dee2b0b6122c354f75795791f` (and the inventory test passed on commit `3f3b2b5f10832f05132e38d69ae31bae8aaaeb15`).
+- Later changes are primarily additional source wording and evidence updates; validate the current head before merge.
+- Do not merge until current-head typecheck, inventory test, existing regressions and build pass and remaining review gates are resolved or explicitly scoped.
 
 ## Completion accounting
 
