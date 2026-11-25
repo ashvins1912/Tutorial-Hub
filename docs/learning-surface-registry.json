@@ -25,7 +25,8 @@
     "tests/content-authoring/visualization-renderer.test.mjs",
     "tests/dsa/arrays-batch-01.test.mjs",
     "tests/dsa/master-interview-inventory.test.mjs",
-    "tests/learning-engine/pattern-forge-pilot.test.mjs"
+    "tests/learning-engine/pattern-forge-pilot.test.mjs",
+    "tests/content-authoring/application-content-audit.test.mjs"
   ],
   "surfaces": [
     {
