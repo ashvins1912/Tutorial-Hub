@@ -1,7 +1,7 @@
 # DSA course structural inventory (PR #70)
 
 **Source:** `src/data/dsaCompleteLessons.ts`  
-**Source blob:** `5702758284bd5f2a32468b53b439947cb0dca8b9` (main snapshot used for inventory)  
+**Source blob:** `3f40474a28ce3455d6154774c0de277487279996` (main snapshot used for inventory)  
 **Status:** structural inventory only; not a semantic/content verification.
 
 A complete structural pass identified 23 stable lesson IDs and counted entries in their teaching arrays. This reconciles the DSA course denominator before topic-by-topic review.
