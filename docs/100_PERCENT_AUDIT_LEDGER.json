@@ -4,8 +4,8 @@
     "registryBlobSha": "c27cc39cf21772661427d3311555078fedf1079b",
     "registrySurfaceCount": 22,
     "contentSourcePathCount": 154,
-    "testSourcePathCount": 25,
-    "allRegisteredPathCount": 179
+    "testSourcePathCount": 26,
+    "allRegisteredPathCount": 180
   },
   "purpose": "Exhaustive path-level audit ledger. Registry membership is inventory only. No path is marked reviewed unless every relevant unit and behavior is dispositioned with evidence.",
   "status": "in_progress",
@@ -2658,6 +2658,18 @@
       "evidence": []
     },
     {
+      "path": "tests/content-authoring/mastery-stepper-accessibility.test.mjs",
+      "roles": [
+        "global-test"
+      ],
+      "surfaceIds": [],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
+    },
+    {
       "path": "tests/content-authoring/matrix-problem-bank-quality.test.mjs",
       "roles": [
         "test"
@@ -2952,21 +2964,31 @@
       "evidence": [
         "tests/content-authoring/dsa-roadmap-quality.test.mjs: source-level search, state and honest-scope assertions"
       ]
+    },
+    {
+      "unitId": "pattern-forge:mastery-stepper-stage-accessibility",
+      "sourcePath": "src/components/MasteryStepper.tsx",
+      "reviewStatus": "ui-corrected-awaiting-ci",
+      "finding": "Stage buttons need consistent keyboard target size and explicit selected/current stage announcement; empty catalog must be communicated as status.",
+      "fix": "Verified the five stage controls expose aria-pressed and aria-current, the navigation has an accessible name, touch targets are at least 44px, decorative separators/icons are hidden, and empty problem catalog is announced. Added source-level regression assertions.",
+      "evidence": [
+        "tests/content-authoring/mastery-stepper-accessibility.test.mjs: source-level stage/state/accessibility assertions"
+      ]
     }
   ],
   "counts": {
     "registeredContentPathCount": 154,
-    "testPathCount": 25,
-    "allPathCount": 179,
+    "testPathCount": 26,
+    "allPathCount": 180,
     "reviewedPaths": 0,
-    "reviewedUnits": 18,
+    "reviewedUnits": 19,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 6,
     "unresolvedP0": 0,
     "unresolvedP1": 0,
     "contentAddedUnitsAwaitingCi": 4,
     "contentCorrectedUnitsAwaitingCi": 4,
-    "uiCorrectedUnitsAwaitingCi": 4
+    "uiCorrectedUnitsAwaitingCi": 5
   },
   "limitations": [
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
