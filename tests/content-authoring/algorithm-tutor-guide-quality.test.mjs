@@ -119,6 +119,10 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['manachers-algorithm'].interviewScript30s, /separator absent from the input/i);
   assert.match(guides['bipartite-graph-coloring'].simpleAnalogy, /odd-length rivalry cycle/i);
   assert.match(guides['meet-in-the-middle'].simpleAnalogy, /match complementary sums/i);
+  assert.match(guides['fast-slow-pointers'].simpleAnalogy, /different stopping conditions/i);
+  assert.match(guides['monotonic-stack'].simpleAnalogy, /next-greater-to-the-right/i);
+  assert.match(guides['mos-algorithm'].interviewScript30s, /supports efficient add\/remove operations/i);
+  assert.match(guides['dual-heaps-median'].followUpTwists.find(x => /90th percentile/i.test(x.question)).invariantShift, /read `hi.top\(\)` as P90/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
