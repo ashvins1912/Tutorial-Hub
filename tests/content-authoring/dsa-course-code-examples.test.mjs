@@ -19,6 +19,7 @@ test('Java DSA course examples handle integer overflow and repeated tree calls',
   const twoSum = codeExample('hash-map', 'Two Sum with value-to-index mapping');
   const pairExists = codeExample('hash-set', 'Stable deduplication and one-pass pair lookup');
   const diameter = codeExample('binary-tree', 'Height and diameter in one postorder traversal');
+  const subsets = codeExample('bit-manipulation', 'Enumerate subsets with a long bitmask');
   assert.match(twoSum, /long complement = \(long\) target - values\[i\]/);
   assert.match(pairExists, /long complement = \(long\) target - value/);
   assert.match(diameter, /int\[\] best = \{0\}/);
@@ -29,6 +30,7 @@ public class AuditCourseSnippets {
 ${twoSum}
 ${pairExists}
 ${diameter}
+${subsets}
   public static void main(String[] args) {
     int[] falsePair = {Integer.MIN_VALUE, -1};
     if (twoSum(falsePair, Integer.MAX_VALUE).length != 0) throw new AssertionError("Two Sum overflow false positive");
@@ -41,6 +43,10 @@ ${diameter}
     if (diameter(root) != 3) throw new AssertionError("tree diameter should be 3 edges");
     if (diameter(new Node(9)) != 0) throw new AssertionError("second call must not reuse previous diameter");
     if (diameter(null) != 0) throw new AssertionError("empty tree diameter");
+    if (subsets(new int[]{1, 2, 3}, 8).size() != 8) throw new AssertionError("subset count");
+    boolean capped = false;
+    try { subsets(new int[]{1, 2, 3, 4}, 8); } catch (IllegalArgumentException expected) { capped = true; }
+    if (!capped) throw new AssertionError("subset output cap");
     System.out.println("DSA Java examples passed");
   }
 }`;
