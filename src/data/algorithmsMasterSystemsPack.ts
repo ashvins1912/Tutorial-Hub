@@ -111,7 +111,7 @@ def split_leaf(keys, max_keys):
     timeComplexity: 'O(log M) write · O(L) read (with Bloom)',
     spaceComplexity: 'O(N) + compaction headroom',
     mentalModel:
-      'Never hunt for an old slot on disk when writing! Append to a sequential WAL, sort in RAM (MemTable), flush whole sorted files (SSTables) to disk, and merge/deduplicate older files in the background using K-Way Merge!',
+      'Avoid in-place random updates on the LSM write path: append to the WAL, update the in-memory MemTable, flush sorted SSTables, then compact older files in the background.',
     coreInvariant:
       'Newest-Wins Read Precedence: check MemTable → L0 SSTables (newest first) → L1 → L2; deletes write a special TOMBSTONE marker that is physically purged only during bottom-level compaction.',
     whenToUse: [
@@ -177,7 +177,7 @@ def compact_sstables(newer_run, older_run):
         step: 3,
         title: 'Read Path Consults Newest Layer First',
         explanation: 'Get(k1) finds v2 in L0_new and stops immediately. Get(k2) hits tombstone `†` and returns NULL without exposing stale L0_old!',
-        invariantCheck: 'Bloom filters skip any SSTable guaranteed not to contain the key.',
+        invariantCheck: 'A correctly maintained standard Bloom filter without deletions can skip an SSTable when it proves the key is absent; a positive result still requires checking the table.',
         variables: [{ name: 'get(k1)', value: 'v2' }, { name: 'get(k2)', value: 'null (tombstone)' }, { name: 'get(k3)', value: 'v9' }],
         array: ['k1→v2', 'k2→null', 'k3→v9'],
         matchedIndices: [0, 2],
@@ -908,7 +908,7 @@ def diff_merkle(node_a, node_b):
     mentalModel:
       'Wall clocks drift by milliseconds across servers (NTP jumps backwards!). A Vector Clock gives each node its own counter `[A:2, B:1, C:0]`—if every entry in V1 ≤ V2 (with at least one `<`), V1 causally preceded V2; if V1 is bigger in one slot and V2 is bigger in another, they are CONCURRENT conflicts!',
     coreInvariant:
-      'Lamport Clock guarantees `A → B ⇒ L(A) < L(B)` (one-way only!). Vector Clock guarantees `A → B ⇔ V(A) < V(B)` (exact two-way causality + concurrency detection!).',
+      'Lamport clocks preserve causality: if A happens before B, L(A) < L(B), but the reverse is not guaranteed. Vector clocks compare component-wise: A happens before B iff every component of V(A) is ≤ the corresponding component of V(B) and at least one is <; incomparable vectors indicate concurrency.',
     whenToUse: [
       'Multi-leader / leaderless conflict detection: Amazon Dynamo shopping carts, Riak Dotted Version Vectors, Voldemort.',
       'Distributed debugging, causal broadcast, and snapshot consistency without synchronized GPS/atomic clocks.',
