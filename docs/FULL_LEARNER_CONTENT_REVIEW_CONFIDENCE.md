@@ -216,3 +216,27 @@ Two additional edge cases were corrected:
 - **Sweep line:** empty half-open intervals `[t, t)` are excluded so the end event cannot decrement before the start event.
 
 Regression assertions were added and source/test blobs were re-fetched. Source commit `6f58a11916470ddd647329bb83357f84256ab029`; test commit `8e68ff58d51b10720b7458167b8d79732fba1d33`. Run #736 was at type-check for an earlier head; the latest delimiter/interval test and report commits still need final-head validation.
+
+
+## Ninth focused technical pass: probabilistic hashing, empirical gains, and arithmetic bounds
+
+The latest source pass removed or qualified six misleading claims:
+
+- **KMP / Rabin-Karp:** separated KMP's deterministic O(N + M) worst-case guarantee from Rabin-Karp's rolling-hash behavior; collisions require verification and can affect runtime.
+- **Mo ordering:** removed a fixed 35–45% pointer-step improvement claim; Hilbert/snake order can help in practice but gains depend on query distribution.
+- **LCM:** divide-before-multiply reduces overflow risk but does not guarantee the final LCM fits; wide/exact arithmetic and result-range checks remain necessary.
+- **Binary exponentiation analogy:** removed the incorrect “10 steps” count for exponent 1000; operation count is logarithmic and includes squarings plus conditional result multiplies.
+
+Regression assertions cover these caveats. Source commit: `1d002ffe498f026970761d912a3aa755ca738cbf`; test commit: `6d1d1f8ab46f526c1e7865c771785713d8fbfbeb`.
+
+## Exact algorithm-guide inventory gate
+
+The tutor-guide module currently registers **53 guide IDs**. The quality test now stores the exact 53-ID inventory and requires exact key equality, matching `algorithmId`, complete non-empty teaching-contract fields, and at least one non-empty follow-up per guide. This prevents silent omission or accidental registration drift. Test commit: `b10001e767b54fb882c52f8d0a52884538b1075e`.
+
+Validation evidence:
+- Run #739 passed the full listed validation suite and frontend build on the prior head.
+- Run #741 was queued for the focused source/test correction before the exact inventory lock.
+- The inventory-lock test and report commit require their own final-head run; no pass is claimed until it completes.
+- Source and test blobs were re-fetched after the edits (source `f196b7040c88e24f031ebf0c58009eb52a36a9c4`; test `267a7f00e339d443647d8ec89a80143da8d3fa30`).
+
+This improves coverage of the 53 tutor-guide records, but does **not** certify all 149 registered source paths or every runtime/UI state in the full platform.
