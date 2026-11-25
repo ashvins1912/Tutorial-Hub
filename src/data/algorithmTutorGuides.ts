@@ -945,7 +945,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Finding the 5th-tallest student in a gym: pick a random height divider, send shorter students left and taller right—then completely ignore whichever side cannot contain #5!',
     interviewScript30s:
-      '"Because we only recurse into the ONE partition containing index `N - K`, expected work forms the geometric series N + N/2 + N/4 + ... = O(N) average time and O(1) space—beating O(N log K) heaps in memory."',
+      '"Quickselect partitions in place and continues only in the side containing target index `N - K`; with randomized pivots its expected running time is O(N), but the expected recurrence is not a guaranteed half-size geometric series. Iterative partitioning uses O(1) auxiliary space; recursive implementations also use stack space (expected O(log N), worst O(N))."',
     chooseWhen: 'K-th Largest Element, K Closest Points to Origin, Top-K Frequent (over unique frequencies) when in-place mutation is allowed.',
     avoidWhen: 'Input is an online unbounded stream (use bounded Min-Heap) or adversarial worst-case O(N) is strictly demanded without randomization.',
     followUpTwists: [
