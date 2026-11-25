@@ -159,6 +159,16 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(MASTER_40_COMPLEXITY_PROFILES['external-kway-merge'].recurrenceRelation, /merge fan-in/i);
   assert.match(MASTER_40_COMPLEXITY_PROFILES['hash-table-probing'].recursiveSpaceBigO, /O\(1\) auxiliary state/i);
   assert.match(MASTER_40_COMPLEXITY_PROFILES['crdt-gcounter-orset'].iterativeTimeBigO, /no synchronous cross-region consensus/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['linear-search'].chooseWhen, /no universal size cutoff/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['elementary-sorts'].chooseWhen, /implementation-specific cutoff/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['linked-list-reversal'].interviewScript30s, /pointer invariants still need careful checks/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['skip-list'].interviewScript30s, /careful CAS and reclamation design/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['hash-table-probing'].interviewScript30s, /Implementations choose their own resize threshold/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['trie-prefix-autocomplete'].interviewScript30s, /O\(L\) expected time when child access is O\(1\)/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['external-kway-merge'].interviewScript30s, /initial run count and merge fan-in/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['aries-wal-recovery'].followUpTwists.find(x => /Compensation Log Record/i.test(x.question)).complexityImpact, /how often recovery is interrupted/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['sql-joins-volcano'].interviewScript30s, /expected O\(R \+ S\)/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['sql-joins-volcano'].followUpTwists.find(x => /Vectorized Execution/i.test(x.question)).complexityImpact, /depend on operator, data layout, and hardware/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
