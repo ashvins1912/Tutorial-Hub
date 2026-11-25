@@ -191,7 +191,7 @@ router.post('/mastery/evidence', requireAuth, async (req: Request, res: Response
     if (!hasCheckpointIdentity || checkpointIsCanonical) {
       const checkpointEvidence = recordPredictionCheckpointEvidence(
         next,
-        checkpointIsCanonical ? checkpointId : undefined,
+        checkpointIsCanonical ? `${traceId}:${checkpointId}` : undefined,
         body.checkpointCorrect
       );
       next.predictionCheckpointResults = checkpointEvidence.predictionCheckpointResults;
