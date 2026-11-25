@@ -77,5 +77,5 @@ test('DP lab UI exposes accessible lesson, hint, search, and practice states', (
   assert.match(source, /tabIndex=\{0\}/);
   assert.match(source, /Java method snippet · add imports\/class as needed/);
   assert.match(source, /aria-pressed=\{filter === g\}/);
-  assert.match(source, /doneCount\/\{DP_PRACTICE_PROBLEMS\.length\}/);
+  assert.match(source, /doneCount\}\s*\/\s*\{DP_PRACTICE_PROBLEMS\.length\}/);
 });
