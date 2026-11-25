@@ -222,7 +222,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you count the NUMBER of distinct shortest paths modulo 10^9+7?',
         invariantShift: 'Maintain `ways[v]`: on strict improvement `ways[v] = ways[u]`; on tie (`d + w === dist[v]`) add `ways[v] += ways[u]`.',
-        complexityImpact: 'Same O((V + E) log V) time.',
+        complexityImpact: 'O((V + E) log V) time for Dijkstra with a binary heap, assuming strictly positive edge weights for this simple path-count update. Zero-weight edges can create cycles in the shortest-path subgraph; define whether counting walks or simple paths and use a suitable method before applying this recurrence.',
       },
     ],
   },
@@ -233,7 +233,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     interviewScript30s:
       '"Since we must enumerate all valid configurations under small N, I use Choose -> Explore -> Unchoose with O(1) conflict sets (or Trie edges) to prune invalid subtrees before recursing."',
     chooseWhen: 'Subsets, permutations, combinations, Sudoku, N-Queens, Word Search II (with Trie pruning).',
-    avoidWhen: 'Asked only for the COUNT or OPTIMAL score with large N > 25 (switch to Dynamic Programming).',
+    avoidWhen: 'Backtracking is a poor fit when the search space is huge and pruning is weak. For counting or optimization, consider DP only when subproblems overlap and a compact state/transition exists; otherwise consider branch-and-bound, meet-in-the-middle, or problem-specific pruning. There is no universal N threshold.',
     followUpTwists: [
       {
         question: 'How do you handle duplicate input numbers without generating duplicate subsets?',
@@ -243,7 +243,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you optimize N-Queens conflict checks from O(N) to O(1)?',
         invariantShift: 'Use 3 integer bitmasks (cols, diag1, diag2) to test & toggle valid positions in single CPU bit instructions.',
-        complexityImpact: 'O(N!) with ~10× faster constant factor.',
+        complexityImpact: 'The search remains exponential with an O(N!) worst-case upper bound; bitmasks reduce conflict-check work to O(1) per candidate on supported integer widths, but the speedup depends on implementation and runtime (do not promise a fixed multiplier).',
       },
     ],
   },
