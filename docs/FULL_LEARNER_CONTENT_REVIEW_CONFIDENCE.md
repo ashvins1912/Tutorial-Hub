@@ -296,3 +296,24 @@ The imported master-guide set was reviewed for high-risk claims and corrected:
 Source commit: `b12390ec790df8c78fa97263e735201afaae9c7d`.
 
 **Inventory correction:** the actual merged tutor-guide registry is 94 unique IDs (54 local + 40 master), not 93. The local inventory test now includes `quickselect` explicitly. This correction supersedes the earlier 93-ID note above; the latest inventory test/report commits need completed CI.
+
+
+## Fourteenth focused technical pass: probabilistic and storage guarantees
+
+Additional master-guide wording was corrected and regression-guarded:
+
+- Removed a fixed linear-scan 2–4× constant-factor promise.
+- Made hybrid-sort insertion-sort cutoffs implementation-specific.
+- Qualified quadtree/octree range-query complexity by balance/distribution and stated O(N) worst-case traversal.
+- Scoped Bloom Filter no-false-negative guarantees to insert-only, intact storage and consistent hashing.
+- Replaced Count-Min Sketch “O(1) space” with parameterized counter-space and O(d) operation bounds.
+- Corrected BWT/FM-index rank-query complexity and removed a fixed 40 GB→2 GB memory claim.
+- Corrected buddy allocator’s false “zero external fragmentation” claim.
+- Removed blanket wait-free/zero-atomic RCU guarantees; clarified CAS is not automatically wait-free.
+- Removed fixed B+ tree page-read, fanout, UUID throughput, and LSM amplification ratios.
+
+Source commits: `dcd4a5fee693d6d323f41938a7353600f5066c28`, `64b312f68614987e7309b748ab3c088dbf203ea5`. Regression assertions were added in test commit `63b7d9fb18f2e22c720d852c382f939a35d75ef9`.
+
+## Inventory assertion follow-up
+
+Run #754 still failed because the test's 54-local-ID list had not yet included the unquoted `quickselect` key. The expected local count and ID list are now both 54; master source count is 40, and merged runtime inventory is 94 unique IDs. Run #758 tested the intermediate inventory correction; the latest master-guide corrections and expanded assertions require a completed current-head run.
