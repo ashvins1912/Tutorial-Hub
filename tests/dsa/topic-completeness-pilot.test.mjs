@@ -701,8 +701,8 @@ test('bit manipulation Java examples execute against expected outputs', () => {
       'if (countSetBits(0b10110100) != 4) throw new AssertionError("set bit count");',
       'if (!isPositivePowerOfTwo(1024) || isPositivePowerOfTwo(0) || isPositivePowerOfTwo(-8)) throw new AssertionError("power of two");',
       'if (singleNumber(new int[]{4, 1, 2, 1, 2}) != 4) throw new AssertionError("xor single");',
-      'if (subsets(new int[]{1, 2, 3}).size() != 8) throw new AssertionError("subset count");',
-      'if (subsets(new int[]{}).size() != 1) throw new AssertionError("empty subset");',
+      'if (subsets(new int[]{1, 2, 3}, 8).size() != 8) throw new AssertionError("subset count");',
+      'if (subsets(new int[]{}, 1).size() != 1) throw new AssertionError("empty subset");',
       '}',
       '}'
     ].join(String.fromCharCode(10));
