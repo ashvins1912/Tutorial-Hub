@@ -1584,11 +1584,11 @@ def topo_sort(n, prereqs):
     category: 'Tree & Graph Traversal',
     visualType: 'dijkstra-graph',
     tagline: 'Greedily settle the closest unvisited vertex via Min-Heap edge relaxation.',
-    timeComplexity: 'O(E log V)',
+    timeComplexity: 'O((V + E) log V) with a binary min-heap and lazy duplicate entries',
     spaceComplexity: 'O(V + E)',
-    complexityLeap: 'O(V²) dense scan → O(E log V) priority-queue relaxation',
+    complexityLeap: 'O(V²) dense scan → O((V + E) log V) heap-based relaxation',
     coreIdea:
-      'Maintain a Min-Heap of (distance, node) starting with (0, source). Because all edge weights are non-negative, the first time a node is popped from the Min-Heap its shortest distance is permanently locked—relax all its outgoing edges.',
+      'Maintain a min-heap of (distance, node) entries, starting with (0, source). With non-negative edge weights, a node popped with a distance equal to its current best distance is settled: no later path can improve it. Lazy heaps may contain older entries, so skip a popped entry when its distance is greater than dist[node].',
     mentalModelSteps: [
       'Initialize dist[source] = 0 and all other dist[v] = ∞; push (0, source) to Min-Heap.',
       'Pop the smallest (d, u). If d > dist[u], skip it (stale heap entry).',
@@ -1603,7 +1603,7 @@ def topo_sort(n, prereqs):
       'Pair with Disjoint Set Union (Union-Find) for MST / dynamic grouping (Accounts Merge)',
     ],
     whenItFails:
-      'Fails if NEGATIVE edge weights exist! Switch to Bellman-Ford O(V·E) when negative weights or limited K-stop constraints appear.',
+      'Dijkstra requires non-negative edge weights. For graphs with negative edges (and no reachable negative cycle), use Bellman-Ford; for a bounded number of edges or stops, use a state-aware dynamic-programming or layered shortest-path formulation. The examples assume path-distance sums fit the chosen numeric type.',
     linkedTopics: ['Union-Find & Shortest Path'],
     linkedProblemSlugs: ['network-delay-time', 'swim-in-rising-water', 'accounts-merge', 'find-if-path-exists'],
     templates: {
