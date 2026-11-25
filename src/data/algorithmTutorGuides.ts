@@ -586,7 +586,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'fenwick-tree-bit': {
     algorithmId: 'fenwick-tree-bit',
     simpleAnalogy:
-      'A super-compact accounting ladder where each rung stores a power-of-two chunk of numbers: climbing up (`i += i & -i`) updates your total in ~17 steps, and stepping down (`i -= i & -i`) sums any prefix in ~17 steps.',
+      'A compact accounting ladder where each rung stores a power-of-two chunk: update with `i += i & -i` and query a prefix with `i -= i & -i`, each in O(log N) steps (about 14 steps for N = 10,000).',
     interviewScript30s:
       '"For invertible operations like prefix sums or inversion counting with online point updates, a 1-indexed Fenwick Tree uses just 10 lines of code and N space with tiny constant-factor O(log N) updates and queries."',
     chooseWhen: 'Dynamic prefix sums, Count Smaller After Self, 2D mutable range sums, online order statistics.',
@@ -693,7 +693,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Standing inside a giant hall of mirrors: if you already know a huge palindrome centered at C, any center on the right half mirrors the exact palindrome radius of its twin on the left half—skipping redundant expansion.',
     interviewScript30s:
-      '"Inserting `#` separators unifies odd and even palindromes, and mirroring radii inside the rightmost palindrome `[L..R]` computes every palindrome center radius in strict O(N) instead of O(N²)."',
+      '"Inserting a separator absent from the input (or an out-of-alphabet sentinel) unifies odd and even palindromes; mirroring radii inside the rightmost palindrome `[L..R]` computes all center radii in O(N) instead of O(N²)."',
     chooseWhen: 'Longest Palindromic Substring or Palindromic Substrings count when N = 10^5 requires O(N).',
     avoidWhen: 'N <= 1,000 in a short interview where Expand-Around-Center O(N²) / O(1) is quicker to code bug-free.',
     followUpTwists: [
@@ -1048,7 +1048,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'bipartite-graph-coloring': {
     algorithmId: 'bipartite-graph-coloring',
     simpleAnalogy:
-      'Seating wedding guests at two tables where rivals cannot sit together: seat the first guest at Table A, every rival at Table B, their rivals back at Table A—if anyone ends up sitting with a rival, a 3-way (odd) rivalry loop makes it impossible.',
+      'Seating wedding guests at two tables where rivals cannot sit together: seat the first guest at Table A, every rival at Table B, their rivals back at Table A—if anyone ends up sitting with a rival, an odd-length rivalry cycle makes a two-table seating impossible.',
     interviewScript30s:
       '"A graph is bipartite iff it contains no odd-length cycle. I iterate across every uncolored component, run BFS assigning alternating 0/1 colors, and return false the instant an edge connects two same-colored nodes—O(V + E) time and O(V) space."',
     chooseWhen: 'Is Graph Bipartite (LC 785), Possible Bipartition (LC 886), odd-cycle detection, or 2-shift conflict scheduling.',
@@ -1132,7 +1132,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'meet-in-the-middle': {
     algorithmId: 'meet-in-the-middle',
     simpleAnalogy:
-      'Trying to open a 40-switch combination lock by brute force takes a trillion tries (2^40). Split the switches into Left 20 and Right 20 (1 million each), list all outcomes of each half, and match pairs in seconds!',
+      'Trying to open a 40-switch combination lock by brute force takes about 1 trillion tries (2^40). Split the switches into Left 20 and Right 20 (about 1 million outcomes each), list each half, then match complementary sums instead of enumerating all 2^40 combinations.',
     interviewScript30s:
       '"At N = 40 with 10^9 values, 2^N backtracking TLEs and subset-sum DP OOMs. Splitting into two halves of N/2 creates two 2^(N/2) lists (~10^6), sorts the right half, and binary searches complements in O(N · 2^(N/2))—a square-root speedup over 2^N."',
     chooseWhen: 'N is roughly 30–44 AND values are too large (10^7–10^9) or negative for pseudo-polynomial DP (LC 1755, LC 2035, 4Sum II).',
