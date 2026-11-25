@@ -19,6 +19,7 @@ import {
   PATTERN_FORGE_TOPICS,
 } from '../../shared/patternForgeCurriculum';
 import {
+  addVerifiedProblemEvidence,
   computeNextRevisionSchedule,
   computeTopicMastery,
   createEmptyMasteryEvidence,
@@ -144,7 +145,7 @@ router.get('/mastery', requireAuth, async (req: Request, res: Response) => {
     const ev =
       state.evidenceByTopic[topic.id] ??
       createEmptyMasteryEvidence(topic.id, topic.version.version);
-    return computeTopicMastery(ev);
+    return computeTopicMastery(ev, topic.problems);
   });
   return res.json({
     mastery: summaries,
@@ -188,14 +189,11 @@ router.post('/mastery/evidence', requireAuth, async (req: Request, res: Response
   if (typeof body.verifiedProblemId === 'string') {
     const prob = topic.problems.find((p) => p.id === body.verifiedProblemId);
     if (prob) {
-      if (!next.implementationsVerified.includes(prob.id)) {
-        next.implementationsVerified = [...next.implementationsVerified, prob.id];
-      }
-      const edgeCount = prob.testSuite.cases.filter((c) => c.isEdgeCase || c.isBoundary).length;
-      next.edgeCasesPassed = Math.max(next.edgeCasesPassed, next.edgeCasesPassed + edgeCount);
-      if (prob.category === 'debugging' && !next.debuggingExercisesPassed.includes(prob.id)) {
-        next.debuggingExercisesPassed = [...next.debuggingExercisesPassed, prob.id];
-      }
+      const verified = addVerifiedProblemEvidence(next, prob, topic.problems);
+      next.implementationsVerified = verified.implementationsVerified;
+      next.edgeCasesPassed = verified.edgeCasesPassed;
+      next.debuggingExercisesPassed = verified.debuggingExercisesPassed;
+      next.tracesCompleted = verified.tracesCompleted;
     }
   }
 
@@ -232,7 +230,7 @@ router.post('/mastery/evidence', requireAuth, async (req: Request, res: Response
 
   return res.json({
     ok: true,
-    mastery: computeTopicMastery(next),
+    mastery: computeTopicMastery(next, topic.problems),
     revision: state.revisionsByTopic[topic.id] ?? null,
   });
 });
@@ -316,7 +314,7 @@ router.post('/assessments/:id/attempts', requireAuth, async (req: Request, res: 
   return res.json({
     attempt,
     feedback,
-    mastery: computeTopicMastery(ev),
+    mastery: computeTopicMastery(ev, topic.problems),
     revision: state.revisionsByTopic[topic.id],
   });
 });
