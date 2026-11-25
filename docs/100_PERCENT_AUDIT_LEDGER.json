@@ -3030,7 +3030,7 @@
       "sourcePath": "shared/masteryEngine.ts",
       "reviewStatus": "corrected-awaiting-ci",
       "finding": "Prediction checkpoint evidence was count-only and could be replayed to inflate the correct/total ratio. The Mastered gate could also pass at 60% checkpoint accuracy when two traces contributed 50 points to the visualization dimension.",
-      "fix": "Added stable-ID checkpoint evidence: duplicate attempts do not increase denominator; a retry can upgrade a prior miss once. Mastered now requires at least two unique traces, two checkpoints and >=80% checkpoint accuracy; ratios are clamped.",
+      "fix": "Added stable trace-scoped checkpoint evidence: duplicate attempts do not increase denominator; a retry can upgrade a prior miss once. Mastered requires at least two unique traces, two checkpoints and >=80% checkpoint accuracy; ratios are clamped.",
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: checkpoint idempotency, retry upgrade, 60% vs 80% mastery gate"
       ]
@@ -3040,7 +3040,7 @@
       "sourcePath": "shared/learningContract.ts",
       "reviewStatus": "content-corrected-awaiting-ci",
       "finding": "MasteryEvidence lacked stable per-checkpoint result identity, so persisted numeric totals could not distinguish unique checkpoint coverage from repeated events.",
-      "fix": "Added optional predictionCheckpointResults map for backward-compatible persisted evidence; old clients retain anonymous count behavior.",
+      "fix": "Added optional predictionCheckpointResults map for backward-compatible persisted evidence. New keys are namespaced by canonical trace ID plus checkpoint ID; old clients retain anonymous count behavior.",
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: stable-ID checkpoint evidence tests"
       ]
@@ -3050,7 +3050,7 @@
       "sourcePath": "src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx",
       "reviewStatus": "ui-corrected-awaiting-ci",
       "finding": "Trace player submitted only checkpoint correctness, not the canonical trace/checkpoint identity required to deduplicate and validate attempts.",
-      "fix": "Trace player now sends the stable trace ID and checkpoint ID with each answer.",
+      "fix": "Trace player now sends the stable canonical trace ID and checkpoint ID with each answer, enabling trace-scoped idempotency.",
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: trace player identity assertion"
       ]
@@ -3060,7 +3060,7 @@
       "sourcePath": "src/features/pattern-forge-unified/useUnifiedLearningStore.ts",
       "reviewStatus": "corrected-awaiting-ci",
       "finding": "Client store accepted checkpoint correctness without checking that the checkpoint belonged to a canonical trace.",
-      "fix": "Client validates trace ID against the topic and checkpoint ID against deterministic trace steps, then records through the shared idempotent helper.",
+      "fix": "Client validates trace ID against the topic and checkpoint ID against deterministic trace steps, then records trace-scoped identity through the shared idempotent helper.",
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: client canonical checkpoint validation assertion"
       ]
@@ -3070,7 +3070,7 @@
       "sourcePath": "server/routes/learningEngineRoutes.ts",
       "reviewStatus": "corrected-awaiting-ci",
       "finding": "Server accepted checkpoint correctness without validating canonical trace/checkpoint identity and could count replayed events.",
-      "fix": "Server validates the trace/checkpoint pair against canonical deterministic trace steps and records through the same idempotent helper; anonymous legacy payloads remain supported.",
+      "fix": "Server validates the trace/checkpoint pair against canonical deterministic trace steps and records trace-scoped identity through the same idempotent helper; anonymous legacy payloads remain supported.",
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: server canonical checkpoint validation assertion"
       ]
