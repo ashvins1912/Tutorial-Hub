@@ -149,7 +149,8 @@
         "tests/content-authoring/matrix-problem-bank-quality.test.mjs",
         "tests/content-authoring/100-percent-audit-ledger.test.mjs",
         "tests/dsa/topic-completeness-pilot.test.mjs",
-        "tests/content-authoring/dp-learning-lab-code-examples.test.mjs"
+        "tests/content-authoring/dp-learning-lab-code-examples.test.mjs",
+        "tests/content-authoring/dsa-roadmap-quality.test.mjs"
       ]
     },
     {
