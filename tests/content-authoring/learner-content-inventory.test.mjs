@@ -28,7 +28,7 @@ test('DSA and published lesson code examples use readable line-numbered walkthro
   const publishedUi = readFileSync(path.join(root, 'src/features/intelligent-engine/components/PublishedLessonView.tsx'), 'utf8');
   for (const source of [dsaUi, publishedUi]) {
     assert.match(source, /Code walkthrough|Code example/);
-    assert.match(source, /lineIndex \+ 1/);
+    assert.match(source, /(?:index|lineIndex) \+ 1/);
     assert.match(source, /How this code works|What the code is doing/);
   }
 });
