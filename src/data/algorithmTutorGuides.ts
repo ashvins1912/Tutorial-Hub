@@ -704,8 +704,8 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'Why do we add sentinel characters `^` and `$` at both ends of the transformed string?',
-        invariantShift: 'Distinct sentinels stop the inner expansion loop cleanly without writing array bounds checks on every iteration.',
-        complexityImpact: 'Cleaner loop and zero out-of-bounds bugs.',
+        invariantShift: 'Choose distinct left/right sentinels that cannot occur in the input; they stop expansion at the boundaries without per-iteration bounds checks.',
+        complexityImpact: 'Cleaner loop; correctness still depends on sentinels being outside the input alphabet and on consistent transformed-index handling.',
       },
     ],
   },
