@@ -42,7 +42,7 @@ export function CompleteDsaRoadmap() {
   const validTopicIds = useMemo(() => new Set(COMPLETE_DSA_ROADMAP.map((item) => item.id)), [COMPLETE_DSA_ROADMAP]);
   const completedSet = useMemo(() => new Set(COMPLETE_DSA_ROADMAP.filter((item) => validTopicIds.has(item.id) && progress[item.id]?.completed).map((item) => item.id)), [COMPLETE_DSA_ROADMAP, progress, validTopicIds]);
   const completedCount = completedSet.size;
-  const activeGateSet = new Set((progress[activeTopic.id]?.gates ?? []).filter((gate) => MASTERY_CHECKLIST.includes(gate));
+  const activeGateSet = new Set((progress[activeTopic.id]?.gates ?? []).filter((gate) => MASTERY_CHECKLIST.includes(gate)));
   const persist = (next: Progress) => {
     setProgress(next);
   };
