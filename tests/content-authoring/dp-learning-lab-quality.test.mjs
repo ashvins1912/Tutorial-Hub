@@ -23,6 +23,13 @@ test('DP practice inventory contains 20 complete, unique problem briefs', () => 
     assert.ok(problem.hint.length >= 35, problem.name + ': missing hint');
   }
   const example = (name) => DP_PRACTICE_PROBLEMS.find((problem) => problem.name === name)?.example;
+  const brief = (name) => DP_PRACTICE_PROBLEMS.find((problem) => problem.name === name);
+  assert.match(brief('Fibonacci Number').statement, /n >= 0.*overflow/i);
+  assert.match(brief('House Robber II').statement, /n=1.*excluding first or last/i);
+  assert.match(brief('Minimum Path Sum').statement, /nonempty rectangular grid/i);
+  assert.match(brief('Coin Change').statement, /nonnegative amount.*amount=0 returns 0/i);
+  assert.match(brief('Burst Balloons').statement, /value\[left\]\*value\[i\]\*value\[right\].*boundaries treated as 1/i);
+
   assert.match(example('Climbing Stairs'), /n=3.*3/);
   assert.match(example('Decode Ways'), /226.*3/);
   assert.match(example('Coin Change'), /amount=11.*3/);
