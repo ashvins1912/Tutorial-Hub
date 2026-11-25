@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Code2, Lightbulb, RotateCcw } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Circle, Code2, Lightbulb, RotateCcw } from 'lucide-react';
 import { useAccountState } from '../hooks/useAccountState';
 import { DP_PRACTICE_PROBLEMS } from '../data/dpPracticeProblems';
 
@@ -22,18 +22,22 @@ export function DpLearningLab() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [stair, setStair] = useState(6);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [expandedProblem, setExpandedProblem] = useState<string | null>(null);
   const [completed, setCompleted] = useAccountState<string[]>(
     'dp-practice-completed',
     [],
     'patternforge-dp-practice-v1'
   );
   const [filter, setFilter] = useState('All');
+  const validProblemNames = useMemo(() => new Set(DP_PRACTICE_PROBLEMS.map((problem) => problem.name)), []);
+  const completedSet = useMemo(() => new Set(completed.filter((name) => validProblemNames.has(name))), [completed, validProblemNames]);
+  const doneCount = completedSet.size;
   const lesson = DP_GUIDED_LESSONS[lessonIndex];
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
   const visibleProblems = DP_PRACTICE_PROBLEMS.filter((problem) => filter === 'All' || problem.level === filter);
   const toggle = (item: string) =>
-    setCompleted((old) => (old.includes(item) ? old.filter((x) => x !== item) : [...old, item]));
+    setCompleted((old) => (old.includes(item) ? old.filter((x) => x !== item) : [...new Set([...old, item])]));
   return <section className="space-y-5">
     <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 p-6 text-white sm:p-8">
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-300"><Lightbulb className="h-4 w-4" /> Interactive DP learning path</div>
@@ -44,7 +48,7 @@ export function DpLearningLab() {
 
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,.8fr)]">
       <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">See the answers grow</div><h3 className="mt-1 text-lg font-bold">Climbing stairs visualiser</h3></div><button onClick={() => setStair(6)} className="inline-flex items-center gap-1 text-xs text-slate-500"><RotateCcw className="h-3.5 w-3.5" /> Reset</button></div>
+        <div className="flex items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">See the answers grow</div><h3 className="mt-1 text-lg font-bold">Climbing stairs visualiser</h3></div><button type="button" onClick={() => setStair(6)} className="inline-flex items-center gap-1 text-xs text-slate-500"><RotateCcw className="h-3.5 w-3.5" /> Reset</button></div>
         <p className="mt-2 text-sm text-slate-500">Each stair can be reached from the previous one or two stairs. Move the slider and inspect how every answer reuses earlier answers.</p>
         <input aria-label="Number of stairs" type="range" min="1" max="10" value={stair} onChange={(e) => setStair(Number(e.target.value))} className="mt-4 w-full accent-indigo-600" />
         <div className="flex justify-between text-xs text-slate-500"><span>1 stair</span><strong>{stair} stairs</strong><span>10 stairs</span></div>
@@ -59,22 +63,23 @@ export function DpLearningLab() {
     </div>
 
     <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Guided lessons · {lessonIndex + 1} of {DP_GUIDED_LESSONS.length}</div><h3 className="mt-1 text-xl font-bold">{lesson.title}</h3></div><div className="flex gap-2"><button disabled={lessonIndex === 0} onClick={() => { setLessonIndex((x) => x - 1); setShowAnswer(false); }} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-30"><ChevronLeft className="inline h-4 w-4" /> Back</button><button disabled={lessonIndex === lessons.length - 1} onClick={() => { setLessonIndex((x) => x + 1); setShowAnswer(false); }} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-30">Next <ChevronRight className="inline h-4 w-4" /></button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Guided lessons · {lessonIndex + 1} of {DP_GUIDED_LESSONS.length}</div><h3 className="mt-1 text-xl font-bold">{lesson.title}</h3></div><div className="flex gap-2"><button type="button" disabled={lessonIndex === 0} onClick={() => { setLessonIndex((x) => x - 1); setShowAnswer(false); }} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-30"><ChevronLeft className="inline h-4 w-4" /> Back</button><button type="button" disabled={lessonIndex === DP_GUIDED_LESSONS.length - 1} onClick={() => { setLessonIndex((x) => x + 1); setShowAnswer(false); }} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-30">Next <ChevronRight className="inline h-4 w-4" /></button></div></div>
       <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{lesson.idea}</p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">{[['State', lesson.state],['Transition / recurrence', lesson.recurrence],['Base cases', lesson.base],['Evaluation order', lesson.order],['Complexity', lesson.complexity]].map(([title, body]) => <div key={title} className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">{title}</h4><p className="mt-2 text-sm leading-relaxed">{body}</p></div>)}</div>
-      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><div className="flex items-center gap-2 border-b border-slate-200 p-3 text-sm font-semibold dark:border-slate-700"><Code2 className="h-4 w-4" /> Java example</div><pre className="overflow-x-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-200"><code>{lesson.java}</code></pre></div>
-      <div className="mt-4 rounded-xl border border-indigo-200 p-4 dark:border-indigo-900"><div className="flex items-center gap-2 text-sm font-bold"><BookOpen className="h-4 w-4 text-indigo-600" /> Check your understanding</div><p className="mt-2 text-sm">{lesson.checkpoint}</p><button onClick={() => setShowAnswer((x) => !x)} className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">{showAnswer ? 'Hide hint' : 'Show hint'}</button>{showAnswer && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Trace the recurrence with a tiny input (0, 1, 2 or 3). Write down exactly what each state means, which earlier states it reads, and why those states are ready before this one.</p>}</div>
+      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><div className="flex items-center gap-2 border-b border-slate-200 p-3 text-sm font-semibold dark:border-slate-700"><Code2 className="h-4 w-4" /> Java example</div><pre tabIndex={0} aria-label={`Java code example for ${lesson.title}`} className="overflow-x-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-200"><code>{lesson.java}</code></pre></div>
+      <div className="mt-4 rounded-xl border border-indigo-200 p-4 dark:border-indigo-900"><div className="flex items-center gap-2 text-sm font-bold"><BookOpen className="h-4 w-4 text-indigo-600" /> Check your understanding</div><p className="mt-2 text-sm">{lesson.checkpoint}</p><button type="button" onClick={() => setShowAnswer((x) => !x)} aria-expanded={showAnswer} aria-controls="dp-lesson-hint" className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">{showAnswer ? 'Hide hint' : 'Show hint'}</button><div id="dp-lesson-hint" hidden={!showAnswer}>{showAnswer ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Trace the recurrence with a tiny input (0, 1, 2 or 3). Write down exactly what each state means, which earlier states it reads, and why those states are ready before this one.</p> : null}</div></div>
       <div className="mt-4 flex flex-wrap gap-2">{DP_GUIDED_LESSONS.map((x, i) => <button key={x.title} onClick={() => { setLessonIndex(i); setShowAnswer(false); }} aria-label={x.title} className={i === lessonIndex ? 'h-2.5 w-8 rounded-full bg-indigo-600' : 'h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-600'} />)}</div>
     </article>
 
     <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-      <div className="flex items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Practice roadmap</div><h3 className="mt-1 text-xl font-bold">20 problems in learning order</h3><p className="mt-1 text-xs text-slate-500">Solve in order. Mark complete only after you can derive the state and recurrence without hints.</p></div><span className="text-sm font-bold tabular-nums">{completed.length}/20</span></div>
+      <div className="flex items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Practice roadmap</div><h3 className="mt-1 text-xl font-bold">{DP_PRACTICE_PROBLEMS.length} problems in learning order</h3><p className="mt-1 text-xs text-slate-500">Solve in order. Mark complete only after you can derive the state and recurrence without hints.</p></div><span className="text-sm font-bold tabular-nums">{doneCount}/{DP_PRACTICE_PROBLEMS.length}</span></div>
       <div className="mt-4 flex flex-wrap gap-2">
         {groups.map((g) => (
           <button
             key={g}
             type="button"
             onClick={() => setFilter(g)}
+            aria-pressed={filter === g}
             className={
               filter === g
                 ? 'rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white'
