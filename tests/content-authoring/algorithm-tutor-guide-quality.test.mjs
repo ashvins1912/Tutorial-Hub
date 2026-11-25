@@ -37,4 +37,7 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['modular-exponentiation'].interviewScript30s, /sufficiently wide\/exact modular-multiply/i);
   assert.match(guides['modular-exponentiation'].avoidWhen, /reducing modulo M after an already-inexact multiplication is too late/i);
   assert.match(guides.quickselect.followUpTwists.find(x => /all-duplicate arrays/i.test(x.question)).complexityImpact, /3-way partitioning/i);
+  assert.match(guides['floyd-warshall'].interviewScript30s, /not negative cycles/i);
+  assert.match(guides['zero-one-bfs'].followUpTwists.find(x => /pushed into the deque more than once/i.test(x.question)).complexityImpact, /vertex can be re-enqueued/i);
+  assert.match(guides['bidirectional-bfs'].followUpTwists.find(x => /speed up Word Ladder/i.test(x.question)).complexityImpact, /not a universal bound/i);
 });
