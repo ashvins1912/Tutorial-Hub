@@ -22,6 +22,7 @@ import {
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
   normalizeVerifiedProblemEvidence,
+  recordPredictionCheckpointEvidence,
   scorePatternRecognitionAttempt,
   scoreAssessmentDimensions,
 } from '../../shared/masteryEngine.ts';
@@ -339,6 +340,63 @@ test('duplicate mastery evidence IDs cannot satisfy independent trace or impleme
   assert.equal(summary.dimensions.find((item) => item.dimension === 'visualization')?.scorePct, 75);
   assert.equal(summary.dimensions.find((item) => item.dimension === 'implementation')?.scorePct, 50);
   assert.notEqual(summary.level, 'Mastered');
+});
+
+test('prediction checkpoint evidence is idempotent by canonical ID and permits learning retries', () => {
+  const evidence = createEmptyMasteryEvidence('dynamic-sliding-window', '1.0.0');
+  const firstMiss = recordPredictionCheckpointEvidence(evidence, 'trace-a:checkpoint-1', false);
+  assert.equal(firstMiss.predictionCheckpointsTotal, 1);
+  assert.equal(firstMiss.predictionCheckpointsCorrect, 0);
+  assert.equal(firstMiss.mistakesCount, 1);
+
+  const duplicateMiss = recordPredictionCheckpointEvidence(firstMiss, 'trace-a:checkpoint-1', false);
+  assert.equal(duplicateMiss.predictionCheckpointsTotal, 1);
+  assert.equal(duplicateMiss.mistakesCount, 1);
+
+  const corrected = recordPredictionCheckpointEvidence(duplicateMiss, 'trace-a:checkpoint-1', true);
+  assert.equal(corrected.predictionCheckpointsTotal, 1);
+  assert.equal(corrected.predictionCheckpointsCorrect, 1);
+  assert.equal(corrected.mistakesCount, 1);
+  const duplicateCorrect = recordPredictionCheckpointEvidence(corrected, 'trace-a:checkpoint-1', true);
+  assert.equal(duplicateCorrect.predictionCheckpointsTotal, 1);
+  assert.equal(duplicateCorrect.predictionCheckpointsCorrect, 1);
+
+  const secondCheckpoint = recordPredictionCheckpointEvidence(duplicateCorrect, 'trace-a:checkpoint-2', true);
+  assert.equal(secondCheckpoint.predictionCheckpointsTotal, 2);
+  assert.equal(secondCheckpoint.predictionCheckpointsCorrect, 2);
+});
+
+test('Mastered requires at least 80 percent prediction accuracy across two checkpoints', () => {
+  const evidence = createEmptyMasteryEvidence('dynamic-sliding-window', '1.0.0');
+  evidence.understandCompleted = true;
+  evidence.conceptCheckPassed = true;
+  evidence.tracesCompleted = ['trace-a', 'trace-b'];
+  evidence.predictionCheckpointsCorrect = 3;
+  evidence.predictionCheckpointsTotal = 5; // Two traces + 60% checkpoint accuracy reaches the raw 80 dimension score.
+  evidence.implementationsVerified = ['problem-a', 'problem-b'];
+  evidence.edgeCasesPassed = 3;
+  evidence.debuggingExercisesPassed = ['debug-a'];
+  evidence.patternRecognitionBestPct = 100;
+  evidence.complexityAnalysisBestPct = 100;
+  evidence.transferAssessmentBestPct = 100;
+
+  const belowThreshold = computeTopicMastery(evidence);
+  assert.equal(belowThreshold.dimensions.find((item) => item.dimension === 'visualization')?.scorePct, 80);
+  assert.notEqual(belowThreshold.level, 'Mastered');
+
+  evidence.predictionCheckpointsCorrect = 4;
+  const atThreshold = computeTopicMastery(evidence);
+  assert.equal(atThreshold.level, 'Mastered');
+});
+
+test('trace player submits stable checkpoint IDs and both API paths validate them against the trace', () => {
+  const tracePlayer = readFileSync(new URL('../../src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx', import.meta.url), 'utf8');
+  const clientStore = readFileSync(new URL('../../src/features/pattern-forge-unified/useUnifiedLearningStore.ts', import.meta.url), 'utf8');
+  const serverRoute = readFileSync(new URL('../../server/routes/learningEngineRoutes.ts', import.meta.url), 'utf8');
+  assert.match(tracePlayer, /checkpointTraceId: trace\.id/);
+  assert.match(tracePlayer, /checkpointId: activeCheckpoint\.id/);
+  assert.match(clientStore, /trace\?\.steps\.some\(\(step\) => step\.checkpoint\?\.id === checkpointId\)/);
+  assert.match(serverRoute, /trace\?\.steps\.some\(\(step\) => step\.checkpoint\?\.id === checkpointId\)/);
 });
 
 test('adaptive spaced revision advances on independent recall and pulls back on struggles', () => {
