@@ -1584,9 +1584,9 @@ def topo_sort(n, prereqs):
     category: 'Tree & Graph Traversal',
     visualType: 'dijkstra-graph',
     tagline: 'Greedily settle the closest unvisited vertex via Min-Heap edge relaxation.',
-    timeComplexity: 'O((V + E) log V) with a binary min-heap and lazy duplicate entries',
+    timeComplexity: 'O(V + E log(E + 1)) with a binary min-heap and lazy duplicate entries',
     spaceComplexity: 'O(V + E)',
-    complexityLeap: 'O(V²) dense scan → O((V + E) log V) heap-based relaxation',
+    complexityLeap: 'O(V²) dense scan → O(V + E log(E + 1)) heap-based relaxation',
     coreIdea:
       'Maintain a min-heap of (distance, node) entries, starting with (0, source). With non-negative edge weights, a node popped with a distance equal to its current best distance is settled: no later path can improve it. Lazy heaps may contain older entries, so skip a popped entry when its distance is greater than dist[node].',
     mentalModelSteps: [
