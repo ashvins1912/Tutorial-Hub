@@ -118,9 +118,7 @@ The surface ledger maps existing paths; it is not yet a complete nested lesson i
 - Preserve existing content IDs, learner progress keys, authentication and security boundaries during curriculum migration.
 - No deployment, paid service, external execution provider or hosting change is part of this audit.
 
-## 8. Current baseline and honest status\n\nThe application-wide static review and confirmed wording corrections are recorded in `docs/APPLICATION_WIDE_CONTENT_DEEP_REVIEW_2026-11-25.md`. The advisory source scan is available as `npm run audit:application-content`. This report does not change the not-assessed status of surfaces without topic-level evidence.\n\n## 8. Current baseline and honest status
-
-The registry contains 22 surfaces, and the audit ledger covers all 22 exactly once. All 22 surfaces retain `not_assessed` content and verification states until topic-level evidence exists. The repository already has stronger evidence in selected DSA pilot lessons and AI Academy curriculum tests; those local tests should be linked to the exact lesson IDs in a later topic-level ledger rather than generalized to an entire surface.
+## 8. Current baseline and honest status\n\nThe application-wide static review and confirmed wording corrections are recorded in `docs/APPLICATION_WIDE_CONTENT_DEEP_REVIEW_2026-11-25.md`. The advisory source scan is available as `npm run audit:application-content`. This report does not change the not-assessed status of surfaces without topic-level evidence.\n\nThe registry contains 22 surfaces, and the audit ledger covers all 22 exactly once. All 22 surfaces retain `not_assessed` content and verification states until topic-level evidence exists. The repository already has stronger evidence in selected DSA pilot lessons and AI Academy curriculum tests; those local tests should be linked to the exact lesson IDs in a later topic-level ledger rather than generalized to an entire surface.
 
 **Exit condition for this PR:** ledger coverage, path integrity, status integrity and CI validation. It does not claim that all lessons have been rewritten or verified.
 
