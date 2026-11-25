@@ -2818,6 +2818,36 @@
       "evidence": [
         "tests/content-authoring/matrix-problem-bank-quality.test.mjs: all 42 entries require examples and expected outputs plus selected known-result assertions"
       ]
+    },
+    {
+      "unitId": "dp-lab:house-robber-prefix-state-and-empty-input",
+      "sourcePath": "src/data/dpGuidedLessons.ts",
+      "reviewStatus": "content-corrected-awaiting-ci",
+      "finding": "House Robber state used an inclusive index description/base that did not align with the rolling implementation and the allowed choose-none behavior for empty/all-negative input.",
+      "fix": "Defined dp[i] as the best value from the first i houses, used the prefix recurrence with money[i-1], set dp[0]=0 and clarified that all-negative input returns 0 when choosing none is permitted.",
+      "evidence": [
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs: asserts prefix state, recurrence, base and implementation consistency"
+      ]
+    },
+    {
+      "unitId": "dp-lab:practice-fulltext-search-and-snippet-label",
+      "sourcePath": "src/components/DpLearningLab.tsx",
+      "reviewStatus": "ui-corrected-awaiting-ci",
+      "finding": "DP practice could only be filtered by level, and the code header could imply a complete Java program rather than a method snippet.",
+      "fix": "Added full-text search over problem name, goal, statement, example, hint and level; no-match status; renamed code heading to clarify snippets need imports/class context.",
+      "evidence": [
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs: search, status and snippet label assertions"
+      ]
+    },
+    {
+      "unitId": "matrix-bank:pacific-atlantic-sample-result",
+      "sourcePath": "src/data/matrixProblems.ts",
+      "reviewStatus": "content-corrected-awaiting-ci",
+      "finding": "Pacific-Atlantic Water Flow sample output omitted coordinate (1,1), which can flow to both oceans in the provided grid.",
+      "fix": "Added (1,1) to the expected result and added a regression assertion.",
+      "evidence": [
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs: m32 expected output includes (1,1)"
+      ]
     }
   ],
   "counts": {
@@ -2825,18 +2855,18 @@
     "testPathCount": 24,
     "allPathCount": 178,
     "reviewedPaths": 0,
-    "reviewedUnits": 13,
+    "reviewedUnits": 16,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 6,
     "unresolvedP0": 0,
     "unresolvedP1": 0,
     "contentAddedUnitsAwaitingCi": 3,
-    "contentCorrectedUnitsAwaitingCi": 2,
-    "uiCorrectedUnitsAwaitingCi": 2
+    "contentCorrectedUnitsAwaitingCi": 4,
+    "uiCorrectedUnitsAwaitingCi": 3
   },
   "limitations": [
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
     "Dynamic/database/generated/user-authored content and UI state variants are not yet fully enumerated.",
-    "Five focused DSA course units have corrections awaiting final-head CI; the rest of the registered paths and course units remain unreviewed."
+    "Focused content and UI units remain awaiting final-head CI; all other registered paths and course units remain unreviewed."
   ]
 }
