@@ -616,7 +616,7 @@ def consistent_route(ring_hashes: list[int], ring_nodes: list[str], key_hash: in
     mentalModel:
       'Think of a parliament with numbered sessions (Terms): a node can only become Leader if a strict majority (`⌊N/2⌋ + 1`) votes for it AND its log is at least as up-to-date as voters—and an entry is committed ONLY once replicated on a majority!',
     coreInvariant:
-      'Quorum intersection means any two majorities share at least one voter. That intersection is necessary but not sufficient by itself to prove a new leader has every committed entry. Raft's up-to-date-log voting rule, term restrictions and AppendEntries/log-matching rules combine with quorum intersection to preserve committed entries under the crash-fault model.',
+      'Quorum intersection means any two majorities share at least one voter. That intersection is necessary but not sufficient by itself to prove a new leader has every committed entry. Raft up-to-date-log voting rule, term restrictions and AppendEntries/log-matching rules combine with quorum intersection to preserve committed entries under the crash-fault model.',
     whenToUse: [
       'Strongly consistent cluster metadata & distributed locks: etcd (Kubernetes), CockroachDB, TiKV, Consul, ZooKeeper (ZAB), Google Spanner (Paxos).',
       'Tolerating up to `f` crash failures with `2f + 1` replicas (e.g., 3 nodes survive 1 crash; 5 nodes survive 2 crashes).',
@@ -862,7 +862,7 @@ def diff_merkle(node_a, node_b):
       {
         step: 2,
         title: 'Prune Entire Left Subtree [0..1] Instantly!',
-        explanation: 'hash(L_A) === hash(L_B) → treat blocks 0 and 1 as matching under the cryptographic hash's collision-resistance assumption. Skip this branch without sending its contents; if hashes differ, descend to locate changed leaves.',
+        explanation: 'hash(L_A) === hash(L_B) → treat blocks 0 and 1 as matching assuming the cryptographic hash function is collision-resistant. Skip this branch without sending its contents; if hashes differ, descend to locate changed leaves.',
         invariantCheck: 'Halves search space at every tree level.',
         variables: [{ name: 'L(0..1)', value: 'MATCH ✓ (SKIP)' }, { name: 'R(2..3)', value: 'DIFF → descend' }],
         array: ['L(0..1) MATCH ✓', 'R(2..3) DIFF'],
