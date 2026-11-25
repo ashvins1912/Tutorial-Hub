@@ -40,4 +40,8 @@ test('DSA roadmap UI searches and renders all learning dispositions and exposes 
   assert.match(ui, /completedSet\.has\(item\.id\)/);
   assert.match(ui, /activeGateSet\.size/);
   assert.match(ui, /Topics self-marked mastered/);
+  assert.match(ui, /Practice prompts \(scaffolds\)/);
+  assert.match(ui, /not complete problem statements, worked solutions or proof notes/);
+  assert.match(ui, /role="status"/);
+  assert.doesNotMatch(ui, /moves from a plain-English mental model to proof, implementation, independent practice and unfamiliar variations/);
 });
