@@ -59,3 +59,10 @@ Each of the 42 matrix problems now includes a concrete example input and expecte
 - DP practice now searches problem names, goals, statements, examples, hints and levels, and announces an empty result. The Java code heading explicitly says these are method snippets requiring imports/class context.
 - Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the current extraction and cleanup are newer than the latest completed validation and must be checked on final head.
 - The ledger now records 16 focused units: 6 targeted corrections, 3 content additions, 4 content corrections and 3 UI corrections, all pending exact-head CI. This is still a focused set; path-level completion remains 0/178.
+
+
+## DSA roadmap focused pass
+
+The 55-topic roadmap was inspected. 54 topics had no authored pitfalls and all topics used a generic practice fallback; the UI also omitted the outcome and practice fields. The roadmap helper now generates contextual scaffold prompts from each topic's title, first subtopic, recognition signal and outcome; the UI renders learning outcomes and guided practice, searches those fields, filters/deduplicates persisted progress and exposes mastery state.
+
+These prompts are explicitly labeled as scaffolds, not topic-specific fully worked problem sets. The new roadmap quality test checks the 55-topic inventory, stable IDs, prerequisite references, required outcomes/pitfalls/practice and UI state/search assertions. Whole-roadmap semantic review remains open.
