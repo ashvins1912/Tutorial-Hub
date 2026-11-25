@@ -60,6 +60,7 @@ const expectedGuideIds = [
 ];
 
 test('algorithm tutor guides have complete, non-empty teaching contracts', () => {
+  assert.equal(expectedGuideIds.length, 54, 'local guide inventory must contain all 54 explicitly maintained guides');
   assert.equal(Object.keys(MASTER_40_TUTOR_GUIDES).length, 40, 'master guide inventory must match its declared 40-guide contract');
   const expectedMergedGuideIds = [...new Set([...expectedGuideIds, ...Object.keys(MASTER_40_TUTOR_GUIDES)])].sort();
   assert.deepEqual(Object.keys(ALGORITHM_TUTOR_GUIDES).sort(), expectedMergedGuideIds, 'merged guide inventory must equal local plus master guide sources');
