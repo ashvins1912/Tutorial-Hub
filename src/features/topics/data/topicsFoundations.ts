@@ -8,7 +8,7 @@ export const FOUNDATIONS_TOPICS: CurriculumTopic[] = [
     shortTitle: 'Arrays & Hashing',
     tier: 'Foundations',
     category: 'Core Data Structures',
-    tagline: 'Replace O(N) linear membership scans with O(1) hash-table complement and frequency lookups.',
+    tagline: 'Use hash maps and sets to replace repeated linear membership scans with expected O(1) lookups, often reducing pair-search or counting patterns from O(N²) to expected O(N) time with O(N) extra space.',
     keywords: ['hash map', 'hash set', 'frequency', 'two sum', 'anagram', 'grouping', 'complement', 'array'],
     patternClues: [
       {

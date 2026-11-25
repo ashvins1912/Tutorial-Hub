@@ -356,7 +356,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     tagline: 'Reduce pair checks to O(N) when the problem has a proven monotonic rule for safely discarding candidates.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(1)',
-    complexityLeap: 'O(N²) all pairs → O(N) single inward sweep in O(1) space',
+    complexityLeap: 'O(N²) all pairs → O(N) single inward sweep in O(1) auxiliary space for the standard Container With Most Water approach',
     coreIdea:
       'For a problem with a valid discard proof, place L and R at opposite ends and evaluate the current pair. Move only the pointer that the proof shows cannot lead to a better remaining answer. The rule depends on the objective: for container area, move the shorter wall; for a sorted target-sum pair, move L when the sum is too small and R when it is too large. Do not apply one pointer-movement rule to every two-pointer problem.',
     mentalModelSteps: [
@@ -668,7 +668,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
         step: 5,
         title: 'Expand R = 6 ("e") → Final Best = 5',
         explanation: 'Window reaches "cbade" [2..6] of length 5. Every character was visited once by R and at most once by L.',
-        invariantCheck: 'Amortized O(N) runtime guaranteed.',
+        invariantCheck: 'Each element enters and leaves the window at most once, so total pointer movement is O(N) and the runtime is amortized O(N).',
         variables: [
           { name: 'window', value: '"cbade" [2..6]' },
           { name: 'final best', value: '5' },
@@ -952,7 +952,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
         step: 5,
         title: 'Tick 4: COLLISION at Node 50!',
         explanation: 'Slow steps 40 → 50 and Fast leaps 30 → 40 → 50. Slow === Fast proves a cycle exists in O(1) space!',
-        invariantCheck: 'Collision guaranteed in <= C steps after Slow enters the loop.',
+        invariantCheck: 'In a finite cycle, the two pointers eventually meet; the exact bound depends on the cycle length and the distance from the entry.',
         variables: [
           { name: 'Slow (S)', value: 'Node 50' },
           { name: 'Fast (F)', value: 'Node 50' },
@@ -2182,7 +2182,7 @@ def dijkstra(graph, src):
     spaceComplexity: 'O(1)',
     complexityLeap: 'O(2^N) subset search / O(N²) DP → O(N log N) single greedy sweep',
     coreIdea:
-      'In Activity Selection / Non-Overlapping Intervals, sort by END time ascending and always pick the next compatible interval finishing earliest. By the Exchange Argument, finishing earlier can never hurt future compatibility.',
+      'For the unweighted Activity Selection / maximum non-overlapping intervals problem, sort by end time and repeatedly choose the next compatible interval that finishes earliest. The exchange argument shows this choice can replace the first interval in an optimal schedule without reducing the number selected; this rule does not directly solve weighted interval scheduling.',
     mentalModelSteps: [
       'Identify the greedy ordering key (earliest end time for max activities; running min buy price for stock profit).',
       'Prove the Exchange Argument: swapping any optimal solution’s choice for the greedy choice cannot worsen the result.',
