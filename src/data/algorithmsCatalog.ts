@@ -2050,7 +2050,7 @@ def dijkstra(graph, src):
     shortName: 'Merge / Quick Sort',
     category: 'Searching & Sorting',
     visualType: 'merge-sort',
-    tagline: 'Split recursively to base-1 slices and zip sorted halves back in O(N log N).',
+    tagline: 'Split until each part has at most one item, then merge sorted halves in O(N log N).',
     timeComplexity: 'O(N log N)',
     spaceComplexity: 'O(N)',
     complexityLeap: 'O(N²) Bubble/Insertion Sort → guaranteed O(N log N) stable sort',
@@ -2063,14 +2063,14 @@ def dijkstra(graph, src):
       'Combine: merge two sorted lists with two pointers in O(N) linear work per level (log N levels).',
     ],
     loopInvariant:
-      'At every recursion level, each subarray returned upward is strictly sorted in ascending order.',
+      'Each recursive call returns its segment in non-decreasing order; the merge step preserves that order while combining two sorted segments.',
     whenToUse: [
       'Guaranteed O(N log N) worst-case stable sorting (unlike QuickSort worst-case O(N²))',
-      'Sorting Linked Lists in O(1) auxiliary space (Merge Sort Linked List)',
+      'Sorting linked lists with iterative merge sort in O(1) auxiliary space; recursive linked-list merge sort uses O(log N) stack space',
       'Merge K Sorted Lists (divide-and-conquer pairing) & Count Inversions',
     ],
     whenItFails:
-      'Requires O(N) auxiliary buffer on arrays; if in-place O(log N) stack memory is critical and stability is unnecessary, consider HeapSort or randomized QuickSort.',
+      'Array merge sort typically needs O(N) auxiliary buffer space. If in-place O(1) extra array space is required and stability is unnecessary, HeapSort offers O(N log N) worst-case time; randomized QuickSort is often fast in practice but has O(N²) worst-case time.',
     linkedTopics: ['Linked Lists', 'Modified Binary Search'],
     linkedProblemSlugs: ['merge-k-sorted-lists', 'median-of-two-sorted-arrays', 'reverse-linked-list', 'binary-search-classic'],
     templates: {
