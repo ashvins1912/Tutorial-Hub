@@ -14,12 +14,14 @@ import {
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
   scoreAssessmentDimensions,
+  recordPredictionCheckpointEvidence,
   scorePatternRecognitionAttempt,
 } from '../../../shared/masteryEngine';
 import {
   getLearningTopicById,
   PATTERN_FORGE_TOPICS,
 } from '../../../shared/patternForgeCurriculum';
+import { buildLearningTrace } from '../../../shared/traceEngine';
 
 const LOCAL_STORAGE_KEY = 'tutorial_hub_unified_learning_v1';
 
@@ -62,6 +64,8 @@ export interface RecordEvidencePayload {
   conceptCheckPassed?: boolean;
   traceCompletedId?: string;
   checkpointCorrect?: boolean;
+  checkpointId?: string;
+  checkpointTraceId?: string;
   verifiedProblemId?: string;
   patternRecognitionProblemId?: string;
   patternRecognitionAnswers?: Record<string, string>;
@@ -198,9 +202,25 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
     }
 
     if (typeof payload.checkpointCorrect === 'boolean') {
-      next.predictionCheckpointsTotal += 1;
-      if (payload.checkpointCorrect) next.predictionCheckpointsCorrect += 1;
-      else next.mistakesCount += 1;
+      const hasCheckpointIdentity = typeof payload.checkpointId === 'string' || typeof payload.checkpointTraceId === 'string';
+      const traceId = payload.checkpointTraceId;
+      const checkpointId = payload.checkpointId;
+      const trace = typeof traceId === 'string' && topic.traceIds.includes(traceId)
+        ? buildLearningTrace(traceId)
+        : null;
+      const checkpointIsCanonical = typeof checkpointId === 'string' &&
+        Boolean(trace?.steps.some((step) => step.checkpoint?.id === checkpointId));
+      if (!hasCheckpointIdentity || checkpointIsCanonical) {
+        const checkpointEvidence = recordPredictionCheckpointEvidence(
+          next,
+          checkpointIsCanonical ? checkpointId : undefined,
+          payload.checkpointCorrect
+        );
+        next.predictionCheckpointResults = checkpointEvidence.predictionCheckpointResults;
+        next.predictionCheckpointsTotal = checkpointEvidence.predictionCheckpointsTotal;
+        next.predictionCheckpointsCorrect = checkpointEvidence.predictionCheckpointsCorrect;
+        next.mistakesCount = checkpointEvidence.mistakesCount;
+      }
     }
 
     if (payload.verifiedProblemId) {
