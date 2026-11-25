@@ -3,7 +3,7 @@
   "auditDate": "2026-11-25",
   "baseline": {
     "branch": "main",
-    "commit": "cf4e90b4f2102a4ea72f60c78717d56386f7ca60"
+    "commit": "9bd778b8e66b645475b1a74a2b7766dd62316426"
   },
   "purpose": "Evidence-led quality audit ledger for every registered learning surface. Inventory mapping is not lesson completeness or technical verification.",
   "evidencePolicy": {
