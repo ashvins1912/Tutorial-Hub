@@ -5,7 +5,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "level": "Warm-up",
     "name": "Fibonacci Number",
     "goal": "Compare recursion, memoization and tabulation.",
-    "statement": "Return the number F(n) in the Fibonacci sequence, where F(0)=0 and F(1)=1; each later value is the sum of the previous two values.",
+    "statement": "For n >= 0, return F(n) with F(0)=0 and F(1)=1; each later value is the sum of the previous two. Use an exact/wide type or report overflow.",
     "example": "n=5 → 5",
     "hint": "Define F(i); combine F(i−1) and F(i−2). State overflow handling."
   },
@@ -31,13 +31,13 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "goal": "Model take/skip choices.",
     "statement": "Maximise money from non-adjacent houses; choosing none is allowed.",
     "example": "[2,7,9,3,1] → 12",
-    "hint": "Compare skip i with money[i]+best[i−2]."
+    "hint": "Set base cases first; for i >= 2 compare skipping house i with money[i]+best[i−2]. Choosing none is allowed."
   },
   {
     "level": "Core",
     "name": "House Robber II",
     "goal": "Split circular adjacency into two ranges.",
-    "statement": "Houses form a circle; first and last are adjacent. Maximise non-adjacent sum.",
+    "statement": "For n >= 1 houses in a circle, first and last are adjacent. Maximise the non-adjacent sum; for n=1 return money[0], otherwise solve ranges excluding first or last.",
     "example": "[2,3,2] → 3",
     "hint": "For n>1, solve the two linear ranges that exclude either the first or last house, then take their maximum."
   },
@@ -53,7 +53,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "level": "Core",
     "name": "Minimum Path Sum",
     "goal": "Change path count into minimum cost.",
-    "statement": "Find minimum sum from top-left to bottom-right moving right/down.",
+    "statement": "Given a nonempty rectangular grid, find the minimum sum from top-left to bottom-right while moving only right or down.",
     "example": "[[1,3,1],[1,5,1],[4,2,1]] → 7",
     "hint": "Cell cost plus min of valid predecessors; initialise borders."
   },
@@ -69,7 +69,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "level": "Core",
     "name": "Coin Change",
     "goal": "Separate minimum coins from combinations.",
-    "statement": "Given positive denominations, return fewest coins to make amount; −1 if impossible. Reuse coins.",
+    "statement": "Given positive denominations and a nonnegative amount, return the fewest coins; −1 if impossible. Coins may be reused, and amount=0 returns 0.",
     "example": "coins=[1,2,5], amount=11 → 3",
     "hint": "Minimise 1+dp[a−coin]; dp[0]=0, unreachable=sentinel."
   },
@@ -125,7 +125,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "level": "Advanced",
     "name": "Burst Balloons",
     "goal": "Choose the last balloon in interval DP.",
-    "statement": "Burst balloons in any order; score is current neighbors' product.",
+    "statement": "Burst balloons in any order; bursting i scores value[left]*value[i]*value[right] using its current neighbors, with outside boundaries treated as 1.",
     "example": "[3,1,5,8] → 167",
     "hint": "Add boundary 1s; choose k as last balloon in (l,r)."
   },
