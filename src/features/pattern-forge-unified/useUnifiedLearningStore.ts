@@ -8,17 +8,20 @@ import type {
   TopicMasterySummary,
 } from '../../../shared/learningContract';
 import {
+  addVerifiedProblemEvidence,
   computeNextRevisionSchedule,
   computeTopicMastery,
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
   scoreAssessmentDimensions,
+  recordPredictionCheckpointEvidence,
   scorePatternRecognitionAttempt,
 } from '../../../shared/masteryEngine';
 import {
   getLearningTopicById,
   PATTERN_FORGE_TOPICS,
 } from '../../../shared/patternForgeCurriculum';
+import { buildLearningTrace } from '../../../shared/traceEngine';
 
 const LOCAL_STORAGE_KEY = 'tutorial_hub_unified_learning_v1';
 
@@ -61,6 +64,8 @@ export interface RecordEvidencePayload {
   conceptCheckPassed?: boolean;
   traceCompletedId?: string;
   checkpointCorrect?: boolean;
+  checkpointId?: string;
+  checkpointTraceId?: string;
   verifiedProblemId?: string;
   patternRecognitionProblemId?: string;
   patternRecognitionAnswers?: Record<string, string>;
@@ -181,7 +186,7 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
     const existing =
       get().evidenceByTopic[topicId] ??
       createEmptyMasteryEvidence(topicId, topic?.version.version ?? '1.0.0');
-    return computeTopicMastery(existing);
+    return computeTopicMastery(existing, topic?.problems);
   },
 
   recordEvidence: async (payload) => {
@@ -206,22 +211,37 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
     }
 
     if (typeof payload.checkpointCorrect === 'boolean') {
-      next.predictionCheckpointsTotal += 1;
-      if (payload.checkpointCorrect) next.predictionCheckpointsCorrect += 1;
-      else next.mistakesCount += 1;
+      const hasCheckpointIdentity = typeof payload.checkpointId === 'string' || typeof payload.checkpointTraceId === 'string';
+      const traceId = payload.checkpointTraceId;
+      const checkpointId = payload.checkpointId;
+      const trace = typeof traceId === 'string' && topic.traceIds.includes(traceId)
+        ? buildLearningTrace(traceId)
+        : null;
+      const checkpointIsCanonical = typeof checkpointId === 'string' &&
+        Boolean(trace?.steps.some((step) => step.checkpoint?.id === checkpointId));
+      if (!hasCheckpointIdentity || checkpointIsCanonical) {
+        const checkpointEvidence = recordPredictionCheckpointEvidence(
+          next,
+          checkpointIsCanonical && typeof traceId === 'string' && typeof checkpointId === 'string'
+            ? `${traceId}:${checkpointId}`
+            : undefined,
+          payload.checkpointCorrect
+        );
+        next.predictionCheckpointResults = checkpointEvidence.predictionCheckpointResults;
+        next.predictionCheckpointsTotal = checkpointEvidence.predictionCheckpointsTotal;
+        next.predictionCheckpointsCorrect = checkpointEvidence.predictionCheckpointsCorrect;
+        next.mistakesCount = checkpointEvidence.mistakesCount;
+      }
     }
 
     if (payload.verifiedProblemId) {
       const prob = topic.problems.find((p) => p.id === payload.verifiedProblemId);
       if (prob) {
-        if (!next.implementationsVerified.includes(prob.id)) {
-          next.implementationsVerified = [...next.implementationsVerified, prob.id];
-        }
-        const edgeCount = prob.testSuite.cases.filter((c) => c.isEdgeCase || c.isBoundary).length;
-        next.edgeCasesPassed = Math.max(next.edgeCasesPassed, next.edgeCasesPassed + edgeCount);
-        if (prob.category === 'debugging' && !next.debuggingExercisesPassed.includes(prob.id)) {
-          next.debuggingExercisesPassed = [...next.debuggingExercisesPassed, prob.id];
-        }
+        const verified = addVerifiedProblemEvidence(next, prob, topic.problems);
+        next.implementationsVerified = verified.implementationsVerified;
+        next.edgeCasesPassed = verified.edgeCasesPassed;
+        next.debuggingExercisesPassed = verified.debuggingExercisesPassed;
+        next.tracesCompleted = verified.tracesCompleted;
       }
     }
 

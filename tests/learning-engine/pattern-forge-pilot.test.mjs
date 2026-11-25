@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -16,10 +16,13 @@ import {
 import { auditCurriculumGovernance } from '../../shared/learningValidator.ts';
 import { buildLearningTrace } from '../../shared/traceEngine.ts';
 import {
+  addVerifiedProblemEvidence,
   computeNextRevisionSchedule,
   computeTopicMastery,
   createEmptyMasteryEvidence,
   createInitialRevisionSchedule,
+  normalizeVerifiedProblemEvidence,
+  recordPredictionCheckpointEvidence,
   scorePatternRecognitionAttempt,
   scoreAssessmentDimensions,
 } from '../../shared/masteryEngine.ts';
@@ -30,6 +33,35 @@ test('canonical curriculum registers all 28 patterns preserving DSA28 canonical 
   const expectedIds = DSA28_PATTERNS.map((p) => p.id);
   const actualIds = PATTERN_FORGE_TOPICS.map((t) => t.id);
   assert.deepEqual(actualIds, expectedIds);
+});
+
+test('canonical DSA28 complexity summaries state their algorithmic assumptions', () => {
+  const byId = new Map(DSA28_PATTERNS.map((pattern) => [pattern.id, pattern]));
+  assert.equal(DSA28_PATTERNS.length, 28);
+  for (const pattern of DSA28_PATTERNS) {
+    assert.ok(pattern.timeComplexity?.trim(), pattern.id + ': time complexity must be stated');
+    assert.ok(pattern.spaceComplexity?.trim(), pattern.id + ': space complexity must be stated');
+  }
+  assert.match(byId.get('two-pointers-opposite-ends').timeComplexity, /monotone elimination invariant/i);
+  assert.match(byId.get('two-pointers-same-direction').timeComplexity, /each pointer advances at most n times/i);
+  assert.match(byId.get('fixed-sliding-window').timeComplexity, /one pass.*O\(1\) update/i);
+  assert.match(byId.get('kadanes-algorithm').timeComplexity, /maximum-subarray recurrence/i);
+  assert.match(byId.get('matrix-traversal-simulation').timeComplexity, /each cell is visited O\(1\) times/i);
+  assert.match(byId.get('fast-slow-pointers').timeComplexity, /finite termination condition/i);
+  assert.match(byId.get('in-place-linked-list-reversal').spaceComplexity, /iterative reversal.*recursive.*O\(n\)/i);
+  assert.match(byId.get('tree-dfs').spaceComplexity, /balanced.*skewed/i);
+  assert.match(byId.get('tree-bfs').spaceComplexity, /maximum tree width/i);
+  assert.match(byId.get('hashmap-hashset-lookup').timeComplexity, /expected O\(1\)/i);
+  assert.match(byId.get('dynamic-sliding-window').timeComplexity, /amortized.*monotone/i);
+  assert.match(byId.get('cyclic-sort').timeComplexity, /only when.*bounded index range/i);
+  assert.match(byId.get('modified-binary-search').timeComplexity, /duplicate-heavy.*O\(n\)/i);
+  assert.match(byId.get('binary-search-on-answer').timeComplexity, /C\(n\).*log R/i);
+  assert.match(byId.get('monotonic-stack').timeComplexity, /amortized/i);
+  assert.match(byId.get('union-find-disjoint-set').timeComplexity, /amortized.*path compression.*union by rank or size/i);
+  assert.match(byId.get('shortest-path-weighted').timeComplexity, /non-negative weights/i);
+  assert.match(byId.get('topological-sort').spaceComplexity, /excluding the stored adjacency graph/i);
+  assert.match(byId.get('backtracking').timeComplexity, /output-sensitive/i);
+  assert.match(byId.get('dynamic-programming').timeComplexity, /number of states.*transitions per state/i);
 });
 
 test('Dynamic Programming explicitly distinguishes pseudo-polynomial state bounds from polynomial input-bit complexity', () => {
@@ -57,6 +89,32 @@ test('content quality governance enforces acyclic DAG, unique IDs, and honest ve
       assert.equal(report.readyForPublication, true, `${report.topicId} must pass all publication gates`);
     }
   }
+});
+
+test('25 inventory-only Pattern Forge topics remain unpublished and every stage communicates the gap', () => {
+  const unpublished = PATTERN_FORGE_TOPICS.filter((topic) => topic.verificationStatus !== 'Published');
+  assert.equal(unpublished.length, 25);
+  for (const topic of unpublished) {
+    assert.equal(topic.version.publicationStatus, 'unpublished', topic.id + ': do not imply publication');
+    assert.equal(topic.understand, undefined, topic.id + ': full Understand content is not authored');
+    assert.deepEqual(topic.traceIds, [], topic.id + ': no authored trace IDs');
+    assert.deepEqual(topic.problems, [], topic.id + ': no published problem suites');
+    assert.deepEqual(topic.assessments, [], topic.id + ': no published transfer assessment');
+  }
+
+  const read = (relativePath) => readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+  const understand = read('../../src/features/pattern-forge-unified/components/StageUnderstandView.tsx');
+  const trace = read('../../src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx');
+  const implement = read('../../src/features/pattern-forge-unified/components/StageImplementView.tsx');
+  const practice = read('../../src/features/pattern-forge-unified/components/StagePracticeView.tsx');
+  const master = read('../../src/features/pattern-forge-unified/components/StageMasterView.tsx');
+  assert.match(understand, /intentionally NOT labeled Published/);
+  assert.match(trace, /Interactive traces are not yet authored/);
+  assert.match(implement, /implementations are not yet published/);
+  assert.match(practice, /currently authored for the 3 Published pilot patterns/);
+  assert.match(master, /topic\.verificationStatus !== 'Published'/);
+  assert.match(master, /role="status"/);
+  assert.match(master, /does not certify a completed course/);
 });
 
 test('three reference pilot patterns provide full 5-stage lifecycle and deterministic traces with checkpoints', () => {
@@ -247,6 +305,114 @@ test('evidence-based mastery never awards Mastered without full 8-dimension proo
   const mastered = computeTopicMastery(ev);
   assert.equal(mastered.level, 'Mastered');
   assert.equal(mastered.missingForMastery.length, 0);
+});
+
+
+
+test('verified problem evidence deduplicates submissions and recomputes edge-case credit from canonical IDs', () => {
+  const problems = [
+    { id: 'prob-a', category: 'core', testSuite: { cases: [{ isEdgeCase: true }, { isBoundary: true }, {}] } },
+    { id: 'prob-b', category: 'debugging', testSuite: { cases: [{ isEdgeCase: true }, {}] } },
+  ];
+  const evidence = createEmptyMasteryEvidence('hashmap-hashset-lookup', '1.0.0');
+  evidence.implementationsVerified = ['prob-a', 'prob-a'];
+  evidence.edgeCasesPassed = 99; // Legacy duplicate submissions must not retain inflated credit.
+  evidence.debuggingExercisesPassed = ['prob-b', 'prob-b'];
+
+  const normalized = normalizeVerifiedProblemEvidence(evidence, problems);
+  assert.deepEqual(normalized.implementationsVerified, ['prob-a']);
+  assert.equal(normalized.edgeCasesPassed, 2);
+  assert.deepEqual(normalized.debuggingExercisesPassed, []);
+
+  const first = addVerifiedProblemEvidence(normalized, problems[0], problems);
+  const duplicate = addVerifiedProblemEvidence(first, problems[0], problems);
+  assert.equal(first.edgeCasesPassed, 2);
+  assert.equal(duplicate.edgeCasesPassed, 2);
+  assert.deepEqual(duplicate.implementationsVerified, ['prob-a']);
+
+  const second = addVerifiedProblemEvidence(duplicate, problems[1], problems);
+  assert.equal(second.edgeCasesPassed, 3);
+  assert.deepEqual(second.implementationsVerified, ['prob-a', 'prob-b']);
+  assert.deepEqual(second.debuggingExercisesPassed, ['prob-b']);
+});
+
+test('duplicate mastery evidence IDs cannot satisfy independent trace or implementation breadth', () => {
+  const evidence = createEmptyMasteryEvidence('hashmap-hashset-lookup', '1.0.0');
+  evidence.understandCompleted = true;
+  evidence.conceptCheckPassed = true;
+  evidence.patternRecognitionBestPct = 100;
+  evidence.tracesCompleted = ['trace-a', 'trace-a'];
+  evidence.predictionCheckpointsCorrect = 2;
+  evidence.predictionCheckpointsTotal = 2;
+  evidence.implementationsVerified = ['problem-a', 'problem-a'];
+  evidence.edgeCasesPassed = 3;
+  evidence.debuggingExercisesPassed = ['debug-a', 'debug-a'];
+  evidence.complexityAnalysisBestPct = 100;
+  evidence.transferAssessmentBestPct = 100;
+
+  const summary = computeTopicMastery(evidence);
+  assert.equal(summary.dimensions.find((item) => item.dimension === 'visualization')?.scorePct, 75);
+  assert.equal(summary.dimensions.find((item) => item.dimension === 'implementation')?.scorePct, 50);
+  assert.notEqual(summary.level, 'Mastered');
+});
+
+test('prediction checkpoint evidence is idempotent by canonical ID and permits learning retries', () => {
+  const evidence = createEmptyMasteryEvidence('dynamic-sliding-window', '1.0.0');
+  const firstMiss = recordPredictionCheckpointEvidence(evidence, 'trace-a:checkpoint-1', false);
+  assert.equal(firstMiss.predictionCheckpointsTotal, 1);
+  assert.equal(firstMiss.predictionCheckpointsCorrect, 0);
+  assert.equal(firstMiss.mistakesCount, 1);
+
+  const duplicateMiss = recordPredictionCheckpointEvidence(firstMiss, 'trace-a:checkpoint-1', false);
+  assert.equal(duplicateMiss.predictionCheckpointsTotal, 1);
+  assert.equal(duplicateMiss.mistakesCount, 1);
+
+  const corrected = recordPredictionCheckpointEvidence(duplicateMiss, 'trace-a:checkpoint-1', true);
+  assert.equal(corrected.predictionCheckpointsTotal, 1);
+  assert.equal(corrected.predictionCheckpointsCorrect, 1);
+  assert.equal(corrected.mistakesCount, 1);
+  const duplicateCorrect = recordPredictionCheckpointEvidence(corrected, 'trace-a:checkpoint-1', true);
+  assert.equal(duplicateCorrect.predictionCheckpointsTotal, 1);
+  assert.equal(duplicateCorrect.predictionCheckpointsCorrect, 1);
+
+  const secondCheckpoint = recordPredictionCheckpointEvidence(duplicateCorrect, 'trace-a:checkpoint-2', true);
+  assert.equal(secondCheckpoint.predictionCheckpointsTotal, 2);
+  assert.equal(secondCheckpoint.predictionCheckpointsCorrect, 2);
+});
+
+test('Mastered requires at least 80 percent prediction accuracy across two checkpoints', () => {
+  const evidence = createEmptyMasteryEvidence('dynamic-sliding-window', '1.0.0');
+  evidence.understandCompleted = true;
+  evidence.conceptCheckPassed = true;
+  evidence.tracesCompleted = ['trace-a', 'trace-b'];
+  evidence.predictionCheckpointsCorrect = 3;
+  evidence.predictionCheckpointsTotal = 5; // Two traces + 60% checkpoint accuracy reaches the raw 80 dimension score.
+  evidence.implementationsVerified = ['problem-a', 'problem-b'];
+  evidence.edgeCasesPassed = 3;
+  evidence.debuggingExercisesPassed = ['debug-a'];
+  evidence.patternRecognitionBestPct = 100;
+  evidence.complexityAnalysisBestPct = 100;
+  evidence.transferAssessmentBestPct = 100;
+
+  const belowThreshold = computeTopicMastery(evidence);
+  assert.equal(belowThreshold.dimensions.find((item) => item.dimension === 'visualization')?.scorePct, 80);
+  assert.notEqual(belowThreshold.level, 'Mastered');
+
+  evidence.predictionCheckpointsCorrect = 4;
+  const atThreshold = computeTopicMastery(evidence);
+  assert.equal(atThreshold.level, 'Mastered');
+});
+
+test('trace player submits stable checkpoint IDs and both API paths validate them against the trace', () => {
+  const tracePlayer = readFileSync(new URL('../../src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx', import.meta.url), 'utf8');
+  const clientStore = readFileSync(new URL('../../src/features/pattern-forge-unified/useUnifiedLearningStore.ts', import.meta.url), 'utf8');
+  const serverRoute = readFileSync(new URL('../../server/routes/learningEngineRoutes.ts', import.meta.url), 'utf8');
+  assert.match(tracePlayer, /checkpointTraceId: trace\.id/);
+  assert.match(tracePlayer, /checkpointId: activeCheckpoint\.id/);
+  assert.match(clientStore, /trace\?\.steps\.some\(\(step\) => step\.checkpoint\?\.id === checkpointId\)/);
+  assert.match(clientStore, /\$\{traceId\}:\$\{checkpointId\}/);
+  assert.match(serverRoute, /trace\?\.steps\.some\(\(step\) => step\.checkpoint\?\.id === checkpointId\)/);
+  assert.match(serverRoute, /\$\{traceId\}:\$\{checkpointId\}/);
 });
 
 test('adaptive spaced revision advances on independent recall and pulls back on struggles', () => {

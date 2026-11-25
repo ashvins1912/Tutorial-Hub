@@ -530,6 +530,8 @@ export interface MasteryEvidence {
   tracesCompleted: string[];
   predictionCheckpointsCorrect: number;
   predictionCheckpointsTotal: number;
+  /** Stable checkpoint IDs; a correct retry upgrades a prior miss without double-counting. */
+  predictionCheckpointResults?: Record<string, boolean>;
   implementationsVerified: string[];
   edgeCasesPassed: number;
   debuggingExercisesPassed: string[];

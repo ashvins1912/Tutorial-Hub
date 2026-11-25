@@ -145,10 +145,10 @@
         "Transfer assessment"
       ],
       "knownEvidence": {
-        "mappedComponents": 4,
-        "mappedDataSources": 4,
+        "mappedComponents": 6,
+        "mappedDataSources": 7,
         "mappedApiRoutes": 2,
-        "mappedTestFiles": 2
+        "mappedTestFiles": 12
       },
       "requiredEvidence": [
         "topic-and-subtopic inventory",

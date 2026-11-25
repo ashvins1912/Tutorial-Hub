@@ -141,6 +141,7 @@ export function createEmptyMasteryEvidence(topicId: string, contentVersion: stri
     tracesCompleted: [],
     predictionCheckpointsCorrect: 0,
     predictionCheckpointsTotal: 0,
+    predictionCheckpointResults: {},
     implementationsVerified: [],
     edgeCasesPassed: 0,
     debuggingExercisesPassed: [],
@@ -155,6 +156,41 @@ export function createEmptyMasteryEvidence(topicId: string, contentVersion: stri
   };
 }
 
+/**
+ * Record a prediction checkpoint once by stable ID. A later correct retry can
+ * upgrade a prior miss without increasing the denominator; anonymous legacy
+ * events retain their old count-based behavior for backward compatibility.
+ */
+export function recordPredictionCheckpointEvidence(
+  evidence: MasteryEvidence,
+  checkpointId: string | undefined,
+  isCorrect: boolean
+): MasteryEvidence {
+  const id = checkpointId?.trim();
+  if (!id) {
+    return {
+      ...evidence,
+      predictionCheckpointsTotal: evidence.predictionCheckpointsTotal + 1,
+      predictionCheckpointsCorrect: evidence.predictionCheckpointsCorrect + (isCorrect ? 1 : 0),
+      mistakesCount: evidence.mistakesCount + (isCorrect ? 0 : 1),
+    };
+  }
+
+  const previous = evidence.predictionCheckpointResults?.[id];
+  if (previous === true || previous === isCorrect) return evidence;
+
+  const results = { ...(evidence.predictionCheckpointResults ?? {}), [id]: isCorrect };
+  return {
+    ...evidence,
+    predictionCheckpointResults: results,
+    predictionCheckpointsTotal: previous === undefined
+      ? evidence.predictionCheckpointsTotal + 1
+      : evidence.predictionCheckpointsTotal,
+    predictionCheckpointsCorrect: evidence.predictionCheckpointsCorrect + (isCorrect ? 1 : 0),
+    mistakesCount: evidence.mistakesCount + (isCorrect ? 0 : 1),
+  };
+}
+
 function clampPct(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
@@ -163,83 +199,144 @@ function clampPct(value: number): number {
  * Computes independent scores for all 8 mastery dimensions from verifiable evidence.
  * Watching a lesson or solving 1 easy problem can NEVER produce 'Mastered'.
  */
-export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySummary {
+type VerifiedProblemEvidenceSource = {
+  id: string;
+  category: string;
+  testSuite: { cases: Array<{ isEdgeCase?: boolean; isBoundary?: boolean }> };
+};
+
+/**
+ * Reconcile mastery evidence against canonical problem IDs. Edge-case credit is
+ * derived once per unique verified problem, so duplicate submissions cannot
+ * inflate correctness and legacy duplicate totals are repaired on read.
+ */
+export function normalizeVerifiedProblemEvidence(
+  evidence: MasteryEvidence,
+  canonicalProblems: readonly VerifiedProblemEvidenceSource[]
+): MasteryEvidence {
+  const problemById = new Map(canonicalProblems.map((problem) => [problem.id, problem]));
+  const implementationsVerified = [...new Set(evidence.implementationsVerified)]
+    .filter((id) => problemById.has(id));
+  const edgeCasesPassed = implementationsVerified.reduce((total, id) => {
+    const problem = problemById.get(id);
+    return total + (problem?.testSuite.cases.filter((item) => item.isEdgeCase || item.isBoundary).length ?? 0);
+  }, 0);
+  const debuggingExercisesPassed = [...new Set(evidence.debuggingExercisesPassed)]
+    .filter((id) => implementationsVerified.includes(id) && problemById.get(id)?.category === 'debugging');
+  return {
+    ...evidence,
+    implementationsVerified,
+    edgeCasesPassed,
+    debuggingExercisesPassed,
+    tracesCompleted: [...new Set(evidence.tracesCompleted)],
+  };
+}
+
+export function addVerifiedProblemEvidence(
+  evidence: MasteryEvidence,
+  problem: VerifiedProblemEvidenceSource,
+  canonicalProblems: readonly VerifiedProblemEvidenceSource[]
+): MasteryEvidence {
+  return normalizeVerifiedProblemEvidence(
+    {
+      ...evidence,
+      implementationsVerified: [...evidence.implementationsVerified, problem.id],
+      debuggingExercisesPassed: problem.category === 'debugging'
+        ? [...evidence.debuggingExercisesPassed, problem.id]
+        : evidence.debuggingExercisesPassed,
+    },
+    canonicalProblems
+  );
+}
+
+export function computeTopicMastery(
+  evidence: MasteryEvidence,
+  canonicalProblems?: readonly VerifiedProblemEvidenceSource[]
+): TopicMasterySummary {
+  const normalizedEvidence = canonicalProblems
+    ? normalizeVerifiedProblemEvidence(evidence, canonicalProblems)
+    : {
+        ...evidence,
+        tracesCompleted: [...new Set(evidence.tracesCompleted)],
+        implementationsVerified: [...new Set(evidence.implementationsVerified)],
+        debuggingExercisesPassed: [...new Set(evidence.debuggingExercisesPassed)],
+      };
   const understandingScore = clampPct(
-    (evidence.understandCompleted ? 50 : 0) + (evidence.conceptCheckPassed ? 50 : 0)
+    (normalizedEvidence.understandCompleted ? 50 : 0) + (normalizedEvidence.conceptCheckPassed ? 50 : 0)
   );
 
-  const patternRecognitionScore = clampPct(evidence.patternRecognitionBestPct);
+  const patternRecognitionScore = clampPct(normalizedEvidence.patternRecognitionBestPct);
 
-  const traceBreadth = Math.min(2, evidence.tracesCompleted.length) * 25; // up to 50
-  const checkpointAccuracy =
-    evidence.predictionCheckpointsTotal > 0
-      ? (evidence.predictionCheckpointsCorrect / evidence.predictionCheckpointsTotal) * 50
-      : 0;
+  const traceBreadth = Math.min(2, normalizedEvidence.tracesCompleted.length) * 25; // up to 50
+  const checkpointAccuracyRatio = normalizedEvidence.predictionCheckpointsTotal > 0
+    ? Math.max(0, Math.min(1, normalizedEvidence.predictionCheckpointsCorrect / normalizedEvidence.predictionCheckpointsTotal))
+    : 0;
+  const checkpointAccuracy = checkpointAccuracyRatio * 50;
   const visualizationScore = clampPct(traceBreadth + checkpointAccuracy);
 
   const implementationScore = clampPct(
-    Math.min(2, evidence.implementationsVerified.length) * 50
+    Math.min(2, normalizedEvidence.implementationsVerified.length) * 50
   );
 
   const correctnessScore = clampPct(
-    (evidence.implementationsVerified.length > 0 ? 40 : 0) +
-      Math.min(3, evidence.edgeCasesPassed) * 20
+    (normalizedEvidence.implementationsVerified.length > 0 ? 40 : 0) +
+      Math.min(3, normalizedEvidence.edgeCasesPassed) * 20
   );
 
   // Legacy complexityCheckPassed is intentionally ignored: older clients set it from unrelated activity.
-  const complexityScore = clampPct(evidence.complexityAnalysisBestPct ?? 0);
+  const complexityScore = clampPct(normalizedEvidence.complexityAnalysisBestPct ?? 0);
 
-  const debuggingScore = clampPct(evidence.debuggingExercisesPassed.length > 0 ? 100 : 0);
+  const debuggingScore = clampPct(normalizedEvidence.debuggingExercisesPassed.length > 0 ? 100 : 0);
 
-  const transferScore = clampPct(evidence.transferAssessmentBestPct);
+  const transferScore = clampPct(normalizedEvidence.transferAssessmentBestPct);
 
   const rawDimensions: Array<{ id: MasteryDimensionId; score: number; count: number; missingHint: string }> = [
     {
       id: 'understanding',
       score: understandingScore,
-      count: (evidence.understandCompleted ? 1 : 0) + (evidence.conceptCheckPassed ? 1 : 0),
+      count: (normalizedEvidence.understandCompleted ? 1 : 0) + (normalizedEvidence.conceptCheckPassed ? 1 : 0),
       missingHint: 'Complete Stage 1 Understand and pass the conceptual check',
     },
     {
       id: 'patternRecognition',
       score: patternRecognitionScore,
-      count: evidence.patternRecognitionBestPct > 0 ? 1 : 0,
+      count: normalizedEvidence.patternRecognitionBestPct > 0 ? 1 : 0,
       missingHint: 'Score >= 80% on Pattern Recognition Intelligence',
     },
     {
       id: 'visualization',
       score: visualizationScore,
-      count: evidence.tracesCompleted.length + evidence.predictionCheckpointsCorrect,
-      missingHint: 'Complete at least 2 interactive traces and pass prediction checkpoints',
+      count: normalizedEvidence.tracesCompleted.length + normalizedEvidence.predictionCheckpointsCorrect,
+      missingHint: 'Complete at least 2 interactive traces and pass at least 80% of 2 or more prediction checkpoints',
     },
     {
       id: 'implementation',
       score: implementationScore,
-      count: evidence.implementationsVerified.length,
+      count: normalizedEvidence.implementationsVerified.length,
       missingHint: 'Verify at least 2 independent code implementations against test suites',
     },
     {
       id: 'correctness',
       score: correctnessScore,
-      count: evidence.edgeCasesPassed,
+      count: normalizedEvidence.edgeCasesPassed,
       missingHint: 'Pass boundary & edge-case tests in verified problem suites',
     },
     {
       id: 'complexityAnalysis',
       score: complexityScore,
-      count: evidence.complexityAnalysisBestPct > 0 ? 1 : 0,
+      count: normalizedEvidence.complexityAnalysisBestPct > 0 ? 1 : 0,
       missingHint: 'Demonstrate accurate Time & Space complexity reasoning',
     },
     {
       id: 'debugging',
       score: debuggingScore,
-      count: evidence.debuggingExercisesPassed.length,
+      count: normalizedEvidence.debuggingExercisesPassed.length,
       missingHint: 'Fix and verify at least 1 debugging challenge',
     },
     {
       id: 'transferAbility',
       score: transferScore,
-      count: evidence.transferAssessmentBestPct > 0 ? 1 : 0,
+      count: normalizedEvidence.transferAssessmentBestPct > 0 ? 1 : 0,
       missingHint: 'Score >= 80% on the Unseen Transfer Assessment',
     },
   ];
@@ -250,7 +347,7 @@ export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySumm
     scorePct: item.score,
     evidenceCount: item.count,
     metMasteryThreshold: item.score >= MASTERY_DIMENSION_THRESHOLDS[item.id],
-    lastUpdatedAt: item.count > 0 ? evidence.updatedAt : null,
+    lastUpdatedAt: item.count > 0 ? normalizedEvidence.updatedAt : null,
   }));
 
   const overallScorePct = clampPct(
@@ -269,30 +366,33 @@ export function computeTopicMastery(evidence: MasteryEvidence): TopicMasterySumm
     level = 'Not Started';
   } else if (
     metCount === dimensions.length &&
-    evidence.implementationsVerified.length >= 2 &&
-    evidence.debuggingExercisesPassed.length >= 1 &&
-    evidence.transferAssessmentBestPct >= 80
+    normalizedEvidence.tracesCompleted.length >= 2 &&
+    normalizedEvidence.predictionCheckpointsTotal >= 2 &&
+    checkpointAccuracyRatio >= 0.8 &&
+    normalizedEvidence.implementationsVerified.length >= 2 &&
+    normalizedEvidence.debuggingExercisesPassed.length >= 1 &&
+    normalizedEvidence.transferAssessmentBestPct >= 80
   ) {
     level = 'Mastered';
   } else if (
     metCount >= 5 &&
     overallScorePct >= 65 &&
-    evidence.implementationsVerified.length >= 1
+    normalizedEvidence.implementationsVerified.length >= 1
   ) {
     level = 'Proficient';
-  } else if (overallScorePct >= 30 || evidence.implementationsVerified.length >= 1 || evidence.tracesCompleted.length >= 1) {
+  } else if (overallScorePct >= 30 || normalizedEvidence.implementationsVerified.length >= 1 || normalizedEvidence.tracesCompleted.length >= 1) {
     level = 'Practicing';
   } else {
     level = 'Learning';
   }
 
   return {
-    topicId: evidence.topicId,
+    topicId: normalizedEvidence.topicId,
     level,
     overallScorePct,
     dimensions,
     missingForMastery,
-    evidence,
+    evidence: normalizedEvidence,
   };
 }
 
