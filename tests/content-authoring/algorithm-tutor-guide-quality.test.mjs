@@ -49,4 +49,6 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides.quickselect.interviewScript30s, /recursive implementations also use stack space/i);
   assert.match(guides['prims-mst'].interviewScript30s, /indexed\/decrease-key heap/i);
   assert.match(guides['prims-mst'].followUpTwists.find(x => /Prim’s beat Kruskal/i.test(x.question)).complexityImpact, /explicit O\(V²\) edge storage/i);
+  assert.match(guides['bellman-ford'].simpleAnalogy, /reachable vertices when no reachable negative cycle exists/i);
+  assert.match(guides['bidirectional-bfs'].interviewScript30s, /irregular graphs do not have that universal bound/i);
 });
