@@ -12,7 +12,7 @@ A complete structural pass identified 23 stable lesson IDs and counted entries i
 | Concepts | 195 |
 | Worked-example steps | 111 |
 | Implementation steps | 172 |
-| Code examples | 45 |
+| Code examples | 42 |
 | Trace exercises | 83 |
 | Assessment items | 142 |
 | Practice items | 115 |
@@ -27,7 +27,7 @@ The new `dsa-course-structure-inventory.test.mjs` locks the 23-module registry, 
 
 - Counts are array entries/steps, not distinct learner-visible sentences or proof of correctness.
 - Some entries may contain multiple claims or substeps; they must be split into auditable units during review.
-- This report does not certify the 195 concepts, 45 code examples, 83 traces or 142 assessments as correct or pedagogically complete.
+- This report does not certify the 195 concepts, 42 code examples, 83 traces or 142 assessments as correct or pedagogically complete.
 - Per-module technical review, executable code verification, answer/key validation, trace-to-code consistency, learner UI state/accessibility review and runtime content tracing remain outstanding.
 - The exact source snapshot should be re-inventoried on the current PR head; update this report if the source changes.
 
