@@ -462,7 +462,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Checking every city pair on a flight map by asking one layover city `k` at a time: "Is flying i -> k -> j cheaper than my current best i -> j?"',
     interviewScript30s:
-      '"With V <= 400 and all-pairs distance queries, Floyd-Warshall runs a 3-loop DP (`k` outermost!) computing all shortest paths in O(V³) time and O(V²) space, naturally supporting negative edges."',
+      '"With V <= 400 and all-pairs distance queries, Floyd-Warshall runs a 3-loop DP (`k` outermost!) in O(V³) time and O(V²) space, supporting negative edges but not negative cycles: distances for pairs that can pass through a negative cycle are undefined (unbounded below)."',
     chooseWhen: 'Dense small graphs (V <= 400) needing all-pairs shortest paths or transitive closure.',
     avoidWhen: 'V > 1,000 (O(V³) = 10^9 ops -> run Dijkstra from each source or Johnson’s algorithm).',
     followUpTwists: [
