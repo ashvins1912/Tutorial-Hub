@@ -4,10 +4,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { DP_PRACTICE_PROBLEMS } from '../../src/data/dpPracticeProblems.ts';
-import { DP_GUIDED_LESSONS } from '../../src/components/DpLearningLab.tsx';
+import { DP_GUIDED_LESSONS } from '../../src/data/dpGuidedLessons.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const source = readFileSync(path.join(root, 'src/components/DpLearningLab.tsx'), 'utf8');
+const lessonSource = readFileSync(path.join(root, 'src/data/dpGuidedLessons.ts'), 'utf8');
 
 test('DP practice inventory contains 20 complete, unique problem briefs', () => {
   assert.equal(DP_PRACTICE_PROBLEMS.length, 20);
@@ -34,13 +35,13 @@ test('DP practice inventory contains 20 complete, unique problem briefs', () => 
 });
 
 test('DP guided lessons have all eight numbered steps and explicit arithmetic bounds', () => {
-  assert.match(source, /export const DP_GUIDED_LESSONS/);
+  assert.match(lessonSource, /export const DP_GUIDED_LESSONS/);
   for (let i = 1; i <= 8; i++) assert.match(source, new RegExp("title: '" + i + "\\."));
-  assert.match(source, /n > 91/);
-  assert.match(source, /Math\.addExact/);
-  assert.match(source, /long\[\] dp/);
-  assert.match(source, /codePoints\(\)/);
-  assert.match(source, /for \(int k = l; k < r; k\+\+\)/);
+  assert.match(lessonSource, /n > 91/);
+  assert.match(lessonSource, /Math\.addExact/);
+  assert.match(lessonSource, /long\[\] dp/);
+  assert.match(lessonSource, /codePoints\(\)/);
+  assert.match(lessonSource, /for \(int k = l; k < r; k\+\+\)/);
 });
 
 test('DP guided lessons have unique complete structures and accurate House Robber prefix state', () => {
@@ -54,8 +55,8 @@ test('DP guided lessons have unique complete structures and accurate House Robbe
   const robber = DP_GUIDED_LESSONS.find((lesson) => lesson.title.includes('House Robber'));
   assert.ok(robber);
   assert.match(robber.state, /first i houses/i);
-  assert.match(robber.base, /dp\\[0\\] = 0/);
-  assert.match(robber.recurrence, /money\\[i - 1\\]/);
+  assert.match(robber.base, /dp\[0\] = 0/);
+  assert.match(robber.recurrence, /money\[i - 1\]/);
   assert.match(robber.java, /twoBack = 0L, oneBack = 0L/);
   assert.match(robber.complexity, /all-negative.*returns 0/i);
   assert.match(DP_GUIDED_LESSONS[5].order, /0\\/1.*descends.*Unbounded.*ascends/i);
