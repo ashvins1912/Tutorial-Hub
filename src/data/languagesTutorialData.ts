@@ -310,7 +310,7 @@ export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
     category: 'Python Memory Model',
     shortTitle: 'RefCount & Cyclic GC',
     title: 'Python Memory Management: Reference Counting + Generational Cyclic GC',
-    tagline: 'In CPython, an object's reference count reaching zero usually triggers prompt deallocation; this is an implementation detail, not a language-wide timing guarantee. The cyclic garbage collector handles unreachable reference cycles, and collection timing should not be relied on for resource cleanup—use context managers or explicit close methods.',
+    tagline: 'In CPython, the reference count of an object reaching zero usually triggers prompt deallocation; this is an implementation detail, not a language-wide timing guarantee. The cyclic garbage collector handles unreachable reference cycles, and collection timing should not be relied on for resource cleanup—use context managers or explicit close methods.',
     standardDefinition:
       'CPython combines deterministic Immediate Reference Counting (ob_refcnt on every PyObject) with a 3-generation tri-color Cyclic Garbage Collector to detect unreachable reference cycles.',
     algorithmName: 'Immediate Reference Counting + Generational Cycle Detection (Gen 0/1/2)',
