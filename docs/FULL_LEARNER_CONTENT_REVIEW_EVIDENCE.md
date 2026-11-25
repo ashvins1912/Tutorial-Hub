@@ -41,7 +41,7 @@ These are registry path counts, not rendered sentence counts. The repository had
 ## Review state
 
 - Targeted semantic review: completed for the specific claims listed above.
-- Static sentence inventory: implemented and passed its regression test on an earlier PR head; latest-head CI is still running.
+- Static sentence inventory: extracted 72,747 candidate units from 149 registered sources across 22 surfaces on commit `dd7c6a1e4b1291b3621b8a1cd5b6d582d52b0fab`; all candidates remain unreviewed. This is intentionally overinclusive and is not a count of learner-facing sentences.
 - All 149 registered sources manually reviewed line by line: **not yet complete**.
 - Database-published, AI-generated, user-authored and other runtime content: **not yet exhaustively traced and reviewed**.
 - Full responsive/accessibility/manual UI verification: **not yet complete**.
@@ -50,7 +50,7 @@ These are registry path counts, not rendered sentence counts. The repository had
 ## Validation
 
 - Local typecheck/build was not available in this execution environment.
-- GitHub Actions passed typecheck, the content-authoring tests, existing regression checks and frontend build on commit `1ce051137445332dee2b0b6122c354f75795791f` (and the inventory test passed on commit `3f3b2b5f10832f05132e38d69ae31bae8aaaeb15`).
+- GitHub Actions passed typecheck, the content-authoring tests (including the sentence inventory and glossary tests), existing regression checks and frontend build on commit `dd7c6a1e4b1291b3621b8a1cd5b6d582d52b0fab`.
 - Later changes are primarily additional source wording and evidence updates; validate the current head before merge.
 - Do not merge until current-head typecheck, inventory test, existing regressions and build pass and remaining review gates are resolved or explicitly scoped.
 
