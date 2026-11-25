@@ -25,8 +25,19 @@ const topic = (
   pitfalls: string[] = [],
   practice: string[] = [],
 ): DsaRoadmapTopic => ({
-  id, title, level, group, prerequisites, outcomes, subtopics, recognition, pitfalls,
-  practice: practice.length ? practice : ['Concept check', 'Guided trace', 'Independent implementation', 'Unseen variation'],
+  id, title, level, group, prerequisites, outcomes, subtopics, recognition,
+  pitfalls: pitfalls.length ? pitfalls : [
+    `Check the preconditions for ${title}; recognition clues alone do not prove the pattern applies.`,
+    `Account for ${subtopics[0] ?? 'the main operation'} and auxiliary space before stating complexity.`,
+    `Test empty/singleton and adversarial inputs, then verify: ${outcomes[0] ?? 'the stated learning outcome'}.`,
+  ],
+  // Contextual prompts are scaffolds for the roadmap, not a substitute for a fully authored problem set.
+  practice: practice.length ? practice : [
+    `Explain ${title} and identify the trigger: ${recognition[0] ?? 'the input property'}.`,
+    `Trace ${subtopics[0] ?? title} on a small input and record each state or update.`,
+    `Implement ${title} and test the outcome: ${outcomes[0] ?? 'the required result'}.`,
+    `Transfer ${title} to a variant that changes one input constraint.`,
+  ],
 });
 
 export const COMPLETE_DSA_ROADMAP: DsaRoadmapTopic[] = [
