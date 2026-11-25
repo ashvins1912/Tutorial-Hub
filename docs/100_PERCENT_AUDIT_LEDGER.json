@@ -3014,6 +3014,16 @@
       "evidence": [
         "tests/learning-engine/pattern-forge-pilot.test.mjs: source-level unpublished-stage fallback/status assertions"
       ]
+    },
+    {
+      "unitId": "dsa28:complexity-assumptions-and-boundaries",
+      "sourcePath": "src/data/dsa28Patterns.ts",
+      "reviewStatus": "content-corrected-awaiting-ci",
+      "finding": "Several canonical pattern-level complexity summaries stated a single bound without the preconditions or model: expected hash operations, amortized monotone boundaries, bounded cyclic-sort values, duplicate-heavy binary-search degradation, feasibility-check cost, DSU optimizations, nonnegative Dijkstra weights, graph-storage exclusion and output-sensitive backtracking.",
+      "fix": "Qualified 19 canonical DSA28 time/space summaries with the assumptions and model needed to interpret their bounds; added regression assertions for the key conditions. This is a targeted complexity pass, not a line-by-line semantic audit of every pattern/problem.",
+      "evidence": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: canonical complexity assumption assertions"
+      ]
     }
   ],
   "counts": {
@@ -3021,13 +3031,13 @@
     "testPathCount": 26,
     "allPathCount": 180,
     "reviewedPaths": 0,
-    "reviewedUnits": 23,
+    "reviewedUnits": 24,
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 9,
     "unresolvedP0": 0,
     "unresolvedP1": 1,
     "contentAddedUnitsAwaitingCi": 4,
-    "contentCorrectedUnitsAwaitingCi": 4,
+    "contentCorrectedUnitsAwaitingCi": 5,
     "uiCorrectedUnitsAwaitingCi": 6
   },
   "limitations": [
