@@ -86,7 +86,7 @@ export const SYSTEM_COMPONENTS: SystemComponentBlock[] = [
     id: 'redis-cache',
     name: 'Redis Cluster Cache',
     layer: 'cache_async',
-    role: 'Sub-millisecond hot-key lookup eliminating DB read pressure',
+    role: 'Can serve hot-key reads from memory and reduce primary-database read load when the cache hit rate is high; cache misses still require a backing-store lookup.',
     latencyImpactMs: -35,
     maxQpsBoost: 80000,
   },
@@ -94,7 +94,7 @@ export const SYSTEM_COMPONENTS: SystemComponentBlock[] = [
     id: 'bloom-filter',
     name: 'Bloom Filter Guard',
     layer: 'cache_async',
-    role: 'O(1)-space probabilistic check rejecting non-existent keys before DB',
+    role: 'A space-efficient probabilistic membership filter that can reject many absent keys before a database lookup; memory use scales with the number of represented keys and the chosen false-positive rate.',
     latencyImpactMs: -15,
     maxQpsBoost: 30000,
   },
@@ -102,7 +102,7 @@ export const SYSTEM_COMPONENTS: SystemComponentBlock[] = [
     id: 'kafka-queue',
     name: 'Kafka Message Queue',
     layer: 'cache_async',
-    role: 'Decouples heavy fan-out writes, analytics & async retries',
+    role: 'Buffers asynchronous events so producers and consumers can scale independently; durability and retry behavior depend on topic, acknowledgement, retention and consumer configuration.',
     latencyImpactMs: -20,
     maxQpsBoost: 45000,
   },
@@ -137,19 +137,19 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
     id: 'url-shortener',
     title: 'Design a Scalable URL Shortener (TinyURL)',
     companyFrequency: 'Google · Amazon · Meta · Uber',
-    summary: 'Handle 100M+ daily redirects with sub-30ms P99 latency and collision-free short codes.',
+    summary: 'Illustrative workload: 100M+ daily redirects with a target P99 under 30 ms. Latency depends on region, network, cache hit rate and storage; short-code collisions must be handled with a uniqueness constraint and retry.',
     defaultDauMillions: 50,
     defaultReadWriteRatio: 100,
     defaultLatencyBudgetMs: 40,
     requiredComponents: [
       { id: 'load-balancer', whyNeeded: 'Traffic must be distributed across multiple stateless redirect servers to avoid a single point of failure.' },
       { id: 'api-gateway', whyNeeded: 'Stateless app servers decode Base62 keys and issue 301/302 redirects.' },
-      { id: 'redis-cache', whyNeeded: 'With a 100:1 read-to-write ratio, caching hot URLs in Redis absorbs 80%+ of redirect reads.' },
+      { id: 'redis-cache', whyNeeded: 'For this illustrative 100:1 read-to-write workload, Redis may improve the hit rate for hot URLs; set a cache-hit target from measured key popularity and validate it with load tests rather than assuming 80%+.' },
       { id: 'primary-db', whyNeeded: 'Durable storage for long-to-short URL mappings.' },
     ],
     recommendedComponents: [
-      { id: 'bloom-filter', whyHelpful: 'Prevents cache-penetration attacks by instantly rejecting unknown short codes before hitting the DB.' },
-      { id: 'rate-limiter', whyNeeded: '', whyHelpful: 'Stops bots from exhausting Base62 keyspace or flooding write endpoints.' } as never,
+      { id: 'bloom-filter', whyHelpful: 'A Bloom filter can reduce cache-penetration load by quickly testing whether a key is probably absent. It has false positives (a missing key may be reported as present), so it cannot reject every unknown key or replace rate limits and abuse controls.' },
+      { id: 'rate-limiter', whyNeeded: 'Bounds URL-creation requests per account or IP, protects backend capacity, and slows automated keyspace probing; pair it with abuse monitoring and uniqueness checks.', whyHelpful: 'Protects creation endpoints from bursts and automated abuse.' } as never,
     ].map((x) => ({ id: x.id, whyHelpful: x.whyHelpful })),
     animationSteps: [
       {
@@ -163,7 +163,7 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
         step: 2,
         title: 'Rate Limiter & Bloom Filter Check',
         activeNodes: ['rate-limiter', 'bloom-filter'],
-        packetNote: 'Rate limit passes; Bloom Filter confirms key "a9X2k" probably exists (blocks fake spam keys in 0.2ms).',
+        packetNote: 'Rate limit passes; the Bloom filter reports that key "a9X2k" may exist. A positive result can be a false positive, so the cache/database must confirm it; the displayed timing is illustrative, not a guarantee.',
         latencyMs: 6,
       },
       {
@@ -270,13 +270,13 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
     id: 'realtime-chat',
     title: 'Design a Real-Time Chat & Presence System',
     companyFrequency: 'WhatsApp · Slack · Discord · Microsoft',
-    summary: 'Maintain millions of concurrent WebSockets with guaranteed message ordering & offline sync.',
+    summary: 'Design a WebSocket service for high concurrency, with explicit per-connection ordering scope, reconnect behavior, durable message storage and offline synchronization. Ordering and delivery guarantees must be defined and implemented; a WebSocket connection alone does not provide durable delivery.',
     defaultDauMillions: 100,
     defaultReadWriteRatio: 5,
     defaultLatencyBudgetMs: 50,
     requiredComponents: [
-      { id: 'websocket-gw', whyNeeded: 'Maintains stateful bi-directional connections for instant message delivery.' },
-      { id: 'kafka-queue', whyNeeded: 'Reliably routes messages between sender gateway and recipient’s connected gateway.' },
+      { id: 'websocket-gw', whyNeeded: 'Maintains stateful two-way connections for low-latency messaging to connected clients; the connection itself does not provide durable delivery.' },
+      { id: 'kafka-queue', whyNeeded: 'Provides asynchronous transport between sender and recipient gateways; durability and delivery semantics depend on producer/consumer configuration and acknowledgements.' },
       { id: 'redis-cache', whyNeeded: 'Tracks online presence heartbeats and userId -> gatewayServerId routing.' },
       { id: 'consistent-sharding', whyNeeded: 'Partitions chat history by channel_id so message sequences scale horizontally.' },
     ],
@@ -296,7 +296,7 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
         step: 2,
         title: 'Presence Lookup & Kafka Routing',
         activeNodes: ['redis-cache', 'kafka-queue'],
-        packetNote: 'Redis identifies recipient’s active gateway; Kafka guarantees ordered delivery.',
+        packetNote: 'Redis identifies the recipient’s active gateway; Kafka preserves order within a partition, not across all partitions. Choose the partition key to match the required per-recipient ordering scope.',
         latencyMs: 19,
       },
       {
@@ -394,7 +394,7 @@ export function evaluateSystemArchitecture(
     checks.push({
       label: 'Consistency Trade-Off',
       passed: true,
-      detail: 'Use Write-Through caching or short TTLs so reads never serve stale transactional state.',
+      detail: 'Write-through caching and short TTLs can reduce the stale-data window, but they do not guarantee linearizable reads. For transactional state, define the consistency requirement and use appropriate invalidation/versioning, read-your-writes routing, or a strongly consistent source of truth.',
     });
   }
 

@@ -35,3 +35,18 @@ npm run test:dsa:arrays:01
 ```
 
 The CI job provisions Node.js, Python, and Java and runs the batch test suite before the production build. The next batch should continue with the remaining Arrays problems, then proceed topic-wise. No records in later batches should be promoted based solely on generated topic templates.
+
+
+## Arrays lesson enhancement — offline range updates
+
+The Arrays reference lesson now includes matching Java 21 and Python 3 difference-array implementations for offline inclusive range additions. The examples validate update bounds, use an `n + 1` sentinel for an update ending at the last index, and materialize results with one prefix scan. Regression fixtures cover overlapping updates and the final-index boundary. This extends the lesson's existing prefix-sum and compaction examples; it does not promote the full Arrays topic or the 293-question inventory to verified status.
+
+
+### Difference-array initial-state correction
+
+A follow-up regression review caught that initializing `diff[i]` with `values[i]` only works for a zero-based initial array. The implementation now derives the initial difference representation (`diff[0] = values[0]`; `diff[i] = values[i] - values[i-1]`) before applying update boundary deltas. Java uses a widened subtraction to avoid 32-bit overflow when adjacent input values are far apart. Executable tests cover overlapping updates, final-index sentinel handling, no updates, and empty input. The earlier CI failure was caused by this initial-state defect; the corrected change is being revalidated.
+
+
+### JavaScript difference-array parity
+
+The Arrays reference lesson now also includes a Node.js implementation of offline inclusive range additions. It preserves the initial array through the difference representation, uses the `n + 1` sentinel, and rejects malformed ranges and unsafe JavaScript integer intermediates rather than silently returning imprecise Number results. CI executes the stored Java 21, JavaScript (Node.js), and Python 3 examples against overlapping updates, final-index updates, no updates, empty input, and invalid/unsafe cases. This remains a lesson-level implementation improvement, not a claim that the complete Arrays topic or all 293 interview records are source-verified.

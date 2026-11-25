@@ -25,8 +25,19 @@ const topic = (
   pitfalls: string[] = [],
   practice: string[] = [],
 ): DsaRoadmapTopic => ({
-  id, title, level, group, prerequisites, outcomes, subtopics, recognition, pitfalls,
-  practice: practice.length ? practice : ['Concept check', 'Guided trace', 'Independent implementation', 'Unseen variation'],
+  id, title, level, group, prerequisites, outcomes, subtopics, recognition,
+  pitfalls: pitfalls.length ? pitfalls : [
+    `Check the preconditions for ${title}; recognition clues alone do not prove the pattern applies.`,
+    `Account for ${subtopics[0] ?? 'the main operation'} and auxiliary space before stating complexity.`,
+    `Test empty/singleton and adversarial inputs, then verify: ${outcomes[0] ?? 'the stated learning outcome'}.`,
+  ],
+  // Contextual prompts are scaffolds for the roadmap, not a substitute for a fully authored problem set.
+  practice: practice.length ? practice : [
+    `Explain ${title} and identify the trigger: ${recognition[0] ?? 'the input property'}.`,
+    `Trace ${subtopics[0] ?? title} on a small input and record each state or update.`,
+    `Implement ${title} and test the outcome: ${outcomes[0] ?? 'the required result'}.`,
+    `Transfer ${title} to a variant that changes one input constraint.`,
+  ],
 });
 
 export const COMPLETE_DSA_ROADMAP: DsaRoadmapTopic[] = [
@@ -80,7 +91,7 @@ export const COMPLETE_DSA_ROADMAP: DsaRoadmapTopic[] = [
     ['Contiguous subarray/substring', 'Longest or shortest range with a maintained property'],
     ['State the window invariant explicitly', 'Know when a two-pointer window is not valid'],
     ['arrays', 'strings', 'hashing'],
-    ['Assuming positive-only window logic works with negative values', 'Forgetting to update frequency counts when shrinking']),
+    ['Sliding Window: assuming positive-only window logic works with negative values', 'Forgetting to update frequency counts when shrinking', 'Shrinking is valid only when the chosen window condition changes monotonically; frequency counts alone do not prove it.']),
   topic('prefix-difference', 'Prefix Sums, Difference Arrays & Prefix XOR', 'Core', 'Array & String Patterns',
     ['1D prefix sum', 'Prefix sum + hashmap', 'Prefix XOR', 'Difference array and range updates', '2D prefix sums', 'Suffix/prefix contribution'],
     ['Repeated range queries', 'Subarray sum equals K', 'Many range updates before final materialization'],

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -48,6 +48,10 @@ import { AlgorithmMatcherModal } from './components/AlgorithmMatcherModal';
 import { PatternRecognitionQuizModal } from './features/quiz/components/PatternRecognitionQuizModal';
 
 // Code-split heavy studios isolated in resilient withLazyStudio HOC (retry + stale-deploy chunk recovery + scoped ErrorBoundary + Suspense)
+const UnifiedPatternForgeWorkspace = withLazyStudio(
+  () => import('./features/pattern-forge-unified/UnifiedPatternForgeWorkspace').then((m) => ({ default: m.UnifiedPatternForgeWorkspace })),
+  { studioName: 'Pattern Forge Unified Learning Experience' }
+);
 const AlgorithmsStudio = withLazyStudio(
   () => import('./components/algorithms/AlgorithmsStudio').then((m) => ({ default: m.AlgorithmsStudio })),
   { studioName: 'Algorithms Studio' }
@@ -178,6 +182,7 @@ export default function App() {
 
   const [workspaceMode, setWorkspaceMode] = useState<'curriculum' | 'classic-lab'>('curriculum');
   const [jumpTopicId, setJumpTopicId] = useState<string | null>(null);
+  const consumeExternalTopic = useCallback(() => setJumpTopicId(null), []);
   const [drillModalOpen, setDrillModalOpen] = useState(false);
 
   const [academyOpen, setAcademyOpen] = useState(false);
@@ -401,6 +406,7 @@ export default function App() {
           : hubSubTab;
 
   const navItems: { id: TopView; label: string; isActive: boolean }[] = [
+    { id: 'pattern-forge', label: 'Pattern Forge', isActive: activeView === 'pattern-forge' },
     { id: 'solver', label: 'Logic Solver', isActive: activeView === 'solver' },
     { id: 'knowledge-engine', label: 'Concept Engine', isActive: activeView === 'knowledge-engine' },
     { id: 'ai-academy', label: 'AI Academy', isActive: activeView === 'ai-academy' },
@@ -441,7 +447,7 @@ export default function App() {
         <div className="max-w-[1920px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3 lg:gap-5">
           <button
             type="button"
-            onClick={() => handleSelectNav('workspace')}
+            onClick={() => handleSelectNav('pattern-forge')}
             className="text-base sm:text-lg font-display font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 text-left"
           >
             PatternForge DSA
@@ -581,7 +587,14 @@ export default function App() {
       )}
 
       {/* Main View Router */}
-      {activeView === 'solver' ? (
+      {activeView === 'pattern-forge' ? (
+        <main className="flex-1 w-full">
+          <UnifiedPatternForgeWorkspace
+            externalTopicId={jumpTopicId}
+            onConsumeExternalTopic={consumeExternalTopic}
+          />
+        </main>
+      ) : activeView === 'solver' ? (
         <main className="flex-1 w-full">
           <UniversalSolverStudio
             externalProblem={solverExternalProblem}

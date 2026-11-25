@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "baseline": {
     "branch": "main",
-    "commit": "2acd983e8b5d37fa8cbbf9d9073e232727f1aa1b",
-    "auditDate": "2026-11-23",
-    "trackedFileCount": 442
+    "commit": "9bd778b8e66b645475b1a74a2b7766dd62316426",
+    "auditDate": "2026-11-25",
+    "trackedFileCount": 517
   },
   "purpose": "Machine-checkable first-pass map of every TopView value to representative entry components, canonical data sources, API routes and existing test files. This is a discoverability and path-integrity inventory, not a claim that mapped content is complete or verified.",
   "qualityStateSemantics": {
@@ -14,17 +14,20 @@
   "globalTestFiles": [
     "tests/content-authoring/ai-academy-curriculum.test.mjs",
     "tests/content-authoring/ai-academy-progress.test.mjs",
+    "tests/content-authoring/application-content-audit.test.mjs",
     "tests/content-authoring/code-execution.test.mjs",
     "tests/content-authoring/generation.test.mjs",
     "tests/content-authoring/learning-content-quality-audit.test.mjs",
     "tests/content-authoring/learning-progress-grading.test.mjs",
     "tests/content-authoring/learning-progress.test.mjs",
     "tests/content-authoring/learning-runtime.test.mjs",
+    "tests/content-authoring/mastery-stepper-accessibility.test.mjs",
     "tests/content-authoring/phase1.test.mjs",
     "tests/content-authoring/published-lesson-security.test.mjs",
     "tests/content-authoring/visualization-renderer.test.mjs",
     "tests/dsa/arrays-batch-01.test.mjs",
-    "tests/dsa/master-interview-inventory.test.mjs"
+    "tests/dsa/master-interview-inventory.test.mjs",
+    "tests/learning-engine/pattern-forge-pilot.test.mjs"
   ],
   "surfaces": [
     {
@@ -112,20 +115,25 @@
       "title": "DSA curriculum workspace",
       "kind": "curriculum",
       "navigation": "primary",
-      "summary": "Topic-first DSA curriculum, staged problem learning and classic problem-solving workspace.",
+      "summary": "Topic-first DSA curriculum, staged problem learning, DP practice lab, matrix problem bank and classic problem-solving workspace.",
       "qualityState": "inventory",
       "verificationState": "not_assessed",
       "componentPaths": [
         "src/features/topics/components/CurriculumWorkbench.tsx",
         "src/components/CompleteDsaCourse.tsx",
         "src/components/CompleteDsaRoadmap.tsx",
-        "src/components/MasteryStepper.tsx"
+        "src/components/MasteryStepper.tsx",
+        "src/components/DpLearningLab.tsx",
+        "src/components/MatrixProblemBank.tsx"
       ],
       "dataSources": [
         "src/features/topics/data/curriculumIndex.ts",
         "src/data/completeDsaRoadmap.ts",
         "src/data/dsaCompleteLessons.ts",
-        "src/data/curriculum.ts"
+        "src/data/curriculum.ts",
+        "src/data/dpPracticeProblems.ts",
+        "src/data/matrixProblems.ts",
+        "src/data/dpGuidedLessons.ts"
       ],
       "apiRoutes": [
         "server/routes/contentBootstrapRoutes.ts",
@@ -133,7 +141,17 @@
       ],
       "testFiles": [
         "tests/dsa/arrays-batch-01.test.mjs",
-        "tests/dsa/master-interview-inventory.test.mjs"
+        "tests/dsa/master-interview-inventory.test.mjs",
+        "tests/content-authoring/dsa-course-structure-inventory.test.mjs",
+        "tests/content-authoring/dsa-course-code-examples.test.mjs",
+        "tests/content-authoring/dsa-course-code-example-syntax.test.mjs",
+        "tests/content-authoring/dsa-course-ui-accessibility.test.mjs",
+        "tests/content-authoring/dp-learning-lab-quality.test.mjs",
+        "tests/content-authoring/matrix-problem-bank-quality.test.mjs",
+        "tests/content-authoring/100-percent-audit-ledger.test.mjs",
+        "tests/dsa/topic-completeness-pilot.test.mjs",
+        "tests/content-authoring/dp-learning-lab-code-examples.test.mjs",
+        "tests/content-authoring/dsa-roadmap-quality.test.mjs"
       ]
     },
     {
@@ -509,6 +527,38 @@
       ],
       "testFiles": [
         "tests/content-authoring/learning-progress.test.mjs"
+      ]
+    },
+    {
+      "id": "pattern-forge",
+      "title": "Pattern Forge unified five-stage learning workspace",
+      "kind": "reference-learning-academy",
+      "navigation": "primary",
+      "summary": "Canonical 28-pattern curriculum with five-stage learning, deterministic traces, verified pilot implementations, practice, mastery and spaced revision.",
+      "qualityState": "inventory",
+      "verificationState": "not_assessed",
+      "componentPaths": [
+        "src/features/pattern-forge-unified/UnifiedPatternForgeWorkspace.tsx",
+        "src/features/pattern-forge-unified/components/StageUnderstandView.tsx",
+        "src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx",
+        "src/features/pattern-forge-unified/components/StageImplementView.tsx",
+        "src/features/pattern-forge-unified/components/StagePracticeView.tsx",
+        "src/features/pattern-forge-unified/components/StageMasterView.tsx"
+      ],
+      "dataSources": [
+        "src/features/pattern-forge-unified/useUnifiedLearningStore.ts",
+        "src/data/dsa28Patterns.ts",
+        "shared/learningContract.ts",
+        "shared/patternForgeCurriculum.ts",
+        "shared/pilotPatternsData.ts",
+        "shared/traceEngine.ts",
+        "shared/masteryEngine.ts"
+      ],
+      "apiRoutes": [
+        "server/routes/learningEngineRoutes.ts"
+      ],
+      "testFiles": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs"
       ]
     }
   ]

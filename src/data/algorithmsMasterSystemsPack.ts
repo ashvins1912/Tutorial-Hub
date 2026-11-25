@@ -111,7 +111,7 @@ def split_leaf(keys, max_keys):
     timeComplexity: 'O(log M) write · O(L) read (with Bloom)',
     spaceComplexity: 'O(N) + compaction headroom',
     mentalModel:
-      'Never hunt for an old slot on disk when writing! Append to a sequential WAL, sort in RAM (MemTable), flush whole sorted files (SSTables) to disk, and merge/deduplicate older files in the background using K-Way Merge!',
+      'Avoid in-place random updates on the LSM write path: append to the WAL, update the in-memory MemTable, flush sorted SSTables, then compact older files in the background.',
     coreInvariant:
       'Newest-Wins Read Precedence: check MemTable → L0 SSTables (newest first) → L1 → L2; deletes write a special TOMBSTONE marker that is physically purged only during bottom-level compaction.',
     whenToUse: [
@@ -177,7 +177,7 @@ def compact_sstables(newer_run, older_run):
         step: 3,
         title: 'Read Path Consults Newest Layer First',
         explanation: 'Get(k1) finds v2 in L0_new and stops immediately. Get(k2) hits tombstone `†` and returns NULL without exposing stale L0_old!',
-        invariantCheck: 'Bloom filters skip any SSTable guaranteed not to contain the key.',
+        invariantCheck: 'A correctly maintained standard Bloom filter without deletions can skip an SSTable when it proves the key is absent; a positive result still requires checking the table.',
         variables: [{ name: 'get(k1)', value: 'v2' }, { name: 'get(k2)', value: 'null (tombstone)' }, { name: 'get(k3)', value: 'v9' }],
         array: ['k1→v2', 'k2→null', 'k3→v9'],
         matchedIndices: [0, 2],
@@ -186,7 +186,7 @@ def compact_sstables(newer_run, older_run):
       {
         step: 4,
         title: 'Background K-Way Compaction Purges Stale Keys & Tombstones',
-        explanation: 'Merge L0_new + L0_old → single clean L1 SSTable `[[k1,v2], [k3,v9]]`. Reclaims disk space & eliminates read amplification!',
+        explanation: 'Merge L0_new + L0_old → a compacted L1 SSTable `[[k1,v2], [k3,v9]]`. Reclaims obsolete data and can reduce read amplification; it does not eliminate all reads or all amplification.',
         invariantCheck: 'Leveled compaction ensures disjoint key ranges at L1+ (at most 1 file checked per level!).',
         variables: [{ name: 'L1_compacted', value: '[(k1,v2),(k3,v9)]' }],
         array: ['L1: k1=v2', 'L1: k3=v9'],
@@ -311,13 +311,13 @@ def external_kway_merge(runs: list[list[int]]) -> list[int]:
     category: 'Database Storage & Query Engines',
     difficulty: 'Advanced',
     visualType: 'stream-partition',
-    tagline: 'Guarantee ACID Atomicity & Durability after sudden power loss via Write-Ahead Logging and 3-phase recovery: Analysis → Redo History → Undo Losers.',
+    tagline: 'Implement atomicity and durability across crashes using Write-Ahead Logging and ARIES-style Analysis → Redo History → Undo Losers, provided the storage flush, commit and recovery protocol is implemented correctly.',
     timeComplexity: 'O(Log since Checkpoint)',
     spaceComplexity: 'O(Active Txns + Dirty Pages)',
     mentalModel:
       'Think of an accountant’s fireproof ledger written BEFORE touching the cash register (STEAL/NO-FORCE): after a crash, (1) Analysis finds who didn’t finish, (2) Redo replays everything to exact crash state, and (3) Undo walks backwards reversing uncommitted "loser" transactions while writing CLR markers!',
     coreInvariant:
-      'Write-Ahead Logging Rule: a dirty page CANNOT be flushed to disk until its WAL record (LSN) is fsynced; `pageLSN >= record.LSN` makes Redo 100% idempotent even if the DB crashes AGAIN during recovery!',
+      'Write-Ahead Logging Rule: a dirty page must not be flushed before its required WAL records are durable. During redo, the pageLSN check skips changes already reflected on the page; this makes redo repeatable under ARIES logging and recovery rules, including a crash during recovery.',
     whenToUse: [
       'ACID relational databases (PostgreSQL, MySQL InnoDB, IBM DB2, SQL Server) supporting high-concurrency STEAL / NO-FORCE buffer pools.',
       'Designing durable stateful microservices, payment ledgers, and Raft replicated log recovery.',
@@ -611,16 +611,16 @@ def consistent_route(ring_hashes: list[int], ring_nodes: list[str], key_hash: in
     difficulty: 'Advanced',
     visualType: 'weighted-network',
     tagline: 'Keep a replicated cluster strongly consistent despite node crashes & network partitions via monotonic Terms, Quorum Majority Votes, and AppendEntries commits.',
-    timeComplexity: '1 RTT per committed write',
+    timeComplexity: 'Typically one leader-to-quorum replication round trip after append; end-to-end client latency also includes client/network, batching and durable-write costs',
     spaceComplexity: 'O(Log Entries) + Snapshots',
     mentalModel:
       'Think of a parliament with numbered sessions (Terms): a node can only become Leader if a strict majority (`⌊N/2⌋ + 1`) votes for it AND its log is at least as up-to-date as voters—and an entry is committed ONLY once replicated on a majority!',
     coreInvariant:
-      'Quorum Intersection: any two majorities of N nodes overlap in at least 1 node! Therefore a newly elected Leader is mathematically guaranteed to hold every previously committed log entry (Election Safety + Log Matching).',
+      'Quorum intersection means any two majorities share at least one voter. That intersection is necessary but not sufficient by itself to prove a new leader has every committed entry. Raft up-to-date-log voting rule, term restrictions and AppendEntries/log-matching rules combine with quorum intersection to preserve committed entries under the crash-fault model.',
     whenToUse: [
       'Strongly consistent cluster metadata & distributed locks: etcd (Kubernetes), CockroachDB, TiKV, Consul, ZooKeeper (ZAB), Google Spanner (Paxos).',
       'Tolerating up to `f` crash failures with `2f + 1` replicas (e.g., 3 nodes survive 1 crash; 5 nodes survive 2 crashes).',
-      'Eliminating split-brain via strict majority quorums + term fencing.',
+      'Eliminating split-brain via correctly configured majority quorums and term fencing under the consensus protocol assumptions.',
     ],
     whenItFails:
       'Cannot tolerate Byzantine (malicious/lying) nodes (use PBFT/HotStuff), halts writes if minority partition loses quorum (CP over AP in CAP), and degrades throughput if replicas span 200ms WAN links without Multi-Raft sharding.',
@@ -854,7 +854,7 @@ def diff_merkle(node_a, node_b):
         step: 1,
         title: 'Compare Root Hashes Across Replica A & Replica B',
         explanation: '4 data blocks: Replica A=[k0, k1, k2, k3], Replica B=[k0, k1, k2_CORRUPT, k3]. Root hashes differ → descend!',
-        invariantCheck: 'If roots matched, sync terminates in 1 hash comparison (32 bytes)!',
+        invariantCheck: 'If roots match, synchronization can stop at this subtree under the hash-collision-resistance assumption; compare canonicalized data and hash parameters consistently.',
         variables: [{ name: 'rootA', value: '0x9a1f' }, { name: 'rootB', value: '0x4c8e (DIFF!)' }],
         array: ['Root: DIFF', 'L(0..1)', 'R(2..3)'],
         highlightIndices: [0],
@@ -862,7 +862,7 @@ def diff_merkle(node_a, node_b):
       {
         step: 2,
         title: 'Prune Entire Left Subtree [0..1] Instantly!',
-        explanation: 'hash(L_A) === hash(L_B) → blocks 0 and 1 are 100% identical! Skip Left branch completely without sending data!',
+        explanation: 'hash(L_A) === hash(L_B) → treat blocks 0 and 1 as matching assuming the cryptographic hash function is collision-resistant. Skip this branch without sending its contents; if hashes differ, descend to locate changed leaves.',
         invariantCheck: 'Halves search space at every tree level.',
         variables: [{ name: 'L(0..1)', value: 'MATCH ✓ (SKIP)' }, { name: 'R(2..3)', value: 'DIFF → descend' }],
         array: ['L(0..1) MATCH ✓', 'R(2..3) DIFF'],
@@ -908,7 +908,7 @@ def diff_merkle(node_a, node_b):
     mentalModel:
       'Wall clocks drift by milliseconds across servers (NTP jumps backwards!). A Vector Clock gives each node its own counter `[A:2, B:1, C:0]`—if every entry in V1 ≤ V2 (with at least one `<`), V1 causally preceded V2; if V1 is bigger in one slot and V2 is bigger in another, they are CONCURRENT conflicts!',
     coreInvariant:
-      'Lamport Clock guarantees `A → B ⇒ L(A) < L(B)` (one-way only!). Vector Clock guarantees `A → B ⇔ V(A) < V(B)` (exact two-way causality + concurrency detection!).',
+      'Lamport clocks preserve causality: if A happens before B, L(A) < L(B), but the reverse is not guaranteed. Vector clocks compare component-wise: A happens before B iff every component of V(A) is ≤ the corresponding component of V(B) and at least one is <; incomparable vectors indicate concurrency.',
     whenToUse: [
       'Multi-leader / leaderless conflict detection: Amazon Dynamo shopping carts, Riak Dotted Version Vectors, Voldemort.',
       'Distributed debugging, causal broadcast, and snapshot consistency without synchronized GPS/atomic clocks.',
@@ -990,13 +990,13 @@ def diff_merkle(node_a, node_b):
     category: 'Distributed Systems & Consensus',
     difficulty: 'Advanced',
     visualType: 'array-cells-bit',
-    tagline: 'Guarantee Strong Eventual Consistency across offline & multi-region replicas with ZERO coordination locks via mathematical join-semilattice merges.',
+    tagline: 'Use join-semilattice merges to support strong eventual convergence for compatible CRDT state when updates are eventually delivered and merge rules are followed; this avoids coordination for those merges, not for every application invariant.',
     timeComplexity: 'O(N) merge · O(1) local write',
     spaceComplexity: 'O(N) replica slots / tags',
     mentalModel:
-      'Instead of arguing over one shared counter `x = x + 1` (where concurrent increments overwrite each other), a G-Counter gives EVERY replica its own private slot `[A:3, B:5, C:2]`: merging takes element-wise `max()`, and the total is `sum()`—order, duplicates, and delays NEVER corrupt the answer!',
+      'Instead of arguing over one shared counter `x = x + 1` (where concurrent increments overwrite each other), a G-Counter gives EVERY replica its own private slot `[A:3, B:5, C:2]`: merging takes element-wise `max()`, and the total is `sum()`—repeated or reordered merges do not double-count the same component; convergence requires each replica to update its own component monotonically and all updates to be eventually delivered.',
     coreInvariant:
-      'Join-Semilattice Laws: `merge(A, B)` is Commutative (`A⊔B = B⊔A`), Associative (`(A⊔B)⊔C = A⊔(B⊔C)`), and Idempotent (`A⊔A = A`) — guaranteeing every replica converges to the EXACT same state once messages arrive!',
+      'Join-Semilattice Laws: `merge(A, B)` is Commutative (`A⊔B = B⊔A`), Associative (`(A⊔B)⊔C = A⊔(B⊔C)`), and Idempotent (`A⊔A = A`) — so replicas that receive the same updates eventually converge to the same state, assuming the merge is applied and updates are eventually delivered.',
     whenToUse: [
       'Collaborative real-time editors (Figma, Google Docs/Yjs/Automerge), offline-first mobile apps, and multi-region active-active Redis Enterprise / Riak counters.',
       'Distributed like/view counters (PN-Counter = two G-Counters: `sum(P) − sum(N)`).',

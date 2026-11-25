@@ -49,39 +49,39 @@ const MASTER_40_COMPLEXITY_LEAPS: Record<string, string> = {
   'counting-radix-sort': 'Ω(N log N) comparison lower bound → O(d · (N + B)) linear non-comparison digit sort',
   'linked-list-reversal': 'O(N) auxiliary array/stack copy → O(1) space 3-pointer in-place rewire',
   'shunting-yard-parser': 'Multi-pass recursive/AST build → O(N) single-pass operator precedence RPN stream',
-  'avl-red-black-trees': 'O(N) skewed BST degeneration → O(log N) guaranteed height via O(1) rotations',
+  'avl-red-black-trees': 'O(N) skewed BST degeneration → O(log N) worst-case height in self-balancing AVL/Red-Black trees, maintained with rotations',
   'huffman-coding': 'Fixed-length log₂|Σ| encoding → Optimal variable-length prefix-free entropy code',
   'trie-prefix-autocomplete': 'O(N · L) full-dictionary scan → O(L) prefix lookup independent of N',
   'hash-table-probing': 'O(N) linear / O(log N) tree lookup → O(1) expected cache-friendly hash lookup',
   'splay-tree-rotations': 'Static O(log N) balanced tree → O(1) hot working-set amortized self-adjusting root',
   'kd-tree-nearest-neighbor': 'O(N) brute spatial scan → O(log N) average hypersphere branch-pruned 2D/3D NN',
-  'quadtree-octree-spatial': 'O(N) global point scan → O(log N + K) adaptive empty-space skipping spatial tiles',
-  'bwt-fm-index': 'O(N) uncompressed scan / O(10N) Suffix Tree RAM → O(|P|) compressed backward search',
+  'quadtree-octree-spatial': 'O(N) global point scan → distribution-sensitive adaptive empty-space skipping; O(N) worst-case spatial query',
+  'bwt-fm-index': 'O(N) uncompressed scan / large suffix-index RAM → compressed backward search with rank-query cost determined by the index representation',
   'lzw-compression': 'Uncompressed symbol stream → O(N) single-pass headerless adaptive dictionary coding',
   'hopcroft-karp-hungarian': 'O(V · E) augmenting paths → O(E √V) parallel layered matching / O(V³) min-cost',
   'eulerian-hierholzer': 'O(E²) Fleury bridge checks → O(V + E) linear post-order edge-splicing circuit',
   'tarjan-bridges-articulation': 'O(E · (V + E)) remove-and-test → O(V + E) single-pass disc/low DFS audit',
   'johnsons-all-pairs': 'O(V³) dense Floyd-Warshall → O(V · E log V) Bellman-Ford reweight + V× Dijkstra',
   'centroid-decomposition': 'O(N²) all-paths tree DFS → O(N log N) divide-and-conquer O(log N)-tall centroid tree',
-  'bloom-filter': 'O(64B · N) exact HashSet RAM → ~10 bits/key O(k) zero-false-negative disk guard',
+  'bloom-filter': 'Exact HashSet membership costs memory proportional to stored keys; a Bloom Filter can use about 10 bits/key for a chosen false-positive target and has no false negatives under standard insert-only, intact-bit-array assumptions',
   'skip-list': 'O(N) sorted list / lock-heavy RB-Tree → O(log N) expected lock-free express lanes',
-  'count-min-sketch': 'O(N) exact HashMap counters → O(1) sublinear fixed-RAM frequency upper-bound sketch',
-  'hyperloglog': 'O(N) 10 GB unique-ID HashSet → 12 KB mergeable registers (< 0.81% error at 10⁹)',
+  'count-min-sketch': 'Exact HashMap counters grow with distinct keys; a Count-Min Sketch uses O((1/ε) log(1/δ)) counters for additive error εN with probability at least 1−δ, independent of stream length N when ε and δ are fixed',
+  'hyperloglog': 'Exact unique-ID HashSet memory grows with cardinality → mergeable HLL registers with relative standard error approximately 1.04/√m (register count m)',
   'cache-lru-lfu-arc': 'O(C) scan / O(log C) heap eviction → O(1) pointer-spliced DLL & scan-resistant ARC',
   'buddy-memory-allocator': 'O(N) fragmented free-list scan → O(log M) power-of-2 split & O(1) XOR buddy coalesce',
   'persistent-data-structures': 'O(N) full-copy snapshot per edit → O(log N) structural-sharing path-copy versioning',
-  'lockfree-cas-rcu': 'Blocking mutexes / RWLock cache-bouncing → O(1) wait-free RCU reads & lock-free CAS',
-  'bplus-tree-storage': 'O(log₂ N) ~30 random binary-tree seeks → O(log_B N) ~3–4 page reads + linked leaf scans',
-  'lsm-tree-compaction': 'Random in-place disk updates → O(1) sequential WAL + MemTable + Bloom-guarded SSTables',
-  'external-kway-merge': 'OOM in-RAM sort failure → 2-pass sequential disk K-way Min-Heap streaming sort',
+  'lockfree-cas-rcu': 'Blocking mutexes / RWLock cache-bouncing → low-overhead RCU read-side work with deferred reclamation + CAS retry progress guarantees',
+  'bplus-tree-storage': 'O(log₂ N) random binary-tree seeks → O(log_B N) page descent with high fanout + linked leaf scans; actual I/O depends on layout and cache',
+  'lsm-tree-compaction': 'Random in-place disk updates → sequential WAL/SSTable writes, in-memory ordered MemTable, and Bloom-filter-assisted reads with compaction tradeoffs',
+  'external-kway-merge': 'OOM in-RAM sort failure → buffered sequential disk runs and multiway Min-Heap merge; pass count depends on memory and merge fan-in',
   'aries-wal-recovery': 'Slow synchronous FORCE page flushes → Fast sequential WAL + idempotent 3-pass recovery',
   'sql-joins-volcano': 'O(|R| · |S|) nested-loop join → O(|R| + |S|) pipelined Hash / Sort-Merge Volcano iterator',
   'consistent-hashing-dht': 'O(K) full-cache invalidation on mod N → O(K / N) minimal remapping with virtual nodes',
-  'raft-paxos-consensus': 'Split-brain async primary → Linearizable 2F+1 quorum consensus in 1 RTT steady state',
-  'gossip-phi-accrual': 'O(N²) all-to-all heartbeat storms → O(1)/node fanout · O(log N) epidemic convergence',
+  'raft-paxos-consensus': 'Split-brain async primary → linearizable 2F+1 quorum consensus; stable-leader replication often commits in one quorum RTT, protocol/network dependent',
+  'gossip-phi-accrual': 'O(N²) all-to-all heartbeat storms → bounded per-node fanout with probabilistic epidemic dissemination; convergence rounds depend on membership, network, and failure assumptions',
   'merkle-tree-sync': 'O(N) full replica dataset diff → O(k log(N/k)) hierarchical hash-tree anti-entropy repair',
-  'vector-clocks-lamport': 'Broken physical NTP clock ordering → Exact O(N) causal partial-order conflict detection',
-  'crdt-gcounter-orset': 'Cross-region blocking 2PC locks → O(1) offline local writes + guaranteed lattice convergence',
+  'vector-clocks-lamport': 'Physical-clock order can disagree with causality; vector clocks represent causal partial order and detect concurrent updates, using O(N) vector entries for N participants',
+  'crdt-gcounter-orset': 'Cross-region coordination can be avoided for local G-Counter/OR-Set updates; replicas converge under the CRDT merge rule when updates are eventually delivered',
 };
 
 const CACHED_PLATFORM_DRILLS: Record<string, PlatformDrillItem[]> = {};
@@ -180,14 +180,14 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Checking a row of unlabeled mailboxes one by one from left to right until you see your name—no prep needed, and shockingly fast when there are only 20 boxes.',
     interviewScript30s:
-      '"For unsorted data queried only once or tiny cache-hot slices (N ≤ 32), linear scan in O(N) time and O(1) space beats sorting or hashing because sequential memory prefetching outperforms random pointer chasing."',
-    chooseWhen: 'Unsorted data queried once, linked lists without random access, or tiny N ≤ 32 SIMD/cache-line arrays.',
+      '"For unsorted data queried once or for small cache-hot slices, a linear scan is O(N) time and O(1) space and can outperform sorting or hashing due to sequential memory access; the crossover depends on data size, layout, and hardware."',
+    chooseWhen: 'Unsorted data queried once, linked lists without random access, or small/cache-hot arrays where a scan benchmarks well; no universal size cutoff.',
     avoidWhen: 'Repeated lookups on large datasets (build a HashMap for O(1) or sort + Binary Search for O(log N)).',
     followUpTwists: [
       {
         question: 'When can Linear Search actually beat Binary Search in wall-clock latency?',
-        invariantShift: 'For N ≤ 32–64 contiguous integers, sequential CPU cache prefetching and zero branch mispredictions outperform random-jumping binary search.',
-        complexityImpact: 'Still O(N) asymptotic, but 2–4× faster constant factor on L1 cache lines.',
+        invariantShift: 'For small contiguous/cache-hot arrays, sequential access may outperform branchy binary search; the crossover depends on element size, cache, compiler, and hardware.',
+        complexityImpact: 'Still O(N) asymptotic; constant-factor wins for small/cache-hot inputs are hardware- and workload-dependent and should be benchmarked.',
       },
       {
         question: 'How does Sentinel Linear Search eliminate one comparison per loop iteration?',
@@ -222,9 +222,9 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Insertion Sort is how you sort playing cards in your hand: pick up one card at a time and slide it leftward past bigger cards until it lands in place.',
     interviewScript30s:
-      '"While Bubble, Selection, and Insertion Sort are O(N²) worst-case, Insertion Sort is adaptive (O(N) on nearly sorted inputs), stable, and in-place—which is why Python TimSort and C++ Introsort switch to Insertion Sort for subarrays of size ≤ 32."',
-    chooseWhen: 'Tiny subarrays (N ≤ 32), online/streaming nearly-sorted data, or minimizing writes (Selection Sort uses ≤ N − 1 swaps).',
-    avoidWhen: 'Large random or reversed arrays (N > 1000)—use Merge Sort, Quick Sort, or TimSort.',
+      '"Bubble, Selection, and Insertion Sort are O(N²) worst-case; Insertion Sort is adaptive (O(N) on nearly sorted inputs), stable, and in-place. Many production sort implementations use insertion sort for short runs or partitions, but the cutoff and exact integration are implementation-specific."',
+    chooseWhen: 'Short subarrays in hybrid sorts (implementation-specific cutoff), online/nearly-sorted data, or minimizing writes (Selection Sort uses ≤ N − 1 swaps).',
+    avoidWhen: 'Large random or reversed arrays where quadratic work is too costly—use Merge Sort, Quick Sort, or TimSort based on stability and worst-case needs.',
     followUpTwists: [
       {
         question: 'If each element is at most K positions away from its sorted spot, what is Insertion Sort’s runtime?',
@@ -285,7 +285,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Reversing a one-way chain of train cars in place: unhook the next coupler, point the current car back at the previous car, and step forward using a saved grip on the next car.',
     interviewScript30s:
-      '"Using three pointers (`prev`, `curr`, `next`), we save `curr.next`, flip `curr.next = prev`, and slide both forward in O(N) time and O(1) space. Adding a dummy head makes sub-list and K-group reversals bug-free."',
+      '"Using three pointers (`prev`, `curr`, `next`), we save `curr.next`, flip `curr.next = prev`, and slide both forward in O(N) time and O(1) space. A dummy head simplifies edge handling for sub-list and K-group reversals, but pointer invariants still need careful checks."',
     chooseWhen: 'LC 206, Reverse Linked List II (subrange), Reverse Nodes in K-Group, Palindrome Linked List, and Reorder List.',
     avoidWhen: 'Concurrent lock-free readers are traversing the list without synchronization (mutating next pointers mid-read causes races).',
     followUpTwists: [
@@ -369,7 +369,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A multi-story coat check organized letter by letter: all words starting with "app" share the exact same hallway `a → p → p` before branching into "apple" and "apply".',
     interviewScript30s:
-      '"A Trie indexes strings by character path so insert, exact search, and prefix lookup run in O(L) time independent of dictionary size N—unlocking instant autocomplete and dead-branch DFS pruning in Word Search II."',
+      '"A Trie indexes strings by character path so insert, exact search, and prefix lookup take O(L) expected time when child access is O(1), rather than scanning the whole dictionary; it supports autocomplete and dead-branch DFS pruning in Word Search II."',
     chooseWhen: 'Search autocomplete, spellcheckers, longest common prefix, IP longest-prefix routing, and 2D board dictionary search.',
     avoidWhen: 'Millions of long sparse keys with tight RAM—compress single-child chains into a Radix Tree / Patricia Trie.',
     followUpTwists: [
@@ -381,7 +381,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How do you optimize Trie memory in Word Search II (LC 212) to avoid TLE?',
         invariantShift: 'Store the full `word` string at leaf nodes (eliminating string concatenation) and prune empty leaf branches backward once found.',
-        complexityImpact: 'Prunes already-matched branches in O(1) amortized, cutting runtime 5–10×.',
+        complexityImpact: 'Prunes already-matched branches in O(1) amortized; actual speedup depends on dictionary size, prefix distribution, and cached Top-K maintenance.',
       },
     ],
   },
@@ -390,7 +390,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A parking garage with assigned spots: Chaining stacks overflow cars in a side lane, while Open Addressing cruises sequentially (or by a second stride) to the next free stall—leaving a "tombstone" cone when a car leaves so later searches do not stop early.',
     interviewScript30s:
-      '"Hash tables achieve O(1) expected lookup by hashing keys into buckets and resizing when load factor α crosses ~0.7. Open addressing (Linear/Quadratic/Double Hashing or Robin Hood) keeps buckets contiguous in CPU cache, while deletions require tombstones to preserve probe chains."',
+      '"Hash tables provide O(1) expected lookup under suitable hashing and controlled load factor. Implementations choose their own resize threshold; open addressing (Linear/Quadratic/Double Hashing or Robin Hood) can improve locality, while deletions require tombstones or safe backward shifting to preserve probe chains."',
     chooseWhen: 'O(1) key-value lookup, deduplication, frequency counting, and cache indexing (Python dict, Rust SwissTable, Java HashMap).',
     avoidWhen: 'Range queries, sorted iteration, or hard real-time O(1) worst-case without incremental rehashing.',
     followUpTwists: [
@@ -453,14 +453,14 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Zooming into a map: empty oceans stay one huge square, while dense downtown Manhattan automatically splits into finer and finer 2×2 blocks until each tile holds only a handful of drivers.',
     interviewScript30s:
-      '"A Quadtree (2D) or Octree (3D) recursively subdivides a bounding box into 4 (or 8) equal quadrants only when a node exceeds capacity. Range queries intersect the search box against each quadrant, skipping empty space in O(log N + K)."',
+      '"A Quadtree (2D) or Octree (3D) recursively subdivides a bounding box into 4 (or 8) cells when a node exceeds capacity. Range queries skip non-intersecting cells; typical cost depends on balance and spatial distribution, while worst-case traversal can be O(N) plus reported results."',
     chooseWhen: 'Geo-proximity search (Uber/Yelp nearby drivers), 2D/3D game collision broad-phase, and sparse voxel terrain.',
     avoidWhen: 'Objects move at high velocity every millisecond across leaf boundaries (spatial hash grids or Geohash+Redis update faster).',
     followUpTwists: [
       {
         question: 'How do you handle a driver standing right on the border of two Quadtree quadrants?',
         invariantShift: 'Query using a bounding box centered on the user (`[x-r, x+r] × [y-r, y+r]`), which automatically intersects all bordering quadrants and filters exact Euclidean radius.',
-        complexityImpact: 'O(log N + K) with zero boundary-miss bugs.',
+        complexityImpact: 'Correctly includes intersecting neighboring quadrants; query cost depends on tree balance and spatial distribution and can be O(N) in the worst case.',
       },
       {
         question: 'What happens if two points share the exact same `(x, y)` coordinates during subdivision?',
@@ -474,7 +474,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Sorting all circular rotations of a book pushes identical words next to each other so the last column becomes long runs of repeated letters—which compress tightly AND let you search any phrase backward using just letter counts.',
     interviewScript30s:
-      '"BWT clusters contextually similar characters for Run-Length/Huffman compression (bzip2). By the Last-to-First (LF) mapping property, pairing BWT with `C[]` cumulative counts and `Occ(c, r)` checkpoints creates an FM-Index that counts any pattern in O(|P|) without decompressing."',
+      '"BWT clusters contextually similar characters for Run-Length/Huffman compression (bzip2). By the Last-to-First (LF) mapping property, pairing BWT with `C[]` cumulative counts and `Occ(c, r)` rank queries creates an FM-Index that counts a pattern without decompressing. Query cost is O(|P|) when rank is O(1) (e.g., a fixed alphabet with suitable checkpoints); a Wavelet Tree typically adds a log-alphabet factor."',
     chooseWhen: 'Human genome alignment (Bowtie2, BWA), bzip2 compression, and compressed full-text substring indexing.',
     avoidWhen: 'Mutable live documents with frequent random character edits (rebuilding BWT/Suffix Array is O(N)).',
     followUpTwists: [
@@ -486,7 +486,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'How does Bowtie2 keep the `Occ(c, r)` table small for a 3-billion-base genome?',
         invariantShift: 'Store `Occ` checkpoints only every 64 or 128 positions (or use a Wavelet Tree) and count the short gap using CPU `popcount` bitmasks.',
-        complexityImpact: 'Cuts index RAM from ~40 GB down to ~2 GB while keeping O(|P|) search.',
+        complexityImpact: 'Checkpoint sampling trades rank-query work for lower index memory; exact RAM and search cost depend on alphabet, checkpoint interval, and rank data structure.',
       },
     ],
   },
@@ -621,7 +621,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A bouncer’s stamp sheet with k ink colors: if ANY of your k expected colors is missing, you definitely never visited; if all k colors are smudged, you probably visited (or someone else’s stamps overlapped).',
     interviewScript30s:
-      '"A Bloom Filter hashes each key with k independent hash functions into an m-bit array in O(k) time and tiny RAM. It guarantees ZERO false negatives and tunable false-positive rate `p ≈ (1 - e^(-kn/m))^k`—blocking 99% of wasted RocksDB/Cassandra SSTable disk reads."',
+      '"An insert-only Bloom Filter hashes each key into an m-bit array using k hash positions in O(k) time. With intact bits and correct query/insert hashing it has no false negatives, and its false-positive rate is approximately `p ≈ (1 - e^(-kn/m))^k`; disk-read savings depend on the workload and chosen p."',
     chooseWhen: 'Database SSTable disk-skip (RocksDB/LevelDB/Cassandra), web-crawler URL dedup, and Chrome Safe Browsing.',
     avoidWhen: 'You require exact membership with zero false positives OR frequent deletions (upgrade to Counting Bloom Filter or Cuckoo Filter).',
     followUpTwists: [
@@ -642,7 +642,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A subway system with local and express trains: ride the top-level express line skipping 100 stops at a time, drop down a level when you are about to overshoot, and take the local train for the final two stops.',
     interviewScript30s:
-      '"A Skip List layers probabilistic express lanes over a sorted linked list (promoting nodes with p = 0.5 or 0.25). It matches Red-Black Tree O(log N) expected search/insert/delete without rotations—making lock-free concurrency and range scans dead simple (Redis ZSET, RocksDB MemTable)."',
+      '"A Skip List layers probabilistic express lanes over a sorted linked list (promoting nodes with p = 0.5 or 0.25). It provides O(log N) expected search/insert/delete without rotations and supports ordered range scans. Concurrent/lock-free variants require careful CAS and reclamation design; Redis ZSET and RocksDB MemTable are practical uses, not proof every skip list is lock-free."',
     chooseWhen: 'Concurrent lock-free ordered maps (`ConcurrentSkipListMap`), Redis Sorted Sets, and LSM-Tree in-memory MemTables.',
     avoidWhen: 'Pointer-heavy cache misses hurt read-only static tables (B+ Trees or sorted arrays pack keys tightly into cache lines).',
     followUpTwists: [
@@ -663,14 +663,14 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Keeping d independent tally notebooks where each item gets tossed into a hashed bucket: collisions can only inflate a bucket’s count, so taking the MINIMUM across all d notebooks strips away noise.',
     interviewScript30s:
-      '"Count-Min Sketch uses a `d × w` matrix of counters with d independent hashes to track frequencies over billion-item streams in O(1) space. Taking `min_i table[i][h_i(x)]` guarantees estimates NEVER underestimate true count, with additive error `≤ εN` with probability `1 - δ`."',
+      '"Count-Min Sketch uses a `d × w` counter matrix with independent hashes; updates and queries take O(d) time. With `w = O(1/ε)` and `d = O(log(1/δ))`, it estimates non-negative stream frequencies without underestimating, with additive error at most εN with probability at least 1−δ."',
     chooseWhen: 'Streaming Heavy Hitters / Top-K (paired with a size-K Min-Heap), DDoS IP rate monitoring, and Caffeine TinyLFU cache admission.',
     avoidWhen: 'Exact counts are legally/financially mandatory (billing ledgers) or keys undergo arbitrary unguarded negative decrements.',
     followUpTwists: [
       {
         question: 'What is "Conservative Update" and why does it slash Count-Min Sketch overestimation?',
         invariantShift: 'On increment, first read `minVal = query(x)` and ONLY increment the rows whose current cell equals `minVal`—preventing already-polluted buckets from growing further.',
-        complexityImpact: 'Same O(d) time, up to 10× lower error in skewed Zipfian streams (no decrements allowed).',
+        complexityImpact: 'Same O(d) time; accuracy depends on sketch width/depth and the stream distribution, with no decrements in the standard guarantee.',
       },
       {
         question: 'How do you find the Top-K heavy hitters over 1 billion events using Count-Min Sketch?',
@@ -682,9 +682,9 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'hyperloglog': {
     algorithmId: 'hyperloglog',
     simpleAnalogy:
-      'If someone tells you they flipped a coin and got 10 heads in a row, you estimate they tried ~1,024 times—splitting those coin flips across 16,384 independent buckets and taking the harmonic mean nails 1 billion uniques within 0.8% in just 12 KB!',
+      'If a stream contains many unique IDs, HyperLogLog hashes them into m registers and combines the leading-zero observations; with m = 16,384 and 6-bit registers it uses about 12 KB and has roughly 0.81% relative standard error (not a per-run error guarantee).',
     interviewScript30s:
-      '"HyperLogLog hashes each ID, uses the top p bits to pick one of `m = 2^p` registers, and records the maximum leading-zero count `ρ` in the remaining bits. Combining registers via harmonic mean estimates cardinalities up to 10⁹ in ~12 KB with ~0.81% standard error."',
+      '"HyperLogLog hashes each ID, uses the top p bits to pick one of `m = 2^p` registers, and records the maximum leading-zero count `ρ` in the remaining bits. Register count determines memory and relative standard error (approximately 1.04/√m in the standard regime); 16,384 six-bit registers use about 12 KB and yield roughly 0.81% standard error."',
     chooseWhen: 'Unique daily active users (`Redis PFCOUNT`), BigQuery `APPROX_COUNT_DISTINCT`, and distributed ad-impression deduplication.',
     avoidWhen: 'You need exact uniqueness counts, element membership queries ("was user X seen?"), or set intersection accuracy.',
     followUpTwists: [
@@ -711,11 +711,11 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     followUpTwists: [
       {
         question: 'Why does a single full-table scan wipe out an LRU cache, and how does ARC stop it?',
-        invariantShift: 'Every scanned page enters LRU as "most recent", evicting hot working-set pages. ARC puts new pages in T1 (recency); hot pages promoted to T2 (frequency) survive the scan untouched.',
+        invariantShift: 'Every scanned page enters LRU as "most recent", which can evict hot working-set pages. ARC adapts between recency and frequency; pages promoted to T2 can be better protected from one-time scans, but no policy guarantees every hot page survives every workload.',
         complexityImpact: 'Still O(1) per access with high hit-rate stability.',
       },
       {
-        question: 'How does LFU stay strictly O(1) instead of using an O(log N) Min-Heap?',
+        question: 'How can LFU support O(1) expected updates without an O(log N) Min-Heap?',
         invariantShift: 'Maintain `freqToDLL` mapping each integer frequency to a doubly linked list and track scalar `minFreq`—since frequency only increments by +1 on access, `minFreq` updates in O(1)!',
         complexityImpact: 'Drops O(log C) heap update to strict O(1) get & put.',
       },
@@ -726,7 +726,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Splitting a giant sheet of graph paper strictly in half until a piece fits your drawing; when you finish, if the matching twin half beside it is also free, tape them back together in one step.',
     interviewScript30s:
-      '"The Buddy Allocator rounds requests up to powers of 2 (`2^k`) and splits larger free blocks in half on demand. On `free(addr, order)`, its twin buddy’s address is computed in O(1) via `addr ^ (1 << order)`, enabling O(log M) coalescing with zero external fragmentation."',
+      '"The Buddy Allocator rounds requests up to powers of 2 (`2^k`) and splits larger free blocks in half on demand. On `free(addr, order)`, its twin buddy’s address is computed in O(1) via `addr ^ (1 << order)`, enabling coalescing across at most O(log M) block orders. Buddy allocation can still suffer external fragmentation because free blocks of incompatible sizes cannot always combine."',
     chooseWhen: 'OS kernel physical page-frame allocators (Linux `alloc_pages`), slab backends, and real-time embedded memory pools.',
     avoidWhen: 'Many odd-sized allocations just above a power of 2 (e.g., 65 bytes wastes 63 bytes of internal fragmentation—pair with a Slab Allocator).',
     followUpTwists: [
@@ -768,40 +768,40 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Updating a highway billboard while cars zoom past: build the entire new sign backstage, swap the pointer in one atomic click (CAS), and wait until every car already on the bridge finishes passing (RCU grace period) before recycling the old sign.',
     interviewScript30s:
-      '"Mutexes stall readers and risk priority inversion. Compare-And-Swap (CAS) loops atomically retry pointer updates without blocking (Michael-Scott Queue), while Read-Copy-Update (RCU) lets readers run with ZERO locks or atomic writes by deferring old-memory reclamation until a grace period passes."',
+      '"Mutexes can block readers and risk priority inversion. Compare-And-Swap (CAS) loops retry pointer updates without taking a mutex (Michael-Scott Queue), but are not automatically wait-free. RCU read-side critical sections are typically very low-overhead and avoid reader-side locks; old memory is reclaimed only after a grace period, with exact guarantees depending on the RCU implementation."',
     chooseWhen: 'OS routing tables & kernel lists (Linux RCU), HFT lock-free queues, and read-mostly shared configs at 100M+ QPS.',
     avoidWhen: 'Write-heavy multi-object atomic transactions (mutexes or STM are simpler and avoid CAS livelock storms).',
     followUpTwists: [
       {
         question: 'What is the ABA problem in a lock-free CAS stack/queue and how do you prevent it?',
         invariantShift: 'Thread 1 reads `A`, stalls while another thread pops `A`, pops `B`, and recycles memory back to `A`—so Thread 1’s CAS falsely succeeds! Fix with Tagged/Versioned Pointers (`(ptr, version++)`) or Hazard Pointers.',
-        complexityImpact: 'O(1) monotonic version tag eliminates ABA corruption completely.',
+        complexityImpact: 'A tagged/versioned pointer helps detect ABA; finite tag wrap and safe memory reclamation still need to be addressed.',
       },
       {
         question: 'Why does RCU outperform Reader-Writer Locks (RWLock) on 64-core servers?',
         invariantShift: 'Even shared RWLock readers atomically increment a shared counter, causing massive cross-core cache-line bouncing; RCU readers issue zero shared writes, scaling linearly with core count.',
-        complexityImpact: 'O(1) wait-free read scalability across all CPU cores.',
+        complexityImpact: 'O(1) read-side work in common RCU designs; do not call it wait-free across all implementations or workloads, and scalability depends on grace-period/reclamation behavior.',
       },
     ],
   },
   'bplus-tree-storage': {
     algorithmId: 'bplus-tree-storage',
     simpleAnalogy:
-      'A multi-volume encyclopedia index: internal directory volumes hold hundreds of guide words per page so you reach any article in 3 page flips, and every leaf volume links straight to the next volume for instant chapter-wide scans.',
+      'A multi-volume encyclopedia index: internal directory pages hold many guide words so high fanout reduces the number of page levels; linked leaf pages support sequential chapter-wide scans. Actual page reads depend on page layout and cache.',
     interviewScript30s:
-      '"Unlike binary trees (height ~30 → 30 random disk seeks), a B+ Tree packs hundreds of separator keys into 4KB–16KB internal pages and keeps all payloads in doubly linked leaf pages—reaching 100M+ rows in just 3–4 page reads and scanning ranges sequentially."',
+      '"A B+ Tree packs many separator keys into 4KB–16KB internal pages and keeps payloads in linked leaves, reducing tree height and supporting sequential range scans. The number of page reads depends on fanout, page occupancy, cache hits, and storage layout; a large table may require only a few uncached index-page reads, but this is not a fixed guarantee."',
     chooseWhen: 'OLTP relational indexes (PostgreSQL, MySQL InnoDB, SQLite) requiring fast point lookups, predictable latency, and ordered `BETWEEN` range scans.',
     avoidWhen: 'Write-heavy petabyte append/time-series workloads where random in-place 16KB page updates bottleneck disk IOPS (use LSM-Trees).',
     followUpTwists: [
       {
         question: 'Why do databases store row payloads ONLY in B+ Tree leaves instead of internal nodes (like classic B-Trees)?',
-        invariantShift: 'Keeping payloads out of internal pages maximizes branching factor (fanout ~500+), shrinks tree height from 5→3, and lets sibling leaf pointers power sequential range scans without revisiting parents.',
-        complexityImpact: 'Cuts random disk I/Os per lookup and accelerates range scans 10×.',
+        invariantShift: 'Keeping payloads out of internal pages increases fanout and reduces tree height; actual fanout and page depth depend on key/pointer sizes, page size, fill factor, and row count. Linked leaves support sequential range scans.',
+        complexityImpact: 'Reduces random disk I/Os compared with lower-fanout layouts; the actual lookup and range-scan improvement depends on page size, occupancy, and cache.',
       },
       {
         question: 'Why do random UUIDv4 primary keys hurt InnoDB B+ Tree write performance compared to UUIDv7/BIGSERIAL?',
         invariantShift: 'UUIDv4 inserts into random leaf pages, causing frequent 50% page splits, cache-buffer misses, and write amplification; monotonic UUIDv7 appends cleanly to the rightmost leaf.',
-        complexityImpact: '3–5× higher write throughput and ~2× denser page fill factor.',
+        complexityImpact: 'Monotonic keys often improve locality and reduce random page splits; throughput and page-fill gains depend on workload, page size, concurrency, and database implementation.',
       },
     ],
   },
@@ -810,7 +810,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Dumping incoming receipts sequentially into a tidy notepad (MemTable) instead of filing each one into an alphabetized cabinet; once the notepad fills up, sort it once into a sealed binder (SSTable) and merge binders in the background.',
     interviewScript30s:
-      '"LSM-Trees convert random disk writes into sequential O(1) WAL appends + in-memory SkipList writes, flushing immutable sorted SSTables to disk. Background compaction (Size-Tiered for write speed, Leveled for tight read/space amplification) merges keys while Bloom Filters skip irrelevant SSTables."',
+      '"LSM-Trees convert many random updates into sequential WAL/SSTable writes and buffer ordered data in a MemTable (SkipList insertion is expected O(log M)). Background compaction trades read, write, and space amplification; Bloom filters reduce negative lookups according to their false-positive rate."',
     chooseWhen: 'High-write-throughput KV/time-series/wide-column stores (RocksDB, Cassandra, ScyllaDB, HBase, InfluxDB).',
     avoidWhen: 'Read-heavy low-latency point queries without memory for Bloom Filters/block cache, or unpredictable compaction tail-latency sensitivity.',
     followUpTwists: [
@@ -821,7 +821,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'Compare Size-Tiered Compaction (STCS) vs Leveled Compaction (LCS) across Read/Write/Space amplification.',
-        invariantShift: 'STCS minimizes write amplification (great for append-heavy writes) but risks 2× temporary disk space and higher read amp; LCS enforces non-overlapping key ranges per level (10× tighter space & faster reads) at higher write amp.',
+        invariantShift: 'STCS often reduces write amplification at the cost of higher read/space amplification; LCS keeps non-overlapping key ranges per level to improve read predictability at higher write amplification. Temporary space and amplification ratios depend on level sizing, compaction policy, and workload.',
         complexityImpact: 'Fundamental RUM (Read/Update/Memory) storage tradeoff.',
       },
     ],
@@ -831,7 +831,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Sorting a 100-GB deck of cards on a desk that only holds 1 GB: sort 100 separate 1-GB stacks onto the floor, then pull the top card from each stack using a 100-slot winner bracket (Min-Heap) to stream one giant sorted output.',
     interviewScript30s:
-      '"When data exceeds RAM, External K-Way Merge first chunks input into RAM-sized sorted runs on disk, then streams all K runs through a size-K Min-Heap using page-sized input/output buffers—minimizing sequential disk passes to `1 + ⌈log_B(N/M)⌉`."',
+      '"When data exceeds RAM, External K-Way Merge chunks input into RAM-sized sorted runs, then streams a bounded number of runs through a Min-Heap with page-sized buffers. Pass count depends on initial run count and merge fan-in (roughly `1 + ceil(log_fanIn(runCount))` after run generation)."',
     chooseWhen: 'SQL `ORDER BY` / `GROUP BY` spills to disk, LSM-Tree SSTable compaction, MapReduce shuffle, and LC 23 Merge K Sorted Lists.',
     avoidWhen: 'Dataset fits comfortably inside RAM (standard in-memory TimSort/QuickSort avoids disk serialization overhead).',
     followUpTwists: [
@@ -864,7 +864,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'What is a Compensation Log Record (CLR) and why does it prevent infinite crash loops?',
         invariantShift: 'Every Undo action logs a redo-only CLR pointing `undoNextLSN` to the prior record; if the DB crashes during Undo, the next recovery skips already-undone steps instead of undoing an undo!',
-        complexityImpact: 'Bounded O(LogSize) recovery regardless of crash frequency.',
+        complexityImpact: 'CLRs let later recovery skip undo actions already logged; total recovery work still depends on log length and how often recovery is interrupted.',
       },
     ],
   },
@@ -873,7 +873,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'An assembly line pulling parts on demand (`next()`): Hash Join builds a quick lookup shelf for the smaller table, while Sort-Merge Join walks two sorted conveyor belts in lockstep without ever holding the whole dataset in memory.',
     interviewScript30s:
-      '"The Volcano iterator model pulls one tuple at a time (`open/next/close`) so operators compose with O(1) pipeline memory. Hash Join streams in O(R + S) by hashing the smaller build table; Sort-Merge Join shines when inputs are pre-sorted or output needs ordering."',
+      '"The Volcano iterator model pulls tuples on demand (`open/next/close`) and can keep per-operator pipeline buffers small. Hash Join runs in expected O(R + S) when the build-side hash table fits memory; Sort-Merge is attractive for pre-sorted inputs or when ordering is useful, otherwise sorting adds cost."',
     chooseWhen: 'Relational query planners (PostgreSQL, DuckDB, Spark SQL): Hash Join for unsorted equi-joins, Sort-Merge for pre-sorted/range joins, Nested Loop for tiny/indexed inner tables.',
     avoidWhen: 'Tuple-at-a-time Volcano calls bottleneck OLAP columnar scans (upgrade to Vectorized 1024-row batches or LLVM JIT codegen).',
     followUpTwists: [
@@ -885,23 +885,23 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Why are modern OLAP engines (DuckDB, ClickHouse, Photon) replacing row-by-row Volcano with Vectorized Execution?',
         invariantShift: 'Passing a 1,024-row column batch per `next()` call amortizes virtual function dispatch 1000× and unlocks CPU SIMD AVX2/AVX-512 instructions.',
-        complexityImpact: '10–50× faster analytical scan & join throughput.',
+        complexityImpact: 'Batching can reduce per-tuple dispatch overhead and enable SIMD; throughput gains depend on operator, data layout, and hardware.',
       },
     ],
   },
   'consistent-hashing-dht': {
     algorithmId: 'consistent-hashing-dht',
     simpleAnalogy:
-      'Seating servers around a circular clock face: each key walks clockwise to the first server it meets. Adding a new server only steals keys from its single clockwise neighbor—and giving each server 150 "virtual seats" balances the pie evenly.',
+      'Seating servers around a circular clock face: each key walks clockwise to the first server it meets. Adding a new server moves keys from nearby ring ranges; virtual nodes improve balance statistically, but the result depends on token count and key distribution.',
     interviewScript30s:
-      '"Modulo hashing (`hash(k) % N`) remaps ~100% of keys when a node joins or dies. Consistent Hashing places keys and virtual nodes on a hash ring, moving only `K / N` keys on topology changes. Chord adds O(log N) finger tables; Rendezvous Hashing picks `argmax hash(k, node)` with zero ring state."',
+      '"Modulo hashing (`hash(k) % N`) can remap most keys when the shard count changes. Consistent Hashing places keys and virtual nodes on a hash ring and limits movement to affected ranges; the expected fraction depends on ring size and distribution. Chord adds O(log N) finger-table routing; Rendezvous Hashing picks `argmax hash(k, node)` without ring state."',
     chooseWhen: 'Distributed caches (Memcached, Redis Cluster), Dynamo/Cassandra sharding, CDNs, and sticky load balancers.',
     avoidWhen: 'Hot celebrity keys skew load onto one shard regardless of ring balance (requires key salting or local read-through caching).',
     followUpTwists: [
       {
         question: 'Why are Virtual Nodes (vnodes) mandatory in production Consistent Hashing?',
-        invariantShift: 'With only 1 point per server, random placement creates 3–5× shard imbalance and causes a dead node’s entire load to slam one neighbor; 100–200 vnodes/server cut variance to < 5% and spread failover across the whole cluster.',
-        complexityImpact: 'O(log(N · V)) lookup, uniform load balance, heterogeneous hardware weighting.',
+        invariantShift: 'With one token per server, random placement can create substantial shard imbalance and concentrate failover load. More virtual nodes usually improve balance and spread movement, but variance depends on vnode count, hashing, and workload.',
+        complexityImpact: 'O(log(N · V)) lookup; more virtual nodes improve statistical balance and can support heterogeneous weights, but do not guarantee uniform load for skewed keys.',
       },
       {
         question: 'When is Rendezvous (Highest Random Weight) Hashing cleaner than a Ring?',
@@ -1151,15 +1151,15 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
   'hash-table-probing': {
     recursiveApproach: 'Recursive Probe-Chain Traversal',
     recursiveTimeBigO: 'O(1) expected (α < 0.7)',
-    recursiveSpaceBigO: 'O(1/(1 − α)) expected stack',
-    recurrenceRelation: 'Expected probes ≈ 1 / (1 − α) for open addressing; 1 + α/2 for chaining',
+    recursiveSpaceBigO: 'O(1) auxiliary state per lookup (excluding the table); expected probe count depends on load factor and probing scheme',
+    recurrenceRelation: 'Probe counts depend on load factor and scheme; for open addressing unsuccessful probes grow rapidly as α approaches 1, so keep α below the implementation target',
     depthWorkFormula: (d) => `Probe ${d} → contiguous cache-line slot check`,
     maxDepthBigO: 'O(1) expected',
     iterativeApproach: 'Iterative Open-Addressing / Bucket Loop + Amortized 2× Rehash',
     iterativeTimeBigO: 'O(1) amortized · O(N) worst-case',
     iterativeSpaceBigO: 'O(N / α)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Iterative open addressing exploits L1/L2 cache locality cleanly; resizing at α = 0.7 keeps amortized ops O(1).',
+    tradeoffVerdict: 'Open addressing can exploit cache locality; resizing thresholds are implementation-specific and keep expected/amortized operations efficient, while worst-case lookup remains O(N).',
   },
   'splay-tree-rotations': {
     recursiveApproach: 'Top-Down / Recursive Splay Restructuring',
@@ -1189,20 +1189,20 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
   },
   'quadtree-octree-spatial': {
     recursiveApproach: 'Recursive 4-Way / 8-Way Quadrant Subdivision',
-    recursiveTimeBigO: 'O(log N + K) range query',
+    recursiveTimeBigO: 'Distribution-sensitive range query; O(N) worst case plus output',
     recursiveSpaceBigO: 'O(N) leaves + O(Depth) stack',
     recurrenceRelation: 'Region side halves per level → depth ≤ log₂(WorldWidth / MinCell)',
     depthWorkFormula: (d) => `Zoom level ${d} → cell width shrinks by 1 / 2^${d}`,
     maxDepthBigO: 'O(log(Span/ε))',
     iterativeApproach: 'Iterative Stack / Morton Z-Order Linear Quadtree',
-    iterativeTimeBigO: 'O(log N + K)',
+    iterativeTimeBigO: 'Distribution-sensitive; O(N) worst-case traversal',
     iterativeSpaceBigO: 'O(N)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Adaptive subdivision skips vast empty regions instantly; capping MAX_DEPTH prevents infinite splits on coincident points.',
+    tradeoffVerdict: 'Adaptive subdivision can skip empty regions efficiently for favorable spatial distributions; cap MAX_DEPTH or minimum cell width to prevent unbounded splitting on coincident points, while acknowledging O(N) worst-case queries.',
   },
   'bwt-fm-index': {
     recursiveApproach: 'Suffix-Tree / Recursive BWT Search',
-    recursiveTimeBigO: 'O(|P|) pattern count',
+    recursiveTimeBigO: 'O(|P|) pattern count when rank/Occ is O(1); wavelet-tree rank adds a log-alphabet factor',
     recursiveSpaceBigO: 'O(N) compressed bits',
     recurrenceRelation: 'Backward step: [l, r] ← [C[c] + Occ(c, l−1), C[c] + Occ(c, r) − 1] in O(1) per char',
     depthWorkFormula: (d) => `Pattern char ${d} → 2 O(1) Occ rank lookups narrow SA range`,
@@ -1211,7 +1211,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(|P|) query · O(N log N) build',
     iterativeSpaceBigO: 'O(N · H₀) compressed',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Iterative backward search queries a 3B-base genome in O(|P|) time using ~10× less RAM than a Suffix Tree.',
+    tradeoffVerdict: 'FM-Index backward search avoids decompressing the full text; memory and per-character rank cost depend on checkpoint sampling and rank structure.',
   },
   'lzw-compression': {
     recursiveApproach: 'Recursive Prefix-Trie Dictionary Expansion',
@@ -1299,10 +1299,10 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     depthWorkFormula: (d) => `Hash ${d} → sets/tests 1 bit in m-bit bitset`,
     maxDepthBigO: 'O(k) hashes',
     iterativeApproach: 'Kirsch-Mitzenmacher Double-Hash Bitset Loop',
-    iterativeTimeBigO: 'O(k) constant (~7 bits for 1% FP)',
+    iterativeTimeBigO: 'O(k) hash-position checks (about 7 positions near the 1% false-positive design point)',
     iterativeSpaceBigO: '~10 bits per key (1% FP)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Uses ~10 bits per key (vs ~64 bytes in a HashSet) to eliminate 99% of unnecessary disk SSTable reads.',
+    tradeoffVerdict: 'A Bloom Filter can use roughly 10 bits per key for a chosen false-positive rate and reduce unnecessary SSTable reads; memory and savings depend on the target rate and workload.',
   },
   'skip-list': {
     recursiveApproach: 'Recursive Multi-Level Express Descent',
@@ -1325,15 +1325,15 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     depthWorkFormula: (d) => `Row ${d} → 1 hash + 1 counter increment/min-read`,
     maxDepthBigO: 'O(d) rows',
     iterativeApproach: 'Fixed 2D Counter Matrix Loop (O(1) Streaming RAM)',
-    iterativeTimeBigO: 'O(d) constant (~5 ops)',
+    iterativeTimeBigO: 'O(d) row updates/query work; d is chosen from the error-probability target',
     iterativeSpaceBigO: 'O(d · w) sublinear fixed RAM',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Tracks billion-key stream frequencies in kilobytes with zero under-estimation error.',
+    tradeoffVerdict: 'Tracks stream frequencies with parameterized sublinear counters; estimates do not undercount under non-negative updates, with additive error controlled by ε and δ.',
   },
   'hyperloglog': {
     recursiveApproach: 'Bit-Prefix Register Bucketing + Harmonic Mean',
     recursiveTimeBigO: 'O(1) add · O(m) count/merge',
-    recursiveSpaceBigO: 'O(m · log log N) ≈ 12 KB for 10⁹ keys',
+    recursiveSpaceBigO: 'O(m) registers; bits per register and memory are determined by implementation and register count',
     recurrenceRelation: 'Standard error σ ≈ 1.04 / √m (m = 2^p registers, 6 bits each)',
     depthWorkFormula: (d) => `Register ${d} → stores max leading zeros ρ(w)`,
     maxDepthBigO: 'O(1) add',
@@ -1341,7 +1341,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(1) add · O(m) cardinality readout',
     iterativeSpaceBigO: '12 KB fixed (p = 14 → 16,384 × 6-bit regs)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Replaces ~10+ GB exact HashSets with 12 KB mergeable registers at < 0.81% standard error.',
+    tradeoffVerdict: 'Uses mergeable registers with memory and relative standard error determined by register count; standard error is approximately 1.04/√m after small-range corrections.',
   },
   'cache-lru-lfu-arc': {
     recursiveApproach: 'TreeMap / Heap Eviction Queue',
@@ -1354,7 +1354,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(1) get & put',
     iterativeSpaceBigO: 'O(C) capacity',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Pointer-spliced DLLs + HashMap guarantee O(1) latency; ARC adds scan resistance with two lightweight ghost lists.',
+    tradeoffVerdict: 'Pointer-spliced doubly linked lists plus a HashMap provide O(1) expected data-structure operations; ARC adapts recency/frequency and can improve scan resistance depending on workload.',
   },
   'buddy-memory-allocator': {
     recursiveApproach: 'Recursive Power-of-2 Block Split / Coalesce',
@@ -1367,7 +1367,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(log M) worst-case (~20 ops)',
     iterativeSpaceBigO: 'O(M / MinBlock) bitmap/free-lists',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Deterministic O(log M) kernel page allocation and instant XOR buddy coalescing eliminate external fragmentation.',
+    tradeoffVerdict: 'Power-of-two splitting and XOR buddy lookup enable bounded coalescing; external fragmentation can still occur when free blocks cannot merge.',
   },
   'persistent-data-structures': {
     recursiveApproach: 'Recursive Path-Copying Functional Tree Update',
@@ -1380,59 +1380,59 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(log N) edit & historical query',
     iterativeSpaceBigO: 'O(N + M log N) across M edits',
     iterativeStackOverhead: 'O(log N) or O(1)',
-    tradeoffVerdict: 'Avoids O(N) full-copy snapshots by sharing 99%+ of unchanged subtrees across historical versions.',
+    tradeoffVerdict: 'Avoids full-copy snapshots by structurally sharing unchanged subtrees; the amount shared depends on the data structure and edit pattern.',
   },
   'lockfree-cas-rcu': {
-    recursiveApproach: 'Lock-Based Critical Section vs Wait-Free Read',
-    recursiveTimeBigO: 'O(1) uncontended CAS · O(1) wait-free RCU read',
+    recursiveApproach: 'Lock-Based Critical Section vs Low-Overhead RCU Read-Side',
+    recursiveTimeBigO: 'O(1) uncontended CAS; common RCU read-side work is O(1), with progress/reclamation guarantees implementation-dependent',
     recursiveSpaceBigO: 'O(1) per op + grace-period deferred trash',
-    recurrenceRelation: 'CAS retries proportional to write contention; RCU reader executes 0 atomic writes',
+    recurrenceRelation: 'CAS retries grow with write contention; common RCU read-side designs avoid shared writes, with implementation-specific progress and reclamation guarantees',
     depthWorkFormula: (d) => `Attempt ${d} → 1 hardware CMPXCHG atomic instruction`,
-    maxDepthBigO: 'O(1) wait-free read',
+    maxDepthBigO: 'Common O(1) RCU read-side work; not a universal wait-free guarantee',
     iterativeApproach: 'Iterative CAS Retry Loop / RCU Publish + Grace-Period Reclaim',
-    iterativeTimeBigO: 'O(1) expected (linear multi-core read scaling)',
+    iterativeTimeBigO: 'CAS operation cost depends on retries/contention; common RCU read-side work is O(1), not a universal wait-free guarantee',
     iterativeSpaceBigO: 'O(Pending Deferred Copies)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'RCU eliminates cross-core cache-line bouncing for read-mostly workloads; tagged CAS prevents ABA corruption.',
+    tradeoffVerdict: 'RCU can reduce reader-side cache-line contention in read-mostly workloads; tagged CAS helps detect ABA but finite tag wrap and safe reclamation must be handled.',
   },
   'bplus-tree-storage': {
     recursiveApproach: 'Recursive Page Descent + Bottom-Up Split/Merge',
-    recursiveTimeBigO: 'O(log_B N) disk I/Os (3–4 pages for 10⁹ rows)',
+    recursiveTimeBigO: 'O(log_B N) disk I/Os; actual page count depends on fanout, occupancy, cache, and storage layout',
     recursiveSpaceBigO: 'O(log_B N) path stack',
     recurrenceRelation: 'Height h ≤ ⌈log_{B/2}(N)⌉ where B ≈ 200–500 keys per 16KB page',
     depthWorkFormula: (d) => `Page level ${d} → binary searches ~500 separator keys in 1 page`,
-    maxDepthBigO: 'O(log_B N) ≈ 3–4',
+    maxDepthBigO: 'O(log_B N), with page depth dependent on fanout and occupancy',
     iterativeApproach: 'Latch-Crabbing Iterative Page Traversal + Linked Leaf Scan',
     iterativeTimeBigO: 'O(log_B N) lookup · O(log_B N + K/B) range',
     iterativeSpaceBigO: 'O(N / B) disk pages',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'High branching factor B cuts disk seeks by 10× over binary trees, and linked leaves power sequential range scans.',
+    tradeoffVerdict: 'High branching factor B reduces tree height and disk-page visits relative to binary trees; actual I/O depends on page size, occupancy, and cache, while linked leaves support sequential range scans.',
   },
   'lsm-tree-compaction': {
     recursiveApproach: 'Multi-Level SSTable Lookup + Background Merge',
     recursiveTimeBigO: 'O(1) WAL + O(log M) write · O(L · log S) read',
-    recursiveSpaceBigO: 'O(N) + compaction space amp (1.1× LCS / 2× STCS)',
-    recurrenceRelation: 'Levels grow by factor T=10 → L = ⌈log_T(N/M)⌉ ≈ 4–5 levels; Bloom skips ~99% misses',
+    recursiveSpaceBigO: 'O(N) stored data plus temporary compaction space; amplification depends on compaction strategy, level sizing, and workload',
+    recurrenceRelation: 'Level count and Bloom-filter savings depend on size ratio, level policy, false-positive rate, and query mix',
     depthWorkFormula: (d) => `Level L${d} → Bloom Filter check + 1 binary-searched SSTable`,
     maxDepthBigO: 'O(log_T N) levels',
     iterativeApproach: 'Sequential WAL + SkipList MemTable + K-Way Compaction',
-    iterativeTimeBigO: 'O(log M) write · O(1) Bloom-filtered read',
+    iterativeTimeBigO: 'O(log M) expected MemTable write; Bloom check O(k) plus level/SSTable lookup and possible disk I/O',
     iterativeSpaceBigO: 'O(N) disk + O(Bloom bits) RAM',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Turns random disk writes into sequential appends for 10× higher ingest throughput than B+ Trees.',
+    tradeoffVerdict: 'Turns many random updates into sequential WAL/SSTable writes, often improving ingest throughput for write-heavy workloads; the gain depends on compaction policy, device, and workload.',
   },
   'external-kway-merge': {
     recursiveApproach: 'Multi-Pass Balanced External Merge Tree',
     recursiveTimeBigO: 'O(N log N) CPU · O((N/B) · log_{M/B}(N/M)) I/O',
     recursiveSpaceBigO: 'O(M) bounded RAM buffer',
-    recurrenceRelation: 'I/O Passes = 1 + ⌈log_{B_mem − 1}(N / M)⌉ (usually just 2 passes for terabytes!)',
+    recurrenceRelation: 'I/O passes depend on initial run count and merge fan-in: approximately 1 + ⌈log_{fan-in}(runCount)⌉ after run generation',
     depthWorkFormula: (d) => `Merge pass ${d} → streams K sorted runs through size-K Min-Heap`,
     maxDepthBigO: 'O(log_{M/B}(N/M)) passes',
     iterativeApproach: 'Buffered K-Way Min-Heap Streaming Merge',
     iterativeTimeBigO: 'O((N / B) · passes) sequential I/O',
     iterativeSpaceBigO: 'O(M) RAM',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Sorts datasets 100× larger than physical RAM in just 2 sequential disk passes using page-aligned buffers.',
+    tradeoffVerdict: 'Sorts datasets larger than RAM by creating sorted runs and performing buffered multiway merges; pass count depends on memory, buffer size, fan-in, and dataset size.',
   },
   'aries-wal-recovery': {
     recursiveApproach: 'Forward Log Scan + Backward Undo Chain',
@@ -1445,7 +1445,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(|WAL tail|)',
     iterativeSpaceBigO: 'O(|DPT| + |ATT|)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Frequent fuzzy checkpoints bound WAL tail recovery time to seconds while supporting zero-wait STEAL/NO-FORCE commits.',
+    tradeoffVerdict: 'WAL and checkpointing bound recovery work according to checkpoint interval and log volume; STEAL/NO-FORCE permits buffer management flexibility but commit durability still depends on the configured log-flush policy.',
   },
   'sql-joins-volcano': {
     recursiveApproach: 'Nested-Loop Join O(|R| · |S|)',
@@ -1464,18 +1464,18 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     recursiveApproach: 'Chord O(log N) Finger-Table Routing Hops',
     recursiveTimeBigO: 'O(log(N · V)) local ring · O(log N) DHT hops',
     recursiveSpaceBigO: 'O(N · V) ring entries · O(log N) fingers',
-    recurrenceRelation: 'Topology change moves strictly K / N keys (vs ~K(N−1)/N for key % N)',
+    recurrenceRelation: 'Under uniform hashing, adding a node remaps an expected fraction about 1/(N+1); exact movement depends on token placement and key distribution',
     depthWorkFormula: (d) => `Hop ${d} → halves clockwise distance around 2^m ring`,
     maxDepthBigO: 'O(log N) hops',
     iterativeApproach: 'Binary Search on Sorted Virtual-Node Ring / Rendezvous Argmax',
     iterativeTimeBigO: 'O(log(N · V)) ring · O(N) HRW',
     iterativeSpaceBigO: 'O(N · V)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Consistent Hashing + 150 vnodes cuts cache-miss storms by ~95% during autoscaling and keeps shard skew < 5%.',
+    tradeoffVerdict: 'Consistent hashing limits remapping when nodes join or leave; virtual-node count and hash distribution affect balance, while cache-miss and skew improvements depend on workload and configuration.',
   },
   'raft-paxos-consensus': {
     recursiveApproach: 'Multi-Round Paxos Prepare/Accept vs Raft Leader Pipeline',
-    recursiveTimeBigO: '1 RTT per committed log entry (steady state)',
+    recursiveTimeBigO: 'Often one quorum RTT for stable-leader replication in the steady state; elections, retries, batching, and network timing add latency',
     recursiveSpaceBigO: 'O(LogSize) compacted via Snapshots',
     recurrenceRelation: 'Quorum Q = ⌊N / 2⌋ + 1 guarantees any two quorums intersect in ≥ 1 node',
     depthWorkFormula: (d) => `Term ${d} → majority AppendEntries RPC commits index safely`,
@@ -1484,7 +1484,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(N) RPCs/commit · 1 RTT latency',
     iterativeSpaceBigO: 'O(Snapshotted Log)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Stable Raft leadership pipelines writes in 1 RTT vs 2 RTT basic Paxos while guaranteeing linearizable safety.',
+    tradeoffVerdict: 'Raft and Paxos can provide linearizable consensus under their stated quorum/failure assumptions; steady-state latency depends on protocol variant, batching, leader placement, and network RTT.',
   },
   'gossip-phi-accrual': {
     recursiveApproach: 'Exponential Epidemic Broadcast Tree',
@@ -1527,16 +1527,16 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
   },
   'crdt-gcounter-orset': {
     recursiveApproach: 'Coordination-Free Lattice Join Merge',
-    recursiveTimeBigO: 'O(1) local op · O(R) state merge (O(Δ) delta merge)',
+    recursiveTimeBigO: 'Local operation cost depends on representation; state merge O(R), delta merge O(Δ)',
     recursiveSpaceBigO: 'O(R) counter · O(|Adds| + |Tombstones|) OR-Set',
     recurrenceRelation: 'Merge ⊔ satisfies Commutativity, Associativity & Idempotence ⇒ guaranteed convergence',
     depthWorkFormula: (d) => `Replica ${d} → monotone lattice join never loses updates`,
     maxDepthBigO: 'O(1)',
     iterativeApproach: 'Local Mutation + Async Idempotent Delta-State Gossip Merge',
-    iterativeTimeBigO: 'O(1) offline write latency',
+    iterativeTimeBigO: 'O(1) local update work for compact counter representations; no synchronous cross-region consensus round trip',
     iterativeSpaceBigO: 'O(R) / O(Unique Tags)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Delivers zero-latency local writes and automatic partition-healing convergence where consensus locks would stall.',
+    tradeoffVerdict: 'Allows local updates without synchronous cross-region consensus and converges after replicas exchange updates under the CRDT merge and delivery assumptions; local storage/network latency is not zero.',
   },
 };
 
@@ -1545,7 +1545,7 @@ export const MASTER_BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArc
     algorithmId: 'bplus-tree-storage',
     brute: { label: 'Brute Force', approach: 'Full unsorted heap-file table scan across all disk blocks.', time: 'O(N / B) I/O', space: 'O(1)', bottleneckOrWin: 'Reads millions of pages for a single primary-key lookup.' },
     better: { label: 'Better', approach: 'Balanced Binary Tree (AVL/RB) stored on disk.', time: 'O(log₂ N) I/O', space: 'O(N)', bottleneckOrWin: 'Height ~30 causes 30 random disk seeks (~150ms) and terrible range scan locality.' },
-    optimal: { label: 'Optimal', approach: 'High-fanout B+ Tree (16KB pages, linked leaves, copy-up splits).', time: 'O(log_B N) ≈ 3–4 I/O', space: 'O(N / B)', bottleneckOrWin: 'Reaches 1B rows in 4 page hops and scans ranges sequentially via sibling leaf pointers.' },
+    optimal: { label: 'Optimal', approach: 'High-fanout B+ Tree (16KB pages, linked leaves, copy-up splits).', time: 'O(log_B N) I/O', space: 'O(N / B)', bottleneckOrWin: 'High fanout reduces index depth; exact page hops depend on page layout and cache, and sibling leaves support sequential range scans.' },
     codeLevelDfd: 'Search Key k → Latch Root Page → Binary Search Separator Keys → Follow Child Pointer to Leaf → Split Full Leaf (Promote Right-Min Key) or Scan Next Leaf Pointer.',
     realWorldUseCases: ['PostgreSQL, MySQL InnoDB, and SQLite primary & secondary database indexes', 'NTFS, ext4, XFS, and APFS filesystem directory/extent metadata trees'],
     challengesFaced: ['Random UUIDv4 keys trigger constant 50% page splits and buffer-pool cache misses (prefer monotonic UUIDv7).', 'Concurrent page splits require latch-crabbing / Blink-Tree high-keys to avoid deadlocks.', 'Forgetting that leaf splits COPY the separator key up while internal splits PUSH it up breaks leaf range scans.'],
@@ -1554,23 +1554,23 @@ export const MASTER_BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArc
     algorithmId: 'lsm-tree-compaction',
     brute: { label: 'Brute Force', approach: 'Append-only log file scanned backward on every read.', time: 'O(1) write · O(N) read', space: 'O(N)', bottleneckOrWin: 'Instant writes, but reads collapse linearly as the log grows.' },
     better: { label: 'Better', approach: 'In-place B+ Tree page updates on disk.', time: 'O(log_B N) random I/O', space: 'O(N)', bottleneckOrWin: 'Random 16KB dirty-page flushes saturate SSD/HDD write IOPS under heavy ingest.' },
-    optimal: { label: 'Optimal', approach: 'Sequential WAL + SkipList MemTable + Immutable SSTables + Bloom Filters + Compaction.', time: 'O(log M) write · O(1) Bloom read', space: 'O(N)', bottleneckOrWin: 'Converts random writes into sequential appends while Bloom Filters skip ~99% of disk lookups.' },
+    optimal: { label: 'Optimal', approach: 'Sequential WAL + SkipList MemTable + Immutable SSTables + Bloom Filters + Compaction.', time: 'O(log M) expected MemTable write · O(k) Bloom check', space: 'O(N)', bottleneckOrWin: 'Converts many random writes into sequential appends; Bloom filters reduce disk lookups according to their false-positive rate and the workload.' },
     codeLevelDfd: 'Write(k,v) → Append WAL → Insert MemTable (SkipList) → Flush Immutable Sorted SSTable + Bloom Filter → Background K-Way Compaction (Drop Overwritten Keys & Tombstones).',
     realWorldUseCases: ['RocksDB (Meta/CockroachDB/TiKV), Apache Cassandra, ScyllaDB, and LevelDB storage engines', 'High-volume time-series telemetry and observability ingestion pipelines (InfluxDB/ClickHouse MergeTree)'],
     challengesFaced: ['Compaction storms consume disk bandwidth and spike P99 tail latency if throttling is misconfigured.', 'Heavy delete workloads accumulate tombstones that slow range scans until bottommost compaction runs.', 'Choosing Size-Tiered (lower write amp) vs Leveled (lower space & read amp) directly determines cluster cost.'],
   },
   'aries-wal-recovery': {
     algorithmId: 'aries-wal-recovery',
-    brute: { label: 'Brute Force', approach: 'FORCE every dirty page synchronously to disk on every COMMIT.', time: 'O(DirtyPages) random I/O', space: 'O(1)', bottleneckOrWin: 'Commits stall on slow random disk flushes; throughput collapses 100×.' },
+    brute: { label: 'Brute Force', approach: 'FORCE every dirty page synchronously to disk on every COMMIT.', time: 'O(DirtyPages) random I/O', space: 'O(1)', bottleneckOrWin: 'Commits stall on synchronous random page flushes; throughput impact depends on device latency, dirty-page volume, and commit rate.' },
     better: { label: 'Better', approach: 'Shadow Paging (copy-on-write full page-table swaps per transaction).', time: 'O(PageTable)', space: 'O(2N)', bottleneckOrWin: 'Fragments sequential data layout and serializes concurrent multi-transaction commits.' },
     optimal: { label: 'Optimal', approach: 'STEAL/NO-FORCE Write-Ahead Log + 3-Pass ARIES (Analysis → Redo → Undo with CLRs).', time: 'O(1) seq WAL commit', space: 'O(DPT + ATT)', bottleneckOrWin: 'Fast sequential commits + idempotent crash recovery even if the DB crashes mid-recovery.' },
     codeLevelDfd: 'Crash Restart → Load Last Checkpoint → Analysis Pass (Build ActiveTx & DirtyPageTable) → Redo Pass (Replay from minRecLSN if pageLSN < LSN) → Undo Pass (Roll Back Losers + Log CLRs).',
     realWorldUseCases: ['PostgreSQL WAL, MySQL InnoDB Redo/Undo logs, IBM DB2, and Microsoft SQL Server', 'Durable transactional KV stores and distributed Raft log state machines'],
-    challengesFaced: ['Flushing a dirty data page BEFORE its WAL record hits disk violates WAL and loses atomicity permanently.', 'Omitting Compensation Log Records (CLRs) causes infinite rollback loops if a second crash happens during recovery.', 'Rare checkpoints allow the WAL tail to grow huge, stretching restart MTTR from seconds to minutes.'],
+    challengesFaced: ['Flushing a dirty data page BEFORE its WAL record hits disk violates WAL and loses atomicity permanently.', 'Omitting Compensation Log Records (CLRs) causes infinite rollback loops if a second crash happens during recovery.', 'Rare checkpoints allow the WAL tail to grow, increasing restart recovery work in proportion to log volume and checkpoint policy.'],
   },
   'consistent-hashing-dht': {
     algorithmId: 'consistent-hashing-dht',
-    brute: { label: 'Brute Force', approach: 'Simple modulo sharding `hash(key) % N`.', time: 'O(1)', space: 'O(1)', bottleneckOrWin: 'Adding or losing 1 server invalidates ~90–99% of all cached keys, causing DB thundering herds.' },
+    brute: { label: 'Brute Force', approach: 'Simple modulo sharding `hash(key) % N`.', time: 'O(1)', space: 'O(1)', bottleneckOrWin: 'Modulo sharding can remap most keys when the shard count changes (approximately N/(N+1) on adding one shard under uniform hashing), causing cache churn.' },
     better: { label: 'Better', approach: 'Basic Consistent Hashing Ring (1 token per physical node).', time: 'O(log N)', space: 'O(N)', bottleneckOrWin: 'Remaps only K/N keys, but random placement creates severe 3–5× hot-shard skew.' },
     optimal: { label: 'Optimal', approach: 'Consistent Hashing with 150+ Virtual Nodes (or Rendezvous HRW / Chord DHT).', time: 'O(log(N·V))', space: 'O(N·V)', bottleneckOrWin: 'Remaps strictly K/N keys with < 5% shard variance and spreads failover load across all surviving nodes.' },
     codeLevelDfd: 'Key k → Compute 64-bit Hash h(k) → Binary Search First Clockwise Virtual Node ≥ h(k) (Wrap to 0) → Map Vnode to Physical Primary + Next R-1 Distinct Physical Replicas.',
@@ -1580,8 +1580,8 @@ export const MASTER_BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArc
   'raft-paxos-consensus': {
     algorithmId: 'raft-paxos-consensus',
     brute: { label: 'Brute Force', approach: 'Single primary server with async fire-and-forget replication.', time: 'O(1)', space: 'O(Log)', bottleneckOrWin: 'Primary crash loses acknowledged writes or creates split-brain dual primaries.' },
-    better: { label: 'Better', approach: 'Basic Single-Decree Paxos running 2 RTT (Prepare + Accept) per command.', time: '2 RTT / write', space: 'O(Log)', bottleneckOrWin: 'Correct consensus, but wastes an extra network round-trip and risks dueling proposers.' },
-    optimal: { label: 'Optimal', approach: 'Raft / Multi-Paxos Stable Leader (Randomized Election + 1-RTT Majority Log Replication).', time: '1 RTT / write', space: 'O(Snapshot + Log)', bottleneckOrWin: 'Linearizable fault tolerance across F failures (2F+1 nodes) with pipelined 1-RTT commits.' },
+    better: { label: 'Better', approach: 'Basic Single-Decree Paxos with Prepare and Accept phases.', time: 'Often 2 RTTs in the basic path', space: 'O(Log)', bottleneckOrWin: 'Correct consensus; latency depends on proposer stability, batching, and network timing.' },
+    optimal: { label: 'Optimal', approach: 'Raft / Multi-Paxos with a stable leader and majority replication.', time: 'Often one quorum RTT in steady state', space: 'O(Snapshot + Log)', bottleneckOrWin: 'Provides linearizable fault tolerance under protocol assumptions; election, batching, and network conditions affect latency.' },
     codeLevelDfd: 'Client Write → Leader Appends (term, idx, cmd) → Parallel AppendEntries RPCs → Majority Quorum Ack → Advance commitIndex (Current Term Rule) → Apply State Machine & Reply.',
     realWorldUseCases: ['Kubernetes etcd control plane, Consul, CockroachDB/TiKV Range Raft groups, and Kafka KRaft', 'Distributed lock managers, leader election, and strongly consistent metadata registries'],
     challengesFaced: ['Committing a previous-term entry purely by replica count violates Raft Figure 8 safety!', 'Partitioned old leaders serving local reads return stale data unless guarded by ReadIndex quorum or leases.', 'Non-randomized election timeouts cause infinite split-vote livelocks on even-sized or synchronized clusters.'],
@@ -1599,7 +1599,7 @@ export const MASTER_BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArc
     algorithmId: 'bloom-filter',
     brute: { label: 'Brute Force', approach: 'Store every full 64-byte URL/key string in an in-memory HashSet.', time: 'O(1)', space: 'O(64B × N)', bottleneckOrWin: '1 billion keys demand > 64 GB RAM—crashing single-node services.' },
     better: { label: 'Better', approach: 'Store sorted 64-bit hashes on disk and binary search.', time: 'O(log N) disk I/O', space: 'O(8B × N) disk', bottleneckOrWin: 'Saves RAM, but triggers multiple slow disk seeks for every negative lookup.' },
-    optimal: { label: 'Optimal', approach: 'm-bit Bloom Filter with k Kirsch-Mitzenmacher hashes (~10 bits/key for 1% FP).', time: 'O(k) ≈ O(1)', space: '~1.25 GB / 1B keys', bottleneckOrWin: '50× memory compression with ZERO false negatives, blocking 99% of wasted disk reads.' },
+    optimal: { label: 'Optimal', approach: 'Bloom Filter with k hash positions and a chosen false-positive target (about 10 bits/key near 1% FP).', time: 'O(k) per check', space: 'About 1.25 GB / 1B keys at 10 bits/key', bottleneckOrWin: 'Compresses membership memory relative to exact sets; no false negatives assumes insert-only use, intact bits, and consistent hashing; disk-read savings depend on negative-query rate and FP rate.' },
     codeLevelDfd: 'Key x → Compute h1(x), h2(x) → Project k Positions (h1 + i·h2) % m → Insert: Set All k Bits = 1 | Query: If Any Bit == 0 Return DEFINITELY ABSENT Else PROBABLY PRESENT.',
     realWorldUseCases: ['RocksDB / Cassandra / LevelDB per-SSTable negative-lookup short-circuiting', 'Google Chrome Safe Browsing URL checks, Medium/Quora seen-article filters, and CDN one-hit-wonder guards'],
     challengesFaced: ['Attempting to delete by clearing bits corrupts other keys and causes illegal false negatives (use Counting Bloom or Cuckoo Filter).', 'Overfilling past design capacity N causes false-positive rate to spike rapidly toward 100%.', 'Using correlated weak hashes ruins bit uniformity—always use Murmur3 / xxHash / SipHash.'],
@@ -1608,7 +1608,7 @@ export const MASTER_BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArc
     algorithmId: 'crdt-gcounter-orset',
     brute: { label: 'Brute Force', approach: 'Global synchronous distributed lock or 2PC across geo-regions.', time: 'O(Cross-Region RTT)', space: 'O(1)', bottleneckOrWin: 'Blocks completely whenever a client goes offline or a transatlantic link partitions.' },
     better: { label: 'Better', approach: 'Last-Write-Wins (LWW) using unsynchronized physical wall-clock timestamps.', time: 'O(1)', space: 'O(1)', bottleneckOrWin: 'Clock skew silently drops concurrent writes permanently (lost-update anomalies).' },
-    optimal: { label: 'Optimal', approach: 'Join-Semilattice CRDTs (G/PN-Counter, OR-Set with unique add tags, Delta-CRDT sync).', time: 'O(1) local · O(Δ) merge', space: 'O(R) / O(Tags)', bottleneckOrWin: 'Zero-latency offline writes with mathematically guaranteed convergence in any delivery order.' },
+    optimal: { label: 'Optimal', approach: 'Join-Semilattice CRDTs (G/PN-Counter, OR-Set with unique add tags, Delta-CRDT sync).', time: 'Local update work depends on representation; merge work depends on delta/state size', space: 'O(R) / O(Tags)', bottleneckOrWin: 'Allows local writes without synchronous consensus and converges under the CRDT merge rule when updates are eventually delivered; storage/network latency remains.' },
     codeLevelDfd: 'Local Offline Op → Mutate Replica Slot / Tag Add(val, uuid) → Async Gossip Delta to Peers → Commutative/Associative/Idempotent Merge (max / tag-union) → Converged Global State.',
     realWorldUseCases: ['Figma, Yjs, Automerge, and Apple Notes offline-first real-time collaboration', 'Redis Enterprise Active-Active Geo-Distribution, Riak DT, and SoundCloud/Discord multi-region counters'],
     challengesFaced: ['Never use CRDTs for hard financial/inventory invariants (e.g., preventing double-spend below $0).', 'Unbounded OR-Set tombstones bloat state forever unless garbage-collected once all replicas observe causality.', 'Implementing non-idempotent merges (like `a + b` instead of per-replica `max(a[i], b[i])`) double-counts retried messages!'],
@@ -1617,7 +1617,7 @@ export const MASTER_BESPOKE_UPGRADE_SPECS: Record<string, AlgorithmUpgradeAndArc
     algorithmId: 'hash-table-probing',
     brute: { label: 'Brute Force', approach: 'Linear scan over an unsorted array of `(key, value)` pairs.', time: 'O(N)', space: 'O(N)', bottleneckOrWin: 'Every lookup inspects N/2 keys on average—collapses at N = 10^5.' },
     better: { label: 'Better', approach: 'Balanced Binary Search Tree (AVL/Red-Black) keyed by key.', time: 'O(log N)', space: 'O(N)', bottleneckOrWin: 'Pointer-chasing tree nodes pays O(log N) comparisons and cache misses when ordering is unneeded.' },
-    optimal: { label: 'Optimal', approach: 'Dynamic Hash Table (Separate Chaining or Open Addressing: Linear/Quadratic/Double Hashing) with α ≤ 0.7 resize.', time: 'O(1) expected', space: 'O(N)', bottleneckOrWin: 'Single hash + cache-friendly probe delivers sub-10ns lookups with amortized O(1) growth.' },
+    optimal: { label: 'Optimal', approach: 'Dynamic Hash Table (Separate Chaining or Open Addressing) with implementation-appropriate load-factor resizing.', time: 'O(1) expected under suitable hashing', space: 'O(N)', bottleneckOrWin: 'Hashing and cache-friendly probing can provide fast expected lookups; latency and resize cost depend on key, hash, and hardware.' },
     codeLevelDfd: 'Key k → Hash h(k) % M → Chaining: Walk Bucket List (or RB-Tree if len ≥ 8) | Open Addressing: Probe (h1 + i·h2) % M Skipping Tombstones → Resize & Rehash 2× When α > 0.7.',
     realWorldUseCases: ['Python `dict` (compact open addressing), Rust `HashMap` (SwissTable SIMD probing), and Java `HashMap`', 'Database in-memory hash joins, symbol tables in compilers, and DNS/URL caches'],
     challengesFaced: ['Deleting by writing EMPTY instead of TOMBSTONE in open addressing breaks downstream probe chains.', 'Linear probing suffers primary clustering above α = 0.75 (mitigate via Robin Hood hashing or Double Hashing).', 'Deterministic non-salted hashes are vulnerable to Hash-DoS O(N²) attacks on public HTTP APIs.'],

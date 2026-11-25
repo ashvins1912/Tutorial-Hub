@@ -978,7 +978,7 @@ debezium_old_test  | f      | 1120045100 | 1120045100
     remediationSteps: [
       'Terminate the 19-day idle-in-transaction session (`SELECT pg_terminate_backend(4421);`) and drop the abandoned replication slot (`SELECT pg_drop_replication_slot(\'debezium_old_test\');`).',
       'Raise `autovacuum_vacuum_cost_limit` and run targeted `VACUUM (FREEZE, VERBOSE, PARALLEL 4) ledger_events;` to advance `relfrozenxid` before reaching 2B.',
-      'Set `idle_in_transaction_session_timeout = \'5min\'` and `max_slot_wal_keep_size` in postgresql.conf so abandoned consumers can never pin WAL/xmin again.',
+      'Use `idle_in_transaction_session_timeout` to limit abandoned idle transactions and set `max_slot_wal_keep_size` to bound retained WAL where appropriate. These settings do not guarantee that every inactive replication slot stops pinning `xmin`; monitor slot `active`, `restart_lsn` and `xmin`, alert on lag, and document slot invalidation/recovery.',
     ],
   },
   {
@@ -1450,22 +1450,22 @@ export const DATABASE_MASTERY_QUIZ: DatabaseQuizQuestion[] = [
     id: 'q-cdc-dual-write',
     topic: 'Streaming Pipelines: Log-Based CDC vs. Dual Writes',
     question:
-      'Your service commits an order update to PostgreSQL and then calls Pinecone and Kafka via HTTP. Why is Log-Based CDC (PostgreSQL WAL -> Debezium -> Kafka) strictly superior?',
+      'Your service commits an order update to PostgreSQL and then calls Pinecone and Kafka via HTTP. Why can log-based CDC (PostgreSQL WAL -> Debezium -> Kafka) be safer than application-level dual writes for this workload, and what guarantees still depend on configuration?',
     hint: 'What happens if the application pod crashes or times out right after PostgreSQL commits, before the HTTP call completes?',
     options: [
       {
         id: 'a',
-        text: 'Log-Based CDC lets the app commit atomically to Postgres only, then streams ordered committed changes directly from the WAL with guaranteed delivery and zero dual-write drift.',
+        text: 'Log-based change data capture (CDC) reads committed changes from the PostgreSQL write-ahead log (WAL) and publishes them asynchronously. It avoids an application-level dual write, but delivery guarantees depend on the connector, checkpointing, retries, WAL retention, schema handling and downstream availability. Consumers should be idempotent and monitor lag. CDC does not create an atomic transaction across PostgreSQL and a downstream system.',
         isCorrect: true,
         reason:
-          'Correct! Dual writes cannot share an atomic transaction across Postgres and HTTP APIs. Tailing wal_level=logical via Debezium guarantees downstream Vector DBs, Redis caches, and warehouses converge reliably.',
+          'Correct! Dual writes cannot share an atomic transaction across Postgres and HTTP APIs. Tailing logical WAL with Debezium captures committed database changes for downstream consumers. Convergence still depends on connector health, retained WAL, consumer retries/checkpoints, idempotent writes, schema compatibility and lag monitoring; a connector outage or retention gap needs an explicit recovery plan.',
       },
       {
         id: 'b',
-        text: 'Dual writes are always faster and guarantee strict cross-service ACID atomicity.',
+        text: 'A dual write can reduce latency in some simple flows, but writes to two independent systems are not one atomic ACID transaction. A partial failure can leave them inconsistent. Prefer a transactional outbox or log-based CDC where appropriate, and make downstream processing idempotent; use a saga when multiple services need coordinated business steps.',
         isCorrect: false,
         reason:
-          'Incorrect. Dual writes add synchronous network latency and silently drift whenever crashes or timeouts occur between writes.',
+          'Incorrect. Dual writes add network work and can leave partial state if a crash or timeout occurs between writes. The inconsistency may be detected by logs or reconciliation; it is not inevitable on every request.',
       },
       {
         id: 'c',

@@ -1109,7 +1109,7 @@ export const PATTERNS_AND_OOD_CONCEPTS: OodConcept[] = [
       {
         question: 'Why must ReceiptEmailer be decoupled via Observer/EventBus instead of called inside the payment method?',
         answer:
-          'Because payment capture is a critical financial mutation while sending an email is a retryable side effect. Decoupling ensures SMTP downtime never rolls back or fails a valid customer payment.',
+          'Payment capture is a critical financial mutation; email is a retryable side effect. If the payment/order transaction commits independently and email is queued durably (for example, through an outbox), SMTP downtime need not fail the payment response or roll back the committed payment. Delivery still requires retries, monitoring and idempotency.',
       },
     ],
     quiz: {

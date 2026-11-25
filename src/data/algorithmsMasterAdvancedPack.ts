@@ -11,7 +11,7 @@ export const MASTER_ADV_18_ALGORITHMS: AlgorithmDefinition[] = hydrateMasterAlgo
     category: 'Range Queries & Advanced Trees',
     difficulty: 'Advanced',
     visualType: 'tree-structure',
-    tagline: 'Move every accessed node to the root via Zig, Zig-Zig, and Zig-Zag rotations—delivering O(log N) amortized time and O(1) cache hits on hot keys.',
+    tagline: 'Move every accessed node to the root via Zig, Zig-Zig, and Zig-Zag rotations—with O(log N) amortized time per access; accessing a node that is already the root takes O(1), while an individual access can take O(N).',
     timeComplexity: 'O(log N) amortized',
     spaceComplexity: 'O(N)',
     mentalModel:
@@ -221,8 +221,8 @@ def splay(x):
       {
         step: 4,
         title: 'Exact Nearest Neighbor Returned: (8, 1)',
-        explanation: 'Found exact nearest neighbor in O(log N) expected time without scanning pruned half-spaces.',
-        invariantCheck: 'Exact Euclidean nearest neighbor guaranteed.',
+        explanation: 'The search returns the exact nearest neighbor when the pruning bound and distance comparisons are implemented correctly. A balanced k-d tree can be efficient on favorable, low-dimensional data, but nearest-neighbor search has O(N) worst-case behavior and can visit many points in high dimensions.',
+        invariantCheck: 'Exact result (assuming correct distance and pruning calculations).',
         variables: [{ name: 'nearest', value: '(8, 1)' }, { name: 'dist', value: '√2 ≈ 1.41' }],
         array: ['(8,1)'],
         matchedIndices: [0],
@@ -716,7 +716,7 @@ def hopcroft_karp(n_left, n_right, adj):
     mentalModel:
       'Trace edges until you hit a dead end—record that vertex on your return path (post-order!), then backtrack to splice in any unvisited side-loops seamlessly.',
     coreInvariant:
-      'Directed Eulerian Path exists iff every node has in==out EXCEPT at most one start (out−in=1) and one end (in−out=1). Post-order append guarantees dead-end edges sit at the very end of the final itinerary!',
+      'A directed Eulerian path requires the degree-balance rule (one start with out−in=1 and one end with in−out=1, or all vertices balanced for a circuit) plus connectivity of all nonzero-degree vertices in the underlying undirected graph. Hierholzer’s algorithm uses edge traversal and reverse postorder to construct the trail.',
     whenToUse: [
       'LC 332 Reconstruct Itinerary (lexicographically smallest flight route using every ticket once!).',
       'LC 2097 Valid Arrangement of Pairs and LC 753 Cracking the Safe (De Bruijn sequences).',
@@ -955,7 +955,7 @@ def eulerian_itinerary(tickets: list[list[str]], start="JFK") -> list[str]:
     }
     if (!changed) break;
   }
-  // Step 3: Reweight edges to guaranteed >= 0
+  // Step 3: With Bellman-Ford potentials and no negative cycle, reweight edges to non-negative reduced costs
   const adj = Array.from({ length: n }, () => []);
   for (const [u, v, w] of edges) adj[u].push([v, w + h[u] - h[v]]);
   // Step 4: Dijkstra from each vertex + un-reweight
@@ -1131,15 +1131,15 @@ def eulerian_itinerary(tickets: list[list[str]], start="JFK") -> list[str]:
     category: 'Probabilistic & Memory Systems',
     difficulty: 'Advanced',
     visualType: 'bit-grid',
-    tagline: 'Test set membership in O(k) time and ~10 bits per key with ZERO false negatives and a tunable ~1% false-positive rate.',
+    tagline: 'Test membership in O(k) time with about 10 bits per key for an illustrative ~1% false-positive target; a correctly maintained standard filter without deletions has no false negatives for inserted keys.',
     timeComplexity: 'O(k) insert & query',
     spaceComplexity: 'O(m bits) ≈ 1.44 N log₂(1/ε)',
     mentalModel:
-      'Think of stamping k different colored ink marks onto an m-bit paper strip for every item inserted. If even ONE of an item’s k spots is blank (0), it is 100% DEFINITELY NOT in the set!',
+      'Think of marking k positions in an m-bit strip for every inserted item. If any required bit is 0, the item is definitely absent from the represented set. This no-false-negative property assumes a standard filter is built and updated correctly and that inserted bits are not cleared by deletions.',
     coreInvariant:
-      'Zero False Negatives: if bit[h_i(x)] === 0 for any i ∈ [1..k], x was NEVER inserted. Optimal hash count k = (m/n) ln 2 ≈ 0.693 (m/n).',
+      'For a standard Bloom filter without deletions, if bit[h_i(x)] === 0 for any i ∈ [1..k], x was not inserted into the represented set. If all bits are 1, the item may still be absent (a false positive). The approximate optimal hash count is k = (m/n) ln 2.',
     whenToUse: [
-      'RocksDB / Cassandra / LevelDB SSTable read filtering — skips 99% of unnecessary disk I/Os for non-existent keys!',
+      'RocksDB / Cassandra / LevelDB SSTable read filtering — can skip many disk reads for absent keys when the filter is sized for a low false-positive rate; savings depend on the workload and filter configuration.',
       'Chrome Safe Browsing URL blocklists, CDN one-hit-wonder cache admission filters, and web crawler deduplication.',
       'Distributed SQL Semi-Join pushdown (send tiny Bloom Filter over network instead of millions of join keys).',
     ],
@@ -1208,14 +1208,14 @@ def eulerian_itinerary(tickets: list[list[str]], start="JFK") -> list[str]:
         step: 4,
         title: 'Query "mongo" (bits 1, 4) → DEFINITELY ABSENT!',
         explanation: 'bit[1]==0 immediately proves "mongo" is NOT on disk — skip expensive SSTable I/O! If bits 2 & 4 hit on an unseen key, that is a False Positive.',
-        invariantCheck: 'False Negative Rate = 0.0% guaranteed.',
+        invariantCheck: 'A standard Bloom filter without deletions has no false negatives for inserted items; positives may be false and require authoritative verification.',
         variables: [{ name: 'query', value: '"mongo"' }, { name: 'bit[1]', value: '0 → SKIP DISK' }],
         array: [0, 0, 1, 0, 1, 0, 0, 1, 0, 0],
         eliminatedIndices: [1],
       },
     ],
     platformDrills: [
-      { platform: 'System Design', title: 'RocksDB / Cassandra Read Path Optimization', difficulty: 'Hard', whyThisFits: 'Bloom filters eliminate 99% of disk reads on missing keys.' },
+      { platform: 'System Design', title: 'RocksDB / Cassandra Read Path Optimization', difficulty: 'Hard', whyThisFits: 'Bloom filters can avoid disk reads for many absent keys; the actual reduction depends on filter sizing, workload and false-positive rate.' },
       { platform: 'System Design', title: 'Web Crawler 10B URL Deduplicator', difficulty: 'Medium', whyThisFits: '10B URLs fit in ~12GB RAM vs 500GB HashSet.' },
     ],
   },
@@ -1344,7 +1344,7 @@ def search(head, max_lvl, target):
     mentalModel:
       'It is a Bloom Filter upgraded from 1-bit flags to integer counters across d rows: hash collisions can only ADD noise to a cell, so taking `min(row_0, row_1, ..., row_{d-1})` strips away collision inflation!',
     coreInvariant:
-      'One-Sided Overestimation Guarantee: `estimate(x) ≥ true_count(x)` ALWAYS, and `estimate(x) ≤ true_count(x) + ε·N` with probability ≥ 1 − δ.',
+      'One-Sided Overestimation Guarantee: `estimate(x) ≥ true_count(x)` for nonnegative updates without counter overflow. With the usual hash assumptions and chosen width/depth, the overestimate is at most `ε·N` with probability at least `1 − δ`, where N is the total update count.',
     whenToUse: [
       'Real-time Heavy Hitters / Top-K trending hashtags, DDoS IP rate limiting, and network packet telemetry.',
       'Caffeine / TinyLFU cache admission policy (estimates key recency/frequency in tiny fixed memory!).',
@@ -1436,7 +1436,7 @@ def search(head, max_lvl, target):
     timeComplexity: 'O(1) insert · O(m) count',
     spaceComplexity: 'O(m) ≈ 12 KB fixed',
     mentalModel:
-      'If someone tells you they flipped 10 heads in a row (`00000000001`), you guess they probably flipped ~2¹⁰ = 1,024 coins! HyperLogLog hashes items into m=2^p independent buckets and takes the Harmonic Mean of 2^maxZeros to eliminate lucky outliers.',
+      'Ten consecutive heads (`1111111111`) have probability 2⁻¹⁰ per independent trial, so about 2¹⁰ = 1,024 trials are expected before seeing that run. HyperLogLog hashes each item, uses part of the hash to select one of m = 2^p registers, and records the largest leading-zero rank in the remaining bits. A corrected harmonic-mean estimator combines the registers to reduce variance.',
     coreInvariant:
       'First p bits choose bucket j ∈ [0..m−1]; remaining bits count leading zeros ρ; harmonic mean E = α_m · m² · (Σ 2^{−M[j]})⁻¹ shrinks variance to σ ≈ 1.04 / √m.',
     whenToUse: [
@@ -1535,7 +1535,7 @@ def hll_merge(reg_a: list[int], reg_b: list[int]) -> list[int]:
     timeComplexity: 'O(1) get & put',
     spaceComplexity: 'O(Capacity)',
     mentalModel:
-      'LRU is a desk pile where touching a file moves it to the top and the dusty bottom file gets evicted. LFU tracks how many times each file was touched. ARC balances TWO lists (Recency T1 vs Frequency T2) automatically so a one-time full table scan never flushes your hot cache!',
+      'LRU is a desk pile where touching a file moves it to the top and the dusty bottom file gets evicted. LFU tracks how many times each file was touched. ARC adapts between recency and frequency using resident and ghost lists, which can reduce scan pollution compared with plain LRU; it does not guarantee that hot entries are never evicted.',
     coreInvariant:
       'LRU: HashMap<Key, Node> gives O(1) pointer into Doubly Linked List for O(1) splice-to-head and O(1) tail eviction. LFU: HashMap<Freq, DLL> + `minFreq` pointer achieves O(1) tie-broken eviction.',
     whenToUse: [
@@ -1709,7 +1709,7 @@ def buddy_address(addr: int, block_size: int) -> int:
       {
         step: 2,
         title: 'Allocate B (12 KB → 16 KB) at Buddy Address 16',
-        explanation: 'Free list for 16 KB already has address 16 → instant O(1) allocation with zero splits!',
+        explanation: 'The illustrative free list already contains a suitable 16 KB block at address 16, so the lookup can be constant-time in this simplified trace. Real allocator latency also depends on metadata, synchronization, fragmentation and the allocator implementation.',
         invariantCheck: 'A@0 and B@16 are buddies: 0 ^ 16 = 16 and 16 ^ 16 = 0.',
         variables: [{ name: 'A', value: '@0 (16KB)' }, { name: 'B', value: '@16 (16KB)' }],
         array: ['A:16KB@0', 'B:16KB@16', 'Free:32KB@32'],

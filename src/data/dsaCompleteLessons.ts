@@ -1,6 +1,7 @@
 export interface DsaLesson {
   id: string;
   title: string;
+  keyTerms?: { term: string; definition: string; example?: string }[];
   sourcePages?: number[];
   promise: string;
   mentalModel: string;
@@ -28,6 +29,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'foundation', sourcePages: [1], title: '1. Foundation', promise: 'Build the reasoning tools used by every data structure and algorithm.',
     mentalModel: 'An algorithm is a precise plan. Data structures decide how information is stored; algorithms decide how that information is processed. Before coding, translate the problem into inputs, outputs, constraints, invariants and edge cases.',
+    keyTerms: [{"term":"Invariant","definition":"A fact that stays true while an algorithm runs.","example":"A seen-set contains values from the processed prefix."},{"term":"Auxiliary space","definition":"Extra memory beyond the input and required output.","example":"A hash set uses O(n) extra space."},{"term":"Precondition","definition":"Condition the input must satisfy before execution.","example":"Binary search requires sorted input."},{"term":"Postcondition","definition":"Property guaranteed when a function returns successfully.","example":"A found index contains the target."},{"term":"Termination","definition":"Reason a loop or recursion eventually stops.","example":"Each binary-search iteration shrinks its interval."},{"term":"Adversarial input","definition":"Valid input that exposes a method's worst behavior.","example":"A sorted or reverse-sorted array may stress pivot choice."}],
     concepts: [
       'Problem decomposition: restate the task, identify input/output, constraints, assumptions and examples.',
       'Time complexity: count how work grows with n. O(1), O(log n), O(n), O(n log n), O(n²), O(2ⁿ), O(n!).',
@@ -57,7 +59,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     deepDive: ["Big-O is an asymptotic upper bound; Big-Theta is a tight bound and Big-Omega a lower bound. State the input-size variable and case being analysed.","Count dominant operations rather than measuring one run. Nested loops are not automatically quadratic if their total iterations are bounded linearly.","Auxiliary space excludes input and often excludes required output; recursion stack must be counted separately. State the convention used.","An invariant has initialization, preservation and termination. A correct loop must establish it before the first iteration, maintain it after each iteration and use it to justify the final result.","A recursive function needs a base case, progress toward it and a contract relating the answer to smaller inputs. Recursion depth can be linear and overflow the call stack.","Brute force is a useful correctness baseline. Improve it by identifying repeated work, exploitable order, state reuse or a stronger data structure—not by guessing a pattern.","Integer overflow, negative modulo, null, empty collections and inclusive/exclusive boundaries are part of correctness, not minor implementation details.","Testing examples is insufficient. Add boundary, duplicate, sorted/reverse, negative, maximum-constraint and adversarial cases; use differential or property tests where possible."],
     correctness: ["Precondition/postcondition: state what must be true before an algorithm runs and what it guarantees on return.","Loop proof: establish initialization, preservation and termination for the chosen invariant.","Recursion proof: use induction on input size, proving base cases and the inductive step.","Counterexample method: a single valid input that violates the claimed output disproves an incorrect approach."],
     implementationSteps: ["Restate the task and define exact input/output semantics.","Extract constraints and estimate feasible complexity before choosing an approach.","Write brute force and a small trace to establish a correctness baseline.","Identify the expensive repeated work and choose an invariant/data structure to remove it.","Prove the invariant or recurrence before coding the optimized version.","Choose integer widths and bounds from constraints.","Test normal, boundary, duplicate, negative, extreme and adversarial cases.","Explain time, auxiliary space, output space and recursion stack separately."],
-    codeExamples: [{"language":"Java 21","title":"A loop with an explicit invariant","code":"static int firstIndexOf(int[] values, int target) {\\n    int i = 0;\\n    // Invariant: every index in [0, i) has been checked and is not target.\\n    while (i < values.length && values[i] != target) i++;\\n    return i == values.length ? -1 : i;\\n}","explanation":"At each iteration the checked prefix grows by one. On termination either the first match is at i or the entire array was checked. O(n) time and O(1) auxiliary space."}],
+    codeExamples: [{"language":"Java 21","title":"A loop with an explicit invariant","code":"static int firstIndexOf(int[] values, int target) {\n    int i = 0;\n    // Invariant: every index in [0, i) has been checked and is not target.\n    while (i < values.length && values[i] != target) i++;\n    return i == values.length ? -1 : i;\n}","explanation":"At each iteration the checked prefix grows by one. On termination either the first match is at i or the entire array was checked. O(n) time and O(1) auxiliary space."}],
     traceExercises: ["For a linear search, write the checked-prefix invariant before and after each iteration.","Compare nested-loop pair checking with a set-based scan and count operations on n=5.","Classify memory used by an input array, a result list and a recursive call stack."],
     realWorldApplications: ["Code review and complexity estimation.","Debugging boundary and state bugs.","Selecting data structures for production services.","Building reliable test suites for APIs and algorithms."],
     assessment: ["State the difference between O, Theta and Omega with an example.","Write initialization, preservation and termination for a loop invariant.","Explain why output memory and auxiliary memory are reported separately.","Choose a feasible algorithm from an input constraint and justify the estimate.","Design boundary and adversarial tests for a given algorithm."],
@@ -66,11 +68,13 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'arrays', sourcePages: [1], title: '2. Arrays', promise: 'Master indexed storage, traversal, in-place transformations and range-query patterns.',
     mentalModel: 'An array is a row of indexed cells. Random access is cheap because the address of an element can be calculated directly; inserting in the middle is expensive because later elements may need to shift.',
+    keyTerms: [{"term":"Index","definition":"A number used to access an array position.","example":"values[2] reads the third item."},{"term":"Subarray","definition":"A continuous slice of an array.","example":"[2,4] is a subarray of [1,2,4]."},{"term":"Dynamic array","definition":"Contiguous storage that grows by allocating a larger backing array.","example":"Append is amortized O(1); a resize can copy O(n)."},{"term":"Prefix sum","definition":"Cumulative aggregate stored at sequence boundaries.","example":"prefix[r]-prefix[l] sums the half-open range [l,r). "},{"term":"Difference array","definition":"Boundary deltas encoding range updates before reconstruction.","example":"For inclusive [l,r], add at l and subtract at r+1."},{"term":"Stable compaction","definition":"Move retained elements into a prefix without changing their order.","example":"Read/write pointers remove zeros while preserving remaining order."}],
     concepts: ['Static arrays vs dynamic arrays and amortized resizing.', 'Traversal, indexing, update, insertion and deletion costs.', 'Subarray (contiguous) vs subsequence (order-preserving, gaps allowed) vs subset.', 'In-place mutation, read/write pointers and stable compaction.', 'Sorting, frequency tables, hash maps and prefix aggregates.', '2D arrays: row/column indexing, bounds and coordinate transforms.', 'Range sums, prefix sums, difference arrays and prefix XOR.', 'Array invariants: processed prefix, unprocessed suffix and write boundary.'],
     recognition: ['The prompt says contiguous range, subarray, in-place, rotate, partition or range query.', 'You need many indexed reads or one-pass processing.', 'Repeated range sums or range updates appear.', 'Constraints rule out checking every pair or every subarray.'],
-    method: ['Clarify whether mutation is allowed and whether order must be preserved.', 'Write the direct nested-loop solution and count repeated work.', 'For repeated sums, build prefix[i+1] = prefix[i] + a[i].', 'For in-place filtering, maintain a write index for the next valid element.', 'For many range additions, add at l and subtract after r in a difference array, then prefix-scan.', 'Prove index boundaries with half-open ranges [l, r).'],
+    method: ['Clarify whether mutation is allowed and whether order must be preserved.', 'Write the direct nested-loop solution and count repeated work.', 'For repeated sums, build prefix[i+1] = prefix[i] + a[i].', 'For in-place filtering, maintain a write index for the next valid element.', 'For many offline range additions, add at l and subtract after inclusive r in an n+1 difference array, then prefix-scan once; this is not the same workload as online range queries.', 'Prove index boundaries with half-open ranges [l, r).'],
     workedExample: ['Range sum from l through r inclusive: prefix[k] stores the sum of the first k elements.', 'Build prefix in O(n): prefix[0]=0; prefix[i+1]=prefix[i]+a[i].', 'Answer is prefix[r+1]−prefix[l], O(1) per query.', 'For a half-open range [l,r), use prefix[r]−prefix[l]. Choose one convention and use it consistently.'],
-    complexity: ['Index read/write: O(1).', 'Full scan: O(n).', 'Insert/delete at arbitrary index: O(n) due to shifts.', 'Prefix preprocessing O(n), each range sum O(1), storage O(n).', 'Sorting usually O(n log n); in-place status depends on the algorithm and language implementation.'],
+    complexity: ['Index read/write: O(1).', 'Full scan: O(n).', 'Insert/delete at arbitrary index: O(n) due to shifts.', 'Prefix preprocessing O(n), each static range-sum query O(1), storage O(n).',
+      'Difference-array batch: O(n + u) time and O(n) extra space for n values and u offline range updates; it is not a replacement for arbitrary online range queries.', 'Sorting usually O(n log n); in-place status depends on the algorithm and language implementation.'],
     pitfalls: ['Off-by-one errors around inclusive endpoints.', 'Confusing a subarray with a subsequence.', 'Overwriting an unread value during in-place compaction.', 'Assuming a prefix-sum hash-map method works without considering integer range and initial prefix 0.', 'Using a difference array without applying the final prefix accumulation.'],
     practice: [
       {level:'Warm-up',task:'Find min/max, reverse an array and rotate by k.',goal:'Use indices safely and reduce k modulo n.'},
@@ -125,7 +129,55 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
     codeExamples: [
       { language: 'Java 21', title: 'Prefix sums and half-open range queries', code: 'static long[] buildPrefix(int[] values) {\n    long[] prefix = new long[values.length + 1];\n    for (int i = 0; i < values.length; i++) {\n        prefix[i + 1] = prefix[i] + values[i];\n    }\n    return prefix;\n}\n\nstatic long sumRange(long[] prefix, int left, int rightExclusive) {\n    if (left < 0 || rightExclusive < left || rightExclusive >= prefix.length) {\n        throw new IndexOutOfBoundsException();\n    }\n    return prefix[rightExclusive] - prefix[left];\n}', explanation: 'prefix[i] is the sum of the first i values. A query [left,rightExclusive) subtracts the prefix before left from the prefix at the right boundary. rightExclusive == n is valid.' },
       { language: 'Java 21', title: 'Stable in-place compaction', code: 'static int removeValue(int[] values, int target) {\n    int write = 0;\n    for (int read = 0; read < values.length; read++) {\n        if (values[read] != target) {\n            values[write++] = values[read];\n        }\n    }\n    return write;\n}', explanation: 'The read pointer visits each original element once. The write pointer never moves ahead of read, so unread values are not overwritten. The retained prefix preserves original order.' },
-      { language: 'Python 3', title: 'Prefix sums and range queries', code: 'def build_prefix(values):\n    prefix = [0]\n    for value in values:\n        prefix.append(prefix[-1] + value)\n    return prefix\n\ndef sum_range(prefix, left, right_exclusive):\n    if left < 0 or right_exclusive < left or right_exclusive >= len(prefix):\n        raise IndexError(\"invalid range\")\n    return prefix[right_exclusive] - prefix[left]', explanation: 'Python integers grow as needed, but the invariant is the same. The right endpoint is exclusive, matching Python slicing.' }
+      { language: 'Java 21', title: 'Difference array for offline range additions', code: 'static long[] applyRangeAdds(int[] values, int[][] updates) {\n    long[] diff = new long[values.length + 1];\n    if (values.length > 0) diff[0] = values[0];\n    for (int i = 1; i < values.length; i++) diff[i] = (long) values[i] - values[i - 1];\n    for (int[] update : updates) {\n        int left = update[0], rightInclusive = update[1], delta = update[2];\n        if (left < 0 || rightInclusive < left || rightInclusive >= values.length) throw new IndexOutOfBoundsException();\n        diff[left] += delta;\n        diff[rightInclusive + 1] -= delta;\n    }\n    long[] result = new long[values.length];\n    long running = 0;\n    for (int i = 0; i < values.length; i++) {\n        running += diff[i];\n        result[i] = running;\n    }\n    return result;\n}', explanation: 'Each inclusive update writes only two boundary deltas. A final prefix scan applies all updates in O(n + u) time and O(n) extra space. The n+1 sentinel makes rightInclusive + 1 safe when the update ends at the final element.' },
+      { language: 'JavaScript (Node.js)', title: 'Difference array for offline range additions', code: `function applyRangeAdds(values, updates) {
+  if (!Array.isArray(values) || !Array.isArray(updates)) {
+    throw new TypeError('values and updates must be arrays');
+  }
+  if (!values.every(Number.isSafeInteger)) {
+    throw new RangeError('values must contain safe integers');
+  }
+
+  const diff = new Array(values.length + 1).fill(0);
+  if (values.length > 0) diff[0] = values[0];
+  for (let i = 1; i < values.length; i++) {
+    diff[i] = values[i] - values[i - 1];
+    if (!Number.isSafeInteger(diff[i])) {
+      throw new RangeError('difference exceeds JavaScript safe integer range');
+    }
+  }
+
+  for (const update of updates) {
+    if (!Array.isArray(update) || update.length !== 3) {
+      throw new TypeError('each update must be [left, rightInclusive, delta]');
+    }
+    const [left, rightInclusive, delta] = update;
+    if (![left, rightInclusive, delta].every(Number.isSafeInteger)) {
+      throw new RangeError('update values must be safe integers');
+    }
+    if (left < 0 || rightInclusive < left || rightInclusive >= values.length) {
+      throw new RangeError('invalid inclusive update range');
+    }
+    diff[left] += delta;
+    diff[rightInclusive + 1] -= delta;
+    if (!Number.isSafeInteger(diff[left]) || !Number.isSafeInteger(diff[rightInclusive + 1])) {
+      throw new RangeError('update delta exceeds JavaScript safe integer range');
+    }
+  }
+
+  const result = [];
+  let running = 0;
+  for (let i = 0; i < values.length; i++) {
+    running += diff[i];
+    if (!Number.isSafeInteger(running)) {
+      throw new RangeError('result exceeds JavaScript safe integer range');
+    }
+    result.push(running);
+  }
+  return result;
+}`, explanation: 'Each inclusive update writes two boundary deltas, then one prefix scan materializes the final values in O(n + u) time and O(n) extra space. The n+1 sentinel safely handles an update ending at the final element. Because JavaScript Number is exact only within the safe-integer range, this version rejects unsafe inputs and intermediate results.' },
+      { language: 'Python 3', title: 'Prefix sums and range queries', code: 'def build_prefix(values):\n    prefix = [0]\n    for value in values:\n        prefix.append(prefix[-1] + value)\n    return prefix\n\ndef sum_range(prefix, left, right_exclusive):\n    if left < 0 or right_exclusive < left or right_exclusive >= len(prefix):\n        raise IndexError(\"invalid range\")\n    return prefix[right_exclusive] - prefix[left]', explanation: 'Python integers grow as needed, but the invariant is the same. The right endpoint is exclusive, matching Python slicing.' },
+      { language: 'Python 3', title: 'Difference array for offline range additions', code: 'def apply_range_adds(values, updates):\n    diff = [0] * (len(values) + 1)\n    if values:\n        diff[0] = values[0]\n    for i in range(1, len(values)):\n        diff[i] = values[i] - values[i - 1]\n    for left, right_inclusive, delta in updates:\n        if left < 0 or right_inclusive < left or right_inclusive >= len(values):\n            raise IndexError("invalid update range")\n        diff[left] += delta\n        diff[right_inclusive + 1] -= delta\n    result = []\n    running = 0\n    for i in range(len(values)):\n        running += diff[i]\n        result.append(running)\n    return result', explanation: 'Boundary deltas encode each inclusive update; one prefix scan materializes the final values. Runtime is O(n + u), where u is the number of updates.' }
     ],
     traceExercises: [
       'Predict every prefix value for [3,-2,5,1]. Answer the sum over [1,4) and explain why negative values do not break the formula.',
@@ -160,6 +212,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
   {
     id: 'linked-list', sourcePages: [11], title: '3. Linked List', promise: 'Reason confidently about nodes, references, pointer rewiring, cycles and list transformations.',
     mentalModel: 'A linked list is a chain of nodes. Each node stores a value and a reference to the next node. You do not jump to index i; you follow links. The key skill is preserving references while rewiring edges.',
+    keyTerms: [{"term":"Node","definition":"A value plus link(s) to other nodes.","example":"A singly linked node has next."},{"term":"Sentinel","definition":"A helper node that simplifies boundary updates.","example":"A dummy head avoids a special first insert."},{"term":"Head and tail","definition":"References to the first and last list nodes.","example":"A tail reference makes append O(1) when maintained."},{"term":"Node identity","definition":"Whether two references point to the same object, not equal values.","example":"Cycle detection compares node references."},{"term":"Splice","definition":"Change links to insert or remove nodes.","example":"Insert after a known node by updating its next link."},{"term":"Local insertion","definition":"Insertion at a known link position with constant pointer changes.","example":"O(1) excludes the search needed to find the position."}],
     concepts: ['Singly vs doubly linked lists; head, tail and null termination.', 'Traversal and why indexed access is O(n).', 'Insertion/deletion after a known node vs searching for a node.', 'Dummy/sentinel nodes to remove head special cases.', 'Reverse iteratively and recursively.', 'Fast/slow pointers for middle and cycle detection.', 'Floyd cycle entry derivation.', 'Merge two sorted lists; split with slow/fast pointers.', 'LRU cache connection: hash map + doubly linked list.'],
     recognition: ['The input is a node head and asks to reverse, merge, partition or detect a cycle.', 'Frequent insert/delete operations occur when the node is already known.', 'You need the middle, kth-from-end or cycle entry.'],
     method: ['Draw nodes as boxes and arrows; mark head and null.', 'Before changing a link, save the next reference if it is still needed.', 'Use a dummy node when the result head may change.', 'For reversal, maintain previous, current and next; reverse one edge per iteration.', 'For cycle detection, move slow by one and fast by two; only compare after safe advancement.', 'State what each pointer represents at the top of every loop.'],
@@ -183,7 +236,7 @@ export const DSA_COMPLETE_LESSONS: DsaLesson[] = [
       'Compare linked lists with arrays and identify when a hash-map plus doubly linked list is useful.'
     ],
     prerequisites: [
-      'Understand object references, null, heap allocation and mutation in Java.',
+      'Understand object references, null/None, heap allocation and mutation in your chosen language; distinguish object identity from equal values.',
       'Be comfortable with loops, conditions and O(1)/O(n) complexity.',
       'Review arrays to compare contiguous indexing with pointer traversal.',
       'Know that two variables can refer to the same mutable node object.'
@@ -250,7 +303,61 @@ static boolean hasCycle(Node head) {
         if (slow == fast) return true;
     }
     return false;
-}`, explanation: 'Reversal is O(n) time and O(1) auxiliary space; it mutates the original nodes. Floyd detection is O(n) time and O(1) space. The identity comparison is intentional: two references meet only when they point to the same node object.' }
+}`, explanation: 'Reversal is O(n) time and O(1) auxiliary space; it mutates the original nodes. Floyd detection is O(n) time and O(1) space. The identity comparison is intentional: two references meet only when they point to the same node object.' },
+
+      { language: 'JavaScript (Node.js)', title: 'Iterative reversal and Floyd cycle detection', code: `class Node {
+  constructor(value) {
+    this.value = value;
+    this.next = null;
+  }
+}
+
+function reverse(head) {
+  let previous = null;
+  let current = head;
+  while (current !== null) {
+    const next = current.next;
+    current.next = previous;
+    previous = current;
+    current = next;
+  }
+  return previous;
+}
+
+function hasCycle(head) {
+  let slow = head;
+  let fast = head;
+  while (fast !== null && fast.next !== null) {
+    slow = slow.next;
+    fast = fast.next.next;
+    if (slow === fast) return true;
+  }
+  return false;
+}`, explanation: 'The algorithm is O(n) time and O(1) auxiliary space. JavaScript strict equality compares node object identity, not values. Reversal mutates the original nodes.' },
+      { language: 'Python 3', title: 'Iterative reversal and Floyd cycle detection', code: `class Node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+
+def reverse(head):
+    previous = None
+    current = head
+    while current is not None:
+        next_node = current.next
+        current.next = previous
+        previous = current
+        current = next_node
+    return previous
+
+def has_cycle(head):
+    slow = head
+    fast = head
+    while fast is not None and fast.next is not None:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:
+            return True
+    return False`, explanation: 'The algorithm is O(n) time and O(1) auxiliary space. Python `is` compares node object identity, not values. Reversal mutates the original nodes.' },
     ],
     traceExercises: [
       'Reverse A → B → C → null. After each iteration, draw prev, curr, next and all next arrows.',
@@ -286,11 +393,12 @@ static boolean hasCycle(Node head) {
   {
     id: 'strings', sourcePages: [2], title: '4. Strings', promise: 'Solve character, substring, palindrome, parsing and pattern-matching problems safely.',
     mentalModel: 'A string is a sequence of symbols. Many languages treat strings as immutable, so repeated concatenation can copy data. Decide whether the task concerns bytes, code units, Unicode code points or user-perceived grapheme clusters.',
+    keyTerms: [{"term":"Code unit","definition":"A fixed-size unit used by a string encoding.","example":"Java String indices address UTF-16 code units."},{"term":"Grapheme","definition":"A user-perceived text character that may contain several code points.","example":"An emoji with a modifier can be one grapheme."},{"term":"Code point","definition":"A Unicode scalar value; Java may represent it with one or two UTF-16 code units.","example":"Use codePoints() to iterate Java code points."},{"term":"Grapheme cluster","definition":"A user-perceived text unit that may contain several code points.","example":"An emoji with a modifier can be multiple code points."},{"term":"Normalization","definition":"Transform text to a canonical Unicode form for comparison.","example":"NFC can compose canonically equivalent sequences."},{"term":"Prefix function","definition":"Length of the longest proper prefix also suffix at each pattern position.","example":"KMP falls back to pi[j-1] after mismatch."}],
     concepts: ['String immutability and efficient builders/buffers.', 'Character arrays, frequency arrays and hash maps.', 'ASCII assumptions vs Unicode and normalization.', 'Substring vs subsequence.', 'Palindrome checks with two pointers and frequency parity.', 'Anagrams and canonical representations.', 'Parsing, tokenization and delimiter handling.', 'Naive matching, KMP prefix function, Z algorithm and rolling hash (advanced).'],
     recognition: ['The task mentions anagram, palindrome, substring, subsequence, pattern match or character counts.', 'You need to compare two strings under reordering or normalization.', 'A naive repeated substring search is too slow.'],
     method: ['Clarify the character model and case/space/punctuation rules.', 'For fixed alphabets, use a frequency array; otherwise use a map.', 'For palindrome, compare mirrored positions or use a center expansion.', 'For sliding substring constraints, maintain a window and character counts.', 'For repeated exact pattern matching, begin with a simple scan, then use KMP/Z when constraints justify it.', 'Build output with StringBuilder or a mutable buffer in languages where concatenation copies.'],
     workedExample: ['Anagram check: if lengths differ, return false.', 'Count each character in the first string; decrement for each character in the second.', 'If any count becomes negative or any final count is nonzero, they are not anagrams.', 'Time O(n), extra space O(Σ) for a fixed alphabet or O(distinct characters) for a map.', 'If Unicode normalization or case folding matters, normalize both inputs before counting.'],
-    complexity: ['One pass with a frequency table: O(n + Σ), often O(n) for a fixed alphabet.', 'Sort both strings: O(n log n) time.', 'Center expansion for all palindromic substrings: O(n²) time, O(1) extra space.', 'KMP pattern matching: O(n + m) time and O(m) prefix table.'],
+    complexity: ['One pass with a frequency table: O(n + Σ), often O(n) for a fixed alphabet.', 'Sort both strings: O(n log n) time.', 'Center expansion checks O(n²) center/expansion pairs when counting or visiting palindromic substrings. If the algorithm copies every substring into output, include the total copied/output length in the time and space cost.', 'KMP pattern matching: O(n + m) time and O(m) prefix table.'],
     pitfalls: ['Assuming every language indexes Unicode by visible character.', 'Using repeated immutable concatenation in a loop.', 'Forgetting empty strings and unequal lengths.', 'Confusing substring with subsequence.', 'Incorrectly resetting a frequency window after a mismatch.'],
     practice: [
       {level:'Warm-up',task:'Reverse words and validate a palindrome.',goal:'Define treatment of spaces and punctuation.'},
@@ -434,6 +542,7 @@ static int[] kmpMatches(String text, String pattern) {
   {
     id: 'stacks-queues', sourcePages: [6, 7], title: '5. Stack and Queues', promise: 'Use LIFO/FIFO order, monotonic structures and deques to process sequences and frontiers.',
     mentalModel: 'A stack processes the most recently added item first (LIFO); a queue processes the earliest item first (FIFO). A deque supports both ends. A monotonic stack/deque keeps candidates in sorted order so dominated candidates can be discarded.',
+    keyTerms: [{"term":"LIFO","definition":"Last In, First Out: the most recently added item is removed first.","example":"A stack pops the newest pushed item before older items."},{"term":"FIFO","definition":"First In, First Out: the earliest added item is removed first.","example":"A queue removes the earliest arrival before later items."},{"term":"Monotonic stack","definition":"Stack whose values remain increasing or decreasing.","example":"Pop smaller values to find the next greater element."},{"term":"Amortized cost","definition":"Average cost across a sequence of operations, not each operation.","example":"One queue poll may transfer n items; each item transfers once."},{"term":"Deque","definition":"Double-ended queue supporting front and back operations.","example":"Use a deque for sliding-window maximum candidates."},{"term":"BFS frontier","definition":"Queue of discovered vertices awaiting expansion.","example":"FIFO order gives nondecreasing edge distance in unweighted graphs."}],
     concepts: ['Stack operations push/pop/peek and balanced delimiters.', 'Queue operations enqueue/dequeue and circular-array implementation.', 'Deque and sliding-window extrema.', 'Monotonic increasing/decreasing stack.', 'Next greater/smaller element, stock span and histogram area.', 'BFS queue frontier and level boundaries.', 'Amortized proof: each item enters and leaves a monotonic structure at most once.'],
     recognition: ['Nested structure or undo/history suggests stack.', 'First-in-first-out processing or level traversal suggests queue.', 'Next greater/smaller or contribution boundaries suggest monotonic stack.', 'Window maximum/minimum suggests monotonic deque.'],
     method: ['Identify which end must be processed next.', 'For delimiters, push opening symbols and validate matching closes.', 'For next-greater, scan once; while stack top is dominated by current value, resolve it.', 'For a window, evict indices outside the left boundary and remove dominated values from the back.', 'Store indices rather than values when expiry or distance matters.', 'Decide strict vs non-strict comparison carefully to handle duplicates.'],
@@ -537,7 +646,93 @@ static int[] kmpMatches(String text, String pattern) {
         if (left >= 0) answer[left] = values[candidates.peekFirst()];
     }
     return answer;
-}`, explanation: 'Indices increase from front to back and their values decrease. Expiry removes indices left of the current window; removing <= values from the back keeps the newest equal maximum. O(n) time and O(k) auxiliary space.' }
+}`, explanation: 'Indices increase from front to back and their values decrease. Expiry removes indices left of the current window; removing <= values from the back keeps the newest equal maximum. O(n) time and O(k) auxiliary space.' },
+      { language: 'JavaScript (Node.js)', title: 'Queue with two stacks and sliding-window maximum', code: `class TwoStackQueue {
+  constructor() {
+    this.incoming = [];
+    this.outgoing = [];
+  }
+
+  offer(value) {
+    this.incoming.push(value);
+  }
+
+  poll() {
+    if (this.outgoing.length === 0) {
+      while (this.incoming.length > 0) this.outgoing.push(this.incoming.pop());
+    }
+    if (this.outgoing.length === 0) throw new RangeError('queue is empty');
+    return this.outgoing.pop();
+  }
+
+  isEmpty() {
+    return this.incoming.length === 0 && this.outgoing.length === 0;
+  }
+}
+
+function slidingMaximum(values, k) {
+  if (!Number.isInteger(k) || k <= 0 || k > values.length) {
+    throw new RangeError('invalid window');
+  }
+  const candidates = [];
+  let head = 0;
+  const answer = [];
+
+  for (let right = 0; right < values.length; right++) {
+    const left = right - k + 1;
+    while (head < candidates.length && candidates[head] < left) head++;
+    // Bound retained stale indices: active candidates are at most k, and
+    // compacting after k expired entries keeps the backing array O(k).
+    if (head >= k || (head > 0 && head * 2 >= candidates.length)) {
+      candidates.splice(0, head);
+      head = 0;
+    }
+    while (candidates.length > head
+        && values[candidates[candidates.length - 1]] <= values[right]) {
+      candidates.pop();
+    }
+    candidates.push(right);
+    if (left >= 0) answer.push(values[candidates[head]]);
+  }
+  return answer;
+}`, explanation: 'The queue transfers only when the output stack is empty, preserving FIFO order with O(1) amortized operations. The window deque stores indices in increasing order and values in decreasing order. A head cursor avoids Array.shift(); periodic stale-prefix compaction keeps retained index storage O(k) with O(n) amortized total compaction work. Sliding maximum is O(n) time and O(k) auxiliary space, excluding the O(n) output.' },
+      { language: 'Python 3', title: 'Queue with two stacks and sliding-window maximum', code: `class TwoStackQueue:
+    def __init__(self):
+        self.incoming = []
+        self.outgoing = []
+
+    def offer(self, value):
+        self.incoming.append(value)
+
+    def poll(self):
+        if not self.outgoing:
+            while self.incoming:
+                self.outgoing.append(self.incoming.pop())
+        if not self.outgoing:
+            raise IndexError("queue is empty")
+        return self.outgoing.pop()
+
+    def is_empty(self):
+        return not self.incoming and not self.outgoing
+
+
+def sliding_maximum(values, k):
+    if not isinstance(k, int) or isinstance(k, bool) or k <= 0 or k > len(values):
+        raise ValueError("invalid window")
+    from collections import deque
+
+    candidates = deque()
+    answer = []
+    for right, value in enumerate(values):
+        left = right - k + 1
+        while candidates and candidates[0] < left:
+            candidates.popleft()
+        while candidates and values[candidates[-1]] <= value:
+            candidates.pop()
+        candidates.append(right)
+        if left >= 0:
+            answer.append(values[candidates[0]])
+    return answer`, explanation: 'The queue reverses incoming items only when outgoing is empty. The sliding-window deque holds candidate indices; expired indices leave the front and dominated values leave the back. Each index enters and leaves at most once, giving O(n) time and O(k) active candidate space.' },
     ],
     traceExercises: [
       'Queue trace: enqueue 1, 2, 3; dequeue twice; enqueue 4; dequeue twice. Show both internal stacks after every operation.',
@@ -573,6 +768,7 @@ static int[] kmpMatches(String text, String pattern) {
   {
     id: 'binary-search', sourcePages: [14], title: '6. Binary Search Algorithm', promise: 'Search sorted data and monotonic answer spaces with explicit invariants.',
     mentalModel: 'Binary search works when the search space is ordered and each comparison lets you discard a half that cannot contain the answer. It is not merely “use mid”; the invariant and boundary convention define correctness.',
+    keyTerms: [{"term":"Search interval","definition":"The range of positions that may still contain the answer.","example":"[low, high) includes low and excludes high."},{"term":"Monotonic predicate","definition":"A condition that changes in one direction as a value grows.","example":"Feasible capacity stays feasible at larger capacities."},{"term":"Lower bound","definition":"First position with value greater than or equal to target.","example":"For [1,2,2,4], lower bound of 2 is index 1."},{"term":"Upper bound","definition":"First position with value strictly greater than target.","example":"For [1,2,2,4], upper bound of 2 is index 3."},{"term":"Half-open interval","definition":"Range [low,high) includes low and excludes high.","example":"The full array is [0,n); n is a valid boundary."},{"term":"First true","definition":"Smallest candidate where a monotonic predicate becomes true.","example":"Find minimum feasible shipping capacity."}],
     concepts: ['Exact search in sorted arrays.', 'Lower bound: first index with a[i] ≥ target; upper bound: first index with a[i] > target.', 'First/last occurrence and insertion position.', 'Rotated sorted arrays and identifying the sorted half.', 'Binary search on answer using a monotonic feasible predicate.', 'Integer overflow-safe midpoint and termination.', 'Unknown-size/exponential search and floating-point tolerance.'],
     recognition: ['Input is sorted or a predicate changes monotonically from false to true.', 'Need first/last position, minimum feasible capacity or maximum feasible rate.', 'A brute-force answer scan can be replaced by a feasibility test.'],
     method: ['Define the answer interval and whether endpoints are inclusive.', 'Write the invariant (e.g. answer lies in [lo, hi)).', 'Use mid = lo + (hi - lo) / 2 to avoid overflow in fixed-width languages.', 'For lower bound, if a[mid] ≥ target, keep mid by setting hi=mid; otherwise lo=mid+1.', 'For answer search, prove the predicate is monotonic before binary searching.', 'Check termination and test 0/1 length, absent target and all-equal values.'],
@@ -592,7 +788,7 @@ static int[] kmpMatches(String text, String pattern) {
     deepDive: ["Lower bound returns the first index i with a[i] >= target; upper bound returns the first index with a[i] > target. Both may return n, so callers must check bounds before indexing.","For [lo,hi), the invariant is that the answer lies in the remaining interval and hi is an exclusive boundary. If a[mid] qualifies, hi=mid retains mid; otherwise lo=mid+1 discards it.","Use lo+(hi-lo)/2 to avoid overflow in lo+hi. The loop terminates because each branch strictly shrinks the interval.","Rotated arrays require identifying a sorted half; duplicates can make the decision ambiguous and may force lo++ with O(n) worst-case behavior.","Binary search on answer requires a monotone predicate. For minimum feasible x, false values precede true values; search for the first true boundary.","For floating-point answers, define absolute/relative tolerance or a fixed iteration count; do not compare floating-point values for exact equality."],
     correctness: ["Interval invariant: before each iteration, the desired boundary remains in [lo,hi].","When predicate(mid) is true for first-true search, the first true cannot be to the right of mid, so hi=mid is safe; otherwise lo=mid+1.","Termination follows because the nonnegative interval length strictly decreases; at lo==hi the boundary is uniquely determined."],
     implementationSteps: ["Write the contract in words: exact index, first >= target, last <= target or first feasible answer.","Choose [lo,hi) and initialize hi=n.","Compute midpoint safely and update only according to the invariant.","Check lo<n before reading a[lo].","For answer search, implement and independently test the feasibility predicate first.","Test empty, singleton, all equal, absent target, duplicates at both ends and integer extremes."],
-    codeExamples: [{"language":"Java 21","title":"Lower bound in a sorted array","code":"static int lowerBound(int[] values, int target) {\\n    int lo = 0, hi = values.length;\\n    while (lo < hi) {\\n        int mid = lo + (hi - lo) / 2;\\n        if (values[mid] >= target) hi = mid;\\n        else lo = mid + 1;\\n    }\\n    return lo;\\n}","explanation":"Returns the first index whose value is at least target, or n if none exists. O(log n) time and O(1) auxiliary space."}],
+    codeExamples: [{"language":"Java 21","title":"Lower bound in a sorted array","code":"static int lowerBound(int[] values, int target) {\n    int lo = 0, hi = values.length;\n    while (lo < hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (values[mid] >= target) hi = mid;\n        else lo = mid + 1;\n    }\n    return lo;\n}","explanation":"Returns the first index whose value is at least target, or n if none exists. O(log n) time and O(1) auxiliary space."}],
     traceExercises: ["Trace lowerBound([1,2,2,2,5],2) with lo,hi,mid each iteration.","Trace target 6 in [1,3,5] and explain why returning n is valid.","For a first-true predicate over [0,100], show each interval update."],
     realWorldApplications: ["Database index range scans and insertion positions.","Capacity/rate planning using a monotone feasibility check.","Version and timestamp boundary lookup.","Threshold selection in scheduling and resource allocation."],
     assessment: ["Implement lower and upper bound and state their exact postconditions.","Prove why hi=mid is required when mid qualifies in first-true search.","Explain when binary search on a rotated array may degrade to O(n).","Derive total complexity when each feasibility check costs O(n).","Test empty arrays, duplicates and absent boundaries."],
@@ -601,6 +797,7 @@ static int[] kmpMatches(String text, String pattern) {
   {
     id: 'two-pointers-window', sourcePages: [3, 4, 12], title: '7. Two Pointers & Sliding Window', promise: 'Exploit order and contiguous ranges without repeatedly rescanning data.',
     mentalModel: 'Two pointers coordinate positions. Sliding window is a special two-pointer technique for a contiguous interval whose state can be updated as its boundaries move. Pointer movement must be justified by a property, not guessed.',
+    keyTerms: [{"term":"Pointer","definition":"An index that marks a position or boundary.","example":"left and right define a window."},{"term":"Window","definition":"A contiguous range currently being examined.","example":"values[left..right] is the active range."},{"term":"Window invariant","definition":"Property maintained by the active contiguous range.","example":"A unique-character window contains no repeated symbol."},{"term":"Fixed-size window","definition":"Contiguous range whose length remains k.","example":"Add incoming and subtract outgoing values from a running sum."},{"term":"Variable-size window","definition":"Range whose boundaries move to restore a validity condition.","example":"Expand right and shrink left while the condition is violated."},{"term":"Monotone validity","definition":"Feasibility changes predictably as a window expands or shrinks.","example":"Negative values can invalidate a sum-based sliding-window assumption."}],
     concepts: ['Opposite-direction pointers on sorted arrays and palindromes.', 'Same-direction read/write pointers for compaction and partition.', 'Fast/slow pointers for cycles and middle positions.', 'Fixed-size sliding windows.', 'Variable-size windows with a validity invariant.', 'Frequency maps for distinct-count and anagram windows.', 'At-most K transformation to exactly K = atMost(K) − atMost(K−1).', 'Prefix sums or other methods when negative values invalidate greedy shrinking.'],
     recognition: ['Sorted pair/triplet sum, palindrome, in-place removal or partition.', 'Longest/shortest contiguous substring/subarray with a maintainable constraint.', 'A range expands on the right and can be repaired by moving the left boundary.'],
     method: ['For opposite pointers, sort if allowed and explain how order justifies movement.', 'For read/write, keep the prefix [0,write) as the valid output.', 'For a fixed window, add incoming and remove outgoing element.', 'For variable windows, state what makes a window valid and prove moving left can restore validity.', 'For at-most K, update counts and shrink while distinct/count constraint is violated.', 'If negative values break monotonicity, switch to prefix sums, a deque or another valid method.'],
@@ -733,6 +930,7 @@ static long atMostKDistinct(int[] values, int k) {
   {
     id: 'binary-tree', sourcePages: [17], title: '8. Binary Tree', promise: 'Master recursive structure, iterative traversals, level order, paths and tree construction.',
     mentalModel: 'A binary tree is a node with up to two child trees. Many tree algorithms are recursive because a subtree is itself a tree. Decide whether information flows top-down (carry state) or bottom-up (return an aggregate).',
+    keyTerms: [{"term":"Depth","definition":"Number of edges from the root to a node.","example":"The root has depth 0."},{"term":"Height","definition":"Longest downward path to a leaf, using a stated edge/node convention.","example":"A single node has edge-height 0."},{"term":"Subtree","definition":"A node and all descendants beneath it.","example":"Postorder height returns a value for each subtree."},{"term":"Diameter","definition":"Longest path between two nodes, measured in edges or nodes by convention.","example":"If height counts nodes, through-node edge length is leftHeight+rightHeight."},{"term":"Traversal order","definition":"Order used to visit nodes in a tree.","example":"Inorder is left, node, right."},{"term":"Balanced tree","definition":"Tree whose height is constrained by a specified balance rule.","example":"AVL child heights differ by at most one at every node."}],
     concepts: ['Root, leaf, depth, height, subtree and balanced tree.', 'Preorder, inorder, postorder and level-order BFS.', 'Recursive DFS and iterative stack traversals.', 'Height, diameter, balance and maximum path sum.', 'Root-to-leaf path, path sum and path construction.', 'Lowest common ancestor.', 'Build tree from traversal pairs with index maps.', 'Serialize/deserialize and null markers.', 'Morris traversal concept and O(1) auxiliary traversal.'],
     recognition: ['The input is a root node and asks about paths, depth, subtree or ancestors.', 'A result depends on child subtree results.', 'Level-by-level output or minimum edge distance is required.'],
     method: ['Define exactly what a recursive call returns.', 'Write the null/base case first.', 'For bottom-up problems, combine left and right results at the current node.', 'For top-down problems, pass accumulated state to children.', 'For BFS, process the queue size captured at the start of each level.', 'For LCA, state assumptions about node presence and unique values.'],
@@ -752,7 +950,7 @@ static long atMostKDistinct(int[] values, int k) {
     deepDive: ["A subtree is itself a binary tree, which makes recursive decomposition natural. A recursive contract should say exactly what the call returns for the subtree rooted at its node.","Depth counts edges from root to node; height may count edges or nodes. State the convention: this lesson uses height(null)=0 and leaf height=1.","Preorder visits node-left-right, inorder left-node-right and postorder left-right-node. Level order uses a queue and captures the current queue size to delimit one level.","Top-down algorithms pass accumulated information such as depth or path sum. Bottom-up algorithms return information such as height, balance status or best downward path.","Diameter is the maximum number of edges on a path between two nodes. At each node, left height + right height is a candidate; the global maximum can be updated while returning height.","A skewed tree has height n, so recursive DFS may use O(n) stack and risk stack overflow. Balanced trees have O(log n) height.","Reconstructing a tree from traversals needs unique values for the standard index-map method; duplicates require extra disambiguating information."],
     correctness: ["Traversal correctness follows by visiting each node exactly once and recursively/iteratively scheduling its defined children.","Height invariant: the returned value is the height of the current subtree; null returns zero and a node returns one plus the larger child height.","Diameter invariant: every path's highest node is its LCA; the path through that node has length leftHeight+rightHeight, so considering every node covers the optimal path."],
     implementationSteps: ["Define null behavior and whether height counts nodes or edges.","Choose recursive DFS, explicit stack or queue based on traversal order and depth risk.","For bottom-up tasks, specify returned subtree information before writing recursion.","For level order, capture queue size before processing a level.","For diameter/balance, combine child results in one traversal where possible.","Test empty, singleton, skewed, complete, duplicate-valued and asymmetric trees."],
-    codeExamples: [{"language":"Java 21","title":"Height and diameter in one postorder traversal","code":"static final class Node { int value; Node left, right; Node(int v) { value = v; } }\\nstatic int diameter = 0;\\nstatic int height(Node node) {\\n    if (node == null) return 0;\\n    int left = height(node.left), right = height(node.right);\\n    diameter = Math.max(diameter, left + right);\\n    return 1 + Math.max(left, right);\\n}","explanation":"Height is measured in nodes; diameter is measured in edges. Reset the accumulator before each independent tree. O(n) time and O(h) recursion stack."}],
+    codeExamples: [{"language":"Java 21","title":"Height and diameter in one postorder traversal","code":"static final class Node {\n    int value;\n    Node left, right;\n    Node(int v) { value = v; }\n}\n\nstatic int diameter(Node node) {\n    int[] best = {0};\n    height(node, best);\n    return best[0];\n}\n\nstatic int height(Node node, int[] best) {\n    if (node == null) return 0;\n    int left = height(node.left, best), right = height(node.right, best);\n    best[0] = Math.max(best[0], left + right);\n    return 1 + Math.max(left, right);\n}","explanation":"Height is measured in nodes; diameter is measured in edges. The per-call accumulator prevents results from leaking across independent trees. O(n) time and O(h) recursion stack."}],
     traceExercises: ["Compute heights and diameter candidates for a root with left chain length 2 and right chain length 3.","Trace level order on an asymmetric tree and record the queue at each level.","Compare recursion stack depth for a balanced tree and a chain of n nodes."],
     realWorldApplications: ["Hierarchical file systems and organizational structures.","Expression trees and syntax trees in compilers.","Decision trees and nested UI component structures.","Routing and indexing structures."],
     assessment: ["Explain the difference between depth and height under a stated convention.","Implement level-order traversal without mixing adjacent levels.","Prove one-pass diameter calculation is O(n).","State worst-case recursion space for a skewed tree.","Explain why traversal reconstruction requires unique values for the usual method."],
@@ -761,6 +959,7 @@ static long atMostKDistinct(int[] values, int k) {
   {
     id: 'bst', sourcePages: [18], title: '9. Binary Search Tree', promise: 'Use ordered tree invariants for search, insertion, deletion and order statistics.',
     mentalModel: 'A BST maintains a global ordering: every key in a node’s left subtree is smaller and every key in its right subtree is larger (or follows a clearly defined duplicate policy). Inorder traversal therefore produces sorted order.',
+    keyTerms: [{"term":"BST ordering","definition":"Left keys are smaller and right keys larger under the chosen duplicate rule.","example":"12 cannot be in the left subtree of key 8."},{"term":"Successor","definition":"The next larger key in sorted order.","example":"For a node with a right subtree, take its minimum key."},{"term":"Strict BST ordering","definition":"All left keys are smaller and all right keys larger under a comparator.","example":"Validate with inherited bounds, not only parent checks."},{"term":"Duplicate policy","definition":"Rule for equal keys in a search tree.","example":"A strict BST may reject duplicates or store a count."},{"term":"Predecessor","definition":"Largest key strictly smaller than a given key.","example":"If left subtree exists, its rightmost node is predecessor."},{"term":"Rotation","definition":"Local pointer transformation preserving inorder key order.","example":"AVL rotation changes shape while retaining sorted order."}],
     concepts: ['BST invariant and duplicate-key policy.', 'Search and insertion.', 'Deletion: leaf, one child, two children using successor/predecessor.', 'Validate BST using lower/upper bounds.', 'Inorder traversal, kth smallest/largest.', 'Predecessor and successor.', 'Balanced BSTs: AVL and Red-Black tree concepts.', 'BST vs heap vs hash map use cases.'],
     recognition: ['Need ordered membership, predecessor/successor or kth smallest.', 'Input is a BST and asks for range or sorted traversal.', 'Need dynamic insert/delete while retaining order.'],
     method: ['Write the global range allowed at each node, not only a parent comparison.', 'Search by comparing target and following one child.', 'For validation, pass exclusive/inclusive bounds according to duplicate policy.', 'For two-child deletion, replace with inorder successor (minimum in right subtree) or predecessor.', 'For kth smallest, use inorder with a counter or augment subtree sizes.', 'Discuss worst-case skew and balancing.'],
@@ -780,7 +979,7 @@ static long atMostKDistinct(int[] values, int k) {
     deepDive: ["The BST invariant is global: every key in a node's left subtree is smaller and every key in its right subtree is larger under the chosen strict ordering.","Validation must carry bounds down the recursion. A node may be correctly ordered relative to its parent but violate an ancestor's constraint.","Inorder traversal of a strict BST is strictly increasing. This gives a validation alternative but must handle duplicate policy consistently.","Deletion of a leaf removes it directly; deletion with one child returns that child; deletion with two children replaces the node with the minimum key in its right subtree (successor) or maximum in left.","Search, insertion and deletion take O(h). An ordinary BST can become a chain with h=n; balancing maintains O(log n) height.","A heap guarantees only parent-child priority order, not sorted inorder semantics. A hash map offers membership by key but no ordered predecessor/successor queries."],
     correctness: ["Search correctness: the BST invariant proves the target, if present, can only lie in the selected child subtree.","Validation correctness: inherited bounds encode every ancestor constraint, so a node is accepted only if it satisfies the entire path's ordering requirements.","Successor deletion correctness: the minimum key in the right subtree is greater than all left-subtree keys and no greater than any remaining right-subtree key, preserving order after replacement."],
     implementationSteps: ["Choose strict or duplicate-allowing ordering semantics.","Write recursive search with the invariant that all candidate keys lie in the current subtree.","Validate by passing exclusive or inclusive lower/upper bounds.","For two-child deletion, find successor, copy/replace its key and remove successor from right subtree.","State O(h) and discuss balanced versus skewed cases.","Test root deletion, leaf, one child, two children, duplicates and extreme keys."],
-    codeExamples: [{"language":"Java 21","title":"Validate a strict BST with global bounds","code":"static boolean isValid(Node node, long low, long high) {\\n    if (node == null) return true;\\n    if (node.value <= low || node.value >= high) return false;\\n    return isValid(node.left, low, node.value)\\n        && isValid(node.right, node.value, high);\\n}","explanation":"Use long bounds so Integer.MIN_VALUE and MAX_VALUE remain valid node values. O(n) time and O(h) recursion space."}],
+    codeExamples: [{"language":"Java 21","title":"Validate a strict BST with global bounds","code":"static boolean isValid(Node node, long low, long high) {\n    if (node == null) return true;\n    if (node.value <= low || node.value >= high) return false;\n    return isValid(node.left, low, node.value)\n        && isValid(node.right, node.value, high);\n}","explanation":"Use long bounds so Integer.MIN_VALUE and MAX_VALUE remain valid node values. O(n) time and O(h) recursion space."}],
     traceExercises: ["Trace validation for root 10, left 5 with right child 12; identify the ancestor bound violation.","Delete a two-child node and show successor removal and resulting inorder traversal.","Insert sorted values 1..5 and compare tree height with inserting median-first."],
     realWorldApplications: ["Ordered in-memory indexes and symbol tables.","Range queries and predecessor/successor lookup.","Balanced search trees in database and runtime libraries.","Maintaining sorted dynamic sets."],
     assessment: ["Explain why parent-only validation is insufficient.","Implement validation with strict global bounds.","Describe all three deletion cases and prove successor replacement preserves order.","Compare O(h) behavior for balanced and skewed trees.","Explain why a heap is not a replacement for a BST."],
@@ -789,6 +988,7 @@ static long atMostKDistinct(int[] values, int k) {
   {
     id: 'heap', sourcePages: [8], title: '10. Heap', promise: 'Use priority queues for repeated extrema, Top K, scheduling and K-way merge.',
     mentalModel: 'A binary heap is a complete binary tree stored compactly in an array. The heap property guarantees the root is the minimum (min-heap) or maximum (max-heap), but the rest of the array is not fully sorted.',
+    keyTerms: [{"term":"Heap property","definition":"Each parent has priority over its children; siblings are not sorted.","example":"In a min-heap, parent ≤ child."},{"term":"Sift","definition":"Move a node until the heap property is restored.","example":"After root removal, sift the last item down."},{"term":"Complete binary tree","definition":"Levels are full except possibly the last, filled left to right.","example":"This shape is stored compactly in an array."},{"term":"Heapify","definition":"Build a heap by repairing parent-child order.","example":"Bottom-up sift-down heapify is O(n)."},{"term":"Bounded heap","definition":"Heap capped at k entries to retain best candidates.","example":"A min-heap of size k can keep the k largest values."},{"term":"Lazy deletion","definition":"Mark stale entries and discard them when they reach the top.","example":"A window heap may pop indices outside the current range."}],
     concepts: ['Complete binary tree and array index formulas.', 'Min-heap vs max-heap.', 'Sift-up and sift-down.', 'Insert, peek and extract.', 'Bottom-up heapify is O(n).', 'Top K largest/smallest and bounded heaps.', 'K-way merge with one candidate per sorted source.', 'Two heaps for running median.', 'Lazy deletion and stale heap entries.'],
     recognition: ['Repeatedly need the next smallest/largest item.', 'Need Top K without sorting everything.', 'Merge K sorted lists or streams.', 'Need a dynamic median or priority scheduling.'],
     method: ['Choose min or max root based on what must be removed.', 'For Top K largest, keep a min-heap of size K; root is the weakest retained candidate.', 'For K-way merge, store (value, source, index) and push the next item from the same source after pop.', 'Use lazy deletion when arbitrary removal is not supported.', 'Distinguish heap construction from repeated insertion.'],
@@ -863,8 +1063,8 @@ static long atMostKDistinct(int[] values, int k) {
             minHeap.offer(value);
         }
     }
-    return minHeap.stream().mapToInt(Integer::intValue).toArray();
-}`, explanation: 'The min-heap root is the smallest of the retained K candidates. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space. Returned order is heap iteration order, not sorted order.' },
+    return minHeap.stream().sorted().mapToInt(Integer::intValue).toArray();
+}`, explanation: 'The min-heap root is the smallest of the retained K candidates. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space. The method returns the retained values in ascending order so callers receive a deterministic result; the heap itself is not sorted. The min-heap root is the smallest retained candidate. Each input item causes at most one O(log K) update. Total O(n log K) time and O(K) auxiliary space.' },
       { language: 'Java 21', title: 'Merge K sorted arrays', code: `record Entry(int value, int source, int index) {}
 
 static int[] mergeKSorted(int[][] arrays) {
@@ -892,7 +1092,129 @@ static int[] mergeKSorted(int[][] arrays) {
         }
     }
     return merged;
-}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' }
+}`, explanation: 'The heap has at most one candidate per source. Each output removes one candidate and inserts at most one successor. O(N log K) time and O(K) heap space, excluding the output array.' },
+      { language: 'JavaScript (Node.js)', title: 'Top K largest and deterministic K-way merge', code: `function topKLargest(values, k) {
+  if (!Number.isInteger(k) || k < 0 || k > values.length) {
+    throw new RangeError('k must be an integer between 0 and values.length');
+  }
+  const heap = [];
+  const push = (value) => {
+    let index = heap.length;
+    heap.push(value);
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (heap[parent] <= heap[index]) break;
+      [heap[parent], heap[index]] = [heap[index], heap[parent]];
+      index = parent;
+    }
+  };
+  const pop = () => {
+    const minimum = heap[0];
+    const last = heap.pop();
+    if (heap.length > 0) {
+      heap[0] = last;
+      let index = 0;
+      while (true) {
+        const left = 2 * index + 1;
+        const right = left + 1;
+        let smallest = index;
+        if (left < heap.length && heap[left] < heap[smallest]) smallest = left;
+        if (right < heap.length && heap[right] < heap[smallest]) smallest = right;
+        if (smallest === index) break;
+        [heap[index], heap[smallest]] = [heap[smallest], heap[index]];
+        index = smallest;
+      }
+    }
+    return minimum;
+  };
+
+  for (const value of values) {
+    if (heap.length < k) push(value);
+    else if (k > 0 && value > heap[0]) {
+      pop();
+      push(value);
+    }
+  }
+  return heap.sort((a, b) => a - b);
+}
+
+function mergeKSorted(sources) {
+  const heap = [];
+  const compare = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  const push = (entry) => {
+    let index = heap.length;
+    heap.push(entry);
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (compare(heap[parent], heap[index]) <= 0) break;
+      [heap[parent], heap[index]] = [heap[index], heap[parent]];
+      index = parent;
+    }
+  };
+  const pop = () => {
+    const minimum = heap[0];
+    const last = heap.pop();
+    if (heap.length > 0) {
+      heap[0] = last;
+      let index = 0;
+      while (true) {
+        const left = 2 * index + 1;
+        const right = left + 1;
+        let smallest = index;
+        if (left < heap.length && compare(heap[left], heap[smallest]) < 0) smallest = left;
+        if (right < heap.length && compare(heap[right], heap[smallest]) < 0) smallest = right;
+        if (smallest === index) break;
+        [heap[index], heap[smallest]] = [heap[smallest], heap[index]];
+        index = smallest;
+      }
+    }
+    return minimum;
+  };
+
+  sources.forEach((source, sourceIndex) => {
+    if (source.length > 0) push([source[0], sourceIndex, 0]);
+  });
+  const merged = [];
+  while (heap.length > 0) {
+    const [value, sourceIndex, index] = pop();
+    merged.push(value);
+    const nextIndex = index + 1;
+    if (nextIndex < sources[sourceIndex].length) {
+      push([sources[sourceIndex][nextIndex], sourceIndex, nextIndex]);
+    }
+  }
+  return merged;
+}`, explanation: 'The bounded min-heap retains only the K largest values and returns them in ascending order. K-way merge stores one [value, sourceIndex, index] candidate per nonempty source; tuple ordering makes equal values deterministic by source and position. Each emitted value advances only its own source. Top K is O(n log K) time and O(K) space; merge is O(N log K) time and O(K) heap space.' },
+      { language: 'Python 3', title: 'Top K largest and deterministic K-way merge', code: `import heapq
+
+def top_k_largest(values, k):
+    if not isinstance(k, int) or isinstance(k, bool) or k < 0 or k > len(values):
+        raise ValueError("k must be an integer between 0 and len(values)")
+    retained = []
+    for value in values:
+        if len(retained) < k:
+            heapq.heappush(retained, value)
+        elif k > 0 and value > retained[0]:
+            heapq.heapreplace(retained, value)
+    return sorted(retained)
+
+def merge_k_sorted(sources):
+    heap = []
+    for source_index, source in enumerate(sources):
+        if source:
+            heapq.heappush(heap, (source[0], source_index, 0))
+
+    merged = []
+    while heap:
+        value, source_index, index = heapq.heappop(heap)
+        merged.append(value)
+        next_index = index + 1
+        if next_index < len(sources[source_index]):
+            heapq.heappush(
+                heap,
+                (sources[source_index][next_index], source_index, next_index)
+            )
+    return merged`, explanation: 'heapq is a min-heap, so it directly supports the bounded Top K largest strategy. Both functions return values in ascending order. Merge entries are tuples (value, sourceIndex, index), giving deterministic tie-breaking without comparing source payloads. Top K is O(n log K) time and O(K) space; merge is O(N log K) time and O(K) heap space.' },
     ],
     traceExercises: [
       'Insert 7, 3, 9, 1, 6 into a min-heap. Draw the array after each append and sift-up.',
@@ -928,6 +1250,7 @@ static int[] mergeKSorted(int[][] arrays) {
   {
     id: 'backtracking', title: '11. Backtracking', promise: 'Explore combinatorial choices systematically and prune only when safe.',
     mentalModel: 'Backtracking builds a partial solution, explores one choice, then undoes it before trying another. The search tree represents decisions. Pruning removes a branch only when it cannot produce a valid or better answer.',
+    keyTerms: [{"term":"State","definition":"The choices made so far in a partial solution.","example":"A path list stores selected values."},{"term":"Pruning","definition":"Stop a branch that cannot produce a valid answer.","example":"Sorted candidates larger than the remaining target can be skipped."},{"term":"Decision state","definition":"Partial choices defining one search-tree node.","example":"N-Queens state tracks occupied columns and diagonals."},{"term":"State restoration","definition":"Undo a choice so sibling branches start from the same state.","example":"Remove the chosen value from the path after recursion."},{"term":"Constraint propagation","definition":"Use a choice to reduce future legal options.","example":"A Sudoku placement removes its digit from peer candidates."},{"term":"Branch and bound","definition":"Prune when an optimistic bound cannot beat the incumbent.","example":"Stop a branch whose best possible score is below current best."}],
     concepts: ['State, choices, constraints, goal and undo operation.', 'Subsets, combinations and permutations.', 'Choose–explore–unchoose template.', 'Duplicate handling after sorting.', 'Constraint propagation and early pruning.', 'N-Queens, Sudoku and word search.', 'Branch and bound for optimization.', 'Memoization when different paths reach the same state.', 'Meet in the middle for moderate n.'],
     recognition: ['Need all valid combinations/permutations/subsets.', 'Small n but exponential possibilities.', 'Constraints make many partial choices impossible.', 'Need a witness configuration rather than only a count.'],
     method: ['Define state completely: index, chosen elements, remaining capacity, used set, etc.', 'List choices available at this state.', 'Reject invalid states before recursing.', 'Make a choice, recurse, then undo exactly that change.', 'For duplicates, sort and skip equal choices at the same recursion depth.', 'Estimate branching factor and depth; add pruning or memoization only with a correctness argument.'],
@@ -947,7 +1270,7 @@ static int[] mergeKSorted(int[][] arrays) {
     deepDive: ["Backtracking explores a decision tree. A state must contain every fact that affects future legal choices; omitting history can merge states that are not equivalent.","The canonical pattern is choose, recurse, unchoose. Every mutation made before recursion must be restored on every return path, including early exits.","Subsets make two choices per element and produce 2^n leaves. Permutations have n! leaves; materializing each length-n result costs Θ(n·n!).","For duplicate values, sort first and skip equal candidates at the same recursion depth. Do not skip equal values globally because identical values may be used at different positions when multiplicity permits.","Pruning is valid only when a partial state cannot possibly lead to a valid solution. A heuristic that merely seems unlikely is not a correctness argument.","Memoization is useful when different decision paths reach the same fully described state. It does not help when all states are unique.","Branch and bound uses a proven optimistic bound to discard branches that cannot beat the best known solution."],
     correctness: ["Search completeness: every valid solution has a sequence of choices represented by one root-to-leaf path in the decision tree.","Soundness: a result is emitted only at a terminal state satisfying all constraints.","Undo invariant: after returning from a recursive child, the mutable path/state equals exactly the parent state before the choice.","Pruning safety: a branch is removed only when its state cannot reach any valid solution (or cannot improve the incumbent for optimization)."],
     implementationSteps: ["Write state variables and prove they contain all future-relevant information.","List choices in a deterministic order.","Check invalid states before descending and terminal states before emitting results.","Apply one choice, recurse, then undo exactly that choice.","Copy mutable paths when storing results.","Sort and skip duplicates at the correct recursion depth if unique combinations are required.","Estimate exponential output and guard recursion depth/input constraints."],
-    codeExamples: [{"language":"Java 21","title":"Generate all subsets with choose/explore/unchoose","code":"static void subsets(int[] values, int index, List<Integer> path, List<List<Integer>> out) {\\n    if (index == values.length) { out.add(new ArrayList<>(path)); return; }\\n    subsets(values, index + 1, path, out);\\n    path.add(values[index]);\\n    subsets(values, index + 1, path, out);\\n    path.remove(path.size() - 1);\\n}","explanation":"Each element is excluded or included. There are 2^n leaves and Θ(n·2^n) total copied output elements. Recursion depth O(n)."}],
+    codeExamples: [{"language":"Java 21","title":"Generate all subsets with choose/explore/unchoose","code":"static void subsets(int[] values, int index, List<Integer> path, List<List<Integer>> out) {\n    if (index == values.length) { out.add(new ArrayList<>(path)); return; }\n    subsets(values, index + 1, path, out);\n    path.add(values[index]);\n    subsets(values, index + 1, path, out);\n    path.remove(path.size() - 1);\n}","explanation":"Each element is excluded or included. There are 2^n leaves and Θ(n·2^n) total copied output elements. Recursion depth O(n)."}],
     traceExercises: ["Draw the full decision tree for subsets of [a,b].","Trace the path list before and after each recursive return for [1,2].","For [1,1,2], show why duplicate skipping is depth-local rather than global."],
     realWorldApplications: ["Constraint solvers and puzzle engines.","Configuration and test-case generation.","Scheduling and resource allocation search.","Compiler optimization and combinatorial planning."],
     assessment: ["Identify the complete state for a combination-sum problem.","Explain why every mutation needs an undo operation.","Prove a chosen pruning condition is safe.","Derive output-sensitive complexity for all subsets.","Explain same-depth duplicate skipping."],
@@ -956,6 +1279,7 @@ static int[] mergeKSorted(int[][] arrays) {
   {
     id: 'greedy', sourcePages: [5], title: '12. Greedy Algorithm', promise: 'Recognise when local decisions can be proven to produce a global optimum.',
     mentalModel: 'A greedy algorithm commits to a locally attractive choice and does not reconsider it. This is powerful only when the problem has a structure that makes the choice safe. A plausible heuristic is not a proof.',
+    keyTerms: [{"term":"Greedy choice","definition":"The locally preferred option chosen now.","example":"Choose the compatible interval that ends earliest for unweighted activity selection."},{"term":"Exchange argument","definition":"Show a greedy choice can replace an optimal choice without making the result worse.","example":"Swap in the earliest-ending compatible interval."},{"term":"Greedy-choice property","definition":"A property that permits a locally selected choice in some optimal solution.","example":"Earliest-finish interval can be part of an optimal schedule."},{"term":"Stays-ahead proof","definition":"Compare greedy and optimal partial solutions after each step.","example":"Show greedy finish time is no later after each selection."},{"term":"Optimal substructure","definition":"Optimal solution contains an optimal residual subproblem.","example":"After selecting an interval, solve the remaining compatible intervals."}],
     concepts: ['Greedy-choice property and optimal substructure.', 'Exchange argument: transform an optimal solution to include the greedy choice.', 'Stays-ahead proof and cut property.', 'Interval scheduling by earliest finish.', 'Minimum platforms/meeting rooms via event ordering.', 'Jump Game reachability.', 'Huffman coding.', 'Greedy vs DP: coin systems and counterexamples.', 'Tie-breaking and sorting invariants.'],
     recognition: ['The task asks for a maximum number of compatible intervals or minimum resources.', 'A sorted order may make one decision dominate alternatives.', 'A local choice can be exchanged into an optimal solution without worsening it.'],
     method: ['Propose the greedy choice and define the remaining subproblem.', 'Try tiny counterexamples, especially ties and awkward values.', 'State the exchange or stays-ahead argument formally.', 'Show that after choosing greedily, the residual problem has the same structure.', 'Sort once if needed and account for sorting complexity.', 'If no proof emerges, compare with DP or graph search rather than assuming greedy works.'],
@@ -1079,6 +1403,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
   {
     id: 'dynamic-programming', sourcePages: [20], title: '13. Dynamic Programming', promise: 'Turn repeated recursive subproblems into a precise state and recurrence.',
     mentalModel: 'DP is systematic reuse of answers to overlapping subproblems. The central work is not filling a table; it is defining a state that contains exactly the information needed to make future decisions.',
+    keyTerms: [{"term":"State","definition":"A compact description of a subproblem.","example":"dp[i] stores the best result for the first i items."},{"term":"Transition","definition":"The rule that computes a state from smaller states.","example":"dp[i] uses previously computed dp values."},{"term":"DP state","definition":"Minimal information describing one subproblem.","example":"dp[i][c] can mean best value from first i items and capacity c."},{"term":"Recurrence","definition":"Equation relating a state to smaller states.","example":"Knapsack compares skip versus take from capacity c-weight."},{"term":"Base case","definition":"State whose answer needs no further transition.","example":"Knapsack at capacity zero has value zero for nonnegative values."},{"term":"Tabulation","definition":"Compute states in dependency order.","example":"Fill a grid row by row when transitions use the prior row."},{"term":"State compression","definition":"Keep only prior values needed for future states.","example":"1D 0/1 knapsack saves memory but requires descending capacity."}],
     concepts: ['Overlapping subproblems and optimal substructure.', 'SRTBOT: state, recurrence, base case, order, answer, time.', 'Memoization (top-down) vs tabulation (bottom-up).', '1D DP: Fibonacci, climbing stairs, house robber.', 'Grid DP: paths, obstacles and minimum cost.', 'Knapsack: 0/1 vs unbounded; loop direction matters.', 'Subset sum, partition and coin change.', 'String DP: LCS, edit distance, LIS and palindromes.', 'Interval DP and tree DP.', 'State compression, bitmask DP and optimization.'],
     recognition: ['The problem asks count/minimum/maximum over repeated choices.', 'Recursive branches revisit the same parameter combinations.', 'A solution depends on smaller prefixes, capacities, intervals or subtrees.', 'Greedy choices fail but optimal substructure exists.'],
     method: ['Start with a recursive definition in plain language.', 'Choose state variables that fully determine the subproblem; avoid missing history.', 'Write recurrence from the choices available at a state.', 'Set base cases for empty/small states.', 'Draw dependencies and choose a valid evaluation order.', 'Prove each transition considers all legal choices and no illegal choice.', 'Count states × transitions; optimize space only after the recurrence is correct.'],
@@ -1098,7 +1423,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     deepDive: ["A DP state is a subproblem identity. If two histories produce the same state, their remaining optimal/counting problem must be equivalent for memoization to be valid.","SRTBOT: state, recurrence, base case, order, answer and time. Define each explicitly before writing a table.","For 0/1 knapsack, each item is used at most once, so a one-dimensional capacity loop runs downward. For unbounded knapsack, upward iteration permits reuse of the current item.","Top-down memoization follows only reached states but adds call-stack cost. Bottom-up tabulation makes dependency order explicit and avoids recursion depth.","Space compression is valid only when overwritten values are no longer needed by future transitions. Derive the dependency direction before reducing dimensions.","O(nW) knapsack is pseudo-polynomial: W is a numeric magnitude, whose representation requires only O(log W) bits.","LCS state dp[i][j] describes prefixes of lengths i and j; equal terminal symbols extend the diagonal, otherwise take the better of dropping one terminal symbol."],
     correctness: ["State sufficiency: histories mapped to the same state have identical remaining choices and costs, so reusing one computed result is valid.","Transition proof: every legal solution's first/last decision is represented by one recurrence branch, and each branch combines valid smaller subproblems.","Evaluation-order proof: every dependency is computed before the state that consumes it.","Space-compression proof: loop direction preserves the old-row/old-item values required by the recurrence."],
     implementationSteps: ["Write a recursive brute-force definition in plain language.","Identify repeated subproblems and define a minimal sufficient state.","Derive recurrence from exhaustive legal choices.","Set base cases for empty/minimal states.","Draw dependency arrows and choose memoization or a valid topological table order.","Count states and transitions; state memory and recursion costs.","Compress space only after proving overwritten states are dead.","Test zero capacity, empty input, repeated values, impossible states and large constraints."],
-    codeExamples: [{"language":"Java 21","title":"0/1 knapsack with one-dimensional compression","code":"static int knapsack01(int[] weight, int[] value, int capacity) {\\n    int[] dp = new int[capacity + 1];\\n    for (int i = 0; i < weight.length; i++) {\\n        for (int c = capacity; c >= weight[i]; c--) {\\n            dp[c] = Math.max(dp[c], value[i] + dp[c - weight[i]]);\\n        }\\n    }\\n    return dp[capacity];\\n}","explanation":"Descending capacity ensures each item contributes at most once. O(nW) time and O(W) space; pseudo-polynomial in capacity."}],
+    codeExamples: [{"language":"Java 21","title":"0/1 knapsack with one-dimensional compression","code":"static int knapsack01(int[] weight, int[] value, int capacity) {\n    int[] dp = new int[capacity + 1];\n    for (int i = 0; i < weight.length; i++) {\n        for (int c = capacity; c >= weight[i]; c--) {\n            dp[c] = Math.max(dp[c], value[i] + dp[c - weight[i]]);\n        }\n    }\n    return dp[capacity];\n}","explanation":"Descending capacity ensures each item contributes at most once. O(nW) time and O(W) space; pseudo-polynomial in capacity."}],
     traceExercises: ["Fill a 0/1 knapsack table for weights [1,3,4], values [15,20,30], capacity 4.","Compare descending and ascending capacity loops for one item of weight 2 and value 3.","Draw the dependency DAG for a small LCS table."],
     realWorldApplications: ["Resource allocation and budget planning.","Sequence comparison in diff tools and bioinformatics.","Route and grid optimization with overlapping subproblems.","Scheduling and inventory decisions."],
     assessment: ["Define state and recurrence for a stated optimization problem.","Explain why 0/1 knapsack iterates capacity downward.","Prove that a proposed state is sufficient or identify missing history.","Calculate states × transitions and classify pseudo-polynomial complexity.","Justify a space optimization from dependency order."],
@@ -1107,6 +1432,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
   {
     id: 'graphs', sourcePages: [19], title: '14. Graphs', promise: 'Model relationships and master traversal, connectivity, ordering and shortest paths.',
     mentalModel: 'A graph is a set of vertices connected by edges. Most graph problems become manageable after choosing a representation, defining what a state means, and selecting an algorithm that matches edge direction and weight assumptions.',
+    keyTerms: [{"term":"Vertex","definition":"A vertex is one point or entity in a graph, connected by edges.","example":"In a route map, each city can be represented as a vertex."},{"term":"Edge","definition":"A connection between vertices.","example":"A road from A to B is an edge."},{"term":"Adjacency list","definition":"Per-vertex collection of neighboring vertices or outgoing edges.","example":"Store an undirected edge in both endpoint lists."},{"term":"BFS","definition":"Breadth-first traversal expanding a FIFO frontier.","example":"First discovery gives shortest edge-count distance in unweighted graphs."},{"term":"Topological order","definition":"Order placing each directed edge u→v with u before v.","example":"Kahn's algorithm orders tasks in a DAG."},{"term":"Disjoint-set union","definition":"Structure maintaining components with find and union.","example":"Path compression plus union-by-size gives near-constant amortized work."}],
     concepts: ['Directed/undirected, weighted/unweighted, cyclic/acyclic, connected/disconnected.', 'Adjacency list vs adjacency matrix; edge list.', 'BFS for unweighted shortest paths and multi-source traversal.', 'DFS for components, cycle detection and finishing order.', 'Grid-to-graph modelling and state-expanded BFS.', 'Topological sorting with Kahn or DFS; DAG dependency order.', 'Union-Find with path compression and union by size/rank.', 'Dijkstra for non-negative weights; Bellman-Ford for negative edges.', 'Floyd-Warshall for all-pairs shortest paths.', 'Minimum spanning tree: Kruskal and Prim.', 'SCC, bridges and articulation points (advanced).'],
     recognition: ['The prompt describes networks, dependencies, routes, transformations or reachability.', 'Need minimum number of edges in an unweighted graph.', 'Need a valid dependency order or detect a cycle.', 'Need repeated connectivity merges or minimum-cost connection.', 'Edge weights determine shortest-path algorithm choice.'],
     method: ['Identify vertices, edges, direction, weight and graph size.', 'Choose adjacency list for sparse graphs; matrix for dense/small graphs or constant-time edge checks.', 'For BFS, mark visited when enqueuing to prevent duplicate queue entries.', 'For DFS, track recursion/explicit stack and distinguish visited from active-path state for directed cycles.', 'For topological order, count indegrees and process zero-indegree vertices; fewer than V outputs means a cycle.', 'For shortest paths, check weights first: BFS if unweighted, Dijkstra if all weights nonnegative, Bellman-Ford if negative edges may occur.', 'For MST, use Kruskal + DSU or Prim; distinguish MST from shortest-path tree.'],
@@ -1126,7 +1452,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     deepDive: ["An adjacency list stores outgoing neighbors and uses O(V+E) space; an adjacency matrix uses O(V²) space and supports constant-time edge existence checks.","BFS explores layers in nondecreasing number of edges. Marking visited when enqueuing prevents multiple queue insertions for the same vertex.","DFS uses recursion or an explicit stack. For directed cycle detection, distinguish unvisited, active (on current path) and completed vertices; an edge to active means a cycle.","Topological ordering exists only for a DAG. Kahn's algorithm repeatedly removes indegree-zero vertices; fewer than V outputs proves a directed cycle remains.","Dijkstra requires nonnegative edge weights. Bellman-Ford supports negative edges and can detect reachable negative cycles; Floyd-Warshall computes all-pairs distances in O(V³).","A minimum spanning tree connects all vertices of a connected undirected weighted graph with minimum total edge weight. It is not a shortest-path tree from a chosen source.","DSU with path compression and union by size/rank supports near-constant amortized connectivity operations and is central to Kruskal's algorithm."],
     correctness: ["BFS invariant: when a vertex is first enqueued, its distance is the shortest possible edge count because all smaller-distance layers have already been processed.","Kahn invariant: every emitted vertex has all incoming neighbors already emitted; if vertices remain, the remaining directed subgraph contains a cycle.","Dijkstra invariant: when the smallest tentative-distance vertex is finalized, no path through an unfinalized vertex can improve it when all edge weights are nonnegative.","Kruskal correctness follows from the cut property: the lightest safe edge crossing a cut can be included in some minimum spanning tree."],
     implementationSteps: ["List vertices and edge semantics, including whether parallel edges/self-loops are allowed.","Choose adjacency list for sparse graphs and matrix for dense/small graphs.","For BFS, initialize distance/parent and mark visited at enqueue time.","For DFS cycle detection, track active recursion path separately from completed nodes.","For topological sort, calculate indegrees and compare output count with V.","Choose shortest-path algorithm only after checking edge-weight constraints.","Test disconnected graphs, isolated vertices, cycles, parallel edges and negative weights."],
-    codeExamples: [{"language":"Java 21","title":"BFS shortest distances in an unweighted graph","code":"static int[] bfsDistances(List<List<Integer>> graph, int source) {\\n    int[] distance = new int[graph.size()];\\n    Arrays.fill(distance, -1);\\n    ArrayDeque<Integer> queue = new ArrayDeque<>();\\n    distance[source] = 0; queue.add(source);\\n    while (!queue.isEmpty()) {\\n        int u = queue.remove();\\n        for (int v : graph.get(u)) {\\n            if (distance[v] == -1) {\\n                distance[v] = distance[u] + 1;\\n                queue.add(v);\\n            }\\n        }\\n    }\\n    return distance;\\n}","explanation":"Returns -1 for unreachable vertices. O(V+E) time and O(V) auxiliary space, excluding adjacency storage."}],
+    codeExamples: [{"language":"Java 21","title":"BFS shortest distances in an unweighted graph","code":"static int[] bfsDistances(List<List<Integer>> graph, int source) {\n    int[] distance = new int[graph.size()];\n    Arrays.fill(distance, -1);\n    ArrayDeque<Integer> queue = new ArrayDeque<>();\n    distance[source] = 0; queue.add(source);\n    while (!queue.isEmpty()) {\n        int u = queue.remove();\n        for (int v : graph.get(u)) {\n            if (distance[v] == -1) {\n                distance[v] = distance[u] + 1;\n                queue.add(v);\n            }\n        }\n    }\n    return distance;\n}","explanation":"Returns -1 for unreachable vertices. O(V+E) time and O(V) auxiliary space, excluding adjacency storage."}],
     traceExercises: ["Trace BFS layers on a graph with a cycle and one disconnected component.","Run Kahn's algorithm and show indegrees after each removal.","Compare Dijkstra and Bellman-Ford on a graph containing one negative edge."],
     realWorldApplications: ["Network routing and reachability.","Build systems and dependency scheduling.","Social network connections and recommendation graphs.","Road/transport networks and infrastructure planning."],
     assessment: ["Choose a graph representation for sparse and dense inputs.","Prove BFS returns shortest unweighted distances.","Explain why visited-on-dequeue can cause duplicate queue entries.","Select a shortest-path algorithm for negative and nonnegative weights.","Explain how Kahn detects cycles and distinguish MST from shortest-path tree."],
@@ -1135,9 +1461,10 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
   {
     id: 'two-dimensional-arrays', sourcePages: [1], title: '15. 2D Arrays & Matrix', promise: 'Master matrix indexing, traversal, transformations, searching, submatrix queries and grid algorithms.',
     mentalModel: 'A matrix is a grid addressed by (row, column). Most bugs come from mixing row and column counts, inconsistent boundaries, or assuming the matrix is square. Treat a cell as a graph vertex when movement and reachability matter; treat a rectangle as a range when aggregation matters.',
+    keyTerms: [{"term":"Row and column","definition":"Coordinates used to locate a matrix cell.","example":"matrix[r][c] uses row r and column c."},{"term":"Ragged array","definition":"An array whose rows can have different lengths.","example":"matrix[r].length may vary by row."},{"term":"Rectangular matrix","definition":"Matrix whose rows all have equal column count.","example":"A 3×4 matrix has four valid columns in every row."},{"term":"Transpose","definition":"Swap row and column coordinates.","example":"Old (r,c) moves to (c,r) in transposed dimensions."},{"term":"2D prefix table","definition":"Summed-area table over row and column prefixes.","example":"Four prefix values compute a rectangle by inclusion-exclusion."},{"term":"Staircase search","definition":"Search row/column sorted matrix by eliminating one row or column.","example":"Start top-right; move left when too large and down when too small."}],
     concepts: [
       'Representation: int[][], rows = matrix.length, columns = rows == 0 ? 0 : matrix[0].length; rectangular and ragged arrays are different contracts.',
-      'Indexing: matrix[r][c]; valid rows are [0, rows), valid columns are [0, cols). Always use rows for the outer loop and columns for the inner loop.',
+      'Indexing: matrix[r][c]; valid rows are [0, rows), valid columns are [0, cols). For row-major traversal, use rows for the outer loop and columns for the inner loop; choose another order when the task requires it.',
       'Traversal: row-major, column-major, diagonals, boundary, zigzag and spiral.',
       'Coordinate transforms: transpose maps (r,c) to (c,r); clockwise rotation maps old (r,c) to (c, rows−1−r) for rectangular output dimensions.',
       'In-place transformations: transpose a square matrix across the diagonal; rotate a square matrix by transpose + reverse each row.',
@@ -1215,7 +1542,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     deepDive: ["For a rectangular matrix, rows=matrix.length and columns=rows==0?0:matrix[0].length. Ragged arrays require checking each row's own length.","Transpose maps old (r,c) to new (c,r), swapping dimensions. Clockwise rotation of an R×C matrix produces C×R coordinates (c,R-1-r).","A flattened binary search is valid only when rows are globally ordered such that each row's first value exceeds the previous row's last. Row-and-column sorted matrices support staircase search instead.","Define prefix[r+1][c+1] as the sum over rows [0,r] and columns [0,c]. Rectangle [r1,r2)×[c1,c2) is P[r2][c2]-P[r1][c2]-P[r2][c1]+P[r1][c1].","A grid becomes a graph when cells are vertices and legal moves are edges. BFS gives shortest move count in unweighted grids; DFS handles reachability; DP handles acyclic movement dependencies.","In-place transpose/rotation has square-matrix constraints; rectangular transformations usually require a new array or a more complex cycle permutation."],
     correctness: ["Traversal correctness follows from visiting every valid coordinate exactly once under the specified row/column bounds.","Coordinate-transform correctness can be checked by mapping corners and proving the transform is bijective over the new dimensions.","Prefix-sum inclusion-exclusion adds the desired rectangle once while subtracting the two excess strips and adding back their overlap."],
     implementationSteps: ["State rectangular versus ragged input contract and empty-matrix behavior.","Use rows for row loops and columns for column loops; check bounds before indexing.","Write coordinate transforms algebraically and verify all four corners.","Choose search algorithm from global sortedness versus per-row/column sortedness.","Build prefix dimensions (R+1)×(C+1) and use half-open rectangle boundaries.","For grid traversal, mark visited before enqueue/push to prevent duplicate work.","Test zero rows, zero columns, non-square, ragged, one-row and one-column cases."],
-    codeExamples: [{"language":"Java 21","title":"2D prefix sum rectangle query","code":"static long[][] buildPrefix(int[][] a) {\\n    int rows = a.length, cols = rows == 0 ? 0 : a[0].length;\\n    long[][] p = new long[rows + 1][cols + 1];\\n    for (int r = 0; r < rows; r++) {\\n        for (int c = 0; c < cols; c++) {\\n            p[r + 1][c + 1] = a[r][c] + p[r][c + 1] + p[r + 1][c] - p[r][c];\\n        }\\n    }\\n    return p;\\n}\\nstatic long sum(long[][] p, int r1, int c1, int r2, int c2) {\\n    return p[r2][c2] - p[r1][c2] - p[r2][c1] + p[r1][c1];\\n}","explanation":"The query uses half-open coordinates [r1,r2)×[c1,c2). Build O(RC), query O(1), storage O(RC). Assumes a rectangular matrix."}],
+    codeExamples: [{"language":"Java 21","title":"2D prefix sum rectangle query","code":"static long[][] buildPrefix(int[][] a) {\n    int rows = a.length, cols = rows == 0 ? 0 : a[0].length;\n    long[][] p = new long[rows + 1][cols + 1];\n    for (int r = 0; r < rows; r++) {\n        for (int c = 0; c < cols; c++) {\n            p[r + 1][c + 1] = a[r][c] + p[r][c + 1] + p[r + 1][c] - p[r][c];\n        }\n    }\n    return p;\n}\nstatic long sum(long[][] p, int r1, int c1, int r2, int c2) {\n    return p[r2][c2] - p[r1][c2] - p[r2][c1] + p[r1][c1];\n}","explanation":"The query uses half-open coordinates [r1,r2)×[c1,c2). Build O(RC), query O(1), storage O(RC). Assumes a rectangular matrix."}],
     traceExercises: ["Map every coordinate of a 2×3 matrix through clockwise rotation.","Compute prefix values and query rectangle [1,3)×[0,2) in a small matrix.","Trace staircase search from the top-right corner of a row/column-sorted matrix."],
     realWorldApplications: ["Image processing and pixel grids.","Spreadsheet and financial range aggregation.","Maps, mazes and board-game movement.","Scientific and geographic raster data."],
     assessment: ["Explain why row and column counts must be treated independently.","Derive the clockwise rotation coordinate formula for R×C.","State the exact condition for flattened binary search.","Derive 2D prefix rectangle inclusion-exclusion.","Choose BFS versus DP for two different grid movement problems."],
@@ -1228,6 +1555,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     sourcePages: [7],
     promise: 'Understand FIFO processing, queue implementations, circular buffers and when a deque is more useful than a basic queue.',
     mentalModel: 'A queue is a line with two controlled ends: new work joins at the rear and the oldest eligible work leaves at the front. The invariant is ordering by arrival, unless the problem explicitly defines priorities or both-end operations.',
+    keyTerms: [{"term":"Circular buffer","definition":"A fixed array whose indices wrap around.","example":"next = (tail + 1) % capacity."},{"term":"Head","definition":"The index of the next item to remove.","example":"Dequeue reads head, then advances it."},{"term":"Front-index compaction","definition":"Move live queue items to the beginning when a consumed prefix grows, preventing unbounded retained storage.","example":"Compact after a threshold of dequeues so each item is moved only occasionally."},{"term":"Full-state distinction","definition":"Rule that separates full from empty after index wrap.","example":"Track size or reserve one slot as a sentinel."},{"term":"Deque operations","definition":"Insertion and removal at both ends.","example":"A deque supports monotonic queues and 0-1 BFS."},{"term":"0-1 BFS","definition":"Shortest-path traversal for edge weights only 0 or 1.","example":"Push zero-cost relaxations front and one-cost relaxations back."}],
     concepts: [
       'FIFO means first-in, first-out: enqueue adds at the rear; dequeue removes from the front; peek reads the front without removing it.',
       'An array queue with a moving front index avoids shifting every remaining element after dequeue, but needs compaction or a circular-buffer strategy to reuse freed slots.',
@@ -1296,7 +1624,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     deepDive: ["A queue's abstract contract is FIFO, independent of implementation. Enqueue adds at rear; dequeue removes front; peek reads the oldest item.","A moving-front array queue avoids shifting on each removal but eventually needs compaction or circular reuse. A circular queue maps indices modulo capacity.","With head and size, the rear insertion slot is (head+size)%capacity. After removal, head=(head+1)%capacity and size decreases. Size explicitly distinguishes empty and full when capacity is fixed.","A linked queue needs both head and tail references for O(1) enqueue and dequeue. Removing the final item must set tail to null as well as head.","A deque supports both-end insertion/removal. Monotonic deque algorithms store candidate indices and remove expired indices from the front and dominated indices from the back.","BFS uses FIFO to process vertices by nondecreasing distance. Marking visited when enqueued ensures each vertex enters the queue once.","A priority queue is not a FIFO queue. It removes by priority, commonly with O(log n) insertion and removal using a heap."],
     correctness: ["Circular-buffer invariant: size is between zero and capacity; logical element k is stored at (head+k)%capacity.","Enqueue preserves order by writing at (head+size)%capacity before increasing size.","Dequeue preserves order by reading head, advancing it modulo capacity and decreasing size.","BFS correctness follows from FIFO frontier order: every distance-d vertex is processed before any distance-(d+1) vertex."],
     implementationSteps: ["Choose bounded/unbounded capacity and specify overflow behavior.","Choose array, circular buffer, linked list or standard deque according to operation needs.","For circular buffer, maintain head and size consistently and compute tail from both.","For linked queue, update both head and tail when queue transitions empty/nonempty.","For BFS, mark visited when enqueueing, not after dequeueing.","For sliding-window deque, store indices and state the monotonic invariant.","Test wraparound, full/empty, singleton removal, repeated enqueue/dequeue and duplicate values."],
-    codeExamples: [{"language":"Java 21","title":"Fixed-capacity circular queue","code":"static final class CircularQueue {\\n    private final int[] data; private int head = 0, size = 0;\\n    CircularQueue(int capacity) {\\n        if (capacity <= 0) throw new IllegalArgumentException();\\n        data = new int[capacity];\\n    }\\n    boolean offer(int value) {\\n        if (size == data.length) return false;\\n        data[(head + size) % data.length] = value; size++; return true;\\n    }\\n    int poll() {\\n        if (size == 0) throw new NoSuchElementException();\\n        int value = data[head]; head = (head + 1) % data.length; size--; return value;\\n    }\\n}","explanation":"Uses head plus size to distinguish full and empty. Offer/poll are O(1); storage is O(capacity). A full queue rejects offer without overwriting existing values."}],
+    codeExamples: [{"language":"Java 21","title":"Fixed-capacity circular queue","code":"static final class CircularQueue {\n    private final int[] data; private int head = 0, size = 0;\n    CircularQueue(int capacity) {\n        if (capacity <= 0) throw new IllegalArgumentException();\n        data = new int[capacity];\n    }\n    boolean offer(int value) {\n        if (size == data.length) return false;\n        data[(head + size) % data.length] = value; size++; return true;\n    }\n    int poll() {\n        if (size == 0) throw new NoSuchElementException();\n        int value = data[head]; head = (head + 1) % data.length; size--; return value;\n    }\n}","explanation":"Uses head plus size to distinguish full and empty. Offer/poll are O(1); storage is O(capacity). A full queue rejects offer without overwriting existing values."}],
     traceExercises: ["Use capacity 3: enqueue 10,20,30; dequeue twice; enqueue 40,50; show head, size and physical array after each step.","Compare linked queue head/tail after removing its only element.","Trace BFS and record queue contents by distance layer."],
     realWorldApplications: ["Producer-consumer buffers and bounded work queues.","Network packet and event processing.","BFS in maps, dependency graphs and social networks.","Rolling-window extrema in monitoring systems."],
     assessment: ["Derive circular queue tail index from head and size.","Explain how size distinguishes full from empty.","Implement queue operations and prove FIFO preservation.","Explain why BFS marks visited at enqueue time.","Choose queue versus deque versus priority queue for three use cases."],
@@ -1308,6 +1636,7 @@ static int maximumCompatibleIntervals(List<Interval> intervals) {
     sourcePages: [13],
     promise: 'Compare elementary and efficient sorting methods by mechanics, stability, memory use and input characteristics.',
     mentalModel: 'Sorting is not just putting values in order. Each algorithm reduces disorder differently: exchange neighbours, select the next minimum, insert into a sorted prefix, divide and merge, partition around a pivot, or repeatedly extract from a heap. The right choice depends on input size, existing order, memory limits and stability requirements.',
+    keyTerms: [{"term":"Stable sort","definition":"Equal-key items keep their original relative order.","example":"Equal ages remain in their input order."},{"term":"In-place","definition":"Uses a small amount of extra memory under a stated definition.","example":"Heap sort uses O(1) auxiliary array space."},{"term":"Stability","definition":"Preserve relative order of records with equal keys.","example":"Stable last-name sort retains prior first-name order among ties."},{"term":"Partition","definition":"Rearrange values around a pivot by a comparison rule.","example":"Quicksort partitions before sorting subranges."},{"term":"Merge step","definition":"Combine two sorted ranges into one sorted range.","example":"Take from the left on equality to preserve stability."},{"term":"Comparison model","definition":"Sorting where order is learned only by comparing keys.","example":"General comparison sorting has Ω(n log n) lower bound."}],
     concepts: [
       'Bubble sort compares adjacent elements and swaps an out-of-order pair; after each pass, the largest remaining value reaches its final position.',
       'Selection sort finds the minimum in the unsorted suffix and places it next; it performs O(n²) comparisons but only O(n) swaps.',
@@ -1479,6 +1808,7 @@ static void mergeSort(int[] values, int[] buffer, int left, int right) {
     sourcePages: [14],
     promise: 'Select a search method from ordering guarantees and reason precisely about loop boundaries and duplicates.',
     mentalModel: 'Searching eliminates candidates while preserving the possibility that the answer remains. Linear search removes one candidate at a time. Binary search removes roughly half only when ordering or a monotonic property justifies that elimination.',
+    keyTerms: [{"term":"Linear search","definition":"Check candidates one by one.","example":"Works even when values are unsorted."},{"term":"Lower bound","definition":"First position whose value is not less than the target.","example":"In [1,2,2,4], lower_bound(2) is index 1."},{"term":"Sorted precondition","definition":"Ordering needed for binary search to eliminate candidates.","example":"Binary search is invalid on arbitrary unsorted data."},{"term":"Boundary search","definition":"Find first/last position satisfying an ordering condition.","example":"Lower bound returns n when no value is at least target."},{"term":"Exponential search","definition":"Double a bound until it brackets target, then binary search.","example":"Probe 1,2,4,8,... in an unknown-length sorted sequence."},{"term":"Search predicate","definition":"Boolean classification of candidate answers.","example":"A monotonic predicate can be searched for its first true."}],
     concepts: [
       'Linear search checks candidates sequentially and works on unsorted collections; scanning left to right returns the first matching index.',
       'Binary search requires a sorted range or monotonic predicate. Its O(log n) time comes from halving the remaining candidate interval.',
@@ -1648,6 +1978,7 @@ static int countOccurrences(int[] values, int target) {
     sourcePages: [15],
     promise: 'Turn optimisation problems into a monotonic yes/no decision and binary-search the smallest or largest feasible answer.',
     mentalModel: 'Do not binary-search the input array when the unknown is a numeric answer. Guess a candidate answer, ask whether it is feasible, and use the monotonic direction of feasibility to eliminate half of the answer range.',
+    keyTerms: [{"term":"Feasibility check","definition":"Tell whether a proposed answer satisfies constraints.","example":"Can capacity C ship all packages within D days?"},{"term":"Monotonic feasibility","definition":"Feasibility changes in one direction across candidate answers.","example":"If C works, any larger capacity works."},{"term":"Answer range","definition":"Proven interval containing the optimum candidate.","example":"Capacity lies between max weight and total weight."},{"term":"Feasibility predicate","definition":"Test whether a candidate meets every constraint.","example":"Can this capacity ship within D days?"},{"term":"First-true search","definition":"Find smallest feasible candidate in false-to-true range.","example":"Increase capacity until feasible, then search left."},{"term":"Ceiling division","definition":"Compute ceil(a/b) for positive integers without floating point.","example":"Use a/b + (a%b==0 ? 0 : 1) for a≥0,b>0."}],
     concepts: [
       'A feasibility function answers whether a candidate capacity, speed, time, distance or threshold satisfies every constraint.',
       'For minimisation, feasible answers often form a suffix: once a capacity is large enough, every larger capacity remains feasible. Search for first true.',
@@ -1827,6 +2158,7 @@ static boolean canShip(int[] weights, int days, long capacity) {
     sourcePages: [16],
     promise: 'Reason about integer representations and use bitwise operations to encode flags, test parity and solve XOR-based problems.',
     mentalModel: 'An integer is represented by bits. Bitwise operations act on corresponding positions independently, so many operations become compact transformations of a fixed-width binary representation. Correctness depends on language integer width and signed-number rules.',
+    keyTerms: [{"term":"Bit mask","definition":"A bit pattern used to select or change bits.","example":"1 << 3 selects bit 3."},{"term":"XOR","definition":"Returns 1 where bits differ.","example":"x ^ x = 0, so duplicate pairs cancel."},{"term":"Two's complement","definition":"Fixed-width signed representation used by common CPUs and Java.","example":"Negation is complement plus one modulo the bit width."},{"term":"Least significant set bit","definition":"Lowest-position bit that is one in a nonzero value.","example":"x & -x isolates it in two's-complement arithmetic."},{"term":"Population count","definition":"Number of set bits in a value.","example":"x &= x-1 removes one set bit per iteration."},{"term":"Shift width","definition":"Number of bits in a fixed-width integer type.","example":"Java int is 32 bits; validate bit index before shifting."}],
     concepts: [
       'AND (&) keeps a bit set only when both inputs have it; OR (|) sets a bit when either input has it; XOR (^) sets a bit when inputs differ.',
       'NOT (~) flips every bit in the fixed-width representation. For signed two’s-complement integers, ~x equals -x-1.',
@@ -1963,11 +2295,17 @@ static int singleNumber(int[] values) {
     for (int value : values) result ^= value;
     return result;
 }`, explanation: 'The set-bit loop works on the fixed-width two’s-complement representation too, terminating after at most Integer.SIZE iterations. The power-of-two check deliberately excludes zero and negatives.' },
-      { language: 'Java 21', title: 'Enumerate subsets with a long bitmask', code: `static List<List<Integer>> subsets(int[] values) {
+      { language: 'Java 21', title: 'Enumerate subsets with a long bitmask', code: `static List<List<Integer>> subsets(int[] values, long maxSubsets) {
+    if (maxSubsets < 1) {
+        throw new IllegalArgumentException("maxSubsets must be positive");
+    }
     if (values.length >= Long.SIZE - 1) {
-        throw new IllegalArgumentException("too many elements for this mask demo");
+        throw new IllegalArgumentException("input is too large for a signed long bitmask");
     }
     long limit = 1L << values.length;
+    if (limit > maxSubsets) {
+        throw new IllegalArgumentException("materialized subset output exceeds maxSubsets");
+    }
     List<List<Integer>> result = new ArrayList<>();
     for (long mask = 0; mask < limit; mask++) {
         List<Integer> subset = new ArrayList<>();
@@ -1977,7 +2315,7 @@ static int singleNumber(int[] values) {
         result.add(subset);
     }
     return result;
-}`, explanation: 'Each mask represents one subset. There are 2^n masks and scanning n bits per mask costs O(n*2^n) time plus output storage. The guard prevents shift-width misuse; practical memory limits are much smaller than the type limit.' }
+}`, explanation: 'Each mask represents one subset. There are 2^n masks and scanning n bits per mask costs O(n*2^n) time; materializing every subset also needs Θ(n*2^n) output elements. The maxSubsets argument lets the caller reject exponential output before allocation, and the signed-long width guard prevents invalid shifts.' }
     ],
     traceExercises: [
       'For x=10 (1010), calculate x&-x, x&(x-1), x|0010 and x^0010.',
@@ -2018,6 +2356,7 @@ static int singleNumber(int[] values) {
     sourcePages: [9],
     promise: 'Use uniqueness and membership checks to remove duplicate work and turn repeated linear scans into expected constant-time lookups.',
     mentalModel: 'A set stores membership, not positions or duplicate counts. Think of it as a collection of keys where each key is either present or absent. A hash set uses a hash function to choose a bucket, then resolves collisions while preserving the set contract.',
+    keyTerms: [{"term":"Hash","definition":"A function maps a key to a number used to choose storage.","example":"A hash code helps choose a bucket."},{"term":"Collision","definition":"Different keys map to the same bucket or hash value.","example":"The set must still compare keys."},{"term":"Hash code","definition":"Value used to choose a bucket/probe sequence, not a unique ID.","example":"Distinct strings can share a hash code and remain distinct set items."},{"term":"Equality contract","definition":"Rule deciding whether two keys represent the same element.","example":"Equal objects must have equal hash codes."},{"term":"Load factor","definition":"Stored-entry count divided by bucket capacity.","example":"A table may resize when its chosen threshold is crossed."},{"term":"Collision resolution","definition":"Mechanism storing distinct keys mapped to the same bucket.","example":"Separate chaining or open addressing resolves collisions."}],
     concepts: [
       'A mathematical set contains unique elements; adding an existing element leaves the set unchanged.',
       'Hashing maps a key to a hash code and then to a bucket index. A hash code is not a unique identifier; distinct keys may collide.',
@@ -2136,12 +2475,13 @@ static int singleNumber(int[] values) {
 static boolean hasPairWithSum(int[] values, int target) {
     Set<Integer> earlier = new HashSet<>();
     for (int value : values) {
-        int complement = target - value;
-        if (earlier.contains(complement)) return true;
+        long complement = (long) target - value;
+        if (complement >= Integer.MIN_VALUE && complement <= Integer.MAX_VALUE
+                && earlier.contains((int) complement)) return true;
         earlier.add(value);
     }
     return false;
-}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup illustrates the earlier-values invariant and answers existence in expected O(n) time with O(n) space. Use a map instead when the actual matching indices must be returned.' }
+}`, explanation: 'Stable deduplication uses LinkedHashSet to preserve first-seen order. The pair lookup widens complement arithmetic before subtraction and checks the int range, then applies the earlier-values invariant. Expected O(n) time and O(n) space. Use a map instead when matching indices are required.' }
     ],
     traceExercises: [
       'Trace LinkedHashSet on [4,1,2,1,3,4]. Show membership and output after each input.',
@@ -2180,6 +2520,7 @@ static boolean hasPairWithSum(int[] values, int target) {
     sourcePages: [10],
     promise: 'Model key-to-value relationships and use frequency, index and grouping maps to solve counting and lookup problems.',
     mentalModel: 'A map stores an association: for a key, remember the value that answers a later question. The key defines identity; the value stores information such as a count, last-seen index, accumulated sum or grouped records.',
+    keyTerms: [{"term":"Key/value pair","definition":"An entry associating a key with a value.","example":"userId maps to a profile."},{"term":"Expected O(1) lookup","definition":"Constant average lookup under hash/workload assumptions, not a worst-case promise.","example":"Severe collisions can make lookup slower."},{"term":"Frequency map","definition":"Map from each value to its occurrence count.","example":"Increment frequency[value] for each array item."},{"term":"Index map","definition":"Map from a value/state to an observed index.","example":"Store prior value-to-index entries for Two Sum."},{"term":"putIfAbsent","definition":"Insert a key only if it is not already present.","example":"Keep the earliest index for a repeated value."},{"term":"Expected lookup","definition":"Performance bound under suitable hashing assumptions.","example":"HashMap lookup is expected O(1), not unconditional worst-case O(1)."}],
     concepts: [
       'A map stores key-value pairs with unique keys. Inserting an existing key replaces its previous value unless the operation explicitly accumulates.',
       'Frequency maps count occurrences: increment with getOrDefault(key,0)+1 or an equivalent language idiom.',
@@ -2307,13 +2648,15 @@ static boolean hasPairWithSum(int[] values, int target) {
       { language: 'Java 21', title: 'Two Sum with value-to-index mapping', code: `static int[] twoSum(int[] values, int target) {
     Map<Integer, Integer> earlierIndex = new HashMap<>();
     for (int i = 0; i < values.length; i++) {
-        int complement = target - values[i];
-        Integer j = earlierIndex.get(complement);
-        if (j != null) return new int[]{j, i};
+        long complement = (long) target - values[i];
+        if (complement >= Integer.MIN_VALUE && complement <= Integer.MAX_VALUE) {
+            Integer j = earlierIndex.get((int) complement);
+            if (j != null) return new int[]{j, i};
+        }
         earlierIndex.putIfAbsent(values[i], i);
     }
     return new int[0];
-}`, explanation: 'Lookup occurs before insertion so an element cannot pair with itself. putIfAbsent retains the earliest index for duplicate values. Expected O(n) time and O(n) space.' }
+}`, explanation: 'Lookup occurs before insertion so an element cannot pair with itself. Complement arithmetic is widened before subtraction and range-checked before narrowing, avoiding int-overflow false positives. putIfAbsent retains the earliest index for duplicate values. Expected O(n) time and O(n) space.' }
     ],
     traceExercises: [
       'Frequency trace: process [a,b,a,c,b,a] and write the full map after each item.',
@@ -2352,6 +2695,7 @@ static boolean hasPairWithSum(int[] values, int target) {
     sourcePages: [12],
     promise: 'Use pointers moving at different speeds to detect cycles, locate midpoints and reason about linked-list structure in constant extra space.',
     mentalModel: 'Two pointers share a traversal but advance at different rates. Their relative motion reveals structure: if a cycle exists, the faster pointer eventually catches the slower one; in a linear list, the fast pointer reaches the end first.',
+    keyTerms: [{"term":"Tortoise and hare","definition":"Pointers move at different speeds through a sequence.","example":"Slow moves one node; fast moves two."},{"term":"Cycle entry","definition":"The first node that belongs to a loop.","example":"Reset one pointer to head and advance both one step after the meeting."},{"term":"Cycle length","definition":"Number of distinct nodes in the loop before the sequence repeats.","example":"After a meeting, count one full traversal around the cycle."},{"term":"Relative speed","definition":"Difference in pointer movement per iteration.","example":"Fast moves two links, slow one, changing separation by one."},{"term":"Meeting phase","definition":"Floyd phase detecting a cycle by pointer collision.","example":"If fast reaches null, the list is acyclic."},{"term":"Second middle","definition":"Later of two middle nodes in an even-length list.","example":"The fast!=null && fast.next!=null loop leaves slow at the second middle."}],
     concepts: [
       'Slow pointer advances one node per iteration; fast pointer advances two. Always check fast and fast.next before dereferencing fast.next.next.',
       'In an acyclic list, fast reaches null (or its next reaches null); slow is then at or near the midpoint depending on list length and loop condition.',

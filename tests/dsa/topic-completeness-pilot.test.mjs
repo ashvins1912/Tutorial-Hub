@@ -10,8 +10,9 @@ test('arrays pilot is a complete learning unit, not only an outline', () => {
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'arrays lesson requires substantive ' + field);
   }
   assert.ok(lesson.codeExamples.every((item) => item.language && item.title && item.code && item.explanation));
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'JavaScript (Node.js)' && item.title === 'Difference array for offline range additions'));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.assessment.length >= 5, 'assessment must test transfer, edge cases and complexity');
 });
@@ -22,10 +23,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-test('arrays Java and Python examples execute against expected outputs', () => {
+test('arrays Java, JavaScript and Python examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'arrays');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
-  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
+  const pythonExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Python'));
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-arrays-'));
   try {
     const javaSource = [
@@ -39,6 +40,10 @@ test('arrays Java and Python examples execute against expected outputs', () => {
       'int[] values = {3, 2, 2, 4, 2, 5};',
       'int length = removeValue(values, 2);',
       'if (length != 3 || !Arrays.equals(Arrays.copyOf(values, length), new int[]{3, 4, 5})) throw new AssertionError("stable compaction");',
+      'if (!Arrays.equals(applyRangeAdds(new int[]{1, 2, 3, 4, 5}, new int[][]{{1, 3, 4}, {2, 4, -2}}), new long[]{1, 6, 5, 6, 3})) throw new AssertionError("difference array updates");',
+      'if (!Arrays.equals(applyRangeAdds(new int[]{7}, new int[][]{{0, 0, 5}}), new long[]{12})) throw new AssertionError("last-index sentinel");',
+      'if (!Arrays.equals(applyRangeAdds(new int[]{1, 2, 3}, new int[][]{}), new long[]{1, 2, 3})) throw new AssertionError("no updates preserves initial values");',
+      'if (!Arrays.equals(applyRangeAdds(new int[]{}, new int[][]{}), new long[]{})) throw new AssertionError("empty input");',
       '}',
       '}'
     ].join('\n');
@@ -48,7 +53,25 @@ test('arrays Java and Python examples execute against expected outputs', () => {
     const execute = spawnSync('java', ['ArrayLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
 
-    const pythonSource = pythonExample.code + '\nassert build_prefix([3, -2, 5, 1]) == [0, 3, 1, 6, 7]\nassert sum_range(build_prefix([3, -2, 5, 1]), 1, 4) == 4\n';
+    const javascriptExample = lesson.codeExamples.find((item) => item.language === 'JavaScript (Node.js)' && item.title === 'Difference array for offline range additions');
+    assert.ok(javascriptExample, 'JavaScript difference-array example must exist');
+    const javascriptSource = javascriptExample.code + `
+if (JSON.stringify(applyRangeAdds([1, 2, 3, 4, 5], [[1, 3, 4], [2, 4, -2]])) !== JSON.stringify([1, 6, 5, 6, 3])) throw new Error('overlapping updates');
+if (JSON.stringify(applyRangeAdds([7], [[0, 0, 5]])) !== JSON.stringify([12])) throw new Error('last-index sentinel');
+if (JSON.stringify(applyRangeAdds([1, 2, 3], [])) !== JSON.stringify([1, 2, 3])) throw new Error('no updates');
+if (JSON.stringify(applyRangeAdds([], [])) !== JSON.stringify([])) throw new Error('empty input');
+let invalidRangeRejected = false;
+try { applyRangeAdds([1, 2], [[0, 2, 1]]); } catch (error) { invalidRangeRejected = error instanceof RangeError; }
+if (!invalidRangeRejected) throw new Error('invalid range must reject');
+let unsafeDifferenceRejected = false;
+try { applyRangeAdds([Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER], []); } catch (error) { unsafeDifferenceRejected = error instanceof RangeError; }
+if (!unsafeDifferenceRejected) throw new Error('unsafe difference must reject');
+`;
+    writeFileSync(join(directory, 'array_lesson_examples.js'), javascriptSource);
+    const javascript = spawnSync('node', ['array_lesson_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(javascript.status, 0, javascript.stderr || javascript.stdout);
+
+    const pythonSource = pythonExamples.map((item) => item.code).join('\n\n') + '\nassert build_prefix([3, -2, 5, 1]) == [0, 3, 1, 6, 7]\nassert sum_range(build_prefix([3, -2, 5, 1]), 1, 4) == 4\nassert apply_range_adds([1, 2, 3, 4, 5], [(1, 3, 4), (2, 4, -2)]) == [1, 6, 5, 6, 3]\nassert apply_range_adds([7], [(0, 0, 5)]) == [12]\nassert apply_range_adds([1, 2, 3], []) == [1, 2, 3]\nassert apply_range_adds([], []) == []\n';
     writeFileSync(join(directory, 'array_lesson_examples.py'), pythonSource);
     const python = spawnSync('python', ['array_lesson_examples.py'], { cwd: directory, encoding: 'utf8' });
     assert.equal(python.status, 0, python.stderr || python.stdout);
@@ -65,7 +88,7 @@ test('strings topic satisfies the complete learning-unit contract', () => {
   for (const field of required) {
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= 3, 'strings lesson requires substantive ' + field);
   }
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
   assert.ok(lesson.deepDive.some((item) => /KMP/.test(item)));
   assert.ok(lesson.deepDive.some((item) => /Unicode/.test(item)));
@@ -75,7 +98,7 @@ test('strings topic satisfies the complete learning-unit contract', () => {
 
 test('strings Java and Python examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'strings');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-strings-'));
   try {
@@ -116,7 +139,7 @@ test('linked-list topic satisfies the complete learning-unit contract', () => {
     const minimum = field === 'codeExamples' ? 1 : 3;
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'linked-list lesson requires substantive ' + field);
   }
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.deepDive.some((item) => /Floyd/.test(item)));
   assert.ok(lesson.assessment.length >= 5);
@@ -124,7 +147,7 @@ test('linked-list topic satisfies the complete learning-unit contract', () => {
 
 test('linked-list Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-linked-list-'));
   try {
     const javaSource = [
@@ -155,6 +178,57 @@ test('linked-list Java examples execute against expected outputs', () => {
 });
 
 
+
+test('linked-list JavaScript and Python examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'linked-list');
+  const jsExample = lesson.codeExamples.find((item) => item.language.startsWith('JavaScript'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  assert.ok(jsExample && pythonExample, 'linked-list lesson must include JavaScript and Python examples');
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-linked-list-polyglot-'));
+  try {
+    const jsSource = jsExample.code + `
+const a = new Node(1), b = new Node(2), c = new Node(3);
+a.next = b; b.next = c;
+const reversed = reverse(a);
+if (reversed !== c || reversed.next !== b || b.next !== a || a.next !== null) throw new Error('reverse links');
+if (hasCycle(reversed)) throw new Error('acyclic list');
+const self = new Node(7); self.next = self;
+if (!hasCycle(self)) throw new Error('self cycle');
+const p = new Node(4), q = new Node(5), r = new Node(6);
+p.next = q; q.next = r; r.next = q;
+if (!hasCycle(p)) throw new Error('middle cycle');
+if (reverse(null) !== null || hasCycle(null)) throw new Error('empty list');
+`;
+    writeFileSync(join(directory, 'linked_list_examples.js'), jsSource);
+    const js = spawnSync('node', ['linked_list_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(js.status, 0, js.stderr || js.stdout);
+
+    const pythonSource = pythonExample.code + `
+a, b, c = Node(1), Node(2), Node(3)
+a.next = b
+b.next = c
+reversed_head = reverse(a)
+assert reversed_head is c and c.next is b and b.next is a and a.next is None
+assert not has_cycle(reversed_head)
+self_node = Node(7)
+self_node.next = self_node
+assert has_cycle(self_node)
+p, q, r = Node(4), Node(5), Node(6)
+p.next = q
+q.next = r
+r.next = q
+assert has_cycle(p)
+assert reverse(None) is None and not has_cycle(None)
+`;
+    writeFileSync(join(directory, 'linked_list_examples.py'), pythonSource);
+    const python = spawnSync('python', ['linked_list_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+
 test('stack and queue topic satisfies the complete learning-unit contract', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
   assert.ok(lesson, 'stack and queue lesson must exist');
@@ -163,15 +237,84 @@ test('stack and queue topic satisfies the complete learning-unit contract', () =
     const minimum = field === 'codeExamples' ? 2 : 3;
     assert.ok(Array.isArray(lesson[field]) && lesson[field].length >= minimum, 'stack/queue lesson requires substantive ' + field);
   }
-  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Java')));
+  assert.ok(lesson.codeExamples.some((item) => item.language === 'Java 21'));
   assert.ok(lesson.correctness.some((item) => /invariant/i.test(item)));
   assert.ok(lesson.deepDive.some((item) => /amortized/i.test(item)));
   assert.ok(lesson.assessment.length >= 5);
 });
 
+test('stack and queue lesson includes JavaScript and Python reference examples', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('JavaScript')));
+  assert.ok(lesson.codeExamples.some((item) => item.language.startsWith('Python')));
+  for (const language of ['JavaScript', 'Python']) {
+    const example = lesson.codeExamples.find((item) => item.language.startsWith(language));
+    assert.match(example.code, /TwoStackQueue/);
+    assert.match(example.code, /sliding_maximum|slidingMaximum/);
+    assert.ok(example.explanation.length > 80);
+  }
+});
+
+test('stack and queue JavaScript and Python examples execute against expected outputs', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
+  const jsExample = lesson.codeExamples.find((item) => item.language.startsWith('JavaScript'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-stack-queue-polyglot-'));
+  try {
+    const jsSource = jsExample.code + `
+const queue = new TwoStackQueue();
+queue.offer(1); queue.offer(2); queue.offer(3);
+if (queue.poll() !== 1 || queue.poll() !== 2) throw new Error('FIFO order');
+queue.offer(4);
+if (queue.poll() !== 3 || queue.poll() !== 4 || !queue.isEmpty()) throw new Error('transfer order');
+if (!queue.isEmpty()) throw new Error('queue should be empty');
+let emptyRejected = false;
+try { queue.poll(); } catch (error) { emptyRejected = error instanceof RangeError; }
+if (!emptyRejected) throw new Error('empty queue must reject poll');
+if (JSON.stringify(slidingMaximum([1, 3, -1, -3, 5, 3, 6, 7], 3)) !== JSON.stringify([3, 3, 5, 5, 6, 7])) throw new Error('window maximum');
+if (JSON.stringify(slidingMaximum([5, 5, 4], 2)) !== JSON.stringify([5, 5])) throw new Error('duplicate maxima');
+if (JSON.stringify(slidingMaximum([7], 1)) !== JSON.stringify([7])) throw new Error('single window');
+let invalidWindowRejected = false;
+try { slidingMaximum([1, 2], 0); } catch (error) { invalidWindowRejected = error instanceof RangeError; }
+if (!invalidWindowRejected) throw new Error('invalid window must reject');
+`;
+    writeFileSync(join(directory, 'stack_queue_examples.js'), jsSource);
+    const js = spawnSync('node', ['stack_queue_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(js.status, 0, js.stderr || js.stdout);
+
+    const pythonSource = pythonExample.code + `
+queue = TwoStackQueue()
+queue.offer(1)
+queue.offer(2)
+queue.offer(3)
+assert queue.poll() == 1 and queue.poll() == 2
+queue.offer(4)
+assert queue.poll() == 3 and queue.poll() == 4 and queue.is_empty()
+try:
+    queue.poll()
+    raise AssertionError("empty queue must reject poll")
+except IndexError:
+    pass
+assert sliding_maximum([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
+assert sliding_maximum([5, 5, 4], 2) == [5, 5]
+assert sliding_maximum([7], 1) == [7]
+try:
+    sliding_maximum([1, 2], 0)
+    raise AssertionError("invalid window must reject")
+except ValueError:
+    pass
+`;
+    writeFileSync(join(directory, 'stack_queue_examples.py'), pythonSource);
+    const python = spawnSync('python', ['stack_queue_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('stack and queue Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'stacks-queues');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-stack-queue-'));
   try {
     const javaSource = [
@@ -215,7 +358,7 @@ test('heap topic satisfies the complete learning-unit contract', () => {
 
 test('heap Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
-  const javaExamples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const javaExamples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-'));
   try {
     const javaSource = [
@@ -224,10 +367,17 @@ test('heap Java examples execute against expected outputs', () => {
       ...javaExamples.map((item) => item.code),
       'public static void main(String[] args) {',
       'int[] top = topKLargest(new int[]{4, 1, 9, 2, 8, 3}, 3);',
-      'Arrays.sort(top);',
       'if (!Arrays.equals(top, new int[]{4, 8, 9})) throw new AssertionError("top K");',
       'if (!Arrays.equals(mergeKSorted(new int[][]{{1, 4, 9}, {1, 3, 8}, {2, 6}}), new int[]{1, 1, 2, 3, 4, 6, 8, 9})) throw new AssertionError("k-way merge");',
       'if (!Arrays.equals(mergeKSorted(new int[][]{{}, {2}, {}}), new int[]{2})) throw new AssertionError("empty sources");',
+      'if (!Arrays.equals(topKLargest(new int[]{}, 0), new int[]{})) throw new AssertionError("empty top K");',
+      'if (!Arrays.equals(topKLargest(new int[]{5, 5, 1, 5}, 2), new int[]{5, 5})) throw new AssertionError("duplicate top K");',
+      'if (!Arrays.equals(topKLargest(new int[]{4, 1, 9}, 1), new int[]{9})) throw new AssertionError("K equals one");',
+      'if (!Arrays.equals(topKLargest(new int[]{4, 1, 9}, 3), new int[]{1, 4, 9})) throw new AssertionError("K equals n");',
+      'if (!Arrays.equals(mergeKSorted(new int[][]{}), new int[]{})) throw new AssertionError("no sources");',
+      'if (!Arrays.equals(mergeKSorted(new int[][]{{1, 1, 2}}), new int[]{1, 1, 2})) throw new AssertionError("one source");',
+      'boolean invalidK = false; try { topKLargest(new int[]{1}, 2); } catch (IllegalArgumentException expected) { invalidK = true; }',
+      'if (!invalidK) throw new AssertionError("invalid K");',
       '}',
       '}'
     ].join(String.fromCharCode(10));
@@ -236,6 +386,68 @@ test('heap Java examples execute against expected outputs', () => {
     assert.equal(compile.status, 0, compile.stderr || compile.stdout);
     const execute = spawnSync('java', ['HeapLessonExamples'], { cwd: directory, encoding: 'utf8' });
     assert.equal(execute.status, 0, execute.stderr || execute.stdout);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+
+test('heap lesson includes JavaScript and Python reference examples', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
+  for (const language of ['JavaScript', 'Python']) {
+    const example = lesson.codeExamples.find((item) => item.language.startsWith(language));
+    assert.ok(example, 'heap lesson must include ' + language);
+    assert.match(example.code, /top_k_largest|topKLargest/);
+    assert.match(example.code, /merge_k_sorted|mergeKSorted/);
+    assert.ok(example.explanation.length > 100);
+  }
+});
+
+test('heap JavaScript and Python examples execute against edge cases', () => {
+  const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
+  const jsExample = lesson.codeExamples.find((item) => item.language.startsWith('JavaScript'));
+  const pythonExample = lesson.codeExamples.find((item) => item.language.startsWith('Python'));
+  const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-polyglot-'));
+  try {
+    const jsSource = jsExample.code + `
+if (JSON.stringify(topKLargest([4, 1, 9, 2, 8, 3], 3)) !== JSON.stringify([4, 8, 9])) throw new Error('top K sorted result');
+if (JSON.stringify(topKLargest([5, 5, 1, 5], 2)) !== JSON.stringify([5, 5])) throw new Error('duplicate top K');
+if (JSON.stringify(topKLargest([4, 1, 9], 1)) !== JSON.stringify([9])) throw new Error('K equals one');
+if (JSON.stringify(topKLargest([4, 1, 9], 3)) !== JSON.stringify([1, 4, 9])) throw new Error('K equals n');
+if (JSON.stringify(topKLargest([], 0)) !== JSON.stringify([])) throw new Error('empty Top K');
+let invalidK = false;
+try { topKLargest([1], 2); } catch (error) { invalidK = error instanceof RangeError; }
+if (!invalidK) throw new Error('invalid K must reject');
+if (JSON.stringify(mergeKSorted([[1, 4, 9], [1, 3, 8], [2, 6]])) !== JSON.stringify([1, 1, 2, 3, 4, 6, 8, 9])) throw new Error('K-way merge');
+if (JSON.stringify(mergeKSorted([[], [2], []])) !== JSON.stringify([2])) throw new Error('empty sources');
+if (JSON.stringify(mergeKSorted([])) !== JSON.stringify([])) throw new Error('no sources');
+if (JSON.stringify(mergeKSorted([[1, 1, 2]])) !== JSON.stringify([1, 1, 2])) throw new Error('one source');
+if (JSON.stringify(mergeKSorted([[1, 1], [1, 1]])) !== JSON.stringify([1, 1, 1, 1])) throw new Error('equal priorities');
+`;
+    writeFileSync(join(directory, 'heap_examples.js'), jsSource);
+    const js = spawnSync('node', ['heap_examples.js'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(js.status, 0, js.stderr || js.stdout);
+
+    const pythonSource = pythonExample.code + `
+assert top_k_largest([4, 1, 9, 2, 8, 3], 3) == [4, 8, 9]
+assert top_k_largest([5, 5, 1, 5], 2) == [5, 5]
+assert top_k_largest([4, 1, 9], 1) == [9]
+assert top_k_largest([4, 1, 9], 3) == [1, 4, 9]
+assert top_k_largest([], 0) == []
+try:
+    top_k_largest([1], 2)
+    raise AssertionError("invalid K must reject")
+except ValueError:
+    pass
+assert merge_k_sorted([[1, 4, 9], [1, 3, 8], [2, 6]]) == [1, 1, 2, 3, 4, 6, 8, 9]
+assert merge_k_sorted([[], [2], []]) == [2]
+assert merge_k_sorted([]) == []
+assert merge_k_sorted([[1, 1, 2]]) == [1, 1, 2]
+assert merge_k_sorted([[1, 1], [1, 1]]) == [1, 1, 1, 1]
+`;
+    writeFileSync(join(directory, 'heap_examples.py'), pythonSource);
+    const python = spawnSync('python', ['heap_examples.py'], { cwd: directory, encoding: 'utf8' });
+    assert.equal(python.status, 0, python.stderr || python.stdout);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -260,7 +472,7 @@ test('set and map Java examples execute against expected outputs', () => {
   const setLesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'hash-set');
   const mapLesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'hash-map');
   const examples = [...setLesson.codeExamples, ...mapLesson.codeExamples]
-    .filter((item) => item.language.startsWith('Java'));
+    .filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-set-map-'));
   try {
     const javaSource = [
@@ -305,7 +517,7 @@ test('heap topic satisfies the complete learning-unit contract', () => {
 
 test('heap Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'heap');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-heap-'));
   try {
     const javaSource = [
@@ -350,7 +562,7 @@ test('sorting and searching Java examples execute against expected outputs', () 
   const sorting = DSA_COMPLETE_LESSONS.find((item) => item.id === 'sorting-algorithms');
   const searching = DSA_COMPLETE_LESSONS.find((item) => item.id === 'searching-algorithms');
   const examples = [...sorting.codeExamples, ...searching.codeExamples]
-    .filter((item) => item.language.startsWith('Java'));
+    .filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-sort-search-'));
   try {
     const javaSource = [
@@ -395,7 +607,7 @@ test('binary-search-on-answer topic satisfies the complete learning-unit contrac
 
 test('binary-search-on-answer Java example executes against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'binary-search-on-answer');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-answer-search-'));
   try {
     const javaSource = [
@@ -436,7 +648,7 @@ test('two pointers and sliding window satisfy the complete learning-unit contrac
 
 test('two pointers and sliding-window Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'two-pointers-window');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-two-pointers-'));
   try {
     const javaSource = [
@@ -477,7 +689,7 @@ test('bit manipulation topic satisfies the complete learning-unit contract', () 
 
 test('bit manipulation Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'bit-manipulation');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-bits-'));
   try {
     const javaSource = [
@@ -489,8 +701,8 @@ test('bit manipulation Java examples execute against expected outputs', () => {
       'if (countSetBits(0b10110100) != 4) throw new AssertionError("set bit count");',
       'if (!isPositivePowerOfTwo(1024) || isPositivePowerOfTwo(0) || isPositivePowerOfTwo(-8)) throw new AssertionError("power of two");',
       'if (singleNumber(new int[]{4, 1, 2, 1, 2}) != 4) throw new AssertionError("xor single");',
-      'if (subsets(new int[]{1, 2, 3}).size() != 8) throw new AssertionError("subset count");',
-      'if (subsets(new int[]{}).size() != 1) throw new AssertionError("empty subset");',
+      'if (subsets(new int[]{1, 2, 3}, 8).size() != 8) throw new AssertionError("subset count");',
+      'if (subsets(new int[]{}, 1).size() != 1) throw new AssertionError("empty subset");',
       '}',
       '}'
     ].join(String.fromCharCode(10));
@@ -520,7 +732,7 @@ test('greedy topic satisfies the complete learning-unit contract', () => {
 
 test('greedy Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'greedy');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-greedy-'));
   try {
     const javaSource = [
@@ -563,7 +775,7 @@ test('fast and slow pointers satisfy the complete learning-unit contract', () =>
 
 test('fast and slow Java examples execute against expected outputs', () => {
   const lesson = DSA_COMPLETE_LESSONS.find((item) => item.id === 'fast-slow-pointers');
-  const examples = lesson.codeExamples.filter((item) => item.language.startsWith('Java'));
+  const examples = lesson.codeExamples.filter((item) => item.language === 'Java 21');
   const directory = mkdtempSync(join(tmpdir(), 'tutorial-hub-dsa-fast-slow-'));
   try {
     const javaSource = [

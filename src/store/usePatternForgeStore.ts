@@ -12,6 +12,7 @@ import { PROBLEMS } from '../data/problems';
 import { INITIAL_BRAIN_PROFILE, SEED_TOPIC_QUIZZES } from '../../server/seed/cognitiveSeed';
 
 export type TopView =
+  | 'pattern-forge'
   | 'solver'
   | 'knowledge-engine'
   | 'ai-academy'
@@ -198,7 +199,7 @@ function createFreshBrainProfile(): UserBrainProfile {
 }
 
 export const usePatternForgeStore = create<PatternForgeState>((set, get) => ({
-  activeView: 'solver',
+  activeView: 'pattern-forge',
   activeAlgorithmId: 'prefix-sum-hash',
   activeAlgorithmTab: 'mental',
   algorithmsStudioMode: 'studio',

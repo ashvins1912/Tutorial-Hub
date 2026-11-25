@@ -114,7 +114,7 @@ export const INTERVIEW_FRAMEWORK_STEPS: FrameworkStep[] = [
     summary:
       'Proactively attack your own design. Surface failure modes before the interviewer asks and justify every box you add.',
     checkpoints: [
-      'Eliminate Single Points of Failure (SPOFs) across load balancers, compute, and databases.',
+      'Identify single points of failure across load balancers, compute and databases; reduce them with redundancy and tested failover, then document remaining dependency risks.',
       'Mitigate database hot shards, celebrity skew, and replication lag.',
       'Protect storage against cache stampedes (thundering herd) and cache penetration.',
       'Handle network partitions, retries with idempotency keys, and observability metrics.',
@@ -266,7 +266,7 @@ export const CORE_ROADMAP_MODULES: RoadmapModule[] = [
           {
             label: 'Write-Through',
             detail:
-              'App writes to cache and DB synchronously. Guarantees warm cache and low read latency at the cost of higher write latency.',
+              'App writes to cache and DB synchronously. If both writes succeed and the cache entry is correctly populated, subsequent reads can hit a warm cache; write latency increases and partial failure/invalidation must be handled.',
           },
           {
             label: 'Write-Back (Write-Behind)',
@@ -300,7 +300,7 @@ export const CORE_ROADMAP_MODULES: RoadmapModule[] = [
           {
             label: 'Dead-Letter Queues (DLQ)',
             detail:
-              'Isolates poison-pill messages after bounded retries so a single malformed payload never blocks the entire partition.',
+              'Routes repeatedly failing messages to a dead-letter path after bounded retries, when configured; ordering, retry policy and consumer implementation determine whether a poison message blocks partition progress.',
           },
         ],
         table: {
@@ -455,7 +455,7 @@ export const DISTRIBUTED_ALGORITHMS: DistributedAlgoDeepDive[] = [
     mechanics: [
       'Maintain an m-bit array initialized to 0 alongside k independent hash functions.',
       'Insert(x): Compute all k hash indices h₁(x)…hₖ(x) mod m and set those k bits to 1.',
-      'Query(x): Check all k bit positions — if ANY bit is 0, x is 100% absent (zero false negatives). If all are 1, x is probably present (small false-positive probability).',
+      'Query(x): Check all k bit positions — if ANY bit is 0, x is absent from the represented set. A correctly built standard Bloom filter without deletions has no false negatives for inserted items. If all bits are 1, x may be present or may be a false positive; check the source of truth.',
     ],
     timeComplexity: 'O(k) for insert and lookup (independent of dataset size n)',
     spaceComplexity: 'O(m) bits (~10 bits per element yields ~1% false-positive rate)',
@@ -472,7 +472,7 @@ export const DISTRIBUTED_ALGORITHMS: DistributedAlgoDeepDive[] = [
     mechanics: [
       'Leader Election: Nodes start as Followers. If no leader heartbeat arrives within a randomized election timeout (150–300ms), a node becomes a Candidate, increments its Term, and requests votes. A majority quorum (⌊N/2⌋ + 1) elects the Leader.',
       'Log Replication: The Leader appends client writes to its log and broadcasts AppendEntries RPCs. Once a majority acknowledges, the entry is committed and applied to every node’s state machine.',
-      'Safety: Log matching and term numbers guarantee that any newly elected leader contains all previously committed entries.',
+      'Safety: Under Raft\'s voting, term, log-matching and quorum rules, a newly elected leader preserves entries that were committed in prior terms; this depends on protocol assumptions and correct implementation.',
     ],
     timeComplexity: 'Minimum 1 network round-trip (RTT) to a majority quorum per write',
     spaceComplexity: 'O(Log Entries) durable WAL + periodic state snapshots',
@@ -657,7 +657,7 @@ export const REASONING_QUIZ_ITEMS: ReasoningQuizItem[] = [
       },
       {
         id: 'c',
-        label: 'Place a Bloom Filter of valid user IDs in front of Redis/DB to reject absent keys in O(k) with zero false negatives',
+        label: 'Place a correctly maintained standard Bloom filter (without deletions) of valid user IDs in front of Redis/DB to reject definitely absent keys in O(k); positives still require an authoritative lookup',
         isCorrect: true,
       },
       {
@@ -668,7 +668,7 @@ export const REASONING_QUIZ_ITEMS: ReasoningQuizItem[] = [
     ],
     answerSummary: 'Bloom Filter in front of Cache/DB (O(k) negative rejection)',
     reasoning:
-      'This is a classic Cache Penetration attack. A Bloom Filter containing all valid user IDs fits in a tiny fraction of RAM (~10 bits/user) and guarantees zero false negatives: any non-existent ID hitting a 0 bit is immediately rejected in O(k) before ever touching PostgreSQL (optionally paired with short-TTL null caching).',
+      'This is a cache-penetration defense. A Bloom filter can represent a large set compactly; memory per key depends on the target false-positive rate (about 10 bits/key is only an illustrative sizing point). For a standard filter without deletions, inserted keys are not false negatives: any 0 bit proves absence, while a positive result may be false and must be checked against PostgreSQL. Lookup costs O(k) hash probes under the usual model; size the filter and rebuild/update it consistently with the source of truth.',
   },
   {
     id: 'q5-clock-drift',

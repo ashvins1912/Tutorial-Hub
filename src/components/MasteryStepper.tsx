@@ -15,23 +15,22 @@ export function MasteryStepper() {
   const currentStage = usePatternForgeStore((s) => s.currentStage);
   const setCurrentStage = usePatternForgeStore((s) => s.setCurrentStage);
   const activeProblemId = usePatternForgeStore((s) => s.activeProblemId);
-  const progress = usePatternForgeStore((s) => s.problemProgress[s.activeProblemId]);
-
   const problem = PROBLEMS.find((p) => p.id === activeProblemId) ?? PROBLEMS[0];
+  const progress = usePatternForgeStore((s) => s.problemProgress[problem?.id ?? activeProblemId]);
 
   const isStageDone = (stageId: number) => {
+    if (!progress) return false;
     if (stageId === 1) return progress.quizSolved;
     if (stageId === 2) return progress.sandboxSolved;
     if (stageId === 3) {
-      return Boolean(
-        progress.placedBlocks.optimal.init &&
-          progress.placedBlocks.optimal.loop &&
-          progress.placedBlocks.optimal.update
-      );
+      const optimal = progress.placedBlocks?.optimal;
+      return Boolean(optimal?.init && optimal?.loop && optimal?.update);
     }
     if (stageId === 4) return progress.bottleneckSolved;
     return progress.feynmanCompleted;
   };
+
+  if (!problem) return <div role="status" className="rounded-xl border border-slate-200 p-4 text-sm text-slate-500">No interactive problems are available in the current catalog.</div>;
 
   return (
     <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-3">
@@ -59,7 +58,9 @@ export function MasteryStepper() {
                 <button
                   type="button"
                   onClick={() => setCurrentStage(stage.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                  aria-pressed={active}
+                  aria-current={active ? 'step' : undefined}
+                  className={`flex min-h-11 items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                     active
                       ? 'bg-slate-900 dark:bg-sky-500 text-white dark:text-slate-950 border-slate-900 dark:border-sky-500'
                       : done

@@ -46,10 +46,16 @@ jobs:
         run: npm run test:solver-endpoint-security
       - name: Verify the canonical 293-question DSA inventory and blueprint boundaries
         run: npm run test:dsa:inventory
+      - name: Verify Pattern Forge five-stage learning engine
+        run: npm run test:learning-engine
+      - name: Verify Pattern Forge topic selection does not trigger redundant state updates
+        run: npm run test:pattern-forge:state
       - name: Validate canonical learning surface inventory
         run: npm run audit:learning-surfaces
       - name: Validate application-wide content quality audit ledger
         run: npm run audit:learning-content
+      - name: Scan registered learner-facing content for wording review targets (advisory)
+        run: npm run audit:application-content
       - name: Inventory canonical topic and lesson candidates
         run: node --test tests/content-authoring/topic-content-inventory.test.mjs
       - name: Build frontend

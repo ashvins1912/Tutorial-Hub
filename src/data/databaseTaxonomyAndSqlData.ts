@@ -64,7 +64,7 @@ export const DATABASE_PARADIGMS: DatabaseParadigm[] = [
     storageLayout: 'Row-Oriented 8KB/16KB Slotted Pages + WAL',
     indexStructure: 'B+ Tree, GIN, GiST, BRIN, Partial Covering',
     simpleEnglish:
-      'Strict spreadsheets with rules, relationships, and unbreakable transaction guarantees—money never disappears between accounts.',
+      'A relational database stores structured rows with declared relationships and constraints. Transactions can provide atomicity and isolation according to the engine, isolation level, schema and configuration; a correct ledger also needs durable writes, constraints, idempotent operations and recovery tests.',
     standardDefinition:
       'Schema-enforced relational database management system organizing tuples into normalized tables with ACID transactions, relational algebra joins, and cost-based query optimization.',
     idealWorkloads: [
@@ -302,7 +302,7 @@ export const SQL_MASTERY_PATTERNS: SqlMasteryPattern[] = [
     title: 'DDL: Declarative Partitioning, Constraints & Zero-Downtime Migrations',
     subtitle: 'CREATE, ALTER, TRUNCATE, PARTITION BY RANGE, CONCURRENTLY & lock_timeout',
     simpleEnglish:
-      'Structure tables with time-ordered IDs and monthly drawers you can detach in milliseconds, and always add a 2-second lock seatbelt before altering live production tables.',
+      'For time-based retention, consider range partitioning so old partitions can be detached or dropped instead of deleting every row. Plan lock_timeout and statement_timeout for each migration based on the operation and service SLO; rehearse lock behavior and retry safely rather than relying on a universal two-second value.',
     standardDefinition:
       'Data Definition Language (DDL) schema orchestration governing physical table layout, declarative range partitioning, integrity constraints, and non-blocking metadata evolution.',
     antiPatternTitle: 'Anti-Pattern: Blocking DDL & Random UUIDv4 + Bulk DELETE',
@@ -332,15 +332,15 @@ CREATE TABLE events (
 
 -- 2. Zero-downtime migration guardrails
 SET lock_timeout = '2s';
-ALTER TABLE events ADD COLUMN region TEXT; -- Instant nullable metadata add
+ALTER TABLE events ADD COLUMN region TEXT; -- Usually metadata-only on supported PostgreSQL versions; still requires a table lock
 CREATE INDEX CONCURRENTLY idx_events_tenant_time ON events (tenant_id, created_at DESC);
 
--- 3. Instant O(1) retention cleanup (milliseconds, zero vacuum bloat)
+-- 3. Partition-based retention avoids row-by-row deletion; verify locking and cleanup duration on the target version
 ALTER TABLE events DETACH PARTITION events_2025_08 CONCURRENTLY;
 DROP TABLE events_2025_08;`,
-    productionImpact: '< 2ms metadata DDL · 0 blocked checkout traffic · O(1) partition drop',
+    productionImpact: 'Illustrative target: metadata-oriented partition retirement instead of row-by-row DELETE; benchmark lock duration, cleanup and traffic impact on the target PostgreSQL version',
     keyTakeaway:
-      'TRUNCATE / DROP PARTITION frees disk blocks instantly in O(1); DELETE marks dead tuples one-by-one and forces autovacuum to clean them.',
+      'In PostgreSQL, TRUNCATE avoids scanning and deleting rows one by one, but it takes strong locks and its storage/catalog work is not a universal wall-clock O(1) guarantee. Dropping or detaching a partition can make bulk retention much cheaper than row-by-row DELETE; physical file cleanup and lock behavior depend on the operation and engine. DELETE creates dead tuples that VACUUM must reclaim for reuse.',
   },
   {
     id: 'dml-merge-skiplocked',

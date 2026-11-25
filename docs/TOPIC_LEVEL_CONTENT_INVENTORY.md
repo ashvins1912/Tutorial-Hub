@@ -1,6 +1,6 @@
 # Topic-level content inventory
 
-The topic-level inventory is generated from the TypeScript AST of 27 canonical source files across 12 learning surfaces, listed in `scripts/audit-topic-content-inventory.mjs`.
+The topic-level inventory is generated from the TypeScript AST of every TypeScript data source mapped by the canonical registry across all surfaces with mapped TypeScript sources, listed in `scripts/audit-topic-content-inventory.mjs`.
 
 ## What the inventory means
 
@@ -8,11 +8,11 @@ The topic-level inventory is generated from the TypeScript AST of 27 canonical s
 - The source path and line are retained so a reviewer can navigate to the authored content.
 - Candidate kind is a structural hint based on fields; it is not a claim that the record is a complete lesson.
 - `fieldsPresent` reports selected teaching signals that are present on that exact object. It does not judge their depth, correctness, rendering or usefulness.
-- Every record remains `not_assessed`. No score, mastery, verification or learning outcome is inferred from source shape.
+- Every record remains `not_assessed`. Each record carries an eight-dimension scorecard scaffold with null scores and empty evidence. No score, mastery, verification or learning outcome is inferred from source shape.
 
 ## Initial canonical coverage
 
-The expanded extraction covers 27 canonical source files across AI engineering, database internals, DevOps/cloud, full-stack architecture, system design, programming languages, OOP/SOLID, fuzzy search, flight simulator, AI academy, the DSA curriculum workspace and algorithm packs. Several surfaces have multiple canonical sources; the source path is part of record identity so IDs are not silently conflated.
+The extractor derives its source manifest from the canonical learning-surface registry. It therefore includes newly registered academies such as Pattern Forge and expands automatically when mapped TypeScript data sources are added. Surfaces without mapped TypeScript data sources remain represented in the surface registry but do not produce fabricated topic candidates. Several surfaces have multiple canonical sources; the source path is part of record identity so IDs are not silently conflated.
 
 ## Run
 
@@ -25,6 +25,6 @@ The command prints a machine-readable JSON report to stdout. CI runs it as a det
 ## Known limitations and next review gates
 
 - The first pass intentionally inventories ID/title objects, not every prose paragraph, diagram, code sample, quiz option or simulator frame.
-- Some datasets compose their content through imported arrays. Those imports are listed as separate sources only when explicitly added to the manifest.
+- Some datasets compose content through imported arrays. The registry's mapped data sources are scanned independently; imports not mapped as data sources are still outside the inventory and should be added to the registry only when they are canonical sources.
 - Candidate classification is heuristic and must be reviewed before it is used for lesson scorecards.
 - Technical accuracy, examples, code execution, accessibility, visualization fidelity, assessment alignment, transfer and retention require separate evidence.
