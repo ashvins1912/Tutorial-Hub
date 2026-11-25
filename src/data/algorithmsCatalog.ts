@@ -373,7 +373,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Palindrome validation or in-place array partitioning',
     ],
     whenItFails:
-      'For pair-sum on unsorted input, sorting is safe only if you retain each value's original index and map the result back. If preserving order or avoiding sorting matters, a hash map may be a better fit. The converging-pointer method also requires a monotonic discard rule; it is not a generic replacement for checking all pairs.',
+      'For pair-sum on unsorted input, sorting is safe only if you retain the original index associated with each value and map the result back. If preserving order or avoiding sorting matters, a hash map may be a better fit. The converging-pointer method also requires a monotonic discard rule; it is not a generic replacement for checking all pairs.',
     linkedTopics: ['Two Pointers'],
     linkedProblemSlugs: ['container-with-most-water', 'trapping-rain-water', '3sum', 'valid-palindrome-ii'],
     featuredLabId: 'trapping-rain-water',
