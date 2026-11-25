@@ -101,3 +101,8 @@ These edits were applied to the actual learner-facing source and verified by re-
 - **Regression-test coverage:** the new structural and caveat tests are committed; execution is pending CI.
 - **Full guide review:** not complete. The 1,159-line tutor-guide file has not been fully dispositioned.
 - **Full platform review:** not complete. No 100% platform content confidence claim is justified yet.
+
+
+## CI status at the latest source head
+
+At the time of this report update, PR head `16af93127b51543d787d339ac7d0b7cd25f0349d` had validation run **#707 in progress**. The combined commit status endpoint had not yet returned individual statuses. Dependency install/typecheck and all downstream curriculum/security/build checks must complete; do not infer success from a run being created or a job starting.
