@@ -95,6 +95,7 @@ The following learner-facing statements were revised in source data. These are t
 
 - Immutable artifacts are described as improving rollback reproducibility, not guaranteeing a deterministic rollback of config, database migrations and external state.
 - Recreate/blue-green deployment descriptions now include database compatibility, rollback and migration sequencing.
+- The OpenSSL CVE fixture is explicitly marked as example-only; runtime secret guidance no longer treats tmpfs as an absolute no-persistence guarantee; mirrored-traffic guidance now warns that any live side effect can duplicate charges or writes.
 - Payment/email example now explains that SMTP need not block a committed payment only when the email side effect is durably queued and retried; idempotency and monitoring remain necessary.
 
 ## 5. Authoring pipeline improvements
