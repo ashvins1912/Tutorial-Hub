@@ -512,7 +512,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     spaceComplexity: 'O(min(N, |Σ|))',
     complexityLeap: 'O(N²) rescan every substring → O(N) amortized two-pointer slide',
     coreIdea:
-      'Maintain a contiguous window [L .. R] and update a compact state (such as a running sum, character counts or last-seen indices). Advance R one step at a time. If the problem's validity condition is monotonic under removing elements, move L forward until the condition is restored; some problems permit a direct jump. State updates are often O(1), while hash-map operations are expected O(1).',
+      'Maintain a contiguous window [L .. R] and update a compact state (such as a running sum, character counts or last-seen indices). Advance R one step at a time. If the validity condition of the problem is monotonic under removing elements, move L forward until the condition is restored; some problems permit a direct jump. State updates are often O(1), while hash-map operations are expected O(1).',
     mentalModelSteps: [
       'Initialize left = 0 and a frequency map / last-seen index map.',
       'Expand right across indices 0 .. n - 1, adding s[right] into the window.',
