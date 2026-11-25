@@ -80,7 +80,7 @@ export function CompleteDsaCourse() {
   } = useAsyncCatalog('dsa-complete-lessons');
   const [activeId, setActiveId] = useState(DSA_COMPLETE_LESSONS[0].id);
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState<SectionKey[]>(['concepts', 'recognition', 'method', 'workedExample']);
+  const [expanded, setExpanded] = useState<SectionKey[]>(['keyTerms', 'recognition', 'method', 'workedExample']);
   const [progress, setProgress] = useAccountState<LessonProgress>('dsa-course-progress', {});
   const active = DSA_COMPLETE_LESSONS.find((lesson) => lesson.id === activeId) ?? DSA_COMPLETE_LESSONS[0];
   const filtered = useMemo(() => {
