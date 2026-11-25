@@ -2974,6 +2974,36 @@
       "evidence": [
         "tests/content-authoring/mastery-stepper-accessibility.test.mjs: source-level stage/state/accessibility assertions"
       ]
+    },
+    {
+      "unitId": "pattern-forge:duplicate-verified-edge-case-credit",
+      "sourcePath": "shared/masteryEngine.ts",
+      "finding": "Edge-case credit was accumulated with an expression equivalent to current + edgeCount on every verification, so duplicate problem submissions could inflate correctness mastery; old persisted totals could also retain duplicate credit.",
+      "fix": "Added canonical-ID normalization that deduplicates verified implementation/trace/debug IDs and recomputes edge-case count from unique verified problem test cases. Mastery scoring now counts unique evidence IDs.",
+      "evidence": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: duplicate IDs and legacy inflated edge-case total regression"
+      ],
+      "reviewStatus": "corrected-awaiting-ci"
+    },
+    {
+      "unitId": "pattern-forge:server-evidence-idempotency",
+      "sourcePath": "server/routes/learningEngineRoutes.ts",
+      "finding": "Server accepted repeated verifiedProblemId events and added the same problem's edge-case cases repeatedly.",
+      "fix": "Server evidence handling now calls the shared canonical normalizer, recomputes the aggregate edge-case count from unique verified problems, and returns mastery based on normalized evidence.",
+      "evidence": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: canonical helper regression; CI run pending"
+      ],
+      "reviewStatus": "corrected-awaiting-ci"
+    },
+    {
+      "unitId": "pattern-forge:client-evidence-idempotency",
+      "sourcePath": "src/features/pattern-forge-unified/useUnifiedLearningStore.ts",
+      "finding": "Client-side evidence accumulation mirrored the duplicate edge-case credit bug and could show inflated mastery before server sync.",
+      "fix": "Client now uses the same shared normalizer/helper as server, so duplicate submissions and legacy inflated totals are reconciled locally.",
+      "evidence": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: canonical helper regression; CI run pending"
+      ],
+      "reviewStatus": "corrected-awaiting-ci"
     }
   ],
   "counts": {
@@ -2981,9 +3011,9 @@
     "testPathCount": 26,
     "allPathCount": 180,
     "reviewedPaths": 0,
-    "reviewedUnits": 19,
+    "reviewedUnits": 22,
     "verifiedUnits": 0,
-    "correctedUnitsAwaitingCi": 6,
+    "correctedUnitsAwaitingCi": 9,
     "unresolvedP0": 0,
     "unresolvedP1": 0,
     "contentAddedUnitsAwaitingCi": 4,
