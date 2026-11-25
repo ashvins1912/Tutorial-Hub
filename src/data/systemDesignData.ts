@@ -137,7 +137,7 @@ export const SYSTEM_SCENARIOS: SystemScenario[] = [
     id: 'url-shortener',
     title: 'Design a Scalable URL Shortener (TinyURL)',
     companyFrequency: 'Google · Amazon · Meta · Uber',
-    summary: 'Illustrative workload: 100M+ daily redirects with a target P99 under 30 ms. Latency depends on region, network, cache hit rate and storage; short-code collisions must be handled with a uniqueness constraint and retry.'
+    summary: 'Illustrative workload: 100M+ daily redirects with a target P99 under 30 ms. Latency depends on region, network, cache hit rate and storage; short-code collisions must be handled with a uniqueness constraint and retry.',
     defaultDauMillions: 50,
     defaultReadWriteRatio: 100,
     defaultLatencyBudgetMs: 40,
