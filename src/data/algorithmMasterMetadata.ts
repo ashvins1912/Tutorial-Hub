@@ -181,12 +181,12 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       'Checking a row of unlabeled mailboxes one by one from left to right until you see your name—no prep needed, and shockingly fast when there are only 20 boxes.',
     interviewScript30s:
       '"For unsorted data queried once or for small cache-hot slices, a linear scan is O(N) time and O(1) space and can outperform sorting or hashing due to sequential memory access; the crossover depends on data size, layout, and hardware."',
-    chooseWhen: 'Unsorted data queried once, linked lists without random access, or tiny N ≤ 32 SIMD/cache-line arrays.',
+    chooseWhen: 'Unsorted data queried once, linked lists without random access, or small/cache-hot arrays where a scan benchmarks well; no universal size cutoff.',
     avoidWhen: 'Repeated lookups on large datasets (build a HashMap for O(1) or sort + Binary Search for O(log N)).',
     followUpTwists: [
       {
         question: 'When can Linear Search actually beat Binary Search in wall-clock latency?',
-        invariantShift: 'For N ≤ 32–64 contiguous integers, sequential CPU cache prefetching and zero branch mispredictions outperform random-jumping binary search.',
+        invariantShift: 'For small contiguous/cache-hot arrays, sequential access may outperform branchy binary search; the crossover depends on element size, cache, compiler, and hardware.',
         complexityImpact: 'Still O(N) asymptotic; constant-factor wins for small/cache-hot inputs are hardware- and workload-dependent and should be benchmarked.',
       },
       {
@@ -223,8 +223,8 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       'Insertion Sort is how you sort playing cards in your hand: pick up one card at a time and slide it leftward past bigger cards until it lands in place.',
     interviewScript30s:
       '"Bubble, Selection, and Insertion Sort are O(N²) worst-case; Insertion Sort is adaptive (O(N) on nearly sorted inputs), stable, and in-place. Many production sort implementations use insertion sort for short runs or partitions, but the cutoff and exact integration are implementation-specific."',
-    chooseWhen: 'Tiny subarrays (N ≤ 32), online/streaming nearly-sorted data, or minimizing writes (Selection Sort uses ≤ N − 1 swaps).',
-    avoidWhen: 'Large random or reversed arrays (N > 1000)—use Merge Sort, Quick Sort, or TimSort.',
+    chooseWhen: 'Short subarrays in hybrid sorts (implementation-specific cutoff), online/nearly-sorted data, or minimizing writes (Selection Sort uses ≤ N − 1 swaps).',
+    avoidWhen: 'Large random or reversed arrays where quadratic work is too costly—use Merge Sort, Quick Sort, or TimSort based on stability and worst-case needs.',
     followUpTwists: [
       {
         question: 'If each element is at most K positions away from its sorted spot, what is Insertion Sort’s runtime?',
@@ -285,7 +285,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Reversing a one-way chain of train cars in place: unhook the next coupler, point the current car back at the previous car, and step forward using a saved grip on the next car.',
     interviewScript30s:
-      '"Using three pointers (`prev`, `curr`, `next`), we save `curr.next`, flip `curr.next = prev`, and slide both forward in O(N) time and O(1) space. Adding a dummy head makes sub-list and K-group reversals bug-free."',
+      '"Using three pointers (`prev`, `curr`, `next`), we save `curr.next`, flip `curr.next = prev`, and slide both forward in O(N) time and O(1) space. A dummy head simplifies edge handling for sub-list and K-group reversals, but pointer invariants still need careful checks."',
     chooseWhen: 'LC 206, Reverse Linked List II (subrange), Reverse Nodes in K-Group, Palindrome Linked List, and Reorder List.',
     avoidWhen: 'Concurrent lock-free readers are traversing the list without synchronization (mutating next pointers mid-read causes races).',
     followUpTwists: [
@@ -369,7 +369,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A multi-story coat check organized letter by letter: all words starting with "app" share the exact same hallway `a → p → p` before branching into "apple" and "apply".',
     interviewScript30s:
-      '"A Trie indexes strings by character path so insert, exact search, and prefix lookup run in O(L) time independent of dictionary size N—unlocking instant autocomplete and dead-branch DFS pruning in Word Search II."',
+      '"A Trie indexes strings by character path so insert, exact search, and prefix lookup take O(L) expected time when child access is O(1), rather than scanning the whole dictionary; it supports autocomplete and dead-branch DFS pruning in Word Search II."',
     chooseWhen: 'Search autocomplete, spellcheckers, longest common prefix, IP longest-prefix routing, and 2D board dictionary search.',
     avoidWhen: 'Millions of long sparse keys with tight RAM—compress single-child chains into a Radix Tree / Patricia Trie.',
     followUpTwists: [
@@ -390,7 +390,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A parking garage with assigned spots: Chaining stacks overflow cars in a side lane, while Open Addressing cruises sequentially (or by a second stride) to the next free stall—leaving a "tombstone" cone when a car leaves so later searches do not stop early.',
     interviewScript30s:
-      '"Hash tables achieve O(1) expected lookup by hashing keys into buckets and resizing when load factor α crosses ~0.7. Open addressing (Linear/Quadratic/Double Hashing or Robin Hood) keeps buckets contiguous in CPU cache, while deletions require tombstones to preserve probe chains."',
+      '"Hash tables provide O(1) expected lookup under suitable hashing and controlled load factor. Implementations choose their own resize threshold; open addressing (Linear/Quadratic/Double Hashing or Robin Hood) can improve locality, while deletions require tombstones or safe backward shifting to preserve probe chains."',
     chooseWhen: 'O(1) key-value lookup, deduplication, frequency counting, and cache indexing (Python dict, Rust SwissTable, Java HashMap).',
     avoidWhen: 'Range queries, sorted iteration, or hard real-time O(1) worst-case without incremental rehashing.',
     followUpTwists: [
@@ -642,7 +642,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A subway system with local and express trains: ride the top-level express line skipping 100 stops at a time, drop down a level when you are about to overshoot, and take the local train for the final two stops.',
     interviewScript30s:
-      '"A Skip List layers probabilistic express lanes over a sorted linked list (promoting nodes with p = 0.5 or 0.25). It matches Red-Black Tree O(log N) expected search/insert/delete without rotations—making lock-free concurrency and range scans dead simple (Redis ZSET, RocksDB MemTable)."',
+      '"A Skip List layers probabilistic express lanes over a sorted linked list (promoting nodes with p = 0.5 or 0.25). It provides O(log N) expected search/insert/delete without rotations and supports ordered range scans. Concurrent/lock-free variants require careful CAS and reclamation design; Redis ZSET and RocksDB MemTable are practical uses, not proof every skip list is lock-free."',
     chooseWhen: 'Concurrent lock-free ordered maps (`ConcurrentSkipListMap`), Redis Sorted Sets, and LSM-Tree in-memory MemTables.',
     avoidWhen: 'Pointer-heavy cache misses hurt read-only static tables (B+ Trees or sorted arrays pack keys tightly into cache lines).',
     followUpTwists: [
@@ -831,7 +831,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Sorting a 100-GB deck of cards on a desk that only holds 1 GB: sort 100 separate 1-GB stacks onto the floor, then pull the top card from each stack using a 100-slot winner bracket (Min-Heap) to stream one giant sorted output.',
     interviewScript30s:
-      '"When data exceeds RAM, External K-Way Merge first chunks input into RAM-sized sorted runs on disk, then streams all K runs through a size-K Min-Heap using page-sized input/output buffers—minimizing sequential disk passes to `1 + ⌈log_B(N/M)⌉`."',
+      '"When data exceeds RAM, External K-Way Merge chunks input into RAM-sized sorted runs, then streams a bounded number of runs through a Min-Heap with page-sized buffers. Pass count depends on initial run count and merge fan-in (roughly `1 + ceil(log_fanIn(runCount))` after run generation)."',
     chooseWhen: 'SQL `ORDER BY` / `GROUP BY` spills to disk, LSM-Tree SSTable compaction, MapReduce shuffle, and LC 23 Merge K Sorted Lists.',
     avoidWhen: 'Dataset fits comfortably inside RAM (standard in-memory TimSort/QuickSort avoids disk serialization overhead).',
     followUpTwists: [
@@ -864,7 +864,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'What is a Compensation Log Record (CLR) and why does it prevent infinite crash loops?',
         invariantShift: 'Every Undo action logs a redo-only CLR pointing `undoNextLSN` to the prior record; if the DB crashes during Undo, the next recovery skips already-undone steps instead of undoing an undo!',
-        complexityImpact: 'Bounded O(LogSize) recovery regardless of crash frequency.',
+        complexityImpact: 'CLRs let later recovery skip undo actions already logged; total recovery work still depends on log length and how often recovery is interrupted.',
       },
     ],
   },
@@ -873,7 +873,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'An assembly line pulling parts on demand (`next()`): Hash Join builds a quick lookup shelf for the smaller table, while Sort-Merge Join walks two sorted conveyor belts in lockstep without ever holding the whole dataset in memory.',
     interviewScript30s:
-      '"The Volcano iterator model pulls one tuple at a time (`open/next/close`) so operators compose with O(1) pipeline memory. Hash Join streams in O(R + S) by hashing the smaller build table; Sort-Merge Join shines when inputs are pre-sorted or output needs ordering."',
+      '"The Volcano iterator model pulls tuples on demand (`open/next/close`) and can keep per-operator pipeline buffers small. Hash Join runs in expected O(R + S) when the build-side hash table fits memory; Sort-Merge is attractive for pre-sorted inputs or when ordering is useful, otherwise sorting adds cost."',
     chooseWhen: 'Relational query planners (PostgreSQL, DuckDB, Spark SQL): Hash Join for unsorted equi-joins, Sort-Merge for pre-sorted/range joins, Nested Loop for tiny/indexed inner tables.',
     avoidWhen: 'Tuple-at-a-time Volcano calls bottleneck OLAP columnar scans (upgrade to Vectorized 1024-row batches or LLVM JIT codegen).',
     followUpTwists: [
@@ -885,7 +885,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Why are modern OLAP engines (DuckDB, ClickHouse, Photon) replacing row-by-row Volcano with Vectorized Execution?',
         invariantShift: 'Passing a 1,024-row column batch per `next()` call amortizes virtual function dispatch 1000× and unlocks CPU SIMD AVX2/AVX-512 instructions.',
-        complexityImpact: '10–50× faster analytical scan & join throughput.',
+        complexityImpact: 'Batching can reduce per-tuple dispatch overhead and enable SIMD; throughput gains depend on operator, data layout, and hardware.',
       },
     ],
   },
