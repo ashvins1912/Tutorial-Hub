@@ -668,7 +668,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
         step: 5,
         title: 'Expand R = 6 ("e") → Final Best = 5',
         explanation: 'Window reaches "cbade" [2..6] of length 5. Every character was visited once by R and at most once by L.',
-        invariantCheck: 'Amortized O(N) runtime guaranteed.',
+        invariantCheck: 'Each element enters and leaves the window at most once, so total pointer movement is O(N) and the runtime is amortized O(N).',
         variables: [
           { name: 'window', value: '"cbade" [2..6]' },
           { name: 'final best', value: '5' },
@@ -952,7 +952,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
         step: 5,
         title: 'Tick 4: COLLISION at Node 50!',
         explanation: 'Slow steps 40 → 50 and Fast leaps 30 → 40 → 50. Slow === Fast proves a cycle exists in O(1) space!',
-        invariantCheck: 'Collision guaranteed in <= C steps after Slow enters the loop.',
+        invariantCheck: 'In a finite cycle, the two pointers eventually meet; the exact bound depends on the cycle length and the distance from the entry.',
         variables: [
           { name: 'Slow (S)', value: 'Node 50' },
           { name: 'Fast (F)', value: 'Node 50' },
