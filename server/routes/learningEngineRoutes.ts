@@ -382,7 +382,7 @@ router.post('/revisions/:id/attempts', requireAuth, async (req: Request, res: Re
   return res.json({
     ok: true,
     revision: updated,
-    mastery: computeTopicMastery(ev),
+    mastery: computeTopicMastery(ev, topic?.problems),
   });
 });
 
