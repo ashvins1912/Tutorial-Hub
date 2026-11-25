@@ -222,7 +222,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'Converge from left and right on sorted arrays or palindromes (Container With Most Water, Trapping Rain Water).',
     mentalModel: 'Start pointers at 0 and n-1; at every step prove which side is the bottleneck and advance it to eliminate an entire row/column of pairs.',
     triggerSignals: ['sorted array pair/triplet', 'palindrome check', 'maximize container area', 'trapping rain water', 'O(1) extra space'],
-    timeComplexity: 'O(n) when a monotone elimination invariant lets each step discard one endpoint; sortedness or the required ordering condition must hold.'
+    timeComplexity: 'O(n) when a monotone elimination invariant lets each step discard one endpoint; sortedness or the required ordering condition must hold.',
     spaceComplexity: 'O(1)',
     hasTrickyTemplate: false,
     canonicalSlug: 'container-with-most-water',
@@ -244,7 +244,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'In-place array filtering, deduplication, or Dutch National Flag sorting (Move Zeroes, Sort Colors).',
     mentalModel: 'Maintain a slow write boundary separating processed valid elements from the fast read explorer (or 3-way low/mid/high boundaries).',
     triggerSignals: ['in-place deduplication', 'move zeroes preserving order', '3-way partition', 'Dutch National Flag', 'remove element in O(1) space'],
-    timeComplexity: 'O(n) amortized when each pointer advances at most n times and the scan never moves either pointer backward.'
+    timeComplexity: 'O(n) amortized when each pointer advances at most n times and the scan never moves either pointer backward.',
     spaceComplexity: 'O(1)',
     hasTrickyTemplate: false,
     canonicalSlug: 'sort-colors',
@@ -266,7 +266,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'Maintain a running state over a fixed-length contiguous subarray (Maximum Average Subarray I).',
     mentalModel: 'Add the entering element at right and evict the leaving element at right - k once the window reaches exact length k.',
     triggerSignals: ['subarray of size k', 'fixed window length k', 'find all anagrams of p', 'permutation in string', 'rolling average'],
-    timeComplexity: 'O(n) for one pass with O(1) update work per entering/leaving element.'
+    timeComplexity: 'O(n) for one pass with O(1) update work per entering/leaving element.',
     spaceComplexity: 'O(1) or O(alphabet)',
     hasTrickyTemplate: false,
     canonicalSlug: 'maximum-average-subarray-i',
@@ -310,7 +310,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'Track local vs. global maximum for contiguous subarrays with negative numbers (Maximum Subarray, Maximum Product Subarray).',
     mentalModel: 'At index i, either extend the best subarray ending at i-1 or restart fresh at nums[i] whenever the prefix becomes a drag.',
     triggerSignals: ['maximum contiguous subarray', 'negative numbers included', 'maximum product subarray', 'circular subarray max sum', 'best time to buy/sell'],
-    timeComplexity: 'O(n) time for the maximum-subarray recurrence; specify empty-input and numeric-overflow behavior.'
+    timeComplexity: 'O(n) time for the maximum-subarray recurrence; specify empty-input and numeric-overflow behavior.',
     spaceComplexity: 'O(1)',
     hasTrickyTemplate: false,
     canonicalSlug: 'maximum-subarray',
@@ -376,7 +376,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'Layer-by-layer rotation, spiral traversal, or in-place marker flags (Spiral Matrix, Rotate Image, Set Matrix Zeroes).',
     mentalModel: 'Control traversal with shrinking boundary walls (top/bottom/left/right), transpose+reverse algebra, or first-row/col O(1) markers.',
     triggerSignals: ['spiral order', 'rotate 90 degrees in-place', 'set matrix zeroes in O(1)', 'diagonal traversal', 'game of life in-place'],
-    timeComplexity: 'O(m · n) when each cell is visited O(1) times; algorithms with repeated scans need a separate bound.'
+    timeComplexity: 'O(m · n) when each cell is visited O(1) times; algorithms with repeated scans need a separate bound.',
     spaceComplexity: 'O(1)',
     hasTrickyTemplate: false,
     canonicalSlug: 'spiral-matrix',
@@ -402,7 +402,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'Detect cycles, find cycle entry points, or locate midpoints in O(1) space (Linked List Cycle II, Find the Duplicate Number).',
     mentalModel: 'Move slow by 1 and fast by 2; if they meet inside a cycle, resetting one pointer to head and walking both by 1 meets at the cycle entry.',
     triggerSignals: ['linked list cycle entry', 'middle of linked list', 'happy number', 'duplicate in read-only array', 'O(1) space palindrome list'],
-    timeComplexity: 'O(n) for standard cycle/middle-node traversals with a finite termination condition and constant-speed pointer steps.'
+    timeComplexity: 'O(n) for standard cycle/middle-node traversals with a finite termination condition and constant-speed pointer steps.',
     spaceComplexity: 'O(1)',
     hasTrickyTemplate: false,
     canonicalSlug: 'linked-list-cycle-ii',
@@ -425,7 +425,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     mentalModel: 'Use a dummy head plus prev/curr/next pointers to rewire links safely without losing the remainder of the list.',
     triggerSignals: ['reverse linked list', 'reverse sublist left..right', 'reverse nodes in k-group', 'swap nodes in pairs', 'O(1) extra memory'],
     timeComplexity: 'O(n)',
-    spaceComplexity: 'O(1) auxiliary pointer state for iterative reversal; recursive reversal uses O(n) call stack.'
+    spaceComplexity: 'O(1) auxiliary pointer state for iterative reversal; recursive reversal uses O(n) call stack.',
     hasTrickyTemplate: true,
     canonicalSlug: 'reverse-nodes-in-k-group',
     problems: [
@@ -609,7 +609,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     mentalModel: 'Decide if the problem is Top-Down (pass bounds/path sum as arguments) or Bottom-Up Post-Order (combine left & right subtree returns).',
     triggerSignals: ['diameter / max path sum', 'lowest common ancestor', 'validate BST bounds', 'subtree height / balance', 'serialize binary tree'],
     timeComplexity: 'O(n)',
-    spaceComplexity: 'O(h) traversal stack, where h is tree height (O(log n) balanced, O(n) skewed); output excluded.'
+    spaceComplexity: 'O(h) traversal stack, where h is tree height (O(log n) balanced, O(n) skewed); output excluded.',
     hasTrickyTemplate: false,
     canonicalSlug: 'lowest-common-ancestor-of-a-binary-tree',
     problems: [
@@ -631,7 +631,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     mentalModel: 'Snapshot levelSize = queue.length at the start of each outer loop iteration so all nodes processed inside belong strictly to the same depth.',
     triggerSignals: ['level order traversal', 'right side view', 'zigzag traversal', 'maximum width of binary tree', 'connect next right pointers'],
     timeComplexity: 'O(n)',
-    spaceComplexity: 'O(w) queue space for maximum tree width w; worst case O(n), excluding output.'
+    spaceComplexity: 'O(w) queue space for maximum tree width w; worst case O(n), excluding output.',
     hasTrickyTemplate: false,
     canonicalSlug: 'binary-tree-right-side-view',
     problems: [
