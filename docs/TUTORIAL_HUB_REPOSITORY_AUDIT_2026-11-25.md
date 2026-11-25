@@ -327,3 +327,26 @@ This document began as a static audit at the historical HEAD above. The integrat
 - Current baseline commit: `cf4e90b4f2102a4ea72f60c78717d56386f7ca60`; the registry and ledger now point to this commit and continue to preserve all 22 surfaces as `not_assessed` until lesson-level evidence is recorded.
 
 The remaining substantive work is still open: complete topic-level inventories and evidence-backed review across all surfaces; author and verify the 25 inventory-only Pattern Forge topics; reconcile and author the 293 DSA question records beyond blueprint status; and improve cross-surface tests, accessibility, technical review and learner-transfer evidence. Static CI success validates the repository's current automated checks, not the full learning experience or learner outcomes.
+
+
+## Consolidated review update — 2026-11-25 (supersedes stale historical statements above)
+
+**Current main commit:** `04bfabcfc9fb52371732a5eeb5382011c0aa40f3` (merge of PR #61). The current registry and quality ledger baseline is `cf4e90b4f2102a4ea72f60c78717d56386f7ca60`, with 22 registered learning surfaces.
+
+### Resolved since the historical audit text
+- Pattern Forge is included in the 22-surface registry; the earlier 21-surface mismatch is resolved.
+- Heap example placement and Java test-language selection were repaired; PR #61's validation run completed successfully and the PR was merged.
+- The earlier text describing a current registry mismatch or Heap CI failure is historical, not the current blocker.
+
+### Unified learning plan review
+The user-approved 20-section plan is now cross-referenced in [UNIFIED_LEARNING_PLAN_IMPLEMENTATION_REVIEW.md](./UNIFIED_LEARNING_PLAN_IMPLEMENTATION_REVIEW.md). That document records existing implementation evidence, the full acceptance matrix, and explicit unclosed work.
+
+A single consolidated implementation PR is in progress: [PR #62](https://github.com/ashvins1912/Tutorial-Hub/pull/62). It currently adds an academy-neutral five-stage learning-unit contract, structural validation and publication reviewer gates, evidence-gated sequential stage progression, and regression tests for the 28-pattern inventory's honest status. It remains draft while the same branch is expanded and CI is run.
+
+### Remaining gaps are still material
+- 25 of 28 Pattern Forge topics remain inventory-only; the 420 activities are a target, not authored/verified content.
+- Cross-academy curriculum adapters and migration are not complete; `UNIFIED_CURRICULA` currently exports Pattern Forge only.
+- The 22 surfaces still require topic-level evidence-based content reviews.
+- A secure isolated execution sandbox, accessibility certification, learner transfer/retention evidence, production readiness and deployment have not been verified by this static review.
+
+Do not mark these gaps complete from schema presence, inventory counts, documentation or CI alone. No deployment or paid service was authorized.
