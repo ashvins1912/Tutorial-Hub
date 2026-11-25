@@ -2,8 +2,64 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ALGORITHM_TUTOR_GUIDES } from '../../src/data/algorithmTutorGuides.ts';
 
+const expectedGuideIds = [
+  'prefix-sum-hash',
+  'two-pointers',
+  'sliding-window',
+  'binary-search',
+  'fast-slow-pointers',
+  'monotonic-stack',
+  'tree-bfs-dfs',
+  'heap-intervals',
+  'graph-topo-sort',
+  'dijkstra-shortest-path',
+  'backtracking-trie',
+  'dynamic-programming',
+  'merge-sort-divide-conquer',
+  'greedy-algorithms',
+  'kadanes-algorithm',
+  'cyclic-sort',
+  'depth-first-search',
+  'union-find-dsu',
+  'bit-manipulation',
+  'kmp-rabin-karp',
+  'bellman-ford',
+  'floyd-warshall',
+  'tarjan-kosaraju-scc',
+  'a-star-search',
+  'max-flow-edmonds-karp',
+  'prims-mst',
+  'segment-tree-lazy',
+  'fenwick-tree-bit',
+  'binary-lifting-lca',
+  'heavy-light-decomposition',
+  'mos-algorithm',
+  'z-algorithm',
+  'manachers-algorithm',
+  'aho-corasick',
+  'suffix-array-lcp',
+  'bitmask-dp',
+  'digit-dp',
+  'dp-on-trees-rerooting',
+  'convex-hull-trick',
+  'sieve-of-eratosthenes',
+  'euclidean-extended-gcd',
+  'modular-exponentiation',
+  'convex-hull-graham-scan',
+  'reservoir-sampling',
+  'monotonic-deque',
+  'zero-one-bfs',
+  'bidirectional-bfs',
+  'kruskals-mst',
+  'bipartite-graph-coloring',
+  'sweep-line-events',
+  'dual-heaps-median',
+  'lis-patience-sorting',
+  'meet-in-the-middle'
+];
+
 test('algorithm tutor guides have complete, non-empty teaching contracts', () => {
-  assert.ok(Object.keys(ALGORITHM_TUTOR_GUIDES).length > 0);
+  assert.deepEqual(Object.keys(ALGORITHM_TUTOR_GUIDES).sort(), [...expectedGuideIds].sort(), 'registered guide inventory must be fully represented in this quality gate');
   for (const [key, guide] of Object.entries(ALGORITHM_TUTOR_GUIDES)) {
     assert.equal(guide.algorithmId, key, `algorithmId mismatch for ${key}`);
     for (const field of ['simpleAnalogy', 'interviewScript30s', 'chooseWhen', 'avoidWhen']) {
@@ -11,6 +67,7 @@ test('algorithm tutor guides have complete, non-empty teaching contracts', () =>
       assert.ok(guide[field].trim().length > 0, `${key}: ${field} must not be empty`);
     }
     assert.ok(Array.isArray(guide.followUpTwists), `${key}: followUpTwists must be an array`);
+    assert.ok(guide.followUpTwists.length > 0, `${key}: add at least one learner follow-up twist`);
     for (const [index, twist] of guide.followUpTwists.entries()) {
       for (const field of ['question', 'invariantShift', 'complexityImpact']) {
         assert.equal(typeof twist[field], 'string', `${key} twist ${index}: ${field} must be text`);
