@@ -28,6 +28,7 @@ test('matrix problem bank has an exact, stable and structurally complete invento
     assert.ok(problem.javaHint.trim(), problem.id + ': implementation hint');
     assert.ok(problem.example.trim(), problem.id + ': missing example input');
     assert.ok(problem.expectedOutput.trim(), problem.id + ': missing expected output');
+    assert.doesNotMatch(problem.example, /standard example|matrix 1\.\.9|standard .* board/i, problem.id + ': example must be reproducible, not a reference to an unnamed standard case');
   }
 
   const byId = (id) => MATRIX_PROBLEMS.find((problem) => problem.id === id);
@@ -42,6 +43,8 @@ test('matrix problem bank has an exact, stable and structurally complete invento
   assert.match(byId('m25').expectedOutput, /5/);
   assert.match(byId('m31').expectedOutput, /2/);
   assert.match(byId('m40').expectedOutput, /0,1,0/);
+  assert.match(byId('m30').example, /\[\['X','X','X','X'\]/);
+  assert.match(byId('m33').example, /ABCCED/);
 });
 
 test('matrix problem UI searches all visible problem fields and reports data-driven counts', () => {
