@@ -23,7 +23,7 @@ The repository snapshot contains 525 tracked blobs. These are inventory figures,
 2. `scripts/audit-learner-content-sentence-inventory.mjs`: extracts static literal/JSX text candidates from registered source paths, records file/line/property and marks every candidate unreviewed by default.
 3. `tests/content-authoring/learner-content-inventory.test.mjs`: verifies broad source coverage, source-path integrity and that extraction does not silently mark content reviewed.
 4. `package.json`: exposes `npm run audit:learner-sentences`.
-5. `src/components/CompleteDsaCourse.tsx`: improves code-example reading with line numbers, stronger type/readability, a clear explanation label and a guided trace prompt.
+5. `src/data/dsaCompleteLessons.ts` and `src/components/CompleteDsaCourse.tsx`: added 46 plain-language term definitions/examples across all 23 DSA modules and a dedicated glossary UI; improved code-example reading with line numbers, a clear explanation label and a guided trace prompt.
 6. `src/features/intelligent-engine/components/PublishedLessonView.tsx`: improves key-point and reasoning hierarchy and gives published code examples a readable, line-numbered walkthrough.
 7. The existing content-quality audit statuses are not promoted to complete without review evidence.
 
