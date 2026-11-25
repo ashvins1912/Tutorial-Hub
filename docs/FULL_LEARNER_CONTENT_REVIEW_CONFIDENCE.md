@@ -106,3 +106,19 @@ These edits were applied to the actual learner-facing source and verified by re-
 ## CI status at the latest source head
 
 At the time of this report update, PR head `16af93127b51543d787d339ac7d0b7cd25f0349d` had validation run **#707 in progress**. The combined commit status endpoint had not yet returned individual statuses. Dependency install/typecheck and all downstream curriculum/security/build checks must complete; do not infer success from a run being created or a job starting.
+
+
+## Additional algorithm-guide corrections (2026-11-25)
+
+A second targeted pass found three more precision gaps and updated the learner-facing source:
+
+1. **Prefix-sum divisibility:** explicitly handles K ≠ 0 using a positive normalized remainder and routes K = 0 to the zero-sum formulation; map-space bound uses |K|.
+2. **Sliding window:** the linear-time guarantee now requires a monotone window-validity condition (examples include non-negative sum bounds and at-most-K distinct). It no longer suggests that frequency counts alone make arbitrary window conditions monotone.
+3. **Stream of Characters / Aho-Corasick:** distinguishes reversed-Trie O(L) worst-case query scanning from amortized O(1) automaton state-transition work per stream character, and includes preprocessing/output-reporting costs.
+
+Added regression assertions for these assumptions to `tests/content-authoring/algorithm-tutor-guide-quality.test.mjs`.
+
+- Source correction commit: `d77bad5d0be926cdf61433d694de75aff774ba09`
+- Regression test commit: `ba835ea10429dc462b0c0507cd40984eeb8ce725`
+- Validation run #709 was queued for the source correction when checked. The test commit's run had not yet appeared in the workflow-run lookup.
+- These are additional targeted corrections; whole-guide and whole-platform completion remains unverified.
