@@ -810,7 +810,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "src/components/flight/FlightMermaidViewer.tsx",
@@ -1071,7 +1076,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "src/components/OodAnimationStage.tsx",
@@ -1615,7 +1625,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "src/data/dpPracticeProblems.ts",
@@ -1624,7 +1639,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "src/data/dsa28Patterns.ts",
@@ -1803,7 +1823,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "src/data/mongooseSchemas.ts",
@@ -2401,7 +2426,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/ai-academy-curriculum.test.mjs",
@@ -2467,7 +2497,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/dp-learning-lab-quality.test.mjs",
@@ -2476,7 +2511,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/dsa-course-code-example-syntax.test.mjs",
@@ -2485,7 +2525,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/dsa-course-code-examples.test.mjs",
@@ -2494,7 +2539,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/dsa-course-structure-inventory.test.mjs",
@@ -2503,7 +2553,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/dsa-course-ui-accessibility.test.mjs",
@@ -2512,7 +2567,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/generation.test.mjs",
@@ -2590,7 +2650,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/content-authoring/phase1.test.mjs",
@@ -2670,7 +2735,12 @@
       ],
       "surfaceIds": [
         "workspace"
-      ]
+      ],
+      "reviewStatus": "not_reviewed",
+      "learnerUnitCount": null,
+      "dispositionedUnitCount": 0,
+      "findings": [],
+      "evidence": []
     },
     {
       "path": "tests/learning-engine/pattern-forge-pilot.test.mjs",
