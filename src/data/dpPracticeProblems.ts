@@ -5,7 +5,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "level": "Warm-up",
     "name": "Fibonacci Number",
     "goal": "Compare recursion, memoization and tabulation.",
-    "statement": "Return F(n) with F(0)=0 and F(1)=1.",
+    "statement": "Return the number F(n) in the Fibonacci sequence, where F(0)=0 and F(1)=1; each later value is the sum of the previous two values.",
     "example": "n=5 → 5",
     "hint": "Define F(i); combine F(i−1) and F(i−2). State overflow handling."
   },
