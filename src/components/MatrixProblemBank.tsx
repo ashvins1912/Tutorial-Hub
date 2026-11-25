@@ -21,7 +21,7 @@ export function MatrixProblemBank() {
   );
   const filtered = useMemo(() => MATRIX_PROBLEMS.filter((problem) => {
     const q = query.trim().toLowerCase();
-    const matchesQuery = !q || [problem.id, problem.title, problem.prompt, problem.approach, problem.complexity, problem.javaHint, problem.group, problem.level].join(' ').toLowerCase().includes(q);
+    const matchesQuery = !q || [problem.id, problem.title, problem.prompt, problem.approach, problem.complexity, problem.javaHint, problem.example, problem.expectedOutput, problem.group, problem.level].join(' ').toLowerCase().includes(q);
     return matchesQuery && (group === 'All' || problem.group === group) && (level === 'All' || problem.level === level);
   }), [MATRIX_PROBLEMS, query, group, level]);
   const validIds = useMemo(() => new Set(MATRIX_PROBLEMS.map((problem) => problem.id)), [MATRIX_PROBLEMS]);
