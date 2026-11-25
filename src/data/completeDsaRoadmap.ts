@@ -91,7 +91,7 @@ export const COMPLETE_DSA_ROADMAP: DsaRoadmapTopic[] = [
     ['Contiguous subarray/substring', 'Longest or shortest range with a maintained property'],
     ['State the window invariant explicitly', 'Know when a two-pointer window is not valid'],
     ['arrays', 'strings', 'hashing'],
-    ['Assuming positive-only window logic works with negative values', 'Forgetting to update frequency counts when shrinking']),
+    ['Sliding Window: assuming positive-only window logic works with negative values', 'Forgetting to update frequency counts when shrinking', 'Shrinking is valid only when the chosen window condition changes monotonically; frequency counts alone do not prove it.']),
   topic('prefix-difference', 'Prefix Sums, Difference Arrays & Prefix XOR', 'Core', 'Array & String Patterns',
     ['1D prefix sum', 'Prefix sum + hashmap', 'Prefix XOR', 'Difference array and range updates', '2D prefix sums', 'Suffix/prefix contribution'],
     ['Repeated range queries', 'Subarray sum equals K', 'Many range updates before final materialization'],
