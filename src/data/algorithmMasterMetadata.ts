@@ -49,7 +49,7 @@ const MASTER_40_COMPLEXITY_LEAPS: Record<string, string> = {
   'counting-radix-sort': 'Ω(N log N) comparison lower bound → O(d · (N + B)) linear non-comparison digit sort',
   'linked-list-reversal': 'O(N) auxiliary array/stack copy → O(1) space 3-pointer in-place rewire',
   'shunting-yard-parser': 'Multi-pass recursive/AST build → O(N) single-pass operator precedence RPN stream',
-  'avl-red-black-trees': 'O(N) skewed BST degeneration → O(log N) guaranteed height via O(1) rotations',
+  'avl-red-black-trees': 'O(N) skewed BST degeneration → O(log N) worst-case height in self-balancing AVL/Red-Black trees, maintained with rotations',
   'huffman-coding': 'Fixed-length log₂|Σ| encoding → Optimal variable-length prefix-free entropy code',
   'trie-prefix-autocomplete': 'O(N · L) full-dictionary scan → O(L) prefix lookup independent of N',
   'hash-table-probing': 'O(N) linear / O(log N) tree lookup → O(1) expected cache-friendly hash lookup',
@@ -63,9 +63,9 @@ const MASTER_40_COMPLEXITY_LEAPS: Record<string, string> = {
   'tarjan-bridges-articulation': 'O(E · (V + E)) remove-and-test → O(V + E) single-pass disc/low DFS audit',
   'johnsons-all-pairs': 'O(V³) dense Floyd-Warshall → O(V · E log V) Bellman-Ford reweight + V× Dijkstra',
   'centroid-decomposition': 'O(N²) all-paths tree DFS → O(N log N) divide-and-conquer O(log N)-tall centroid tree',
-  'bloom-filter': 'O(64B · N) exact HashSet RAM → ~10 bits/key O(k) zero-false-negative disk guard',
+  'bloom-filter': 'Exact HashSet membership costs memory proportional to stored keys; a Bloom Filter can use about 10 bits/key for a chosen false-positive target and has no false negatives under standard insert-only, intact-bit-array assumptions',
   'skip-list': 'O(N) sorted list / lock-heavy RB-Tree → O(log N) expected lock-free express lanes',
-  'count-min-sketch': 'O(N) exact HashMap counters → O(1) sublinear fixed-RAM frequency upper-bound sketch',
+  'count-min-sketch': 'Exact HashMap counters grow with distinct keys; a Count-Min Sketch uses O((1/ε) log(1/δ)) counters for additive error εN with probability at least 1−δ, independent of stream length N when ε and δ are fixed',
   'hyperloglog': 'O(N) 10 GB unique-ID HashSet → 12 KB mergeable registers (< 0.81% error at 10⁹)',
   'cache-lru-lfu-arc': 'O(C) scan / O(log C) heap eviction → O(1) pointer-spliced DLL & scan-resistant ARC',
   'buddy-memory-allocator': 'O(N) fragmented free-list scan → O(log M) power-of-2 split & O(1) XOR buddy coalesce',
@@ -80,8 +80,8 @@ const MASTER_40_COMPLEXITY_LEAPS: Record<string, string> = {
   'raft-paxos-consensus': 'Split-brain async primary → Linearizable 2F+1 quorum consensus in 1 RTT steady state',
   'gossip-phi-accrual': 'O(N²) all-to-all heartbeat storms → O(1)/node fanout · O(log N) epidemic convergence',
   'merkle-tree-sync': 'O(N) full replica dataset diff → O(k log(N/k)) hierarchical hash-tree anti-entropy repair',
-  'vector-clocks-lamport': 'Broken physical NTP clock ordering → Exact O(N) causal partial-order conflict detection',
-  'crdt-gcounter-orset': 'Cross-region blocking 2PC locks → O(1) offline local writes + guaranteed lattice convergence',
+  'vector-clocks-lamport': 'Physical-clock order can disagree with causality; vector clocks represent causal partial order and detect concurrent updates, using O(N) vector entries for N participants',
+  'crdt-gcounter-orset': 'Cross-region coordination can be avoided for local G-Counter/OR-Set updates; replicas converge under the CRDT merge rule when updates are eventually delivered',
 };
 
 const CACHED_PLATFORM_DRILLS: Record<string, PlatformDrillItem[]> = {};
@@ -180,7 +180,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Checking a row of unlabeled mailboxes one by one from left to right until you see your name—no prep needed, and shockingly fast when there are only 20 boxes.',
     interviewScript30s:
-      '"For unsorted data queried only once or tiny cache-hot slices (N ≤ 32), linear scan in O(N) time and O(1) space beats sorting or hashing because sequential memory prefetching outperforms random pointer chasing."',
+      '"For unsorted data queried once or for small cache-hot slices, a linear scan is O(N) time and O(1) space and can outperform sorting or hashing due to sequential memory access; the crossover depends on data size, layout, and hardware."',
     chooseWhen: 'Unsorted data queried once, linked lists without random access, or tiny N ≤ 32 SIMD/cache-line arrays.',
     avoidWhen: 'Repeated lookups on large datasets (build a HashMap for O(1) or sort + Binary Search for O(log N)).',
     followUpTwists: [
@@ -222,7 +222,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Insertion Sort is how you sort playing cards in your hand: pick up one card at a time and slide it leftward past bigger cards until it lands in place.',
     interviewScript30s:
-      '"While Bubble, Selection, and Insertion Sort are O(N²) worst-case, Insertion Sort is adaptive (O(N) on nearly sorted inputs), stable, and in-place—which is why Python TimSort and C++ Introsort switch to Insertion Sort for subarrays of size ≤ 32."',
+      '"Bubble, Selection, and Insertion Sort are O(N²) worst-case; Insertion Sort is adaptive (O(N) on nearly sorted inputs), stable, and in-place. Many production sort implementations use insertion sort for short runs or partitions, but the cutoff and exact integration are implementation-specific."',
     chooseWhen: 'Tiny subarrays (N ≤ 32), online/streaming nearly-sorted data, or minimizing writes (Selection Sort uses ≤ N − 1 swaps).',
     avoidWhen: 'Large random or reversed arrays (N > 1000)—use Merge Sort, Quick Sort, or TimSort.',
     followUpTwists: [
@@ -453,7 +453,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Zooming into a map: empty oceans stay one huge square, while dense downtown Manhattan automatically splits into finer and finer 2×2 blocks until each tile holds only a handful of drivers.',
     interviewScript30s:
-      '"A Quadtree (2D) or Octree (3D) recursively subdivides a bounding box into 4 (or 8) equal quadrants only when a node exceeds capacity. Range queries intersect the search box against each quadrant, skipping empty space in O(log N + K)."',
+      '"A Quadtree (2D) or Octree (3D) recursively subdivides a bounding box into 4 (or 8) cells when a node exceeds capacity. Range queries skip non-intersecting cells; typical cost depends on balance and spatial distribution, while worst-case traversal can be O(N) plus reported results."',
     chooseWhen: 'Geo-proximity search (Uber/Yelp nearby drivers), 2D/3D game collision broad-phase, and sparse voxel terrain.',
     avoidWhen: 'Objects move at high velocity every millisecond across leaf boundaries (spatial hash grids or Geohash+Redis update faster).',
     followUpTwists: [
@@ -621,7 +621,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A bouncer’s stamp sheet with k ink colors: if ANY of your k expected colors is missing, you definitely never visited; if all k colors are smudged, you probably visited (or someone else’s stamps overlapped).',
     interviewScript30s:
-      '"A Bloom Filter hashes each key with k independent hash functions into an m-bit array in O(k) time and tiny RAM. It guarantees ZERO false negatives and tunable false-positive rate `p ≈ (1 - e^(-kn/m))^k`—blocking 99% of wasted RocksDB/Cassandra SSTable disk reads."',
+      '"An insert-only Bloom Filter hashes each key into an m-bit array using k hash positions in O(k) time. With intact bits and correct query/insert hashing it has no false negatives, and its false-positive rate is approximately `p ≈ (1 - e^(-kn/m))^k`; disk-read savings depend on the workload and chosen p."',
     chooseWhen: 'Database SSTable disk-skip (RocksDB/LevelDB/Cassandra), web-crawler URL dedup, and Chrome Safe Browsing.',
     avoidWhen: 'You require exact membership with zero false positives OR frequent deletions (upgrade to Counting Bloom Filter or Cuckoo Filter).',
     followUpTwists: [
@@ -663,7 +663,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Keeping d independent tally notebooks where each item gets tossed into a hashed bucket: collisions can only inflate a bucket’s count, so taking the MINIMUM across all d notebooks strips away noise.',
     interviewScript30s:
-      '"Count-Min Sketch uses a `d × w` matrix of counters with d independent hashes to track frequencies over billion-item streams in O(1) space. Taking `min_i table[i][h_i(x)]` guarantees estimates NEVER underestimate true count, with additive error `≤ εN` with probability `1 - δ`."',
+      '"Count-Min Sketch uses a `d × w` counter matrix with independent hashes; updates and queries take O(d) time. With `w = O(1/ε)` and `d = O(log(1/δ))`, it estimates non-negative stream frequencies without underestimating, with additive error at most εN with probability at least 1−δ."',
     chooseWhen: 'Streaming Heavy Hitters / Top-K (paired with a size-K Min-Heap), DDoS IP rate monitoring, and Caffeine TinyLFU cache admission.',
     avoidWhen: 'Exact counts are legally/financially mandatory (billing ledgers) or keys undergo arbitrary unguarded negative decrements.',
     followUpTwists: [
