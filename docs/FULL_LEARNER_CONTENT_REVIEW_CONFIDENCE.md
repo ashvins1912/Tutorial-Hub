@@ -127,3 +127,19 @@ Added regression assertions for these assumptions to `tests/content-authoring/al
 ## Test-commit validation update
 
 Validation run **#710** was created for test commit `ba835ea10429dc462b0c0507cd40984eeb8ce725`. At the latest job check, dependency installation was in progress and type-check plus all downstream checks were pending. This run therefore does not yet establish test success. The evidence-report update itself will also require final-head validation.
+
+
+## Third focused technical pass: arithmetic and selection bounds
+
+A further source review corrected these learner-facing statements:
+
+- **Modular exponentiation:** O(log e) counts modular multiplications, but reducing after multiplication alone does not prevent intermediate overflow. The guide now requires a sufficiently wide/exact modular multiply and explains the JavaScript Number safe-integer issue.
+- **Extended GCD choice:** clarified that Fermat inversion is an optional alternative for prime modulus and coprime a; Extended GCD remains valid whenever gcd(a,m)=1.
+- **Quickselect duplicates:** made the linear all-equal case explicitly conditional on 3-way partitioning; randomization alone is not a worst-case linear guarantee.
+
+Added regression assertions for modular multiplication and the 3-way partition condition.
+
+- Source correction commit: `1c6987cd9379778d29b8ccddac71a7c94109ff89`
+- Test commit: `2c903b4df3b8163ffacab5d0c6ec3fed935dacdf`
+- Run #713 is in progress for the test commit. Run #712 remains in progress at type-check; it has not established downstream validation.
+- The source and test blobs were re-fetched. The test includes the new assertions; test execution is pending.
