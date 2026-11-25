@@ -128,6 +128,16 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['monotonic-stack'].simpleAnalogy, /next-greater-to-the-right/i);
   assert.match(guides['mos-algorithm'].interviewScript30s, /supports efficient add\/remove operations/i);
   assert.match(guides['dual-heaps-median'].followUpTwists.find(x => /90th percentile/i.test(x.question)).invariantShift, /read `hi.top\(\)` as P90/i);
+  assert.doesNotMatch(MASTER_40_TUTOR_GUIDES['linear-search'].interviewScript30s, /2–4×|2-4×/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['elementary-sorts'].interviewScript30s, /cutoff and exact integration are implementation-specific/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['quadtree-octree-spatial'].interviewScript30s, /worst-case traversal can be O\(N\)/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['bloom-filter'].interviewScript30s, /insert-only Bloom Filter/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['count-min-sketch'].interviewScript30s, /updates and queries take O\(d\) time/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['bwt-fm-index'].interviewScript30s, /rank is O\(1\)/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['buddy-memory-allocator'].interviewScript30s, /external fragmentation/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['lockfree-cas-rcu'].interviewScript30s, /not automatically wait-free/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['bplus-tree-storage'].interviewScript30s, /not a fixed guarantee/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['lsm-tree-compaction'].followUpTwists.find(x => /Size-Tiered Compaction/i.test(x.question)).invariantShift, /ratios depend on level sizing/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
