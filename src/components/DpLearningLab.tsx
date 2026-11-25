@@ -29,13 +29,20 @@ export function DpLearningLab() {
     'patternforge-dp-practice-v1'
   );
   const [filter, setFilter] = useState('All');
+  const [problemSearch, setProblemSearch] = useState('');
   const validProblemNames = useMemo(() => new Set(DP_PRACTICE_PROBLEMS.map((problem) => problem.name)), []);
   const completedSet = useMemo(() => new Set(completed.filter((name) => validProblemNames.has(name))), [completed, validProblemNames]);
   const doneCount = completedSet.size;
   const lesson = DP_GUIDED_LESSONS[lessonIndex];
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
-  const visibleProblems = DP_PRACTICE_PROBLEMS.filter((problem) => filter === 'All' || problem.level === filter);
+  const visibleProblems = useMemo(() => {
+    const query = problemSearch.trim().toLowerCase();
+    return DP_PRACTICE_PROBLEMS.filter((problem) =>
+      (filter === 'All' || problem.level === filter) &&
+      (!query || [problem.name, problem.goal, problem.statement, problem.example, problem.hint, problem.level].join(' ').toLowerCase().includes(query))
+    );
+  }, [filter, problemSearch]);
   const toggle = (item: string) =>
     setCompleted((old) => (old.includes(item) ? old.filter((x) => x !== item) : [...new Set([...old, item])]));
   return <section className="space-y-5">
@@ -90,7 +97,12 @@ export function DpLearningLab() {
           </button>
         ))}
       </div>
+      <label className="mt-4 block">
+        <span className="sr-only">Search dynamic programming practice problems</span>
+        <input type="search" value={problemSearch} onChange={(event) => setProblemSearch(event.target.value)} placeholder="Search problems, goals, examples or hints…" aria-label="Search dynamic programming practice problems" className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900" />
+      </label>
       <div className="mt-4 space-y-2">
+        {visibleProblems.length === 0 ? <p role="status" className="rounded-lg border border-dashed p-4 text-sm text-slate-500">No DP problems match this search and level. Clear the search or choose All.</p> : null}
         {visibleProblems.map((problem, problemIndex) => {
           const isDone = completedSet.has(problem.name);
           const isOpen = expandedProblem === problem.name;
