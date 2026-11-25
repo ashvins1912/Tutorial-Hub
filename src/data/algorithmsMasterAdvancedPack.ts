@@ -1131,15 +1131,15 @@ def eulerian_itinerary(tickets: list[list[str]], start="JFK") -> list[str]:
     category: 'Probabilistic & Memory Systems',
     difficulty: 'Advanced',
     visualType: 'bit-grid',
-    tagline: 'Test set membership in O(k) time and ~10 bits per key with ZERO false negatives and a tunable ~1% false-positive rate.',
+    tagline: 'Test membership in O(k) time with about 10 bits per key for an illustrative ~1% false-positive target; a correctly maintained standard filter without deletions has no false negatives for inserted keys.',
     timeComplexity: 'O(k) insert & query',
     spaceComplexity: 'O(m bits) ≈ 1.44 N log₂(1/ε)',
     mentalModel:
-      'Think of stamping k different colored ink marks onto an m-bit paper strip for every item inserted. If even ONE of an item’s k spots is blank (0), it is 100% DEFINITELY NOT in the set!',
+      'Think of marking k positions in an m-bit strip for every inserted item. If any required bit is 0, the item is definitely absent from the represented set. This no-false-negative property assumes a standard filter is built and updated correctly and that inserted bits are not cleared by deletions.',
     coreInvariant:
-      'Zero False Negatives: if bit[h_i(x)] === 0 for any i ∈ [1..k], x was NEVER inserted. Optimal hash count k = (m/n) ln 2 ≈ 0.693 (m/n).',
+      'For a standard Bloom filter without deletions, if bit[h_i(x)] === 0 for any i ∈ [1..k], x was not inserted into the represented set. If all bits are 1, the item may still be absent (a false positive). The approximate optimal hash count is k = (m/n) ln 2.',
     whenToUse: [
-      'RocksDB / Cassandra / LevelDB SSTable read filtering — skips 99% of unnecessary disk I/Os for non-existent keys!',
+      'RocksDB / Cassandra / LevelDB SSTable read filtering — can skip many disk reads for absent keys when the filter is sized for a low false-positive rate; savings depend on the workload and filter configuration.',
       'Chrome Safe Browsing URL blocklists, CDN one-hit-wonder cache admission filters, and web crawler deduplication.',
       'Distributed SQL Semi-Join pushdown (send tiny Bloom Filter over network instead of millions of join keys).',
     ],
