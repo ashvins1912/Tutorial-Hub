@@ -26,6 +26,8 @@ test('matrix problem bank has an exact, stable and structurally complete invento
     assert.ok(problem.approach.trim(), problem.id + ': approach');
     assert.ok(problem.complexity.trim(), problem.id + ': complexity assumptions');
     assert.ok(problem.javaHint.trim(), problem.id + ': implementation hint');
+    assert.ok(problem.example.trim(), problem.id + ': missing example input');
+    assert.ok(problem.expectedOutput.trim(), problem.id + ': missing expected output');
   }
 
   const byId = (id) => MATRIX_PROBLEMS.find((problem) => problem.id === id);
@@ -36,6 +38,10 @@ test('matrix problem bank has an exact, stable and structurally complete invento
   assert.match(byId('m37').javaHint, /long for accumulated path costs/i);
   assert.match(byId('m39').javaHint, /long for height×width area/i);
   assert.match(byId('m42').javaHint, /long prefix sums/i);
+  assert.match(byId('m20').expectedOutput, /13/);
+  assert.match(byId('m25').expectedOutput, /5/);
+  assert.match(byId('m31').expectedOutput, /2/);
+  assert.match(byId('m40').expectedOutput, /0,1,0/);
 });
 
 test('matrix problem UI searches all visible problem fields and reports data-driven counts', () => {
@@ -49,4 +55,7 @@ test('matrix problem UI searches all visible problem fields and reports data-dri
   assert.match(ui, /aria-controls=.{0,80}matrix-problem/);
   assert.match(ui, /aria-label="Filter matrix problems by pattern"/);
   assert.match(ui, /aria-label="Filter matrix problems by difficulty"/);
+  assert.match(ui, /problem\.example/);
+  assert.match(ui, /problem\.expectedOutput/);
+  assert.match(ui, /<pre tabIndex=\{0\}/);
 });
