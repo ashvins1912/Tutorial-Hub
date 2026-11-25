@@ -80,3 +80,16 @@ The new syntax suite parses every JavaScript example, compiles every Python exam
 The prior 46 terms (two per module) were too thin for the requested concept coverage. Added 92 original plain-language glossary entries, bringing the course to **138 terms across 23 modules** (at least five per module; several modules now have six or seven). New entries cover prerequisites/postconditions, array aggregates, node identity, Unicode units, amortized cost, lower/upper bounds, window invariants, tree diameter, BST duplicate policy, heapify, backtracking state restoration, greedy proof tools, DP state/recurrence, graph traversal, matrix transforms, ring buffers, sorting stability, search predicates, answer-space feasibility, two's complement, hash contracts and pointer-cycle concepts.
 
 The expanded inventory test now checks at least five terms per module, unique term names within a module, and nonempty definition/example for every term. This is a structural/editorial completeness gate; it does not yet certify every glossary definition's technical accuracy.
+
+
+## DSA course UI review (focused source pass)
+
+The course renderer was reviewed alongside the data changes:
+
+- The code section is labeled “Code examples and walkthroughs,” not “Runnable code examples,” because many snippets require surrounding types or a harness.
+- Course search now includes glossary terms/definitions/examples, deep-dive text, methods, worked examples, traces, implementation notes, correctness/complexity/pitfalls, outcomes, assessments, practice tasks and code titles/explanations—not only titles and recognition cues.
+- Module selection and mastery-step buttons expose `aria-pressed`; section controls expose `aria-expanded` and `aria-controls`, with a persistent hidden panel target.
+- Code blocks are keyboard-focusable, labeled by language/title and associated with their explanation; decorative line numbers are hidden from assistive technology.
+- The “mastered” label was changed to self-marked completion to avoid overstating a self-assessment. Duplicate list text uses positional keys to avoid React key collisions.
+
+Source test: `tests/content-authoring/dsa-course-ui-accessibility.test.mjs`. These are source-level accessibility assertions, not a substitute for browser/screen-reader testing at every viewport and state; the full UI audit remains open.
