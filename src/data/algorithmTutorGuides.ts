@@ -663,7 +663,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Can Mo’s Algorithm support point updates?',
         invariantShift: 'Add a 3rd time dimension `t` with block size `N^(2/3)` (Mo’s with Updates).',
-        complexityImpact: 'O(Q · N^(2/3)) time.',
+        complexityImpact: 'For Q queries and U point updates, the common N^(2/3)-block Mo-with-updates scheme has O((N + Q + U) · N^(2/3)) pointer/time work under the standard movement model; the exact bound depends on query/update mix and ordering.',
       },
     ],
   },
@@ -672,7 +672,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Measuring how far every suffix matches the start of the string while remembering the furthest "already-copied mirror window" [L..R] so you copy known prefix lengths in O(1) before scanning new chars.',
     interviewScript30s:
-      '"Z-Algorithm computes for every index i the longest common prefix with s[0..] in strict O(N) time by reusing matches inside the rightmost Z-box [L..R]. Concatenating `pat + "$" + text` solves pattern search without LPS fallback confusion."',
+      '"Z-Algorithm computes for every index i the longest common prefix with s[0..] in strict O(N) time by reusing matches inside the rightmost Z-box [L..R]. Concatenating `pat + separator + text` solves pattern search; choose a separator that cannot occur in either input (or an out-of-alphabet sentinel) to avoid false cross-boundary matches."',
     chooseWhen: 'Linear pattern search, Longest Prefix-Suffix, counting pattern occurrences, Sum of Scores of Built Strings.',
     avoidWhen: 'Streaming character-by-character text where you cannot concatenate pattern + text upfront (use KMP).',
     followUpTwists: [
