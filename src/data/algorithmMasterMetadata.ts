@@ -787,7 +787,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'bplus-tree-storage': {
     algorithmId: 'bplus-tree-storage',
     simpleAnalogy:
-      'A multi-volume encyclopedia index: internal directory volumes hold hundreds of guide words per page so you reach any article in 3 page flips, and every leaf volume links straight to the next volume for instant chapter-wide scans.',
+      'A multi-volume encyclopedia index: internal directory pages hold many guide words so high fanout reduces the number of page levels; linked leaf pages support sequential chapter-wide scans. Actual page reads depend on page layout and cache.',
     interviewScript30s:
       '"A B+ Tree packs many separator keys into 4KB–16KB internal pages and keeps payloads in linked leaves, reducing tree height and supporting sequential range scans. The number of page reads depends on fanout, page occupancy, cache hits, and storage layout; a large table may require only a few uncached index-page reads, but this is not a fixed guarantee."',
     chooseWhen: 'OLTP relational indexes (PostgreSQL, MySQL InnoDB, SQLite) requiring fast point lookups, predictable latency, and ordered `BETWEEN` range scans.',
@@ -796,7 +796,7 @@ export const MASTER_40_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       {
         question: 'Why do databases store row payloads ONLY in B+ Tree leaves instead of internal nodes (like classic B-Trees)?',
         invariantShift: 'Keeping payloads out of internal pages increases fanout and reduces tree height; actual fanout and page depth depend on key/pointer sizes, page size, fill factor, and row count. Linked leaves support sequential range scans.',
-        complexityImpact: 'Cuts random disk I/Os per lookup and accelerates range scans 10×.',
+        complexityImpact: 'Reduces random disk I/Os compared with lower-fanout layouts; the actual lookup and range-scan improvement depends on page size, occupancy, and cache.',
       },
       {
         question: 'Why do random UUIDv4 primary keys hurt InnoDB B+ Tree write performance compared to UUIDv7/BIGSERIAL?',
@@ -1198,7 +1198,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'Distribution-sensitive; O(N) worst-case traversal',
     iterativeSpaceBigO: 'O(N)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Adaptive subdivision skips vast empty regions instantly; capping MAX_DEPTH prevents infinite splits on coincident points.',
+    tradeoffVerdict: 'Adaptive subdivision can skip empty regions efficiently for favorable spatial distributions; cap MAX_DEPTH or minimum cell width to prevent unbounded splitting on coincident points, while acknowledging O(N) worst-case queries.',
   },
   'bwt-fm-index': {
     recursiveApproach: 'Suffix-Tree / Recursive BWT Search',
@@ -1302,7 +1302,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(k) constant (~7 bits for 1% FP)',
     iterativeSpaceBigO: '~10 bits per key (1% FP)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Uses ~10 bits per key (vs ~64 bytes in a HashSet) to eliminate 99% of unnecessary disk SSTable reads.',
+    tradeoffVerdict: 'A Bloom Filter can use roughly 10 bits per key for a chosen false-positive rate and reduce unnecessary SSTable reads; memory and savings depend on the target rate and workload.',
   },
   'skip-list': {
     recursiveApproach: 'Recursive Multi-Level Express Descent',
@@ -1354,7 +1354,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(1) get & put',
     iterativeSpaceBigO: 'O(C) capacity',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Pointer-spliced DLLs + HashMap guarantee O(1) latency; ARC adds scan resistance with two lightweight ghost lists.',
+    tradeoffVerdict: 'Pointer-spliced doubly linked lists plus a HashMap provide O(1) expected data-structure operations; ARC adapts recency/frequency and can improve scan resistance depending on workload.',
   },
   'buddy-memory-allocator': {
     recursiveApproach: 'Recursive Power-of-2 Block Split / Coalesce',
@@ -1380,7 +1380,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(log N) edit & historical query',
     iterativeSpaceBigO: 'O(N + M log N) across M edits',
     iterativeStackOverhead: 'O(log N) or O(1)',
-    tradeoffVerdict: 'Avoids O(N) full-copy snapshots by sharing 99%+ of unchanged subtrees across historical versions.',
+    tradeoffVerdict: 'Avoids full-copy snapshots by structurally sharing unchanged subtrees; the amount shared depends on the data structure and edit pattern.',
   },
   'lockfree-cas-rcu': {
     recursiveApproach: 'Lock-Based Critical Section vs Wait-Free Read',
@@ -1419,7 +1419,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(log M) write · O(1) Bloom-filtered read',
     iterativeSpaceBigO: 'O(N) disk + O(Bloom bits) RAM',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Turns random disk writes into sequential appends for 10× higher ingest throughput than B+ Trees.',
+    tradeoffVerdict: 'Turns many random updates into sequential WAL/SSTable writes, often improving ingest throughput for write-heavy workloads; the gain depends on compaction policy, device, and workload.',
   },
   'external-kway-merge': {
     recursiveApproach: 'Multi-Pass Balanced External Merge Tree',
@@ -1432,7 +1432,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O((N / B) · passes) sequential I/O',
     iterativeSpaceBigO: 'O(M) RAM',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Sorts datasets 100× larger than physical RAM in just 2 sequential disk passes using page-aligned buffers.',
+    tradeoffVerdict: 'Sorts datasets larger than RAM by creating sorted runs and performing buffered multiway merges; pass count depends on memory, buffer size, fan-in, and dataset size.',
   },
   'aries-wal-recovery': {
     recursiveApproach: 'Forward Log Scan + Backward Undo Chain',
@@ -1445,7 +1445,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(|WAL tail|)',
     iterativeSpaceBigO: 'O(|DPT| + |ATT|)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Frequent fuzzy checkpoints bound WAL tail recovery time to seconds while supporting zero-wait STEAL/NO-FORCE commits.',
+    tradeoffVerdict: 'WAL and checkpointing bound recovery work according to checkpoint interval and log volume; STEAL/NO-FORCE permits buffer management flexibility but commit durability still depends on the configured log-flush policy.',
   },
   'sql-joins-volcano': {
     recursiveApproach: 'Nested-Loop Join O(|R| · |S|)',
@@ -1471,7 +1471,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(log(N · V)) ring · O(N) HRW',
     iterativeSpaceBigO: 'O(N · V)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Consistent Hashing + 150 vnodes cuts cache-miss storms by ~95% during autoscaling and keeps shard skew < 5%.',
+    tradeoffVerdict: 'Consistent hashing limits remapping when nodes join or leave; virtual-node count and hash distribution affect balance, while cache-miss and skew improvements depend on workload and configuration.',
   },
   'raft-paxos-consensus': {
     recursiveApproach: 'Multi-Round Paxos Prepare/Accept vs Raft Leader Pipeline',
@@ -1484,7 +1484,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(N) RPCs/commit · 1 RTT latency',
     iterativeSpaceBigO: 'O(Snapshotted Log)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Stable Raft leadership pipelines writes in 1 RTT vs 2 RTT basic Paxos while guaranteeing linearizable safety.',
+    tradeoffVerdict: 'Raft and Paxos can provide linearizable consensus under their stated quorum/failure assumptions; steady-state latency depends on protocol variant, batching, leader placement, and network RTT.',
   },
   'gossip-phi-accrual': {
     recursiveApproach: 'Exponential Epidemic Broadcast Tree',
@@ -1536,7 +1536,7 @@ export const MASTER_40_COMPLEXITY_PROFILES: Record<string, ComplexityComparisonP
     iterativeTimeBigO: 'O(1) offline write latency',
     iterativeSpaceBigO: 'O(R) / O(Unique Tags)',
     iterativeStackOverhead: 'O(1) OS call stack',
-    tradeoffVerdict: 'Delivers zero-latency local writes and automatic partition-healing convergence where consensus locks would stall.',
+    tradeoffVerdict: 'Allows local updates without synchronous cross-region consensus and converges after replicas exchange updates under the CRDT merge and delivery assumptions; local storage/network latency is not zero.',
   },
 };
 
