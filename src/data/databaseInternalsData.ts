@@ -1455,14 +1455,14 @@ export const DATABASE_MASTERY_QUIZ: DatabaseQuizQuestion[] = [
     options: [
       {
         id: 'a',
-        text: 'Log-Based CDC lets the app commit atomically to Postgres only, then streams ordered committed changes directly from the WAL with guaranteed delivery and zero dual-write drift.',
+        text: 'Log-based change data capture (CDC) reads committed changes from PostgreSQL's write-ahead log (WAL) and publishes them asynchronously. It avoids an application-level dual write, but delivery guarantees depend on the connector, checkpointing, retries, WAL retention, schema handling and downstream availability. Consumers should be idempotent and monitor lag. CDC does not create an atomic transaction across PostgreSQL and a downstream system.',
         isCorrect: true,
         reason:
           'Correct! Dual writes cannot share an atomic transaction across Postgres and HTTP APIs. Tailing wal_level=logical via Debezium guarantees downstream Vector DBs, Redis caches, and warehouses converge reliably.',
       },
       {
         id: 'b',
-        text: 'Dual writes are always faster and guarantee strict cross-service ACID atomicity.',
+        text: 'A dual write can reduce latency in some simple flows, but writes to two independent systems are not one atomic ACID transaction. A partial failure can leave them inconsistent. Prefer a transactional outbox or log-based CDC where appropriate, and make downstream processing idempotent; use a saga when multiple services need coordinated business steps.',
         isCorrect: false,
         reason:
           'Incorrect. Dual writes add synchronous network latency and silently drift whenever crashes or timeouts occur between writes.',
