@@ -59,7 +59,12 @@ test('100 percent audit ledger reconciles every registered content and test path
     registry.surfaces.map((surface) => surface.id).sort());
   assert.ok(ledger.surfaces.every((surface) => surface.contentStatus === 'not_reviewed' && surface.uiStatus === 'not_reviewed'));
   assert.ok(ledger.reviewedUnits.every((unit) => expected.has(unit.sourcePath)));
-  assert.ok(ledger.reviewedUnits.every((unit) => unit.reviewStatus === 'corrected-awaiting-ci'));
+  const allowedUnitStatuses = new Set(['corrected-awaiting-ci', 'content-added-awaiting-ci', 'content-corrected-awaiting-ci', 'ui-corrected-awaiting-ci']);
+  assert.ok(ledger.reviewedUnits.every((unit) => allowedUnitStatuses.has(unit.reviewStatus)));
+  assert.equal(ledger.counts.correctedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'corrected-awaiting-ci').length);
+  assert.equal(ledger.counts.contentAddedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'content-added-awaiting-ci').length);
+  assert.equal(ledger.counts.contentCorrectedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'content-corrected-awaiting-ci').length);
+  assert.equal(ledger.counts.uiCorrectedUnitsAwaitingCi, ledger.reviewedUnits.filter((unit) => unit.reviewStatus === 'ui-corrected-awaiting-ci').length);
   assert.equal(ledger.counts.reviewedPaths, 0);
   assert.equal(ledger.counts.correctedUnitsAwaitingCi, ledger.reviewedUnits.length);
 });
