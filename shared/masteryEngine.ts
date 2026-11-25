@@ -221,9 +221,9 @@ export function computeTopicMastery(
     ? normalizeVerifiedProblemEvidence(evidence, canonicalProblems)
     : {
         ...evidence,
-        tracesCompleted: [...new Set(normalizedEvidence.tracesCompleted)],
-        implementationsVerified: [...new Set(normalizedEvidence.implementationsVerified)],
-        debuggingExercisesPassed: [...new Set(normalizedEvidence.debuggingExercisesPassed)],
+        tracesCompleted: [...new Set(evidence.tracesCompleted)],
+        implementationsVerified: [...new Set(evidence.implementationsVerified)],
+        debuggingExercisesPassed: [...new Set(evidence.debuggingExercisesPassed)],
       };
   const understandingScore = clampPct(
     (normalizedEvidence.understandCompleted ? 50 : 0) + (normalizedEvidence.conceptCheckPassed ? 50 : 0)
