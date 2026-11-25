@@ -146,7 +146,7 @@
       ],
       "knownEvidence": {
         "mappedComponents": 6,
-        "mappedDataSources": 6,
+        "mappedDataSources": 7,
         "mappedApiRoutes": 2,
         "mappedTestFiles": 11
       },
