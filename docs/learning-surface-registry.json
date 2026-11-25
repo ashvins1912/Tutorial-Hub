@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "baseline": {
     "branch": "main",
-    "commit": "512c342ac17825398b9aafde24b706ecd1d9a3a6",
+    "commit": "82a26434496bc0a63b07576da73ee06830696756",
     "auditDate": "2026-11-25",
-    "trackedFileCount": 442
+    "trackedFileCount": 510
   },
   "purpose": "Machine-checkable first-pass map of every TopView value to representative entry components, canonical data sources, API routes and existing test files. This is a discoverability and path-integrity inventory, not a claim that mapped content is complete or verified.",
   "qualityStateSemantics": {
