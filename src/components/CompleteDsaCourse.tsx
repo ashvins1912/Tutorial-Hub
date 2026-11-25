@@ -95,13 +95,17 @@ export function CompleteDsaCourse() {
       ...(lesson.learningOutcomes ?? []), ...(lesson.prerequisites ?? []), ...(lesson.interviewChecks ?? []),
       ...(lesson.assessment ?? []), ...(lesson.realWorldApplications ?? []), ...(lesson.revisionPrompts ?? []),
       ...(lesson.practice ?? []).flatMap((item) => [item.task, item.goal, item.level]),
-      ...(lesson.codeExamples ?? []).flatMap((item) => [item.title, item.language, item.explanation]),
+      ...(lesson.codeExamples ?? []).flatMap((item) => [item.title, item.language, item.code, item.explanation]),
     ].join(' ').toLowerCase();
     return DSA_COMPLETE_LESSONS.filter((lesson) => searchableText(lesson).includes(q));
   }, [DSA_COMPLETE_LESSONS, search]);
-  const doneCount = DSA_COMPLETE_LESSONS.filter((lesson) => (progress[lesson.id]?.length ?? 0) === DSA_LESSON_STEPS.length).length;
+  const validStepSet = new Set<string>(DSA_LESSON_STEPS);
+  const validProgressFor = (lessonId: string) => [...new Set((progress[lessonId] ?? []).filter((step) => validStepSet.has(step)))];
+  const doneCount = DSA_COMPLETE_LESSONS.filter((lesson) => validProgressFor(lesson.id).length === DSA_LESSON_STEPS.length).length;
+  const activeCompletedSteps = validProgressFor(active.id);
   const toggleStep = (step: string) => {
-    const current = progress[active.id] ?? [];
+    if (!validStepSet.has(step)) return;
+    const current = activeCompletedSteps;
     const next = current.includes(step) ? current.filter((item) => item !== step) : [...current, step];
     const updated = { ...progress, [active.id]: next };
     setProgress(updated);
