@@ -11,7 +11,7 @@ export const MASTER_ADV_18_ALGORITHMS: AlgorithmDefinition[] = hydrateMasterAlgo
     category: 'Range Queries & Advanced Trees',
     difficulty: 'Advanced',
     visualType: 'tree-structure',
-    tagline: 'Move every accessed node to the root via Zig, Zig-Zig, and Zig-Zag rotations—delivering O(log N) amortized time and O(1) cache hits on hot keys.',
+    tagline: 'Move every accessed node to the root via Zig, Zig-Zig, and Zig-Zag rotations—with O(log N) amortized time per access; accessing a node that is already the root takes O(1), while an individual access can take O(N).',
     timeComplexity: 'O(log N) amortized',
     spaceComplexity: 'O(N)',
     mentalModel:
@@ -1344,7 +1344,7 @@ def search(head, max_lvl, target):
     mentalModel:
       'It is a Bloom Filter upgraded from 1-bit flags to integer counters across d rows: hash collisions can only ADD noise to a cell, so taking `min(row_0, row_1, ..., row_{d-1})` strips away collision inflation!',
     coreInvariant:
-      'One-Sided Overestimation Guarantee: `estimate(x) ≥ true_count(x)` ALWAYS, and `estimate(x) ≤ true_count(x) + ε·N` with probability ≥ 1 − δ.',
+      'One-Sided Overestimation Guarantee: `estimate(x) ≥ true_count(x)` for nonnegative updates without counter overflow. With the usual hash assumptions and chosen width/depth, the overestimate is at most `ε·N` with probability at least `1 − δ`, where N is the total update count.',
     whenToUse: [
       'Real-time Heavy Hitters / Top-K trending hashtags, DDoS IP rate limiting, and network packet telemetry.',
       'Caffeine / TinyLFU cache admission policy (estimates key recency/frequency in tiny fixed memory!).',
@@ -1436,7 +1436,7 @@ def search(head, max_lvl, target):
     timeComplexity: 'O(1) insert · O(m) count',
     spaceComplexity: 'O(m) ≈ 12 KB fixed',
     mentalModel:
-      'If someone tells you they flipped 10 heads in a row (`00000000001`), you guess they probably flipped ~2¹⁰ = 1,024 coins! HyperLogLog hashes items into m=2^p independent buckets and takes the Harmonic Mean of 2^maxZeros to eliminate lucky outliers.',
+      'Ten consecutive heads (`1111111111`) have probability 2⁻¹⁰ per independent trial, so about 2¹⁰ = 1,024 trials are expected before seeing that run. HyperLogLog hashes each item, uses part of the hash to select one of m = 2^p registers, and records the largest leading-zero rank in the remaining bits. A corrected harmonic-mean estimator combines the registers to reduce variance.',
     coreInvariant:
       'First p bits choose bucket j ∈ [0..m−1]; remaining bits count leading zeros ρ; harmonic mean E = α_m · m² · (Σ 2^{−M[j]})⁻¹ shrinks variance to σ ≈ 1.04 / √m.',
     whenToUse: [
@@ -1535,7 +1535,7 @@ def hll_merge(reg_a: list[int], reg_b: list[int]) -> list[int]:
     timeComplexity: 'O(1) get & put',
     spaceComplexity: 'O(Capacity)',
     mentalModel:
-      'LRU is a desk pile where touching a file moves it to the top and the dusty bottom file gets evicted. LFU tracks how many times each file was touched. ARC balances TWO lists (Recency T1 vs Frequency T2) automatically so a one-time full table scan never flushes your hot cache!',
+      'LRU is a desk pile where touching a file moves it to the top and the dusty bottom file gets evicted. LFU tracks how many times each file was touched. ARC adapts between recency and frequency using resident and ghost lists, which can reduce scan pollution compared with plain LRU; it does not guarantee that hot entries are never evicted.',
     coreInvariant:
       'LRU: HashMap<Key, Node> gives O(1) pointer into Doubly Linked List for O(1) splice-to-head and O(1) tail eviction. LFU: HashMap<Freq, DLL> + `minFreq` pointer achieves O(1) tie-broken eviction.',
     whenToUse: [
