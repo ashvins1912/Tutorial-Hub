@@ -40,7 +40,12 @@ test('DSA course has a complete structural inventory for all lesson modules', ()
       assert.ok(count(lesson[field]) > 0, lesson.id + ': required teaching field is empty: ' + field);
     }
     assert.ok(lesson.promise?.trim(), lesson.id + ': missing learning promise');
-    assert.ok(count(lesson.keyTerms) > 0, lesson.id + ': add plain-language terms');
+    assert.ok(count(lesson.keyTerms) >= 5, lesson.id + ': add at least five plain-language terms');
+    const termNames = lesson.keyTerms.map((term) => term.term.trim().toLowerCase());
+    assert.equal(new Set(termNames).size, termNames.length, lesson.id + ': duplicate glossary term');
+    for (const term of lesson.keyTerms) {
+      assert.ok(term.term?.trim() && term.definition?.trim() && term.example?.trim(), lesson.id + ': glossary entry needs term, definition and example');
+    }
     assert.ok(count(lesson.concepts) > 0, lesson.id + ': add concept coverage');
     assert.ok(count(lesson.recognition) > 0, lesson.id + ': add recognition cues');
     assert.ok(count(lesson.method) > 0, lesson.id + ': add a method/checklist');
@@ -69,7 +74,7 @@ test('DSA course structure totals remain transparent and reviewable', () => {
     field,
     DSA_COMPLETE_LESSONS.reduce((sum, lesson) => sum + count(lesson[field]), 0),
   ]));
-  assert.equal(totals.keyTerms, 46);
+  assert.equal(totals.keyTerms, 138);
   assert.equal(totals.recognition, 96);
   assert.equal(totals.method, 144);
   assert.equal(totals.complexity, 109);
