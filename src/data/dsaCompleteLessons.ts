@@ -1,6 +1,7 @@
 export interface DsaLesson {
   id: string;
   title: string;
+  keyTerms?: { term: string; definition: string; example?: string }[];
   sourcePages?: number[];
   promise: string;
   mentalModel: string;
