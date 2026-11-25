@@ -317,3 +317,23 @@ Source commits: `dcd4a5fee693d6d323f41938a7353600f5066c28`, `64b312f68614987e730
 ## Inventory assertion follow-up
 
 Run #754 still failed because the test's 54-local-ID list had not yet included the unquoted `quickselect` key. The expected local count and ID list are now both 54; master source count is 40, and merged runtime inventory is 94 unique IDs. Run #758 tested the intermediate inventory correction; the latest master-guide corrections and expanded assertions require a completed current-head run.
+
+
+## Master metadata/profile audit: asymptotic and systems guarantees
+
+A deeper pass through the 40 master-guide complexity profiles and bespoke upgrade specs corrected additional cross-surface claims:
+
+- Quadtree/Octree query profiles now state distribution-sensitive behavior and O(N) worst-case traversal.
+- RCU profile labels no longer promise universal wait-free reads; CAS progress depends on contention and implementation.
+- B+ tree page I/O and depth are tied to fanout, occupancy, layout, and cache rather than fixed page counts.
+- Buddy allocator profiles no longer claim external fragmentation is eliminated.
+- FM-index pattern-query cost now includes the rank/Occ data-structure assumption.
+- LSM compaction space, lookup cost, and external-merge pass counts now depend on policy, false-positive rate, memory, and fan-in.
+- HyperLogLog space is O(m) registers; Count-Min error/space are parameterized; hash-table expected bounds are scoped to hashing/load-factor assumptions.
+- Consistent-hashing movement and shard balance are described statistically; Raft/Paxos RTT claims are steady-state/protocol-dependent.
+- CRDT local work is distinguished from wall-clock latency and requires eventual update delivery for convergence.
+- Removed fixed benchmark claims from B+ tree, LSM, ARIES, hashing, and distributed storage profiles.
+
+Source commits: `dbaf52714699cbafb632af663fe4f1bde568474a`, `037a5b599886c40126e3d6caab5e00faf72afe9f`, `fbbe9bd411e954ceaabee374b2a9978a9da50117`, `2c0eaad86267f2343eb0723e3605d1a67450e074`, `bcf1b99cf12c7874e59b6ae0cd576ac9d12e7ad1`, `b8a15e1cb209c362053658794cafeb2f5c23c479`, and `0ac8c165176c60437fb64a7109344175f3674e63`. Regression assertions are in test commit `14b4bad04b6a0095f31b5149febcf9a04c58145b`.
+
+Run #758 passed the complete listed validation suite and frontend build for the corrected 94-guide inventory head. Runs #761 and #762 also passed all listed validations and frontend build on their tested commits. The newest master-profile/source assertions and report commit require a new completed final-head run.
