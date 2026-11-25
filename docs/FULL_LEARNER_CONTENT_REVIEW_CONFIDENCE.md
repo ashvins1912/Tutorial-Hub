@@ -84,3 +84,20 @@ These edits were applied to the actual learner-facing source and verified by re-
 - **Whole-file confidence:** remains unverified because all 1,159 lines have not been dispositioned.
 - **Whole-platform review completion:** still 0% evidenced complete against the strict 100% criteria above. This is a coverage statement, not a claim that the platform content is 0% correct.
 - **100% certification:** not yet supported. Keep PR draft and do not merge/deploy until complete coverage and final-head checks are evidenced.
+
+
+## Latest enhancement and CI update
+
+- Added `tests/content-authoring/algorithm-tutor-guide-quality.test.mjs`.
+- The new test validates that every registered tutor guide has a matching ID and non-empty analogy, interview script, choose/avoid guidance and complete follow-up fields.
+- Added targeted regression assertions for the newly corrected N-Queens, backtracking, Dijkstra path-counting, two-pointer and binary-search caveats.
+- Test file commit: `16af93127b51543d787d339ac7d0b7cd25f0349d`.
+- GitHub Actions validation run #706 is **in progress**; dependency installation is in progress and later checks have not yet run.
+- Latest PR head at this update: `16af93127b51543d787d339ac7d0b7cd25f0349d`.
+
+### Confidence, stated precisely
+
+- **Targeted claim edits:** 6/6 intended text corrections were applied and verified in the source blob. This is 100% completion of that small targeted correction set, not 100% accuracy of the whole guide.
+- **Regression-test coverage:** the new structural and caveat tests are committed; execution is pending CI.
+- **Full guide review:** not complete. The 1,159-line tutor-guide file has not been fully dispositioned.
+- **Full platform review:** not complete. No 100% platform content confidence claim is justified yet.
