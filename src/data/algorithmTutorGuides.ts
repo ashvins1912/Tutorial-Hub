@@ -103,7 +103,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'fast-slow-pointers': {
     algorithmId: 'fast-slow-pointers',
     simpleAnalogy:
-      'Two runners move around a circular track at different speeds: if the faster runner gains on the slower runner, their positions eventually coincide after a whole-number number of steps. This models cycle detection; the proof depends on the step sizes and cycle structure, not on a straight-road halfway point.',
+      'For cycle detection, a slow pointer advances one step and a fast pointer two; inside a cycle they eventually meet. The same speed pattern can locate a linked-list midpoint when no cycle is present, but the two uses have different stopping conditions.',
     interviewScript30s:
       '"Using a 1-step slow pointer and 2-step fast pointer detects cycles and splits lists in half in O(N) time and O(1) memory, avoiding an O(N) visited HashSet."',
     chooseWhen: 'Linked list cycle detection, cycle entry node, midpoint split, or implicit duplicate cycle (Find Duplicate Number #287).',
@@ -124,7 +124,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
   'monotonic-stack': {
     algorithmId: 'monotonic-stack',
     simpleAnalogy:
-      'People standing in line looking forward: anyone shorter than a tall newcomer behind them is permanently blocked from view and pops out of the line immediately.',
+      'As you scan from left to right, a taller new person makes shorter unresolved people behind them no longer candidates for the next-greater-to-the-right answer; pop those indices from the stack.',
     interviewScript30s:
       '"Instead of scanning forward O(N²) from each index, I keep unresolved indices in monotonic order on a stack. Each element enters once and pops once when resolved, guaranteeing amortized O(N)."',
     chooseWhen: 'Next Greater/Smaller Element, Daily Temperatures, Stock Span, Largest Rectangle in Histogram.',
@@ -651,7 +651,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A warehouse picker with 10,000 range orders: instead of running wildly back and forth across aisles, group orders by starting aisle block of size √N and sort right endpoints smoothly so the cart barely moves.',
     interviewScript30s:
-      '"When offline range queries lack an associative merge (like counting distinct elements or mode frequency), sorting queries by `(L / √N, R)` bounds pointer slides to O((N + Q) √N)."',
+      '"For offline range queries whose statistic supports efficient add/remove operations but lacks a simpler segment-tree merge (for example, distinct count or mode frequency), sort queries by `(L / √N, R)` to bound pointer movement by O((N + Q) √N)."',
     chooseWhen: 'Offline static range queries with non-mergeable aggregates (distinct count, frequency-squared) where N, Q <= 10^5.',
     avoidWhen: 'Queries are online or require O(log N) worst-case latency.',
     followUpTwists: [
@@ -1103,7 +1103,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How do you track the 90th percentile (P90) instead of the 50th percentile?',
-        invariantShift: 'Keep the exact same two heaps, but rebalance to maintain `lo.size ≈ 9 * hi.size` instead of `lo.size ≈ hi.size`!',
+        invariantShift: 'Keep the lower Max-Heap at about 9 times the upper Min-Heap size for a nearest-rank 90th percentile; read `hi.top()` as P90 (with careful size handling for small N).',
         complexityImpact: 'Still O(log N) add and O(1) P90 read.',
       },
     ],
