@@ -51,4 +51,6 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(guides['prims-mst'].followUpTwists.find(x => /Prim’s beat Kruskal/i.test(x.question)).complexityImpact, /explicit O\(V²\) edge storage/i);
   assert.match(guides['bellman-ford'].simpleAnalogy, /reachable vertices when no reachable negative cycle exists/i);
   assert.match(guides['bidirectional-bfs'].interviewScript30s, /irregular graphs do not have that universal bound/i);
+  assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
+  assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
