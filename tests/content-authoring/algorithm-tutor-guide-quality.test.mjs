@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ALGORITHM_TUTOR_GUIDES } from '../../src/data/algorithmTutorGuides.ts';
 import { MASTER_40_TUTOR_GUIDES } from '../../src/data/algorithmMasterMetadata.ts';
+import { MASTER_40_COMPLEXITY_PROFILES, MASTER_BESPOKE_UPGRADE_SPECS } from '../../src/data/algorithmMasterMetadata.ts';
 
 const expectedGuideIds = [
   'prefix-sum-hash',
@@ -138,6 +139,19 @@ test('high-risk algorithm tutor claims retain necessary assumptions and caveats'
   assert.match(MASTER_40_TUTOR_GUIDES['lockfree-cas-rcu'].interviewScript30s, /not automatically wait-free/i);
   assert.match(MASTER_40_TUTOR_GUIDES['bplus-tree-storage'].interviewScript30s, /not a fixed guarantee/i);
   assert.match(MASTER_40_TUTOR_GUIDES['lsm-tree-compaction'].followUpTwists.find(x => /Size-Tiered Compaction/i.test(x.question)).invariantShift, /ratios depend on level sizing/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['hyperloglog'].interviewScript30s, /relative standard error/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['count-min-sketch'].interviewScript30s, /non-negative stream frequencies/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['buddy-memory-allocator'].interviewScript30s, /external fragmentation/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['lockfree-cas-rcu'].interviewScript30s, /not automatically wait-free/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['bplus-tree-storage'].interviewScript30s, /not a fixed guarantee/i);
+  assert.match(MASTER_40_TUTOR_GUIDES['lsm-tree-compaction'].followUpTwists.find(x => /Size-Tiered Compaction/i.test(x.question)).invariantShift, /ratios depend on level sizing/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['quadtree-octree-spatial'].recursiveTimeBigO, /O\(N\) worst case/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['lockfree-cas-rcu'].recursiveTimeBigO, /implementation-dependent/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['bplus-tree-storage'].recursiveTimeBigO, /actual page count depends/i);
+  assert.match(MASTER_40_COMPLEXITY_PROFILES['buddy-memory-allocator'].tradeoffVerdict, /external fragmentation can still occur/i);
+  assert.match(MASTER_BESPOKE_UPGRADE_SPECS['raft-paxos-consensus'].optimal.time, /quorum RTT/i);
+  assert.match(MASTER_BESPOKE_UPGRADE_SPECS['crdt-gcounter-orset'].optimal.bottleneckOrWin, /storage\/network latency remains/i);
+  assert.match(MASTER_BESPOKE_UPGRADE_SPECS['bloom-filter'].optimal.bottleneckOrWin, /insert-only use/i);
   assert.match(guides['kmp-rabin-karp'].followUpTwists.find(x => /Shortest Palindrome/i.test(x.question)).invariantShift, /separator absent from s/i);
   assert.match(guides['sweep-line-events'].interviewScript30s, /Ignore empty intervals/i);
 });
