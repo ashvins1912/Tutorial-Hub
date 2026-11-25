@@ -196,3 +196,13 @@ A further correction in this pass addressed **Quickselect**: the expected O(N) b
 
 
 The same pass also corrected **Prim/Kruskal dense-graph comparisons**: Prim’s heap bound now distinguishes indexed/decrease-key from lazy duplicate heaps, and the dense complete-graph comparison explicitly includes Kruskal’s materialized edge-storage cost. Regression assertions were added (source commit `bc3c1f8a1506c182eb37121f0922d45f2da35e5a`, test commit `0531266f562ca7d29226b2585c8a72339723ca1c`). These latest changes require their own completed validation.
+
+
+## Seventh focused technical pass: source-level graph explanations
+
+Two explanatory claims were aligned with the actual algorithm assumptions:
+
+- **Bellman-Ford analogy:** now scopes settled distances and the V-th-pass negative-cycle signal to source-reachable vertices.
+- **Bidirectional BFS script:** now qualifies the O(b^(d/2)) estimate as a balanced-branching/near-middle model and states that it is not universal on irregular graphs.
+
+Regression assertions were added and source/test blobs were re-fetched. Source commit `4659b8389011fece3a25cb687fe71eafacceea97`; test commit `52d6e49a33b5d967c2f22050a2411be51643b1b4`. Run #733 was in progress at type-check for an earlier head; these latest edits still require completed validation.
