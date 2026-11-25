@@ -23,6 +23,7 @@
     "audit:topic-inventory": "node scripts/audit-topic-content-inventory.mjs",
     "audit:application-content": "node scripts/audit-application-content.mjs",
     "test:learning-engine": "node --import tsx --test tests/learning-engine/*.test.mjs",
+    "test:pattern-forge:state": "node --import tsx --test tests/pattern-forge/*.test.mjs",
     "audit:learner-sentences": "node scripts/audit-learner-content-sentence-inventory.mjs"
   },
   "dependencies": {

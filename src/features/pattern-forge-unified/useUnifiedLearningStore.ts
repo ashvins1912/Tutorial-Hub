@@ -114,7 +114,16 @@ export const useUnifiedLearningStore = create<UnifiedLearningStoreState>((set, g
   hydrated: false,
 
   setActiveTopicId: (topicId, stage = 'understand') =>
-    set({ activeTopicId: topicId, activeStage: stage, activeWorkspaceTab: 'learn' }),
+    set((state) => {
+      if (
+        state.activeTopicId === topicId &&
+        state.activeStage === stage &&
+        state.activeWorkspaceTab === 'learn'
+      ) {
+        return state;
+      }
+      return { activeTopicId: topicId, activeStage: stage, activeWorkspaceTab: 'learn' };
+    }),
 
   setActiveStage: (stage) => set({ activeStage: stage }),
 
