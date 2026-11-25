@@ -27,6 +27,9 @@ test('builds subject-specific prompts and treats uploaded text as reference data
   assert.match(prompt, /objectiveIds/);
   assert.match(prompt, /Every quiz question must assess at least one explicit learning objective/);
   assert.match(prompt, /sectionId/);
+  assert.match(prompt, /Teach concept-by-concept/);
+  assert.match(prompt, /Use original teaching material/);
+  assert.match(prompt, /expected output/);
 });
 
 test('validates complete required section coverage and visualizations', () => {
