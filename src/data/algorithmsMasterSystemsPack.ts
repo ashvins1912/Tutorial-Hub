@@ -611,12 +611,12 @@ def consistent_route(ring_hashes: list[int], ring_nodes: list[str], key_hash: in
     difficulty: 'Advanced',
     visualType: 'weighted-network',
     tagline: 'Keep a replicated cluster strongly consistent despite node crashes & network partitions via monotonic Terms, Quorum Majority Votes, and AppendEntries commits.',
-    timeComplexity: '1 RTT per committed write',
+    timeComplexity: 'Typically one leader-to-quorum replication round trip after append; end-to-end client latency also includes client/network, batching and durable-write costs',
     spaceComplexity: 'O(Log Entries) + Snapshots',
     mentalModel:
       'Think of a parliament with numbered sessions (Terms): a node can only become Leader if a strict majority (`⌊N/2⌋ + 1`) votes for it AND its log is at least as up-to-date as voters—and an entry is committed ONLY once replicated on a majority!',
     coreInvariant:
-      'Quorum Intersection: any two majorities of N nodes overlap in at least 1 node! Therefore a newly elected Leader is mathematically guaranteed to hold every previously committed log entry (Election Safety + Log Matching).',
+      'Quorum intersection means any two majorities share at least one voter. That intersection is necessary but not sufficient by itself to prove a new leader has every committed entry. Raft up-to-date-log voting rule, term restrictions and AppendEntries/log-matching rules combine with quorum intersection to preserve committed entries under the crash-fault model.',
     whenToUse: [
       'Strongly consistent cluster metadata & distributed locks: etcd (Kubernetes), CockroachDB, TiKV, Consul, ZooKeeper (ZAB), Google Spanner (Paxos).',
       'Tolerating up to `f` crash failures with `2f + 1` replicas (e.g., 3 nodes survive 1 crash; 5 nodes survive 2 crashes).',
@@ -854,7 +854,7 @@ def diff_merkle(node_a, node_b):
         step: 1,
         title: 'Compare Root Hashes Across Replica A & Replica B',
         explanation: '4 data blocks: Replica A=[k0, k1, k2, k3], Replica B=[k0, k1, k2_CORRUPT, k3]. Root hashes differ → descend!',
-        invariantCheck: 'If roots matched, sync terminates in 1 hash comparison (32 bytes)!',
+        invariantCheck: 'If roots match, synchronization can stop at this subtree under the hash-collision-resistance assumption; compare canonicalized data and hash parameters consistently.',
         variables: [{ name: 'rootA', value: '0x9a1f' }, { name: 'rootB', value: '0x4c8e (DIFF!)' }],
         array: ['Root: DIFF', 'L(0..1)', 'R(2..3)'],
         highlightIndices: [0],
@@ -862,7 +862,7 @@ def diff_merkle(node_a, node_b):
       {
         step: 2,
         title: 'Prune Entire Left Subtree [0..1] Instantly!',
-        explanation: 'hash(L_A) === hash(L_B) → blocks 0 and 1 are 100% identical! Skip Left branch completely without sending data!',
+        explanation: 'hash(L_A) === hash(L_B) → treat blocks 0 and 1 as matching assuming the cryptographic hash function is collision-resistant. Skip this branch without sending its contents; if hashes differ, descend to locate changed leaves.',
         invariantCheck: 'Halves search space at every tree level.',
         variables: [{ name: 'L(0..1)', value: 'MATCH ✓ (SKIP)' }, { name: 'R(2..3)', value: 'DIFF → descend' }],
         array: ['L(0..1) MATCH ✓', 'R(2..3) DIFF'],

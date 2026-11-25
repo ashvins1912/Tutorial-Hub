@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "baseline": {
     "branch": "main",
-    "commit": "cf4e90b4f2102a4ea72f60c78717d56386f7ca60",
+    "commit": "9bd778b8e66b645475b1a74a2b7766dd62316426",
     "auditDate": "2026-11-25",
-    "trackedFileCount": 510
+    "trackedFileCount": 517
   },
   "purpose": "Machine-checkable first-pass map of every TopView value to representative entry components, canonical data sources, API routes and existing test files. This is a discoverability and path-integrity inventory, not a claim that mapped content is complete or verified.",
   "qualityStateSemantics": {
@@ -25,7 +25,8 @@
     "tests/content-authoring/visualization-renderer.test.mjs",
     "tests/dsa/arrays-batch-01.test.mjs",
     "tests/dsa/master-interview-inventory.test.mjs",
-    "tests/learning-engine/pattern-forge-pilot.test.mjs"
+    "tests/learning-engine/pattern-forge-pilot.test.mjs",
+    "tests/content-authoring/application-content-audit.test.mjs"
   ],
   "surfaces": [
     {

@@ -700,11 +700,11 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     category: 'Searching & Sorting',
     visualType: 'binary-search',
     tagline: 'Halve sorted, rotated, or monotonic answer spaces in O(log N) comparisons.',
-    timeComplexity: 'O(log N)',
+    timeComplexity: 'O(log N) with distinct values; O(N) worst case with duplicates',
     spaceComplexity: 'O(1)',
-    complexityLeap: 'O(N) linear scan → O(log N) logarithmic elimination',
+    complexityLeap: 'O(N) linear scan → O(log N) when values distinguish the sorted half; duplicates can require linear shrinking',
     coreIdea:
-      'Even in a rotated sorted array, cutting at mid ALWAYS leaves at least one side strictly sorted. Test whether target falls inside the guaranteed-sorted half—if yes, keep that half; otherwise discard it completely.',
+      'For a rotated non-decreasing array with distinct values, at least one half around mid is sorted, so its range can guide the next search. With duplicates, equal boundary values can make the sorted half ambiguous; shrink a boundary safely when necessary, and note that the worst case can degrade to O(N).',
     mentalModelSteps: [
       'Maintain closed search range [L, R] and compute overflow-safe mid = L + (R - L) // 2.',
       'Check if nums[mid] == target first.',

@@ -504,7 +504,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'Like Dijkstra’s GPS, except you also glance at a compass pointing straight toward your destination so you explore roads heading toward the goal instead of radiating blindly backward.',
     interviewScript30s:
-      '"A* ranks states by f(n) = g(n) + h(n). As long as heuristic h(n) is admissible (never overestimates true remaining cost, like Manhattan distance on a 4-dir grid), A* stays 100% optimal while pruning far more states than Dijkstra."',
+      '"A* ranks states by f(n) = g(n) + h(n). An admissible heuristic never overestimates the remaining cost. A* tree search is optimal with an admissible heuristic; graph-search implementations must also handle improved paths correctly (for example, reopen nodes when needed), or use a consistent heuristic with a suitable closed-set policy. Optimality assumes non-negative edge costs and correct termination when the goal is removed from the priority queue."',
     chooseWhen: 'Single-pair shortest path on grids, maps, or puzzles (Sliding Puzzle, 8-Puzzle) with a strong geometric heuristic.',
     avoidWhen: 'No admissible heuristic exists or all-targets shortest distances are needed (use Dijkstra).',
     followUpTwists: [

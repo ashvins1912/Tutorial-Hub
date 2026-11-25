@@ -3,7 +3,7 @@
 **Purpose:** Make every DSA lesson on Tutorial Hub accurate, original, understandable from first principles, executable, traceable to its concepts, and useful for interviews and professional engineering.
 
 **Repository:** `ashvins1912/Tutorial-Hub`  
-**Review branch:** `feat/unified-learning-plan-single-pr` (PR #62)  
+**Baseline:** `main` at `9bd778b8e66b645475b1a74a2b7766dd62316426`\n\n**Prior consolidated work:** PR #62 (merged 2026-11-25)  
 **Reference works:** Aditya Bhargava, *Grokking Algorithms*; Jay Wengrow, *A Common-Sense Guide to Data Structures and Algorithms*; Narasimha Karumanchi, *Data Structures and Algorithms Made Easy*; Brian Christian and Tom Griffiths, *Algorithms to Live By*; Thomas H. Cormen, *Algorithms Unlocked*.
 
 ## 1. Reference-use and originality policy

@@ -350,3 +350,17 @@ A single consolidated implementation PR is in progress: [PR #62](https://github.
 - A secure isolated execution sandbox, accessibility certification, learner transfer/retention evidence, production readiness and deployment have not been verified by this static review.
 
 Do not mark these gaps complete from schema presence, inventory counts, documentation or CI alone. No deployment or paid service was authorized.
+
+
+## Application-wide content deep-review addendum — 2026-11-25
+
+The consolidated DSA writing standard from PR #62 has merged to `main`. A follow-up application-wide content review is now being prepared on branch `docs/application-wide-content-deep-review` from merge commit `9bd778b8e66b645475b1a74a2b7766dd62316426`.
+
+- Refreshed repository baseline: 517 tracked files, 22 registered surfaces, 62 unique mapped canonical data sources, and 118 source/seed data files.
+- Applied targeted corrections to overgeneralized claims in DSA, databases, system design, distributed systems, languages, DevOps and OOD content.
+- Strengthened the AI authoring prompt and generated-lesson validation warnings for concept-level examples and code explanation.
+- Added an application-wide review report and an advisory source wording scan.
+- Surface-level content and verification statuses remain `not_assessed` until topic-level review evidence is complete.
+- This addendum records a targeted static review; it does not claim a word-by-word review of every tracked file, runtime verification, accessibility certification or learner validation.
+
+See `docs/APPLICATION_WIDE_CONTENT_DEEP_REVIEW_2026-11-25.md` for the detailed scope, corrected claims, per-surface review register and remaining completion gates.

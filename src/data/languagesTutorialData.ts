@@ -310,7 +310,7 @@ export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
     category: 'Python Memory Model',
     shortTitle: 'RefCount & Cyclic GC',
     title: 'Python Memory Management: Reference Counting + Generational Cyclic GC',
-    tagline: 'Understand how Python frees objects instantly when their count hits zero, and how the cyclic GC cleans up circular references.',
+    tagline: 'In CPython, the reference count of an object reaching zero usually triggers prompt deallocation; this is an implementation detail, not a language-wide timing guarantee. The cyclic garbage collector handles unreachable reference cycles, and collection timing should not be relied on for resource cleanup—use context managers or explicit close methods.',
     standardDefinition:
       'CPython combines deterministic Immediate Reference Counting (ob_refcnt on every PyObject) with a 3-generation tri-color Cyclic Garbage Collector to detect unreachable reference cycles.',
     algorithmName: 'Immediate Reference Counting + Generational Cycle Detection (Gen 0/1/2)',
@@ -910,8 +910,8 @@ export const LANGUAGE_VISUAL_FLOWS: LangVisualFlow[] = [
       {
         stepNumber: 3,
         title: '3. Treeification Guard: LinkedList -> Red-Black Tree @ 8',
-        plainEnglish: 'If 8+ colliding keys pile into one bucket (e.g., bad hash or attack), Java automatically upgrades that bucket into a balanced Red-Black tree so lookups never degrade to slow O(n)!',
-        technicalDetail: 'When bin count hits `TREEIFY_THRESHOLD = 8` and table size >= `MIN_TREEIFY_CAPACITY = 64`, `treeifyBin()` converts nodes into `TreeNode`, guaranteeing O(log n) worst-case lookup (and untreeifies back to list at <= 6).',
+        plainEnglish: 'In Java HashMap, a heavily populated bucket may be treeified (using a red-black tree) when the treeification threshold is reached and the table is large enough; otherwise the map may resize first. Tree bins improve collision handling, but do not claim every bucket with eight keys is immediately treeified or that all lookups are guaranteed O(log n). HashMap lookup is expected O(1) with well-distributed hashes; pathological collisions and key-comparison behavior still matter.',
+        technicalDetail: 'When bin count hits `TREEIFY_THRESHOLD = 8` and table size >= `MIN_TREEIFY_CAPACITY = 64`, `treeifyBin()` converts nodes into `TreeNode`; tree bins can improve collision-heavy lookup, but do not state an unconditional O(log n) worst-case guarantee for every key type. A bin may untreeify at the implementation-defined lower threshold (commonly 6).',
         activeNodeIds: ['list', 'tree'],
         activeEdgeIds: ['e3'],
         packetEdgeId: 'e3',

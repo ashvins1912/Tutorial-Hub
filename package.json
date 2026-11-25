@@ -21,6 +21,7 @@
     "test:solver-endpoint-security": "node --import tsx --test tests/solver-endpoint-security.test.mjs",
     "audit:learning-content": "node scripts/validate-learning-content-quality-audit.mjs",
     "audit:topic-inventory": "node scripts/audit-topic-content-inventory.mjs",
+    "audit:application-content": "node scripts/audit-application-content.mjs",
     "test:learning-engine": "node --import tsx --test tests/learning-engine/*.test.mjs"
   },
   "dependencies": {
