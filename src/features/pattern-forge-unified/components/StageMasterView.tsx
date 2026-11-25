@@ -79,6 +79,11 @@ export const StageMasterView: React.FC<StageMasterViewProps> = ({ topic }) => {
 
   return (
     <div className="space-y-8">
+      {topic.verificationStatus !== 'Published' && (
+        <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <strong>{topic.title} is inventory-only.</strong> The full five-stage content and transfer assessment are not published for this pattern yet. This panel may show saved evidence, but it does not certify a completed course.
+        </div>
+      )}
       {/* 8-Dimension Evidence-Based Mastery Dashboard */}
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
