@@ -12,6 +12,7 @@ test('learner sentence inventory covers registered sources and labels candidates
     encoding: 'utf8',
   });
   const inventory = JSON.parse(output);
+  console.log('Static sentence inventory: ' + inventory.sentenceUnitCount + ' candidate units from ' + inventory.sourceCount + ' registered sources across ' + inventory.surfaceCount + ' surfaces; all candidates remain unreviewed.');
   assert.ok(inventory.surfaceCount > 0);
   assert.ok(inventory.sourceCount > 100, 'expected broad registered-source coverage');
   assert.ok(inventory.sentenceUnitCount > 1000, 'expected extracted sentence candidates');
