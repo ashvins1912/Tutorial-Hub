@@ -3015,7 +3015,7 @@
     "verifiedUnits": 0,
     "correctedUnitsAwaitingCi": 9,
     "unresolvedP0": 0,
-    "unresolvedP1": 0,
+    "unresolvedP1": 1,
     "contentAddedUnitsAwaitingCi": 4,
     "contentCorrectedUnitsAwaitingCi": 4,
     "uiCorrectedUnitsAwaitingCi": 5
@@ -3024,5 +3024,21 @@
     "The DSA structural inventory counts array entries but not semantic correctness or rendered sentence boundaries.",
     "Dynamic/database/generated/user-authored content and UI state variants are not yet fully enumerated.",
     "Focused content and UI units remain awaiting final-head CI; all other registered paths and course units remain unreviewed."
+  ],
+  "openFindings": [
+    {
+      "id": "pattern-forge-25-unpublished-patterns",
+      "severity": "P1",
+      "status": "open",
+      "surfaceId": "pattern-forge",
+      "sourcePath": "shared/patternForgeCurriculum.ts",
+      "affectedTopicCount": 25,
+      "finding": "Only 3 of 28 Pattern Forge topics have published full five-stage pilot content. The remaining 25 are structurally valid inventory entries with unpublished status, no authored traces/problems/assessments, and fallback stage messages. This is a known completion blocker for the requested full topic/course coverage.",
+      "impact": "Learners cannot complete the full five-stage course for 25 canonical patterns; the inventory should remain clearly unpublished until complete verified content is authored.",
+      "disposition": "Open; do not claim Pattern Forge course coverage is complete. Author and validate each topic's Understand, deterministic traces/checkpoints, multi-language implementations/test suites, practice/debugging, assessment, mastery and revision content.",
+      "evidence": [
+        "tests/learning-engine/pattern-forge-pilot.test.mjs: governance assertion reports 3 published and 25 structurally valid only"
+      ]
+    }
   ]
 }
