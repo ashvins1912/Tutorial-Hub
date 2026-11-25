@@ -37,11 +37,12 @@ The new Java harness compiles all eight lesson snippets and executes selected re
 
 ## Current verification
 
-- CI #891 passed on content/test commit `7f94da1ab2aa156af4f59c8b1a0f919c1fed693f` (type-check, DSA inventories/pilot/solutions, security and content authorization checks, learning-surface and ledger validation, advisory scans and frontend build).
-- CI #892 passed on report commit `035cebbce1bbf743a63afccc689a8efe701adfc1`; no application source changed between #891 and #892.
-- Latest registry/ledger and Pattern Forge mastery-stepper accessibility test were added after #892. CI #898 passed test commit `fe0a7a0a387122dddec64b6c6e4429bfd26be6d5`, including the new Pattern Forge mastery-stepper accessibility/progress test and current registry/ledger reconciliation. CI #899 is validating the latest audit-report commit and remains in progress.
-- The focused audit ledger currently records **19 units** awaiting final evidence: 6 targeted corrections, 4 content additions, 4 content corrections and 5 UI corrections. `verifiedUnits` remains 0 by design until evidence-backed unit disposition; path-level completion remains 0/180.
-- The registered path inventory now includes 22 surfaces, 154 content paths, 26 test paths and 180 unique paths. Dynamic/DB/generated/user-authored content remains to be reconciled beyond this static registry.
+- CI #891/#892 passed the DSA/DP/Matrix content and report checks.
+- CI #898 passed the 180-path registry/ledger and Pattern Forge mastery-stepper test.
+- CI #909 passed the shared mastery evidence normalization fix (duplicate implementation IDs and legacy inflated edge-case totals), client/server use of the helper, Supabase Node-test environment fix, type-check, content/security validation, registry/ledger checks and frontend build.
+- The latest Mastery-stage unpublished-status banner, its regression assertion, and the open P1 ledger entry were added after #909. Runs #910/#911 are validating those changes and remain in progress at this update.
+- The focused ledger currently records **23 units**: 9 targeted corrections, 4 content additions, 4 content corrections and 6 UI corrections. It also records **1 open P1**: 25 Pattern Forge topics are inventory-only/unpublished. `verifiedUnits` remains 0 and path-level completion remains 0/180.
+- Static registry: 22 surfaces, 154 content paths, 26 test paths, 180 unique paths. Dynamic/DB/generated/user-authored content remains to be reconciled.
 
 ## Confidence statement
 
@@ -59,11 +60,11 @@ Each of the 42 matrix problems now includes a concrete example input and expecte
 - Clarified House Robber's DP state as a prefix length, aligned its recurrence/base with the rolling implementation, and documented the choose-none behavior for empty/all-negative inputs.
 - DP practice now searches problem names, goals, statements, examples, hints and levels, and announces an empty result. The Java code heading explicitly says these are method snippets requiring imports/class context.
 - Extracted the eight DP guided lessons into `src/data/dpGuidedLessons.ts` for direct content tests. A malformed intermediate extraction was caught by CI and repaired; the repaired extraction and cleanup passed the full validation in #891/#892; #898 also passed after the new Pattern Forge test and registry update.
-- The ledger now records 19 focused units: 6 targeted corrections, 4 content additions, 4 content corrections and 5 UI corrections, all awaiting final evidence. This is still a focused set; path-level completion remains 0/180.
+- The ledger now records 23 focused units: 9 targeted corrections, 4 content additions, 4 content corrections and 6 UI corrections, all awaiting final evidence. One P1 blocker remains: 25 Pattern Forge topics are inventory-only. Path-level completion remains 0/180.
 
 
 ## DSA roadmap focused pass
 
-The 55-topic roadmap was inspected. The helper supplies contextual scaffold prompts from each topic's title, first subtopic, recognition signal and outcome; the sliding-window topic now includes explicit pitfalls about negative values, frequency updates and monotonicity. The UI renders outcomes and practice prompts, searches those fields, filters/deduplicates persisted progress and exposes mastery state. It now explicitly disclaims that prompts are full problem briefs, worked solutions or proofs.
+The 55-topic roadmap was inspected. The helper supplies contextual scaffold prompts from each topic's title, first subtopic, recognition signal and outcome; the sliding-window topic now includes explicit pitfalls about negative values, frequency updates and monotonicity. The UI renders outcomes and practice prompts, searches those fields, filters/deduplicates persisted progress and exposes mastery state. It now explicitly disclaims that prompts are full problem briefs, worked solutions or proofs. CI #891/#892 passed the corresponding content and UI checks.
 
 These prompts are explicitly labeled as scaffolds, not topic-specific fully worked problem sets. The new roadmap quality test checks the 55-topic inventory, stable IDs, prerequisite references, required outcomes/pitfalls/practice and UI state/search assertions. Whole-roadmap semantic review remains open.
