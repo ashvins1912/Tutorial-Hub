@@ -45,7 +45,7 @@ test('matrix problem bank has an exact, stable and structurally complete invento
 });
 
 test('matrix problem UI searches all visible problem fields and reports data-driven counts', () => {
-  for (const field of ['problem.id', 'problem.title', 'problem.prompt', 'problem.approach', 'problem.complexity', 'problem.javaHint']) {
+  for (const field of ['problem.id', 'problem.title', 'problem.prompt', 'problem.approach', 'problem.complexity', 'problem.javaHint', 'problem.example', 'problem.expectedOutput']) {
     assert.ok(ui.includes(field), 'search omits ' + field);
   }
   assert.match(ui, /MATRIX_PROBLEMS\.length/);
