@@ -102,7 +102,7 @@ export function evaluateLearningProgress(
   });
 
   let previousComplete = true;
-  const progress: LearningStageProgress[] = rawStageProgress.map((stageProgress) => {
+  const progress: LearningStageProgress[] = rawStageProgress.map((stageProgress): LearningStageProgress => {
     const { stage } = stageProgress;
     if (!contractValid) {
       return {
