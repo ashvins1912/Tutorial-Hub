@@ -27,6 +27,15 @@ test('matrix problem bank has an exact, stable and structurally complete invento
     assert.ok(problem.complexity.trim(), problem.id + ': complexity assumptions');
     assert.ok(problem.javaHint.trim(), problem.id + ': implementation hint');
   }
+
+  const byId = (id) => MATRIX_PROBLEMS.find((problem) => problem.id === id);
+  assert.match(byId('m17').javaHint, /long total=.*low\+\(high-low\)\/2/i);
+  assert.match(byId('m20').javaHint, /long for min\/max and midpoint/i);
+  assert.match(byId('m21').javaHint, /even median/i);
+  assert.match(byId('m24').javaHint, /long for deltas\/cumulative values/i);
+  assert.match(byId('m37').javaHint, /long for accumulated path costs/i);
+  assert.match(byId('m39').javaHint, /long for height×width area/i);
+  assert.match(byId('m42').javaHint, /long prefix sums/i);
 });
 
 test('matrix problem UI searches all visible problem fields and reports data-driven counts', () => {
