@@ -88,7 +88,7 @@ test('JavaScript sliding-window maximum matches brute force and bounds stale ind
   assert.match(example.code, /candidates\.splice\(0, head\)/, 'stale prefix must be compacted');
   assert.match(example.code, /head >= k/, 'compaction must bound retained stale indices by the window size');
   const module = { exports: {} };
-  runInNewContext(example.code + '\\nmodule.exports = { slidingMaximum };', { module });
+  runInNewContext(example.code + '\nmodule.exports = { slidingMaximum };', { module });
   const slidingMaximum = module.exports.slidingMaximum;
   const cases = [
     { values: [5, 5, 5, 5, 5, 5], k: 2 },
