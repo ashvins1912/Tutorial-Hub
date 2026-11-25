@@ -353,16 +353,16 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
     shortName: 'Two Pointers',
     category: 'Array & String Patterns',
     visualType: 'two-pointers',
-    tagline: 'Eliminate O(N²) pairs by discarding the pointer that cannot improve the bound.',
+    tagline: 'Reduce pair checks to O(N) when the problem has a proven monotonic rule for safely discarding candidates.',
     timeComplexity: 'O(N)',
     spaceComplexity: 'O(1)',
     complexityLeap: 'O(N²) all pairs → O(N) single inward sweep in O(1) space',
     coreIdea:
-      'Place L at the start and R at the end. At every step, compute the objective for (L, R), then move the pointer whose extreme value limits the result—proving mathematically that no skipped pair could ever beat the current candidate.',
+      'For a problem with a valid discard proof, place L and R at opposite ends and evaluate the current pair. Move only the pointer that the proof shows cannot lead to a better remaining answer. The rule depends on the objective: for container area, move the shorter wall; for a sorted target-sum pair, move L when the sum is too small and R when it is too large. Do not apply one pointer-movement rule to every two-pointer problem.',
     mentalModelSteps: [
       'Start pointers at opposite extremes: L = 0, R = n - 1.',
       'Evaluate the current pair (e.g., area = (R - L) * min(h[L], h[R]) or sum = a[L] + a[R]).',
-      'Identify the bottleneck wall (the shorter height, or the side pushing sum away from target).',
+      'Choose the movement rule proved for this problem (for container area, move the shorter wall; for sorted pair sum, move the side that moves the sum toward the target).',
       'Advance only the limiting pointer inward until L meets R.',
     ],
     loopInvariant:
@@ -373,7 +373,7 @@ const BASE_14_ALGORITHMS: AlgorithmDefinition[] = [
       'Palindrome validation or in-place array partitioning',
     ],
     whenItFails:
-      'Fails on unsorted pair-sum problems if you need original indices without sorting (use Hash Map instead).',
+      'For pair-sum on unsorted input, sorting is safe only if you retain each value's original index and map the result back. If preserving order or avoiding sorting matters, a hash map may be a better fit. The converging-pointer method also requires a monotonic discard rule; it is not a generic replacement for checking all pairs.',
     linkedTopics: ['Two Pointers'],
     linkedProblemSlugs: ['container-with-most-water', 'trapping-rain-water', '3sum', 'valid-palindrome-ii'],
     featuredLabId: 'trapping-rain-water',
