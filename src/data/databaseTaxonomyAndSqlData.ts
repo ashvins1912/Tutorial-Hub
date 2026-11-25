@@ -332,10 +332,10 @@ CREATE TABLE events (
 
 -- 2. Zero-downtime migration guardrails
 SET lock_timeout = '2s';
-ALTER TABLE events ADD COLUMN region TEXT; -- Instant nullable metadata add
+ALTER TABLE events ADD COLUMN region TEXT; -- Usually metadata-only on supported PostgreSQL versions; still requires a table lock
 CREATE INDEX CONCURRENTLY idx_events_tenant_time ON events (tenant_id, created_at DESC);
 
--- 3. Instant O(1) retention cleanup (milliseconds, zero vacuum bloat)
+-- 3. Partition-based retention avoids row-by-row deletion; verify locking and cleanup duration on the target version
 ALTER TABLE events DETACH PARTITION events_2025_08 CONCURRENTLY;
 DROP TABLE events_2025_08;`,
     productionImpact: 'Illustrative target: metadata-oriented partition retirement instead of row-by-row DELETE; benchmark lock duration, cleanup and traffic impact on the target PostgreSQL version',
