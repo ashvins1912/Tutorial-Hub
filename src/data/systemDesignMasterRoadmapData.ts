@@ -472,7 +472,7 @@ export const DISTRIBUTED_ALGORITHMS: DistributedAlgoDeepDive[] = [
     mechanics: [
       'Leader Election: Nodes start as Followers. If no leader heartbeat arrives within a randomized election timeout (150–300ms), a node becomes a Candidate, increments its Term, and requests votes. A majority quorum (⌊N/2⌋ + 1) elects the Leader.',
       'Log Replication: The Leader appends client writes to its log and broadcasts AppendEntries RPCs. Once a majority acknowledges, the entry is committed and applied to every node’s state machine.',
-      'Safety: Under Raft's voting, term, log-matching and quorum rules, a newly elected leader preserves entries that were committed in prior terms; this depends on protocol assumptions and correct implementation.',
+      'Safety: Under Raft\'s voting, term, log-matching and quorum rules, a newly elected leader preserves entries that were committed in prior terms; this depends on protocol assumptions and correct implementation.',
     ],
     timeComplexity: 'Minimum 1 network round-trip (RTT) to a majority quorum per write',
     spaceComplexity: 'O(Log Entries) durable WAL + periodic state snapshots',
