@@ -65,3 +65,157 @@ The sentence inventory is a candidate extractor, not a reviewer verdict. A compl
 - test/build/visual verification outcomes.
 
 No complete-application review claim is made until those values are supported by evidence.
+
+## Exhaustive source-by-source completion ledger
+
+Registry-derived checklist (149 unique paths). Each item remains **not reviewed** until a human/agent performs a content and behavior review, records findings and verifies corrections. This list prevents source omissions; it is not evidence of completion.
+
+- [ ] `server/modules/content-authoring/contentAuthoring.routes.ts` — api; surfaces: knowledge-engine; status: not reviewed
+- [ ] `server/routes/aiAcademyProgressRoutes.ts` — api; surfaces: ai-academy; status: not reviewed
+- [ ] `server/routes/codeExecutionRoutes.ts` — api; surfaces: knowledge-engine; status: not reviewed
+- [ ] `server/routes/cognitiveRoutes.ts` — api; surfaces: revision; status: not reviewed
+- [ ] `server/routes/communityRoutes.ts` — api; surfaces: community; status: not reviewed
+- [ ] `server/routes/contentBootstrapRoutes.ts` — api; surfaces: workspace; status: not reviewed
+- [ ] `server/routes/interviewProblemRoutes.ts` — api; surfaces: roadmap; status: not reviewed
+- [ ] `server/routes/learningEngineRoutes.ts` — api; surfaces: pattern-forge; status: not reviewed
+- [ ] `server/routes/learningProgressRoutes.ts` — api; surfaces: knowledge-engine, workspace; status: not reviewed
+- [ ] `server/routes/problemRoutes.ts` — api; surfaces: solver; status: not reviewed
+- [ ] `server/routes/profileRoutes.ts` — api; surfaces: profile; status: not reviewed
+- [ ] `server/routes/sprintRoutes.ts` — api; surfaces: sprint; status: not reviewed
+- [ ] `server/routes/systemDesignAiRoutes.ts` — api; surfaces: system-design; status: not reviewed
+- [ ] `server/routes/universalSolverRoutes.ts` — api; surfaces: solver; status: not reviewed
+- [ ] `server/routes/userStateRoutes.ts` — api; surfaces: profile; status: not reviewed
+- [ ] `server/seed/bigTechTopicSeed.ts` — data; surfaces: sprint; status: not reviewed
+- [ ] `shared/learningContract.ts` — data; surfaces: pattern-forge; status: not reviewed
+- [ ] `shared/masteryEngine.ts` — data; surfaces: pattern-forge; status: not reviewed
+- [ ] `shared/patternForgeCurriculum.ts` — data; surfaces: pattern-forge; status: not reviewed
+- [ ] `shared/pilotPatternsData.ts` — data; surfaces: pattern-forge; status: not reviewed
+- [ ] `shared/traceEngine.ts` — data; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/components/AiEngineeringStudio.tsx` — component; surfaces: ai-engineering; status: not reviewed
+- [ ] `src/components/algorithms/AlgorithmsStudio.tsx` — component; surfaces: algorithms; status: not reviewed
+- [ ] `src/components/algorithms/AlgorithmVisualStage.tsx` — component; surfaces: algorithms; status: not reviewed
+- [ ] `src/components/algorithms/SortingAlgorithmLab.tsx` — component; surfaces: algorithms; status: not reviewed
+- [ ] `src/components/cognitive/ConceptAcademyDrawer.tsx` — component; surfaces: skill-tree; status: not reviewed
+- [ ] `src/components/cognitive/NoobToProSkillTree.tsx` — component; surfaces: skill-tree, roadmap; status: not reviewed
+- [ ] `src/components/CommunityHubView.tsx` — component; surfaces: community; status: not reviewed
+- [ ] `src/components/CompleteDsaCourse.tsx` — component; surfaces: workspace; status: not reviewed
+- [ ] `src/components/CompleteDsaRoadmap.tsx` — component; surfaces: workspace; status: not reviewed
+- [ ] `src/components/database/DatabaseInternalsStudio.tsx` — component; surfaces: db-internals; status: not reviewed
+- [ ] `src/components/database/DatabasePracticeWorkbench.tsx` — component; surfaces: db-internals; status: not reviewed
+- [ ] `src/components/database/DeadlockWaitForVisualizer.tsx` — component; surfaces: db-internals; status: not reviewed
+- [ ] `src/components/database/PitrRecoveryPlayground.tsx` — component; surfaces: db-internals; status: not reviewed
+- [ ] `src/components/database/QueryPipelinePlayground.tsx` — component; surfaces: db-internals; status: not reviewed
+- [ ] `src/components/devops/CloudDevCompleteTutorial.tsx` — component; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/components/devops/DevOpsCloudStudio.tsx` — component; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/components/devops/DevOpsInteractiveSimulators.tsx` — component; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/components/devops/DevOpsVisualPlayground.tsx` — component; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/components/flight/FlightMermaidViewer.tsx` — component; surfaces: flight-simulator; status: not reviewed
+- [ ] `src/components/flight/FlightSimulatorStudio.tsx` — component; surfaces: flight-simulator; status: not reviewed
+- [ ] `src/components/fullstack/FullStackStoryboardAnimator.tsx` — component; surfaces: full-stack; status: not reviewed
+- [ ] `src/components/fullstack/FullStackSystemsStudio.tsx` — component; surfaces: full-stack; status: not reviewed
+- [ ] `src/components/fullstack/RuntimeAndInfraInternalsLab.tsx` — component; surfaces: full-stack; status: not reviewed
+- [ ] `src/components/fullstack/StorageAndDiagnosticsLab.tsx` — component; surfaces: full-stack; status: not reviewed
+- [ ] `src/components/fuzzy/NGramFuzzyStudio.tsx` — component; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/components/fuzzy/NGramVisualStage.tsx` — component; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/components/fuzzy/PruningLogicSimulator.tsx` — component; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/components/interview/ProductCompanyMasterBankView.tsx` — component; surfaces: roadmap; status: not reviewed
+- [ ] `src/components/interview/TopicPatternExplorer.tsx` — component; surfaces: roadmap; status: not reviewed
+- [ ] `src/components/languages/CollectionsConcurrencyPlayground.tsx` — component; surfaces: languages; status: not reviewed
+- [ ] `src/components/languages/LanguagePracticeWorkbench.tsx` — component; surfaces: languages; status: not reviewed
+- [ ] `src/components/languages/LanguagesTutorialStudio.tsx` — component; surfaces: languages; status: not reviewed
+- [ ] `src/components/languages/LanguageVisualAnimator.tsx` — component; surfaces: languages; status: not reviewed
+- [ ] `src/components/languages/MultithreadingTelemetryLab.tsx` — component; surfaces: languages; status: not reviewed
+- [ ] `src/components/languages/OopCustomDsAcademy.tsx` — component; surfaces: ood; status: not reviewed
+- [ ] `src/components/MasteryStepper.tsx` — component; surfaces: workspace; status: not reviewed
+- [ ] `src/components/OodAnimationStage.tsx` — component; surfaces: ood; status: not reviewed
+- [ ] `src/components/OodPrinciplesStudio.tsx` — component; surfaces: ood; status: not reviewed
+- [ ] `src/components/PairProgrammingCanvas.jsx` — component; surfaces: community; status: not reviewed
+- [ ] `src/components/Patterns28RoadmapView.tsx` — component; surfaces: roadmap; status: not reviewed
+- [ ] `src/components/ProblemBank45View.tsx` — component; surfaces: roadmap; status: not reviewed
+- [ ] `src/components/profile/DbSyncInspectorCard.tsx` — component; surfaces: profile; status: not reviewed
+- [ ] `src/components/profile/MonthlyLearningResetCard.tsx` — component; surfaces: profile; status: not reviewed
+- [ ] `src/components/ProfileStatsView.tsx` — component; surfaces: profile; status: not reviewed
+- [ ] `src/components/QuickRevisionHub.tsx` — component; surfaces: revision; status: not reviewed
+- [ ] `src/components/SchemasReferenceView.tsx` — component; surfaces: schemas; status: not reviewed
+- [ ] `src/components/shared/MasteryReviewPanel.tsx` — component; surfaces: revision; status: not reviewed
+- [ ] `src/components/sprint/Mock45SimulatorModal.tsx` — component; surfaces: sprint; status: not reviewed
+- [ ] `src/components/sprint/SprintConfiguratorModal.tsx` — component; surfaces: sprint; status: not reviewed
+- [ ] `src/components/sprint/SprintWarRoomDashboard.tsx` — component; surfaces: sprint; status: not reviewed
+- [ ] `src/components/system-design/FrontierLlmArchitectureLab.tsx` — component; surfaces: ai-engineering; status: not reviewed
+- [ ] `src/components/system-design/RealWorldArchitecturesAndInterviewLab.tsx` — component; surfaces: system-design; status: not reviewed
+- [ ] `src/components/system-design/SystemDfdSimulator.tsx` — component; surfaces: system-design; status: not reviewed
+- [ ] `src/components/system-playground/SystemPlayground.tsx` — component; surfaces: system-design; status: not reviewed
+- [ ] `src/components/SystemDesignLearningAcademy.tsx` — component; surfaces: system-design; status: not reviewed
+- [ ] `src/components/SystemDesignStudio.tsx` — component; surfaces: system-design; status: not reviewed
+- [ ] `src/data/academyResources.ts` — data; surfaces: revision; status: not reviewed
+- [ ] `src/data/aiEngineeringData.ts` — data; surfaces: ai-engineering; status: not reviewed
+- [ ] `src/data/aiStudioDeepEnrichmentData.ts` — data; surfaces: ai-engineering; status: not reviewed
+- [ ] `src/data/algorithmCombinationsAndRoadmap.ts` — data; surfaces: algorithms; status: not reviewed
+- [ ] `src/data/algorithmsCatalog.ts` — data; surfaces: solver, algorithms; status: not reviewed
+- [ ] `src/data/algorithmsMasterAdvancedPack.ts` — data; surfaces: algorithms; status: not reviewed
+- [ ] `src/data/algorithmsMasterCorePack.ts` — data; surfaces: algorithms; status: not reviewed
+- [ ] `src/data/algorithmsMasterSystemsPack.ts` — data; surfaces: algorithms; status: not reviewed
+- [ ] `src/data/canonicalDataRegistry.ts` — data; surfaces: knowledge-engine; status: not reviewed
+- [ ] `src/data/completeDsaRoadmap.ts` — data; surfaces: workspace, skill-tree; status: not reviewed
+- [ ] `src/data/curriculum.ts` — data; surfaces: workspace, skill-tree; status: not reviewed
+- [ ] `src/data/databaseInternalsData.ts` — data; surfaces: db-internals; status: not reviewed
+- [ ] `src/data/databaseTaxonomyAndSqlData.ts` — data; surfaces: db-internals; status: not reviewed
+- [ ] `src/data/databaseVisualData.ts` — data; surfaces: db-internals; status: not reviewed
+- [ ] `src/data/dbQueryDataFlowData.ts` — data; surfaces: db-internals; status: not reviewed
+- [ ] `src/data/devopsCloudCurriculumData.ts` — data; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/data/devopsCloudDeepGapsData.ts` — data; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/data/dockerK8sCloudDevTutorialData.ts` — data; surfaces: devops-cloud; status: not reviewed
+- [ ] `src/data/dsa28Patterns.ts` — data; surfaces: roadmap, pattern-forge; status: not reviewed
+- [ ] `src/data/dsaCompleteLessons.ts` — data; surfaces: workspace; status: not reviewed
+- [ ] `src/data/flightSimulatorData.ts` — data; surfaces: flight-simulator; status: not reviewed
+- [ ] `src/data/fullStackArchitectureData.ts` — data; surfaces: full-stack; status: not reviewed
+- [ ] `src/data/fullStackDeepEnrichmentData.ts` — data; surfaces: full-stack; status: not reviewed
+- [ ] `src/data/fuzzyCurriculumModules.ts` — data; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/data/highRoi45.ts` — data; surfaces: roadmap, sprint; status: not reviewed
+- [ ] `src/data/javaPythonCodingMasteryData.ts` — data; surfaces: languages; status: not reviewed
+- [ ] `src/data/langCollectionsConcurrencyData.ts` — data; surfaces: languages; status: not reviewed
+- [ ] `src/data/langConcurrencyExceptionsData.ts` — data; surfaces: languages; status: not reviewed
+- [ ] `src/data/languagesTutorialData.ts` — data; surfaces: languages; status: not reviewed
+- [ ] `src/data/llmFrontierArchitectureData.ts` — data; surfaces: ai-engineering; status: not reviewed
+- [ ] `src/data/mongooseSchemas.ts` — data; surfaces: db-internals, schemas; status: not reviewed
+- [ ] `src/data/ngramTaxonomy.ts` — data; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/data/ngramTaxonomyPart1.ts` — data; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/data/ngramTaxonomyPart2.ts` — data; surfaces: fuzzy-search; status: not reviewed
+- [ ] `src/data/ood/extendedPatternsData.ts` — data; surfaces: ood; status: not reviewed
+- [ ] `src/data/ood/oopsAndSolidData.ts` — data; surfaces: ood; status: not reviewed
+- [ ] `src/data/ood/patternsAndOodData.ts` — data; surfaces: ood; status: not reviewed
+- [ ] `src/data/problems.ts` — data; surfaces: solver; status: not reviewed
+- [ ] `src/data/productCompanyMasterBank.ts` — data; surfaces: roadmap; status: not reviewed
+- [ ] `src/data/realWorldPlaygroundBlueprints.ts` — data; surfaces: system-design; status: not reviewed
+- [ ] `src/data/realWorldSystemBlueprintsData.ts` — data; surfaces: system-design; status: not reviewed
+- [ ] `src/data/runtimeAndInfraInternalsData.ts` — data; surfaces: full-stack; status: not reviewed
+- [ ] `src/data/systemDesignData.ts` — data; surfaces: system-design; status: not reviewed
+- [ ] `src/data/systemDesignMasterRoadmapData.ts` — data; surfaces: system-design; status: not reviewed
+- [ ] `src/data/systemDfdLibraryData.ts` — data; surfaces: system-design; status: not reviewed
+- [ ] `src/data/topInterview100.ts` — data; surfaces: roadmap; status: not reviewed
+- [ ] `src/features/ai-academy/components/AIEngineeringAcademy.tsx` — component; surfaces: ai-academy; status: not reviewed
+- [ ] `src/features/ai-academy/data/aiEngineeringCurriculum.ts` — data; surfaces: ai-academy; status: not reviewed
+- [ ] `src/features/ai-academy/data/aiEngineeringDeepDiveLessons.ts` — data; surfaces: ai-academy; status: not reviewed
+- [ ] `src/features/ai-academy/data/aiEngineeringExtraLessons.ts` — data; surfaces: ai-academy; status: not reviewed
+- [ ] `src/features/ai-academy/data/aiEngineeringMcpSystems.ts` — data; surfaces: ai-academy; status: not reviewed
+- [ ] `src/features/ai-academy/data/aiEngineeringRagSystems.ts` — data; surfaces: ai-academy; status: not reviewed
+- [ ] `src/features/intelligent-engine/components/CodeExecutionLab.tsx` — component; surfaces: knowledge-engine; status: not reviewed
+- [ ] `src/features/intelligent-engine/components/IntelligentEngineStudio.tsx` — component; surfaces: knowledge-engine; status: not reviewed
+- [ ] `src/features/intelligent-engine/components/PublishedLessonView.tsx` — component; surfaces: knowledge-engine; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/components/StageImplementView.tsx` — component; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/components/StageMasterView.tsx` — component; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/components/StagePracticeView.tsx` — component; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/components/StageUnderstandView.tsx` — component; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx` — component; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/UnifiedPatternForgeWorkspace.tsx` — component; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/pattern-forge-unified/useUnifiedLearningStore.ts` — data; surfaces: pattern-forge; status: not reviewed
+- [ ] `src/features/solver-studio/AdaptiveCoachPanel.tsx` — component; surfaces: solver; status: not reviewed
+- [ ] `src/features/solver-studio/GuidedLogicBuilderPanel.tsx` — component; surfaces: solver; status: not reviewed
+- [ ] `src/features/solver-studio/OptimizationCheckerPanel.tsx` — component; surfaces: solver; status: not reviewed
+- [ ] `src/features/solver-studio/PulledProblemLibraryPanel.tsx` — component; surfaces: solver; status: not reviewed
+- [ ] `src/features/solver-studio/systemProblemsAdapter.ts` — data; surfaces: solver; status: not reviewed
+- [ ] `src/features/solver-studio/UniversalSolverStudio.tsx` — component; surfaces: solver; status: not reviewed
+- [ ] `src/features/topics/components/CurriculumWorkbench.tsx` — component; surfaces: workspace; status: not reviewed
+- [ ] `src/features/topics/data/curriculumIndex.ts` — data; surfaces: workspace; status: not reviewed
+- [ ] `src/store/usePatternForgeStore.ts` — data; surfaces: profile; status: not reviewed
+- [ ] `src/store/useSprintStore.ts` — data; surfaces: profile; status: not reviewed
