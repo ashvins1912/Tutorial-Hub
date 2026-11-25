@@ -27,8 +27,8 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     followUpTwists: [
       {
         question: 'What if we need subarray sum DIVISIBLE by K with negative numbers?',
-        invariantShift: 'Store normalized remainder `((prefix % k) + k) % k` as the HashMap key; matching remainders mean the slice between them is divisible by K.',
-        complexityImpact: 'Still O(N) time, O(min(N, K)) space.',
+        invariantShift: 'For non-zero K, normalize with a positive modulus such as `((prefix % absK) + absK) % absK`; equal remainders identify subarrays divisible by |K|. Handle K = 0 separately as a zero-sum subarray problem.',
+        complexityImpact: 'O(N) time, O(min(N, |K|)) map space for K ≠ 0; K = 0 uses the separate zero-sum formulation.',
       },
       {
         question: 'What if the array receives online point updates between sum queries?',
@@ -63,7 +63,7 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
     simpleAnalogy:
       'A stretchy rubber frame sliding rightward across a tape: stretch the right edge to collect new items, and pull the left edge forward whenever the frame breaks your rule.',
     interviewScript30s:
-      '"Since frequencies or non-negative sums change monotonically as the window grows or shrinks, both pointers cross the array at most once—achieving O(N) amortized time instead of O(N²)."',
+      '"For constraints whose validity is monotone under window expansion/shrinking (for example, non-negative sum bounds or at-most-K distinct values), each pointer advances at most N times, giving O(N) time. Frequency counts alone do not make every window condition monotone."',
     chooseWhen: 'Longest or shortest contiguous subarray/substring with positive values or character counts.',
     avoidWhen: 'Negative values are present in sum constraints (monotonicity breaks -> use Prefix Sum + HashMap).',
     followUpTwists: [
@@ -725,8 +725,8 @@ export const ALGORITHM_TUTOR_GUIDES: Record<string, AlgorithmTutorGuide> = {
       },
       {
         question: 'How does Stream of Characters (#1032) solve online suffix queries simply?',
-        invariantShift: 'Insert words REVERSED into a Trie (or run Aho-Corasick forward) to check incoming stream characters in O(1) per char.',
-        complexityImpact: 'O(1) per streamed character with Aho-Corasick automaton.',
+        invariantShift: 'For the reversed-Trie online suffix-query approach, scan backward up to the maximum word length (O(L) worst case per query). A prebuilt Aho-Corasick automaton can process a stream in amortized O(1) state-transition work per character, but reporting matches adds O(matches); preprocessing and memory depend on total pattern length.',
+        complexityImpact: 'Amortized O(1) state-transition work per streamed character after preprocessing, plus O(matches) to report outputs; this is not a constant-time per-query guarantee.',
       },
     ],
   },
