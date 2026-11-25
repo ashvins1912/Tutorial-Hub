@@ -1709,7 +1709,7 @@ def buddy_address(addr: int, block_size: int) -> int:
       {
         step: 2,
         title: 'Allocate B (12 KB → 16 KB) at Buddy Address 16',
-        explanation: 'Free list for 16 KB already has address 16 → instant O(1) allocation with zero splits!',
+        explanation: 'The illustrative free list already contains a suitable 16 KB block at address 16, so the lookup can be constant-time in this simplified trace. Real allocator latency also depends on metadata, synchronization, fragmentation and the allocator implementation.',
         invariantCheck: 'A@0 and B@16 are buddies: 0 ^ 16 = 16 and 16 ^ 16 = 0.',
         variables: [{ name: 'A', value: '@0 (16KB)' }, { name: 'B', value: '@16 (16KB)' }],
         array: ['A:16KB@0', 'B:16KB@16', 'Free:32KB@32'],
