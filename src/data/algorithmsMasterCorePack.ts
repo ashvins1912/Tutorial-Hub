@@ -930,7 +930,7 @@ void siftDown(int[] a, int i, int size) {
     mentalModel:
       'Think of Morse code: frequent letter "E" gets a single dot (`.`), while rare "Q" gets `--.-`. Huffman repeatedly merges the two least-frequent symbols into a parent node so rare symbols sink deepest.',
     coreInvariant:
-      'Prefix-Free Property: every symbol sits exclusively at a leaf, so no codeword is a prefix of any other codeword—so the bit stream can be decoded unambiguously without separators; decoding still takes time proportional to the number of bits read.',
+      'Prefix-Free Property: each symbol is assigned to a leaf, so no codeword is a prefix of another. This lets a decoder read the bit stream without separators; decoding time still grows with the number of bits read.',
     whenToUse: [
       'Lossless entropy coding inside DEFLATE / gzip / ZIP, PNG, JPEG, and HTTP/2 HPACK headers.',
       'Optimal merge patterns: Minimum Cost to Connect Sticks (LC 1167) and Merge Files with Minimum Cost.',
