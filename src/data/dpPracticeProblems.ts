@@ -158,7 +158,7 @@ export const DP_PRACTICE_PROBLEMS: DpPracticeProblem[] = [
     "name": "Traveling Salesperson / Assignment DP",
     "goal": "Use bitmask state for small n.",
     "statement": "Minimum tour from city 0 visiting each city once and returning to 0 in a weighted complete graph.",
-    "example": "4-city symmetric edges 10,15,20,35,25,30 → 80",
+    "example": "cost=[[0,10,15,20],[10,0,35,25],[15,35,0,30],[20,25,30,0]] → 80",
     "hint": "dp[mask][last]; transition to unvisited city. State count is exponential."
   }
 ];
