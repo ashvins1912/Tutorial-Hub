@@ -84,3 +84,17 @@ Do not report 100% until the denominator is reconciled, every in-scope unit and 
 ## Constraints
 
 Preserve existing routes, stable topic/lesson IDs, progress, quiz history, persisted keys, API/schema contracts and working behavior. No deployment, paid service, hosting change, or external spend. Keep changes in this PR and do not merge until the user reviews the completed evidence and final CI.
+
+
+## Live execution status (2026-11-25)
+
+- Current registered inventory: **22 surfaces, 154 content source paths, 25 test paths, 179 unique paths**. This reconciles the current registry; it is not yet a complete learner-visible unit denominator because runtime-generated, DB-seeded, cached and user-authored variants still require enumeration.
+- Focused reviewed units recorded: **18**, currently categorized as 6 targeted corrections, 4 content additions, 4 content corrections and 4 UI corrections; all are awaiting exact-head CI or focused evidence. **0 registered paths fully dispositioned; 0 units verified as final/pass; whole-platform completion is not 100%.**
+- DSA complete course structural inventory: 23 modules; 138 glossary terms with definition/example; exact counts for the other teaching fields are guarded by tests. Glossary definition/example quality checks now require explanatory minimum lengths and uniqueness within each module.
+- DP lab: 8 guided lesson records and 20 practice briefs. A thin Fibonacci statement and House Robber II hint were expanded; the DP lab search now covers statement/example/hint and the UI calls Java code “method snippets” where imports/class are needed.
+- DSA roadmap: 55 topics. Sliding-window pitfalls now include the monotonicity condition and contextual warning. The UI explicitly labels roadmap practice as scaffolds, not full problem briefs, worked solutions or proofs; its earlier overclaim was removed.
+- Matrix bank: 42 stable problem records with concrete input/output; matrix UI search, filters, status, expansion, and progress are data-driven and expose accessible state. Structural and selected numeric/sample assertions are in the content-authoring suite.
+- CI history: intermediate runs #883–#889 failed on discovered issues (ledger status/count reconciliation, DP hint length, roadmap pitfalls). Those were corrected in subsequent commits; run **#891** is validating the latest ledger reconciliation commit `7f94da1ab2aa156af4f59c8b1a0f919c1fed693f` and is still in progress at this update. Earlier failures must not be represented as passing.
+- PR #70 is **draft and unmerged**. No deployment or external cost was incurred.
+
+The next gates remain: current-head CI/build success; audit every registered source path and all content units within it; enumerate and review runtime/DB/generated variants; inspect every UI state/viewport/accessibility interaction with evidence; disposition all findings; update the final denominator and confidence per topic/course/concept/surface.
