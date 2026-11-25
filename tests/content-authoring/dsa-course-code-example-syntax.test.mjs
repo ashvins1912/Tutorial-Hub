@@ -79,7 +79,7 @@ test('code walkthrough examples store real newline characters for line numbering
   for (const title of titles) {
     const example = all.find((item) => item.title === title);
     assert.ok(example, 'missing line-numbered code example: ' + title);
-    assert.ok(example.code.split('\\n').length > 1,
+    assert.ok(example.code.split('\n').length > 1,
       title + ': code UI splits on real newline characters, not escaped backslash-n text');
   }
 });
