@@ -178,7 +178,7 @@ export const DSA28_PATTERNS: Dsa28Pattern[] = [
     summary: 'Track frequencies, detect duplicates, or achieve O(1) complement lookups (Two Sum, Group Anagrams).',
     mentalModel: 'Trade O(n) space to eliminate an inner O(n) linear scan by storing seen values, canonical keys, or frequency counts.',
     triggerSignals: ['find pair with target sum', 'frequency count', 'anagram grouping', 'longest consecutive sequence', 'first unique'],
-    timeComplexity: 'Expected O(total input size) for key construction plus expected O(n) hash operations; n strings of length k commonly cost O(n · k). Collision-heavy worst cases depend on the map implementation.',
+    timeComplexity: 'Expected O(total input size) for key construction plus n expected O(1) hash operations; n strings of length k commonly cost O(n · k). Collision-heavy worst cases depend on the map implementation.',
     spaceComplexity: 'O(n) auxiliary map/set entries plus stored key material proportional to total key length; input and returned groups are excluded.',
     hasTrickyTemplate: false,
     canonicalSlug: 'two-sum',
