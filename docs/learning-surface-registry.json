@@ -131,7 +131,8 @@
         "src/data/dsaCompleteLessons.ts",
         "src/data/curriculum.ts",
         "src/data/dpPracticeProblems.ts",
-        "src/data/matrixProblems.ts"
+        "src/data/matrixProblems.ts",
+        "src/data/dpGuidedLessons.ts"
       ],
       "apiRoutes": [
         "server/routes/contentBootstrapRoutes.ts",
