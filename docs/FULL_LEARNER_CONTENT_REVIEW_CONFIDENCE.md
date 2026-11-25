@@ -177,3 +177,16 @@ Regression assertions were added and source/test blobs were re-fetched.
 ## CI follow-up: assertion targeting correction
 
 Run #718 failed in the new high-risk tutor-guide test because the bidirectional-BFS complexity assertion searched the `bidirectional-bfs` guide, while the Word Ladder follow-up is registered under `tree-bfs-dfs`. The assertion was corrected to inspect the owning guide in commit `351c51a8f3ff60d711db4509474c89c8b74cdfab`. This was a test-selection error, not a reported application/type-check/build failure. Run #721 was still at type-check when polled; the assertion-fix commit needs completed CI.
+
+
+## Sixth focused technical pass: query/update complexity and sentinels
+
+Three additional source assumptions were made explicit:
+
+- **Mo with updates:** complexity now includes input, query, and update movement (`N + Q + U`) instead of describing only Q.
+- **Z algorithm:** the concatenation separator must not occur in the pattern or text (or must be an out-of-alphabet sentinel).
+- **Manacher:** boundary sentinels must be distinct and absent from the input; correctness also depends on consistent transformed-index handling.
+
+Regression assertions were added. The Manacher source correction is in commit `eaa81011d395ae48e3b7d505800c6364ebe7e443`; the Mo/Z source correction is `c1a48b891af6ffe3312ada7d3f3491b45d659a54`.
+
+Run #721 failed because the test assertion pointed at the wrong guide (fixed in `351c51a`). Run #725 was queued for the assertion fix; the latest source/report commit requires a completed final-head run.
