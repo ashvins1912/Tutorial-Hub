@@ -33,6 +33,15 @@ const sectionMeta: { key: SectionKey; title: string; intro: string }[] = [
 
 type LessonProgress = Record<string, string[]>;
 function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionKey }) {
+  if (section === 'keyTerms') {
+    return <div className="grid gap-3 sm:grid-cols-2">{(lesson.keyTerms ?? []).map((item) => (
+      <article key={item.term} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
+        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.term}</h4>
+        <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{item.definition}</p>
+        {item.example ? <p className="mt-2 rounded-md bg-white px-3 py-2 text-xs leading-relaxed text-slate-600 dark:bg-slate-900 dark:text-slate-400"><span className="font-semibold">Example:</span> {item.example}</p> : null}
+      </article>
+    ))}</div>;
+  }
   if (section === 'codeExamples') {
     return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => {
       const codeLines = example.code.split('\n');
