@@ -357,7 +357,7 @@ def has_cycle(head):
         fast = fast.next.next
         if slow is fast:
             return True
-    return False`, explanation: 'The algorithm is O(n) time and O(1) auxiliary space. Python's is operator compares node object identity, not values. Reversal mutates the original nodes.' },
+    return False`, explanation: 'The algorithm is O(n) time and O(1) auxiliary space. Python `is` compares node object identity, not values. Reversal mutates the original nodes.' },
     ],
     traceExercises: [
       'Reverse A → B → C → null. After each iteration, draw prev, curr, next and all next arrows.',
