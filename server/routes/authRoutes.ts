@@ -149,41 +149,60 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       { upsert: true }
     );
 
-    // Auto-accept any pending community invites sent directly to this user's email
+    // Community invite processing is a best-effort side effect. A malformed or
+    // unavailable invite record must not prevent an authenticated learner from signing in.
     let autoAcceptedInvites = 0;
     if (cleanEmail) {
-      const displayName = account.fullName || cleanEmail.split('@')[0] || 'Learner';
-      const inviteUpdate = await CommunityInvite.updateMany(
-        {
-          inviteeEmail: cleanEmail,
-          status: 'pending',
-          inviterUserId: { $ne: user.id },
-        },
-        {
-          $set: {
-            status: 'accepted',
-            acceptedByUserId: user.id,
-            acceptedByName: displayName,
-            acceptedByEmail: cleanEmail,
-            acceptedAt: new Date(),
+      try {
+        const displayName = account.fullName || cleanEmail.split('@')[0] || 'Learner';
+        const inviteUpdate = await CommunityInvite.updateMany(
+          {
+            inviteeEmail: cleanEmail,
+            status: 'pending',
+            inviterUserId: { $ne: user.id },
           },
-        }
-      );
-      autoAcceptedInvites = inviteUpdate.modifiedCount ?? 0;
+          {
+            $set: {
+              status: 'accepted',
+              acceptedByUserId: user.id,
+              acceptedByName: displayName,
+              acceptedByEmail: cleanEmail,
+              acceptedAt: new Date(),
+            },
+          }
+        );
+        autoAcceptedInvites = inviteUpdate.modifiedCount ?? 0;
+      } catch (inviteError) {
+        console.error('[auth/me] Community invite auto-accept failed:', inviteError instanceof Error ? inviteError.message : 'UNKNOWN_ERROR');
+      }
     }
 
-    // Verify account progress status from DB (fresh sign-ups must report zero existing records)
-    const [profileDoc, stateDocs] = await Promise.all([
-      UserBrainProfile.findOne({ userId: user.id }).lean(),
-      UserLearningState.find({ userId: user.id }).select('stateKey payload').lean(),
-    ]);
+    // Progress is supplementary to successful account/profile provisioning. If a
+    // legacy state document cannot be read, keep sign-in available and report a
+    // conservative empty summary; the underlying learning data is not modified.
+    let hasProgress = false;
+    let persistedStateCount = 0;
+    let completedProblemsCount = 0;
+    let totalXp = 0;
+    try {
+      const [profileDoc, stateDocs] = await Promise.all([
+        UserBrainProfile.findOne({ userId: user.id }).lean(),
+        UserLearningState.find({ userId: user.id }).select('stateKey payload').lean(),
+      ]);
 
-    const statesMap: Record<string, unknown> = {};
-    for (const s of stateDocs) {
-      statesMap[s.stateKey] = s.payload;
+      const statesMap: Record<string, unknown> = {};
+      for (const s of stateDocs) {
+        statesMap[s.stateKey] = s.payload;
+      }
+
+      const summary = computeUserProgressSummary(profileDoc as any, statesMap, 0);
+      hasProgress = summary.hasProgress;
+      persistedStateCount = stateDocs.filter((s) => s.stateKey !== 'ui-preferences').length;
+      completedProblemsCount = summary.uniqueProblemsSolved;
+      totalXp = summary.totalXp;
+    } catch (progressError) {
+      console.error('[auth/me] Progress summary read failed:', progressError instanceof Error ? progressError.message : 'UNKNOWN_ERROR');
     }
-
-    const summary = computeUserProgressSummary(profileDoc as any, statesMap, 0);
 
     return res.json({
       user: {
@@ -194,17 +213,19 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       },
       freshAccountCheck: {
         isNewAccount,
-        hasProgress: summary.hasProgress,
-        persistedStateCount: stateDocs.filter((s) => s.stateKey !== 'ui-preferences').length,
-        completedProblemsCount: summary.uniqueProblemsSolved,
-        totalXp: summary.totalXp,
+        hasProgress,
+        persistedStateCount,
+        completedProblemsCount,
+        totalXp,
         autoAcceptedInvites,
       },
     });
   } catch (error) {
+    // Log the server-side failure reason for diagnosis without exposing it to
+    // the client (MongoDB errors may contain connection details).
     console.error(
-      '[auth/me] Failed to provision learning account:',
-      error instanceof Error ? error.name : 'UNKNOWN_ERROR'
+      '[auth/me] Critical account/profile provisioning failed:',
+      error instanceof Error ? error.message : String(error)
     );
     return res.status(500).json({
       code: 'ACCOUNT_INITIALIZATION_FAILED',
