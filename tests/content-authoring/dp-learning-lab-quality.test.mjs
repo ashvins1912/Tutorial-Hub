@@ -27,6 +27,8 @@ test('DP practice inventory contains 20 complete, unique problem briefs', () => 
   assert.match(example('Target Sum'), /target=3.*5/);
   assert.match(example('Stock with Cooldown'), /\[1,2,3,0,2\].*3/);
   assert.match(example('Burst Balloons'), /167/);
+  assert.match(example('Traveling Salesperson \/ Assignment DP'), /\[\[0,10,15,20\]/);
+  assert.match(example('Traveling Salesperson \/ Assignment DP'), /80/);
   assert.match(example('Regular Expression Matching'), /a\*/);
 });
 
