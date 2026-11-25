@@ -83,3 +83,106 @@ Incorrect algorithm explanation; failing verified solution; trace/code disagreem
 The work should land through **one consolidated PR** from the approved branch. Add commits to that branch as the crosswalk and regression gates are implemented; do not open separate feature PRs for this initiative.
 
 The PR can be described as complete only for the implementation and evidence actually delivered in its diff. It must not claim the 25 inventory topics, all 420 target activities, all 22 surfaces, production sandbox, accessibility review or learner effectiveness are complete unless the corresponding artifacts and validation are present. Remaining topic authoring/reviewer/learner evidence must stay visible as open acceptance items rather than being converted to “verified” by documentation alone.
+
+
+## Concrete curriculum and platform requirements from the source plan
+
+### The 28 canonical pattern families
+
+Preserve existing canonical IDs and reconcile aliases before migration. The source plan names:
+
+1. HashMap and HashSet
+2. Prefix Sum and Difference Array
+3. Two Pointers — Opposite Ends
+4. Two Pointers — Same Direction
+5. Sliding Window — Fixed Size
+6. Sliding Window — Variable Size
+7. Sorting Patterns
+8. Intervals
+9. Matrix Traversal
+10. Kadane's Algorithm
+11. Fast and Slow Pointers
+12. Linked List Reversal
+13. Monotonic Stack
+14. Monotonic Queue
+15. Binary Search
+16. Rotated Binary Search
+17. Binary Search on Answer
+18. Heap and Priority Queue
+19. K-way Merge
+20. Tree DFS
+21. Tree BFS
+22. Trie
+23. Graph BFS and DFS
+24. Topological Sort
+25. Union-Find
+26. Dijkstra and Weighted Graphs
+27. Backtracking
+28. Dynamic Programming
+
+### Minimum authored activities per pattern (target, not current completion)
+
+| Activity | Target per pattern |
+|---|---:|
+| Conceptual examples | 2 |
+| Interactive traces | 3 |
+| Brute-force comparisons | 2 |
+| Coding problems | 3 |
+| Edge-case challenges | 2 |
+| Debugging exercise | 1 |
+| Mixed-pattern problem | 1 |
+| Unseen transfer exercise | 1 |
+| **Total** | **15 (420 across 28)** |
+
+The inventory must count actual authored and linked activities. A target constant, generated blueprint, empty placeholder or lesson title does not count as an activity.
+
+### Recognition rubric and mastery dimensions
+
+The source plan's proposed recognition weights are structural understanding 20%, pattern identification 25%, data-structure selection 15%, constraint reasoning 15%, complexity analysis 15%, and alternative-approach evaluation 10%. Validate the total is 100%; calibrate only against learner evidence.
+
+Track the source plan's eight independent mastery dimensions: understanding, pattern recognition, visualization, implementation, correctness, complexity analysis, debugging and transfer ability. The full-platform quality standard additionally calls for teach-back, communication and delayed retention as evidence dimensions/signals where applicable.
+
+### Revision schedule
+
+Start with Day 1, 3, 7, 14 and 30. Adjust using mistakes, assessment scores, hints, time taken, delayed recall and repeated failures. A struggle should trigger reinforcement/relearning rather than silently advance the learner.
+
+### Proposed shared entities
+
+Curriculum; Topic; TopicPrerequisite; Lesson; LessonStage; LearningAsset; Problem; ProblemSolution; TestSuite; Assessment; AssessmentAttempt; MasteryEvidence; RevisionSchedule; ContentReview; ContentVersion.
+
+### Proposed API surface (design target, not a claim of existing routes)
+
+- `GET /api/learning/curricula`
+- `GET /api/learning/topics`
+- `GET /api/learning/topics/:id`
+- `GET /api/learning/topics/:id/lessons`
+- `GET /api/learning/lessons/:id`
+- `GET /api/learning/problems`
+- `GET /api/learning/problems/:id`
+- `POST /api/learning/assessments/:id/attempts`
+- `GET /api/learning/mastery`
+- `GET /api/learning/revisions`
+- `POST /api/learning/revisions/:id/attempts`
+
+Before adding routes or tables, reconcile with current routes/models, enforce authenticated ownership, idempotency and version-aware evidence, and preserve existing progress/assessment history.
+
+### Migration waves
+
+- **Wave 1 — algorithms/DSA:** Pattern Forge, DSA Academy, Algorithms Studio, Universal Problem Solver, Interview Problem Catalog and Revision Hub.
+- **Wave 2 — core engineering:** Java, Python, OOP/design patterns, Full Stack and Database Internals.
+- **Wave 3 — advanced engineering:** System Design, DevOps/Cloud, AI Engineering and Flight Simulator.
+- **Wave 4 — learning intelligence:** unified learner profile, cross-academy skill graph, adaptive recommendations, cross-topic assessments, interview readiness and analytics.
+
+Each wave must include adapters, content conversion, duplicate logic removal where safe, learner-progress preservation, route/navigation compatibility and regression tests.
+
+### QA and release gates
+
+Run unit tests for schema, prerequisites, mastery, revision, complexity metadata and trace generation; integration tests for content retrieval, assessment submission, progress persistence, mastery, revision and version changes; end-to-end learner journeys from topic open through revision; and educational tests for explanation/code/trace/output agreement, edge cases, objective mapping and evidence-based mastery.
+
+Release blockers include incorrect explanations, failing verified code, contradictory visualization, unsupported mastery, critical sandbox vulnerabilities, lost learner progress, broken authentication/authorization or unresolved critical regressions. Also validate responsive layout, accessibility, API performance, security, monitoring/logging, backup/recovery and rollback before production release.
+
+### Success measures and risk controls
+
+Measure published-content contract coverage, verified solutions and trace fixtures, objective-linked assessments, first-attempt success, hint improvement/dependence, independent problem solving, delayed recall, unseen transfer, stage time, misconceptions and retention. Establish a baseline before setting outcome targets.
+
+Mitigate generated-content errors with distinct draft/verified states and technical review; duplicate learning logic with one canonical contract; scope risk with three reference pilots first; unsafe execution with an approved isolated sandbox; mastery inflation with independent evidence; migration regression with compatibility tests; and performance/bundle growth with lazy-loaded content and visualization, published-content caching and no all-problem eager loading.
