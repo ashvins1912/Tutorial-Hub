@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -59,6 +59,32 @@ test('content quality governance enforces acyclic DAG, unique IDs, and honest ve
       assert.equal(report.readyForPublication, true, `${report.topicId} must pass all publication gates`);
     }
   }
+});
+
+test('25 inventory-only Pattern Forge topics remain unpublished and every stage communicates the gap', () => {
+  const unpublished = PATTERN_FORGE_TOPICS.filter((topic) => topic.verificationStatus !== 'Published');
+  assert.equal(unpublished.length, 25);
+  for (const topic of unpublished) {
+    assert.equal(topic.version.publicationStatus, 'unpublished', topic.id + ': do not imply publication');
+    assert.equal(topic.understand, undefined, topic.id + ': full Understand content is not authored');
+    assert.deepEqual(topic.traceIds, [], topic.id + ': no authored trace IDs');
+    assert.deepEqual(topic.problems, [], topic.id + ': no published problem suites');
+    assert.deepEqual(topic.assessments, [], topic.id + ': no published transfer assessment');
+  }
+
+  const read = (relativePath) => readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+  const understand = read('../../src/features/pattern-forge-unified/components/StageUnderstandView.tsx');
+  const trace = read('../../src/features/pattern-forge-unified/components/TraceVisualizationPlayer.tsx');
+  const implement = read('../../src/features/pattern-forge-unified/components/StageImplementView.tsx');
+  const practice = read('../../src/features/pattern-forge-unified/components/StagePracticeView.tsx');
+  const master = read('../../src/features/pattern-forge-unified/components/StageMasterView.tsx');
+  assert.match(understand, /intentionally NOT labeled Published/);
+  assert.match(trace, /Interactive traces are not yet authored/);
+  assert.match(implement, /implementations are not yet published/);
+  assert.match(practice, /currently authored for the 3 Published pilot patterns/);
+  assert.match(master, /topic\.verificationStatus !== 'Published'/);
+  assert.match(master, /role="status"/);
+  assert.match(master, /does not certify a completed course/);
 });
 
 test('three reference pilot patterns provide full 5-stage lifecycle and deterministic traces with checkpoints', () => {
