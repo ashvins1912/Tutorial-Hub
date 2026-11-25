@@ -139,7 +139,7 @@ export function CompleteDsaCourse() {
         <div className="mt-3 flex items-center justify-between px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400"><span>Learning path</span><span>{filtered.length} / {DSA_COMPLETE_LESSONS.length}</span></div>
         <div className="mt-2 max-h-[65vh] space-y-1 overflow-y-auto">
           {filtered.map((lesson) => {
-            const count = progress[lesson.id]?.length ?? 0;
+            const count = validProgressFor(lesson.id).length;
             const selected = active.id === lesson.id;
             return <button key={lesson.id} type="button" onClick={() => setActiveId(lesson.id)} aria-pressed={selected} className={`w-full rounded-xl border p-3 text-left transition-colors ${selected ? 'border-sky-400 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/40' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold">{lesson.title}</span>{count === DSA_LESSON_STEPS.length ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" /> : <span className="text-[10px] tabular-nums text-slate-400">{count}/{DSA_LESSON_STEPS.length}</span>}</div>
@@ -167,9 +167,9 @@ export function CompleteDsaCourse() {
 
         {active.id === 'dynamic-programming' && <DpLearningLab />}
         {active.id === 'two-dimensional-arrays' && <MatrixProblemBank />}\n\n        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-          <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold">Your mastery checklist</h3><p className="mt-1 text-xs text-slate-500">Complete all eight steps through independent work, not by simply reading.</p></div><span className="text-sm font-bold tabular-nums">{progress[active.id]?.length ?? 0}/8</span></div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: ((progress[active.id]?.length ?? 0) / 8 * 100) + '%' }} /></div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">{DSA_LESSON_STEPS.map((step) => { const checked = progress[active.id]?.includes(step) ?? false; return <button key={step} type="button" onClick={() => toggleStep(step)} aria-pressed={checked} className="flex items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><span className={checked ? 'text-emerald-500' : 'text-slate-300'}>{checked ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}</span><span className={`text-xs leading-relaxed ${checked ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>{step}</span></button>; })}</div>
+          <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold">Your mastery checklist</h3><p className="mt-1 text-xs text-slate-500">Complete all eight steps through independent work, not by simply reading.</p></div><span className="text-sm font-bold tabular-nums">{activeCompletedSteps.length}/{DSA_LESSON_STEPS.length}</span></div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: (activeCompletedSteps.length / DSA_LESSON_STEPS.length * 100) + '%' }} /></div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">{DSA_LESSON_STEPS.map((step) => { const checked = activeCompletedSteps.includes(step); return <button key={step} type="button" onClick={() => toggleStep(step)} aria-pressed={checked} className="flex items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><span className={checked ? 'text-emerald-500' : 'text-slate-300'}>{checked ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}</span><span className={`text-xs leading-relaxed ${checked ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>{step}</span></button>; })}</div>
           <p className="mt-3 text-[11px] text-slate-400">Progress is stored locally in this browser. It is a self-assessment, not an externally graded result.</p>
         </section>
       </div>
