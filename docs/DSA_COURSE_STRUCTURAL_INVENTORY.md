@@ -47,3 +47,20 @@ The first focused review of the DSA course examples found and corrected three is
 The JavaScript sliding-window code is exercised against brute force for duplicate, increasing, decreasing, negative, singleton and invalid-window cases. The Java snippets are compiled and executed in CI for valid Two Sum, overflow false-positive cases, a multi-edge tree, a singleton tree and an empty tree. Source blob after these edits: `da054573218eba496695a9247fad785f6c347f19`.
 
 A CI run on an earlier intermediate head failed because the initial hand-parsed code-example count was 45; the runtime-exported course count is 42. The report and test expectation were corrected to 42. The current-head run is required to confirm all structural totals and the new executable examples.
+
+
+## Additional structural dimensions
+
+The all-module structural test also locks these course totals, and now requires every module to have nonempty entries for every declared teaching array (including correctness, deep dive, practice, interview checks and real-world applications):
+
+| Teaching unit | Entries |
+|---|---:|
+| Recognition cues | 96 |
+| Method/checklist steps | 144 |
+| Complexity notes | 109 |
+| Correctness notes | 115 |
+| Deep-dive notes | 227 |
+| Interview checks | 112 |
+| Real-world applications | 106 |
+
+These counts are array entries, not a score or content review. A field being present does not prove its statements are correct or sufficiently detailed.
