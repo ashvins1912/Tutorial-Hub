@@ -40,5 +40,5 @@ test('DSA Academy provides plain-language glossary entries across the course mod
   assert.equal(glossaryBlocks, 23, 'expected a glossary block for each current DSA lesson');
   assert.match(lessonData, /"term":"Invariant"/);
   assert.match(lessonData, /"term":"Monotonic predicate"/);
-  assert.match(lessonData, /"term":"Feasibility check"/);
+  assert.match(lessonData, /"term":"Feasibility check"/);\n  const dsaUi = readFileSync(path.join(root, 'src/components/CompleteDsaCourse.tsx'), 'utf8');\n  assert.match(dsaUi, /section === 'keyTerms'/);
 });
