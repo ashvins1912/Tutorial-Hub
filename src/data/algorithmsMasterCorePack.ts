@@ -903,7 +903,7 @@ void siftDown(int[] a, int i, int size) {
       {
         step: 4,
         title: 'AVL vs Red-Black Trade-off Summary',
-        explanation: 'AVL guarantees height ≤ 1.44 log₂ N (faster reads); Red-Black guarantees ≤ 2 rotations per insert (faster writes).',
+        explanation: 'AVL trees have a tighter height bound (about 1.44 log₂ N for large N), which can shorten search paths; actual read speed depends on implementation and workload. Red-Black insertion uses at most two rotations, while deletion has a different bound.',
         invariantCheck: 'All operations bounded strictly by O(log N).',
         variables: [{ name: 'avlMaxH', value: '1.44 logN' }, { name: 'rbMaxH', value: '2 logN' }],
         array: [20, 10, 40, 30, 50],
@@ -930,7 +930,7 @@ void siftDown(int[] a, int i, int size) {
     mentalModel:
       'Think of Morse code: frequent letter "E" gets a single dot (`.`), while rare "Q" gets `--.-`. Huffman repeatedly merges the two least-frequent symbols into a parent node so rare symbols sink deepest.',
     coreInvariant:
-      'Prefix-Free Property: every symbol sits exclusively at a leaf, so no codeword is a prefix of any other codeword—enabling instant unambiguous bit-stream decoding.',
+      'Prefix-Free Property: every symbol sits exclusively at a leaf, so no codeword is a prefix of any other codeword—so the bit stream can be decoded unambiguously without separators; decoding still takes time proportional to the number of bits read.',
     whenToUse: [
       'Lossless entropy coding inside DEFLATE / gzip / ZIP, PNG, JPEG, and HTTP/2 HPACK headers.',
       'Optimal merge patterns: Minimum Cost to Connect Sticks (LC 1167) and Merge Files with Minimum Cost.',
@@ -1132,7 +1132,7 @@ void insert(TrieNode root, String w) {
         step: 3,
         title: 'Collect Subtree Completions in Lexicographical Order',
         explanation: 'DFS under node `p` emits ["app", "apple", "apt"] while completely ignoring the `b` ("bat") branch.',
-        invariantCheck: 'Pre-caching top-3 frequent words at each node enables O(L) instant autocomplete!',
+        invariantCheck: 'Walking the trie to the prefix node costs O(L). A cached top-three list can make returning those suggestions constant-time after the walk, but cache updates and output costs still apply.',
         variables: [{ name: 'matches', value: '["app","apple","apt"]' }],
         array: ['app', 'apple', 'apt'],
         matchedIndices: [0, 1, 2],
