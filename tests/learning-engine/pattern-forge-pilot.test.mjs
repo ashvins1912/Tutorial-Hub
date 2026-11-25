@@ -34,6 +34,21 @@ test('canonical curriculum registers all 28 patterns preserving DSA28 canonical 
   assert.deepEqual(actualIds, expectedIds);
 });
 
+test('canonical DSA28 complexity summaries state their algorithmic assumptions', () => {
+  const byId = new Map(DSA28_PATTERNS.map((pattern) => [pattern.id, pattern]));
+  assert.match(byId.get('hashmap-hashset-lookup').timeComplexity, /expected O\(1\)/i);
+  assert.match(byId.get('dynamic-sliding-window').timeComplexity, /amortized.*monotone/i);
+  assert.match(byId.get('cyclic-sort').timeComplexity, /only when.*bounded index range/i);
+  assert.match(byId.get('modified-binary-search').timeComplexity, /duplicate-heavy.*O\(n\)/i);
+  assert.match(byId.get('binary-search-on-answer').timeComplexity, /C\(n\).*log R/i);
+  assert.match(byId.get('monotonic-stack').timeComplexity, /amortized/i);
+  assert.match(byId.get('union-find-disjoint-set').timeComplexity, /amortized.*path compression.*union by rank or size/i);
+  assert.match(byId.get('shortest-path-weighted').timeComplexity, /non-negative weights/i);
+  assert.match(byId.get('topological-sort').spaceComplexity, /excluding the stored adjacency graph/i);
+  assert.match(byId.get('backtracking').timeComplexity, /output-sensitive/i);
+  assert.match(byId.get('dynamic-programming').timeComplexity, /number of states.*transitions per state/i);
+});
+
 test('Dynamic Programming explicitly distinguishes pseudo-polynomial state bounds from polynomial input-bit complexity', () => {
   const topic = getLearningTopicById('dynamic-programming');
   assert.ok(topic?.understand, 'Dynamic Programming must publish its conceptual explanation');
