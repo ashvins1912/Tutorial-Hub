@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Code2, Lightbulb, RotateCcw } from 'lucide-react';
 import { useAccountState } from '../hooks/useAccountState';
+import { DP_PRACTICE_PROBLEMS } from '../data/dpPracticeProblems';
 
-type Lesson = { title: string; idea: string; state: string; recurrence: string; base: string; order: string; complexity: string; java: string; checkpoint: string };
-const lessons: Lesson[] = [
+export type DpGuidedLesson = { title: string; idea: string; state: string; recurrence: string; base: string; order: string; complexity: string; java: string; checkpoint: string };
+export const DP_GUIDED_LESSONS: DpGuidedLesson[] = [
   { title: '1. What DP actually means', idea: 'Dynamic Programming means solving a smaller question once, saving its answer, and reusing it. Imagine climbing stairs: to reach step n, your last move came from n−1 or n−2. Those smaller answers repeat, so cache them.', state: 'dp[i] = number of different ways to reach stair i.', recurrence: 'dp[i] = dp[i - 1] + dp[i - 2]', base: 'dp[0] = 1 (one way to stay at the ground); dp[1] = 1.', order: 'Calculate from i = 2 up to n because each answer needs the previous two.', complexity: 'O(n) time, O(n) table space; O(1) space is possible because only two previous values are needed.', java: 'int climbStairs(int n) {\n    if (n <= 1) return 1;\n    int twoBack = 1, oneBack = 1;\n    for (int i = 2; i <= n; i++) {\n        int current = oneBack + twoBack;\n        twoBack = oneBack;\n        oneBack = current;\n    }\n    return oneBack;\n}', checkpoint: 'Can you explain why the answer for step 5 depends only on steps 4 and 3?' },
   { title: '2. Memoization: recursion + cache', idea: 'First write the natural recursive question. Before solving a state, check whether its answer is already stored. This keeps the easy-to-understand recursive structure while removing repeated work.', state: 'solve(i) = number of ways to reach stair i.', recurrence: 'solve(i) = solve(i - 1) + solve(i - 2)', base: 'If i == 0 or i == 1, return 1. Use a cache with an uncomputed marker.', order: 'The call stack discovers dependencies on demand. Each state is fully calculated once.', complexity: 'O(n) distinct states × O(1) work per state = O(n) time; O(n) cache plus O(n) recursion stack.', java: 'int solve(int n, int[] memo) {\n    if (n <= 1) return 1;\n    if (memo[n] != -1) return memo[n];\n    memo[n] = solve(n - 1, memo)\n            + solve(n - 2, memo);\n    return memo[n];\n}\n// Initialise memo with -1 before calling.', checkpoint: 'Why does the cache turn an exponential recursion tree into only n distinct calculations?' },
   { title: '3. Tabulation: build answers bottom-up', idea: 'Instead of asking recursion to discover smaller states, build the table in dependency order. Start with known answers and move toward the target.', state: 'dp[i] = best/number of ways for the prefix ending at i (define the exact meaning for each problem).', recurrence: 'Write the transition using already-computed smaller states.', base: 'Initialise the smallest valid states explicitly before the loop.', order: 'Draw arrows from dependencies to the state. The loop order must process every dependency first.', complexity: 'Usually number of states × transitions per state. Table space equals number of stored states.', java: 'int[] dp = new int[n + 1];\ndp[0] = 1;\nif (n >= 1) dp[1] = 1;\nfor (int i = 2; i <= n; i++) {\n    dp[i] = dp[i - 1] + dp[i - 2];\n}\nreturn dp[n];', checkpoint: 'If dp[i] reads dp[i-1], why must i-1 be calculated first?' },
@@ -14,28 +15,7 @@ const lessons: Lesson[] = [
   { title: '8. Advanced patterns: intervals, trees, bitmasks', idea: 'Once one-dimensional, grid, knapsack and string DP feel natural, the same state-and-transition method extends to more complex shapes.', state: 'Interval DP: dp[l][r] describes a range. Tree DP: dp[node][choice/state] describes a subtree. Bitmask DP: dp[mask][last] describes a visited subset and endpoint.', recurrence: 'Enumerate the final split, root choice, or next unvisited element; combine valid smaller states.', base: 'Use the smallest interval, leaf node, empty mask or single-element subset as base states.', order: 'Intervals by increasing length; trees postorder; masks in increasing number of set bits or numeric order when dependencies are smaller masks.', complexity: 'Often O(n³) interval DP, O(n × statesPerNode) tree DP, and O(2ⁿ × n) bitmask DP. Derive rather than memorise.', java: '/* Interval DP skeleton */\nfor (int len = 1; len <= n; len++) {\n    for (int l = 0; l + len <= n; l++) {\n        int r = l + len - 1;\n        // try every valid split k in [l, r]\n        for (int k = l; k <= r; k++) {\n            // combine smaller interval states\n        }\n    }\n}', checkpoint: 'What is the meaning of one DP cell before you decide its recurrence?' }
 ];
 
-const problems = [
-  ['Warm-up', 'Fibonacci Number', 'Recognise repeated subproblems; compare recursion, memoization and tabulation.'],
-  ['Warm-up', 'Climbing Stairs', 'Define dp[i] as ways to reach stair i and set base cases.'],
-  ['Warm-up', 'Min Cost Climbing Stairs', 'Change the state meaning from count to minimum cost.'],
-  ['Core', 'House Robber', 'Model take/skip choices and compress to two variables.'],
-  ['Core', 'House Robber II', 'Split circular adjacency into two linear ranges.'],
-  ['Core', 'Unique Paths', 'Build a grid state from top and left.'],
-  ['Core', 'Minimum Path Sum', 'Change sum-of-ways into minimum-cost transition.'],
-  ['Core', 'Decode Ways', 'Use one-character and valid two-character transitions.'],
-  ['Core', 'Coin Change', 'Distinguish minimum number of coins from number of combinations.'],
-  ['Core', 'Partition Equal Subset Sum', 'Convert partition into 0/1 subset-sum.'],
-  ['Challenge', 'Longest Increasing Subsequence', 'Compare O(n²) DP with O(n log n) tails optimisation.'],
-  ['Challenge', 'Longest Common Subsequence', 'Design a two-prefix state and reconstruct if required.'],
-  ['Challenge', 'Edit Distance', 'Model insert, delete and replace operations.'],
-  ['Challenge', 'Target Sum', 'Transform signed choices into subset-sum where valid.'],
-  ['Challenge', 'Best Time to Buy and Sell Stock with Cooldown', 'Add a state for holding, sold and cooldown.'],
-  ['Advanced', 'Burst Balloons', 'Choose the last balloon and use interval DP.'],
-  ['Advanced', 'Palindrome Partitioning II', 'Precompute palindrome intervals and optimise cuts.'],
-  ['Advanced', 'Word Break', 'Use prefix reachability and dictionary membership.'],
-  ['Advanced', 'Regular Expression Matching', 'Model pattern position and string position.'],
-  ['Advanced', 'Traveling Salesperson / Assignment DP', 'Use bitmask state when n is small.']
-] as const;
+
 
 const stages = ['Understand the question', 'Define the state', 'Write the transition', 'Set base cases', 'Choose calculation order', 'Code and test', 'Analyse complexity'];
 export function DpLearningLab() {
@@ -48,10 +28,10 @@ export function DpLearningLab() {
     'patternforge-dp-practice-v1'
   );
   const [filter, setFilter] = useState('All');
-  const lesson = lessons[lessonIndex];
+  const lesson = DP_GUIDED_LESSONS[lessonIndex];
   const fib = useMemo(() => { const a = [1, 1]; for (let i = 2; i <= stair; i++) a.push(a[i - 1] + a[i - 2]); return a.slice(0, stair + 1); }, [stair]);
   const groups = ['All', 'Warm-up', 'Core', 'Challenge', 'Advanced'];
-  const visibleProblems = problems.filter((p) => filter === 'All' || p[0] === filter);
+  const visibleProblems = DP_PRACTICE_PROBLEMS.filter((problem) => filter === 'All' || problem.level === filter);
   const toggle = (item: string) =>
     setCompleted((old) => (old.includes(item) ? old.filter((x) => x !== item) : [...old, item]));
   return <section className="space-y-5">
@@ -79,12 +59,12 @@ export function DpLearningLab() {
     </div>
 
     <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Guided lessons · {lessonIndex + 1} of {lessons.length}</div><h3 className="mt-1 text-xl font-bold">{lesson.title}</h3></div><div className="flex gap-2"><button disabled={lessonIndex === 0} onClick={() => { setLessonIndex((x) => x - 1); setShowAnswer(false); }} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-30"><ChevronLeft className="inline h-4 w-4" /> Back</button><button disabled={lessonIndex === lessons.length - 1} onClick={() => { setLessonIndex((x) => x + 1); setShowAnswer(false); }} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-30">Next <ChevronRight className="inline h-4 w-4" /></button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs font-bold uppercase tracking-wider text-indigo-600">Guided lessons · {lessonIndex + 1} of {DP_GUIDED_LESSONS.length}</div><h3 className="mt-1 text-xl font-bold">{lesson.title}</h3></div><div className="flex gap-2"><button disabled={lessonIndex === 0} onClick={() => { setLessonIndex((x) => x - 1); setShowAnswer(false); }} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-30"><ChevronLeft className="inline h-4 w-4" /> Back</button><button disabled={lessonIndex === lessons.length - 1} onClick={() => { setLessonIndex((x) => x + 1); setShowAnswer(false); }} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-30">Next <ChevronRight className="inline h-4 w-4" /></button></div></div>
       <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{lesson.idea}</p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">{[['State', lesson.state],['Transition / recurrence', lesson.recurrence],['Base cases', lesson.base],['Evaluation order', lesson.order],['Complexity', lesson.complexity]].map(([title, body]) => <div key={title} className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">{title}</h4><p className="mt-2 text-sm leading-relaxed">{body}</p></div>)}</div>
       <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"><div className="flex items-center gap-2 border-b border-slate-200 p-3 text-sm font-semibold dark:border-slate-700"><Code2 className="h-4 w-4" /> Java example</div><pre className="overflow-x-auto bg-slate-950 p-4 text-xs leading-relaxed text-emerald-200"><code>{lesson.java}</code></pre></div>
       <div className="mt-4 rounded-xl border border-indigo-200 p-4 dark:border-indigo-900"><div className="flex items-center gap-2 text-sm font-bold"><BookOpen className="h-4 w-4 text-indigo-600" /> Check your understanding</div><p className="mt-2 text-sm">{lesson.checkpoint}</p><button onClick={() => setShowAnswer((x) => !x)} className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">{showAnswer ? 'Hide hint' : 'Show hint'}</button>{showAnswer && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Trace the recurrence with a tiny input (0, 1, 2 or 3). Write down exactly what each state means, which earlier states it reads, and why those states are ready before this one.</p>}</div>
-      <div className="mt-4 flex flex-wrap gap-2">{lessons.map((x, i) => <button key={x.title} onClick={() => { setLessonIndex(i); setShowAnswer(false); }} aria-label={x.title} className={i === lessonIndex ? 'h-2.5 w-8 rounded-full bg-indigo-600' : 'h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-600'} />)}</div>
+      <div className="mt-4 flex flex-wrap gap-2">{DP_GUIDED_LESSONS.map((x, i) => <button key={x.title} onClick={() => { setLessonIndex(i); setShowAnswer(false); }} aria-label={x.title} className={i === lessonIndex ? 'h-2.5 w-8 rounded-full bg-indigo-600' : 'h-2.5 w-2.5 rounded-full bg-slate-300 dark:bg-slate-600'} />)}</div>
     </article>
 
     <article className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
