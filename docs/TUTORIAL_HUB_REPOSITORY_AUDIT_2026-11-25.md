@@ -299,3 +299,18 @@ Every pilot should include:
 No application code, learning content, production functionality, authentication, learner progress or deployment was changed in this audit. A dedicated audit branch may contain this report only.
 
 **Required next approval:** approve Phase 0 (the narrow registry + ledger + CI correction) and the proposed topic inventory/pilot sequence. Bulk content enrichment remains blocked until review of this report.
+
+## Follow-up verification — 2026-11-25
+
+This section supersedes time-sensitive CI and inventory statements above where they refer to the earlier audited HEAD `512c342ac17825398b9aafde24b706ecd1d9a3a6`. The earlier findings remain preserved as a historical snapshot.
+
+- Current verified `main` HEAD: `82a26434496bc0a63b07576da73ee06830696756`.
+- The canonical learning-surface registry and quality ledger now each contain **22** surfaces, including `pattern-forge`. The registry's tracked-file baseline is refreshed to **510** files at this commit.
+- The Pattern Forge registry/ledger integration gap (LRN-001) is resolved in current source. The previous CI failure described under LRN-001 belongs to the earlier commit and is not the current CI state.
+- The current main workflow run **45529681550** completed successfully. Its single validation job passed TypeScript, handwritten DSA curriculum checks, DSA topic completeness, source-authored DSA solution execution, content-authoring/security checks, the 293-question inventory boundary checks, Pattern Forge governance, registry and quality-ledger validation, topic inventory, and the frontend build.
+- The Heap lesson's JavaScript/Python examples are now inside the canonical `codeExamples` array. The Java test harness was corrected to select only `language === 'Java 21'`; PRs #56 and #57 contain the corrective work.
+- The quality ledger intentionally remains **not_assessed** for all 22 surfaces. Passing structural and CI checks is not a substitute for topic-level subject-matter review, accessibility testing or learner outcome evidence.
+- Pattern Forge still has three reference pilots out of 28 patterns. The other 25 remain inventory-only and unpublished.
+- This follow-up is static repository and CI evidence only. It does not claim a production browser walkthrough, manual assistive-technology review, independent SME review or learner study.
+
+The overall all-topic content-quality audit therefore remains open. Continue with topic-level evidence collection and risk-based pilots; do not bulk-promote inventory records or change publication status without the required review evidence.
