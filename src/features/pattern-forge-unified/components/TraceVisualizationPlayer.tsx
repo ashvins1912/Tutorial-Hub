@@ -128,6 +128,8 @@ export const TraceVisualizationPlayer: React.FC<TraceVisualizationPlayerProps> =
     }));
     void recordEvidence({
       topicId: topic.id,
+      checkpointTraceId: trace.id,
+      checkpointId: activeCheckpoint.id,
       checkpointCorrect: option.isCorrect,
     });
   };
