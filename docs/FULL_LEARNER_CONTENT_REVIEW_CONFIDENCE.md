@@ -54,3 +54,33 @@
 ## Status
 
 This report records the evidenced gap and improvements required. It does **not** claim 100% completion. Keep PR #69 draft until all gates pass and the final evidence ledger supports the claim. No deployment, merge, hosting change or external spend is authorized.
+
+
+## Latest targeted review update (2026-11-25)
+
+### Source-level improvements committed
+
+A focused technical review of `src/data/algorithmTutorGuides.ts` identified and corrected five high-risk teaching overstatements:
+
+1. **N-Queens bitmask performance:** removed an unsupported fixed “~10× faster” promise. The guide now states the exponential upper bound and qualifies O(1) candidate conflict checks by supported integer width and implementation.
+2. **Backtracking applicability:** removed the blanket “N > 25 → DP” rule. It now explains DP only applies when a compact state and recurrence exist, and distinguishes branch-and-bound / meet-in-the-middle / problem-specific pruning.
+3. **Shortest-path counting:** clarified that the simple Dijkstra ways-count recurrence assumes strictly positive edge weights; zero-weight shortest-path cycles require a defined walk/simple-path counting model and a suitable method.
+4. **Two-pointer complexity:** restricted the O(N) claim to suitable sorted pair-search problems with a valid elimination invariant; explicitly excludes input/output space from auxiliary-space claims.
+5. **K-Sum complexity:** clarified fixed-K assumptions, recursion stack, sorting cost and output exclusion.
+6. **Binary search on answer:** clarified monotonicity, candidate range R, O(N log R) checker cost and preprocessing caveat.
+
+These edits were applied to the actual learner-facing source and verified by re-fetching the updated blob. They improve confidence in these specific claims only; they do not certify all entries in the 1,159-line guide or the broader curriculum.
+
+### Latest commit and validation
+
+- Latest source correction commit: `41807861925c386e47a01a32e3fb0e3ffe0405ba`
+- Previous source correction commit: `eda02fb5569d66f33abe90cb90521621403bfecb`
+- CI run #703 was reported in progress for the previous source-correction commit.
+- No workflow run had yet been returned for the latest commit when this report was refreshed.
+
+### Updated confidence
+
+- **Targeted correctness confidence:** improved for the six corrected claims; still requires CI and independent review.
+- **Whole-file confidence:** remains unverified because all 1,159 lines have not been dispositioned.
+- **Whole-platform review completion:** still 0% evidenced complete against the strict 100% criteria above. This is a coverage statement, not a claim that the platform content is 0% correct.
+- **100% certification:** not yet supported. Keep PR draft and do not merge/deploy until complete coverage and final-head checks are evidenced.
