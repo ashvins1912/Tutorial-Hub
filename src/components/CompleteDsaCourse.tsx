@@ -43,15 +43,15 @@ function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionK
     ))}</div>;
   }
   if (section === 'codeExamples') {
-    return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example) => {
+    return <div className="space-y-4">{(lesson.codeExamples ?? []).map((example, exampleIndex) => {
       const codeLines = example.code.split('\n');
       return <article key={example.title} className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800"><h4 className="text-sm font-semibold">{example.title}</h4><span className="rounded bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">{example.language}</span></div>
         <div className="border-b border-slate-100 bg-white dark:border-slate-700 dark:bg-slate-950">
           <div className="flex items-center justify-between px-4 pt-3"><span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Code walkthrough</span><span className="text-[11px] text-slate-400">Read the line numbers with the explanation</span></div>
-          <pre className="overflow-x-auto p-4 text-sm leading-6 text-slate-800 dark:text-slate-200"><code>{codeLines.map((line, index) => <span key={index} className="flex min-w-max"><span aria-hidden="true" className="mr-4 inline-block w-6 shrink-0 select-none text-right text-slate-400">{index + 1}</span><span>{line || ' '}{'\n'}</span></span>)}</code></pre>
+          <pre tabIndex={0} aria-label={`${example.language} code example: ${example.title}`} aria-describedby={`dsa-code-explanation-${lesson.id}-${exampleIndex}`} className="overflow-x-auto p-4 text-sm leading-6 text-slate-800 dark:text-slate-200"><code>{codeLines.map((line, index) => <span key={index} className="flex min-w-max"><span aria-hidden="true" className="mr-4 inline-block w-6 shrink-0 select-none text-right text-slate-400">{index + 1}</span><span>{line || ' '}{'\n'}</span></span>)}</code></pre>
         </div>
-        <div className="border-t border-slate-100 bg-sky-50/60 p-4 dark:border-slate-700 dark:bg-sky-950/20"><h5 className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">What the code is doing</h5><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{example.explanation}</p><p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Study tip: predict the next state, trace the variables, then explain why each update is safe before changing the code.</p></div>
+        <div className="border-t border-slate-100 bg-sky-50/60 p-4 dark:border-slate-700 dark:bg-sky-950/20"><h5 id={`dsa-code-explanation-${lesson.id}-${exampleIndex}`} className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">What the code is doing</h5><p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{example.explanation}</p><p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Study tip: predict the next state, trace the variables, then explain why each update is safe before changing the code.</p></div>
       </article>;
     })}</div>;
   }
@@ -67,7 +67,7 @@ function SectionList({ lesson, section }: { lesson: DsaLesson; section: SectionK
   const values = (lesson[section] ?? []) as string[];
   if (values.length === 0) return null;
   return <ol className="space-y-2.5">{values.map((value, index) => (
-    <li key={value} className="flex gap-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+    <li key={`${section}-${index}`} className="flex gap-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 dark:bg-slate-800">{index + 1}</span>
       <span>{value}</span>
     </li>
@@ -127,7 +127,7 @@ export function CompleteDsaCourse() {
           {filtered.map((lesson) => {
             const count = progress[lesson.id]?.length ?? 0;
             const selected = active.id === lesson.id;
-            return <button key={lesson.id} type="button" onClick={() => setActiveId(lesson.id)} className={`w-full rounded-xl border p-3 text-left transition-colors ${selected ? 'border-sky-400 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/40' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+            return <button key={lesson.id} type="button" onClick={() => setActiveId(lesson.id)} aria-pressed={selected} className={`w-full rounded-xl border p-3 text-left transition-colors ${selected ? 'border-sky-400 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/40' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <div className="flex items-start justify-between gap-2"><span className="text-sm font-semibold">{lesson.title}</span>{count === DSA_LESSON_STEPS.length ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" /> : <span className="text-[10px] tabular-nums text-slate-400">{count}/{DSA_LESSON_STEPS.length}</span>}</div>
               <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{lesson.promise}</p>
             </button>;
@@ -146,8 +146,8 @@ export function CompleteDsaCourse() {
         {sectionMeta.filter((meta) => meta.key === 'codeExamples' ? Boolean(active.codeExamples?.length) : Boolean((active[meta.key] as unknown[] | undefined)?.length)).map((meta) => {
           const isOpen = expanded.includes(meta.key);
           return <section key={meta.key} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <button type="button" onClick={() => toggleSection(meta.key)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5"><div><h3 className="text-sm font-bold sm:text-base">{meta.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{meta.intro}</p></div>{isOpen ? <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />}</button>
-            {isOpen && <div className="border-t border-slate-100 p-4 dark:border-slate-800 sm:p-5"><SectionList lesson={active} section={meta.key} /></div>}
+            <button type="button" onClick={() => toggleSection(meta.key)} aria-expanded={isOpen} aria-controls={`dsa-section-${meta.key}`} className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5"><div><h3 className="text-sm font-bold sm:text-base">{meta.title}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{meta.intro}</p></div>{isOpen ? <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" /> : <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />}</button>
+            {isOpen && <div id={`dsa-section-${meta.key}`} className="border-t border-slate-100 p-4 dark:border-slate-800 sm:p-5"><SectionList lesson={active} section={meta.key} /></div>}
           </section>;
         })}
 
@@ -155,7 +155,7 @@ export function CompleteDsaCourse() {
         {active.id === 'two-dimensional-arrays' && <MatrixProblemBank />}\n\n        <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold">Your mastery checklist</h3><p className="mt-1 text-xs text-slate-500">Complete all eight steps through independent work, not by simply reading.</p></div><span className="text-sm font-bold tabular-nums">{progress[active.id]?.length ?? 0}/8</span></div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: ((progress[active.id]?.length ?? 0) / 8 * 100) + '%' }} /></div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">{DSA_LESSON_STEPS.map((step) => { const checked = progress[active.id]?.includes(step) ?? false; return <button key={step} type="button" onClick={() => toggleStep(step)} className="flex items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><span className={checked ? 'text-emerald-500' : 'text-slate-300'}>{checked ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}</span><span className={`text-xs leading-relaxed ${checked ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>{step}</span></button>; })}</div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">{DSA_LESSON_STEPS.map((step) => { const checked = progress[active.id]?.includes(step) ?? false; return <button key={step} type="button" onClick={() => toggleStep(step)} aria-pressed={checked} className="flex items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800"><span className={checked ? 'text-emerald-500' : 'text-slate-300'}>{checked ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}</span><span className={`text-xs leading-relaxed ${checked ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>{step}</span></button>; })}</div>
           <p className="mt-3 text-[11px] text-slate-400">Progress is stored locally in this browser. It is a self-assessment, not an externally graded result.</p>
         </section>
       </div>
