@@ -37,13 +37,18 @@ import { CloudDevCompleteTutorial } from './CloudDevCompleteTutorial';
 import { DEVOPS_CLOUD_DEEP_TOPICS } from '../../data/devopsCloudDeepGapsData';
 import { DevOpsCloudDeepVisualLab } from './DevOpsCloudDeepVisualLab';
 import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
+import { BackendDevopsHandbooksView } from '../shared/BackendDevopsHandbooksView';
 
 const BoundedDevOpsCloudDeepVisualLab = withStudioBoundary(DevOpsCloudDeepVisualLab, {
   studioName: 'DevOps & Cloud Deep Visual Learning Lab',
 });
+const BoundedDockerRuntimeHandbook = withStudioBoundary(BackendDevopsHandbooksView, {
+  studioName: 'Docker Complete Handbook & OS Runtime Lab',
+});
 
 type StudioTab =
   | 'dev-tutorials'
+  | 'docker-handbook'
   | 'deep-visual-gaps'
   | 'playground'
   | 'simulators'
@@ -658,6 +663,7 @@ const DevOpsCloudStudioInner: React.FC = () => {
         onChange={setActiveTab}
         tabs={[
           { id: 'dev-tutorials', label: 'Docker · K8s · AWS · GCP' },
+          { id: 'docker-handbook', label: 'Docker Handbook & Process/Thread Lab' },
           {
             id: 'deep-visual-gaps',
             label: `Cloud & K8s Deep Visual Lab (${DEVOPS_CLOUD_DEEP_TOPICS.length})`,
@@ -673,6 +679,11 @@ const DevOpsCloudStudioInner: React.FC = () => {
 
       {/* Complete Developer Tutorial: Docker, Kubernetes, AWS & GCP */}
       {activeTab === 'dev-tutorials' && <CloudDevCompleteTutorial />}
+
+      {/* Plain-Language Docker Complete Handbook + Node/JPA + Process vs Thread Simulator */}
+      {activeTab === 'docker-handbook' && (
+        <BoundedDockerRuntimeHandbook initialTrack="docker-handbook" />
+      )}
 
       {/* Enriched DevOps & Cloud Deep Visual Learning Lab (8 Production Gap Modules) */}
       {activeTab === 'deep-visual-gaps' && <BoundedDevOpsCloudDeepVisualLab />}

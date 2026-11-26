@@ -41,12 +41,19 @@ import {
   type OopDesignPatternItem,
 } from '../../data/systemDesignHandbookData';
 import { useAccountState } from '../../hooks/useAccountState';
+import { EventDrivenAnd30ConceptsView } from './EventDrivenAnd30ConceptsView';
 
 export interface SystemDesignHandbookViewProps {
   onOpenAcademyTopic?: (categoryId: string, topicId: string) => void;
 }
 
-type HandbookSection = 'study' | 'capacity-interview' | 'matrices' | 'case-studies' | 'reference';
+type HandbookSection =
+  | 'study'
+  | 'capacity-interview'
+  | 'matrices'
+  | 'case-studies'
+  | 'eda-concepts30'
+  | 'reference';
 
 interface HandbookProgress {
   completedPasses: number[];
@@ -281,6 +288,7 @@ export function SystemDesignHandbookView({ onOpenAcademyTopic }: SystemDesignHan
 
   const sectionTabs: { id: HandbookSection; label: string; icon: typeof BookOpen }[] = [
     { id: 'case-studies', label: '10 Case Studies', icon: Compass },
+    { id: 'eda-concepts30', label: 'EDA, Kafka & 30 Concepts', icon: Layers },
     { id: 'capacity-interview', label: 'Capacity & 7-Step Interview', icon: Calculator },
     { id: 'matrices', label: 'DS, Algos, LLD & HLD', icon: Layers },
     { id: 'study', label: '5-Pass Method & Roadmap', icon: BookOpen },
@@ -1526,6 +1534,8 @@ export function SystemDesignHandbookView({ onOpenAcademyTopic }: SystemDesignHan
           </section>
         </div>
       )}
+
+      {activeSection === 'eda-concepts30' && <EventDrivenAnd30ConceptsView />}
     </div>
   );
 }

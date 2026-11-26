@@ -26,8 +26,16 @@ import { PolyglotStackCodeLab } from './PolyglotStackCodeLab';
 import { StorageAndDiagnosticsLab } from './StorageAndDiagnosticsLab';
 import { LiveTrafficFlowSimulator } from '../shared/LiveTrafficFlowSimulator';
 import { TopicBridgeBar } from '../shared/TopicBridgeBar';
+import { BackendDevopsHandbooksView } from '../shared/BackendDevopsHandbooksView';
 
-type FullStackTab = 'internals-sim' | 'storyboard' | 'frameworks' | 'ai-gpu' | 'polyglot' | 'storage-ops';
+type FullStackTab =
+  | 'internals-sim'
+  | 'jpa-node-docker'
+  | 'storyboard'
+  | 'frameworks'
+  | 'ai-gpu'
+  | 'polyglot'
+  | 'storage-ops';
 
 interface FullStackStudioProgress {
   verifiedRunbookIds: string[];
@@ -54,6 +62,9 @@ const BoundedPolyglotStackCodeLab = withStudioBoundary(PolyglotStackCodeLab, {
 });
 const BoundedStorageAndDiagnosticsLab = withStudioBoundary(StorageAndDiagnosticsLab, {
   studioName: 'Storage, Vector & SRE Diagnostics Lab',
+});
+const BoundedBackendDevopsHandbooksView = withStudioBoundary(BackendDevopsHandbooksView, {
+  studioName: 'Spring Data JPA, Node.js, Docker & Process vs Thread Handbooks',
 });
 
 export function FullStackSystemsStudio() {
@@ -162,6 +173,12 @@ export function FullStackSystemsStudio() {
                 icon: Boxes,
               },
               {
+                id: 'jpa-node-docker',
+                label: 'JPA · Node.js · Docker · Process/Thread',
+                shortLabel: 'JPA & Runtime',
+                icon: Layers,
+              },
+              {
                 id: 'storyboard',
                 label: 'Storyboard & DFDs',
                 shortLabel: 'Storyboard',
@@ -210,6 +227,9 @@ export function FullStackSystemsStudio() {
 
       {/* Active Workspace */}
       {activeTab === 'internals-sim' && <BoundedRuntimeAndInfraInternalsLab />}
+      {activeTab === 'jpa-node-docker' && (
+        <BoundedBackendDevopsHandbooksView initialTrack="spring-jpa" />
+      )}
       {activeTab === 'storyboard' && <BoundedFullStackStoryboardAnimator />}
       {activeTab === 'frameworks' && <BoundedFrameworkRuntimeMatrixLab />}
       {activeTab === 'ai-gpu' && <BoundedAiInferenceHardwareLab />}

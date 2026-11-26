@@ -16,6 +16,7 @@ import {
 import { useAccountState } from '../../hooks/useAccountState';
 import { CatalogSearchInput } from '../ui';
 import { LineByLineCodeStudio } from './LineByLineCodeStudio';
+import { DsaHandwrittenQuickNotesView } from './DsaHandwrittenQuickNotesView';
 
 export interface Patterns20KarumanchiLabProps {
   initialPatternId?: string;
@@ -26,7 +27,7 @@ export const Patterns20KarumanchiLab: React.FC<Patterns20KarumanchiLabProps> = (
   initialPatternId,
   onJumpTo28Pattern,
 }) => {
-  const [section, setSection] = useState<'patterns20' | 'karumanchi'>('patterns20');
+  const [section, setSection] = useState<'patterns20' | 'karumanchi' | 'handwritten'>('patterns20');
   const [selectedId, setSelectedId] = useState<string>(
     initialPatternId ?? ALL_20_CODING_PATTERNS[0].id
   );
@@ -62,6 +63,9 @@ export const Patterns20KarumanchiLab: React.FC<Patterns20KarumanchiLabProps> = (
       [
         `chapter ${ch.chapter}`,
         ch.title,
+        ch.madeEasyDefinition ?? '',
+        ch.adtOperations ?? '',
+        ch.memoryRepresentation ?? '',
         ch.corePrinciple,
         ch.formulaOrInvariant,
         ch.complexityBreakdown,
@@ -124,6 +128,18 @@ export const Patterns20KarumanchiLab: React.FC<Patterns20KarumanchiLabProps> = (
             >
               <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               <span>Karumanchi DSA Foundations ({KARUMANCHI_CHAPTER_NOTES.length} Chapters)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection('handwritten')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                section === 'handwritten'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Handwritten Notes · Strings, Heaps, Greedy &amp; Trees</span>
             </button>
           </div>
 
@@ -401,7 +417,31 @@ export const Patterns20KarumanchiLab: React.FC<Patterns20KarumanchiLabProps> = (
                   </h3>
                 </div>
 
-                <div className="space-y-2 text-xs leading-relaxed">
+                <div className="space-y-2.5 text-xs leading-relaxed">
+                  {ch.madeEasyDefinition && (
+                    <div className="rounded-lg border border-sky-200 dark:border-sky-900/60 bg-sky-50/50 dark:bg-sky-950/25 p-3 space-y-1">
+                      <div className="text-[11px] font-semibold text-sky-800 dark:text-sky-300">
+                        Formal Definition (Made Easy Book Style)
+                      </div>
+                      <p className="text-slate-800 dark:text-slate-200">{ch.madeEasyDefinition}</p>
+                    </div>
+                  )}
+                  {ch.adtOperations && (
+                    <p className="text-slate-700 dark:text-slate-300">
+                      <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                        ADT Operations &amp; Rules:{' '}
+                      </strong>
+                      {ch.adtOperations}
+                    </p>
+                  )}
+                  {ch.memoryRepresentation && (
+                    <p className="text-slate-700 dark:text-slate-300">
+                      <strong className="font-semibold text-slate-900 dark:text-slate-100">
+                        Memory Representation:{' '}
+                      </strong>
+                      {ch.memoryRepresentation}
+                    </p>
+                  )}
                   <p className="text-slate-700 dark:text-slate-300">
                     <strong className="font-semibold text-slate-900 dark:text-slate-100">
                       Core Principle:{' '}
@@ -467,6 +507,9 @@ export const Patterns20KarumanchiLab: React.FC<Patterns20KarumanchiLabProps> = (
           )}
         </div>
       )}
+
+      {/* SECTION C: HANDWRITTEN NOTES QUICK-REVISION (ANALOGIES, STRINGS/KMP, HEAPS, GREEDY, TREES) */}
+      {section === 'handwritten' && <DsaHandwrittenQuickNotesView />}
     </div>
   );
 };

@@ -70,6 +70,9 @@ export interface LineByLinePatternBlueprint {
 export interface KarumanchiChapterNote {
   chapter: number;
   title: string;
+  madeEasyDefinition?: string;
+  adtOperations?: string;
+  memoryRepresentation?: string;
   corePrinciple: string;
   formulaOrInvariant: string;
   complexityBreakdown: string;

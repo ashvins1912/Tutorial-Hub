@@ -38,9 +38,13 @@ import { LiveTrafficFlowSimulator } from './shared/LiveTrafficFlowSimulator';
 import { withStudioBoundary } from './hoc';
 import { CopyButton, SegmentedTabBar } from './ui';
 import { TopicBridgeBar } from './shared/TopicBridgeBar';
+import { AiMlHarnessHandbookView } from './ai/AiMlHarnessHandbookView';
 
 const AiDfdVisualizer = withStudioBoundary(AiDfdVisualizerBase, {
   studioName: 'AI Architecture DFD Visualizer',
+});
+const BoundedAiMlHarnessHandbookView = withStudioBoundary(AiMlHarnessHandbookView, {
+  studioName: 'ML, LLM, Spring AI & Agent Harness Handbooks',
 });
 
 interface AiEngineeringProgress {
@@ -57,7 +61,7 @@ const EMPTY_AI_PROGRESS: AiEngineeringProgress = {
   inspectedNodes: [],
 };
 
-type WorkspaceTab = 'ontology-dfd' | 'patterns' | 'lab' | 'quiz';
+type WorkspaceTab = 'ontology-dfd' | 'patterns' | 'lab' | 'quiz' | 'handbooks';
 type RoadmapPace = 'fast-3m' | 'deep-6m';
 
 export function AiEngineeringStudio() {
@@ -499,6 +503,11 @@ export function AiEngineeringStudio() {
                 id: 'quiz',
                 label: `Reasoning Quiz (${activePhase.quizzes.filter((q) => solvedQuizSet.has(q.id)).length}/${activePhase.quizzes.length})`,
                 icon: HelpCircle,
+              },
+              {
+                id: 'handbooks',
+                label: 'ML · LLM · Spring AI · Harness Handbooks',
+                icon: Cpu,
               },
             ]}
           />
@@ -983,6 +992,8 @@ export function AiEngineeringStudio() {
           })}
         </div>
       )}
+
+      {activeTab === 'handbooks' && <BoundedAiMlHarnessHandbookView />}
 
       {/* Phase Navigation Footer */}
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-3.5 flex items-center justify-between gap-3">
